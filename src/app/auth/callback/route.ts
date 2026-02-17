@@ -11,7 +11,12 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Check if user already has a salon
+      // If redirecting to a specific page (e.g., password reset), respect it
+      if (next !== "/setup") {
+        return NextResponse.redirect(`${origin}${next}`);
+      }
+
+      // For signup flow, check if user already has a salon
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -28,7 +33,7 @@ export async function GET(request: Request) {
         }
       }
 
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${origin}/setup`);
     }
   }
 

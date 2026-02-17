@@ -34,7 +34,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Protected routes: redirect to login if not authenticated
-  const protectedPaths = ["/dashboard", "/customers", "/records", "/settings", "/setup"];
+  const protectedPaths = ["/dashboard", "/customers", "/records", "/settings", "/setup", "/appointments"];
   const isProtectedRoute = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
@@ -45,7 +45,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect logged-in users away from auth pages
+  // Redirect logged-in users away from auth pages (but allow update-password)
   const authPaths = ["/login", "/signup"];
   const isAuthRoute = authPaths.some(
     (path) => request.nextUrl.pathname === path

@@ -236,6 +236,86 @@ export type Database = {
           },
         ];
       };
+      appointments: {
+        Row: {
+          id: string;
+          salon_id: string;
+          customer_id: string;
+          menu_id: string | null;
+          menu_name_snapshot: string | null;
+          appointment_date: string;
+          start_time: string;
+          end_time: string | null;
+          status: string;
+          source: string | null;
+          memo: string | null;
+          treatment_record_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          salon_id: string;
+          customer_id: string;
+          menu_id?: string | null;
+          menu_name_snapshot?: string | null;
+          appointment_date: string;
+          start_time: string;
+          end_time?: string | null;
+          status?: string;
+          source?: string | null;
+          memo?: string | null;
+          treatment_record_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          salon_id?: string;
+          customer_id?: string;
+          menu_id?: string | null;
+          menu_name_snapshot?: string | null;
+          appointment_date?: string;
+          start_time?: string;
+          end_time?: string | null;
+          status?: string;
+          source?: string | null;
+          memo?: string | null;
+          treatment_record_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "appointments_salon_id_fkey";
+            columns: ["salon_id"];
+            isOneToOne: false;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "appointments_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "appointments_menu_id_fkey";
+            columns: ["menu_id"];
+            isOneToOne: false;
+            referencedRelation: "treatment_menus";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "appointments_treatment_record_id_fkey";
+            columns: ["treatment_record_id"];
+            isOneToOne: false;
+            referencedRelation: "treatment_records";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
