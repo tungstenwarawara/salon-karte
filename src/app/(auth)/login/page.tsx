@@ -29,8 +29,14 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
-    router.refresh();
+    // Check if salon exists to determine redirect target
+    const { data: salon } = await supabase
+      .from("salons")
+      .select("id")
+      .eq("owner_id", (await supabase.auth.getUser()).data.user!.id)
+      .single();
+
+    router.push(salon ? "/dashboard" : "/setup");
   };
 
   return (

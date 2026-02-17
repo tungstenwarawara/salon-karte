@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef } from "react";
 
 type PhotoEntry = {
   file: File;
@@ -17,7 +17,7 @@ export function PhotoUpload({
   onChange: (photos: PhotoEntry[]) => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [addingType, setAddingType] = useState<"before" | "after">("before");
+  const addingTypeRef = useRef<"before" | "after">("before");
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -28,7 +28,7 @@ export function PhotoUpload({
 
     onChange([
       ...photos,
-      { file, preview, type: addingType, memo: "" },
+      { file, preview, type: addingTypeRef.current, memo: "" },
     ]);
 
     // Reset input
@@ -38,11 +38,13 @@ export function PhotoUpload({
   };
 
   const handleAdd = (type: "before" | "after") => {
-    setAddingType(type);
+    addingTypeRef.current = type;
     fileInputRef.current?.click();
   };
 
   const handleRemove = (index: number) => {
+    // Revoke blob URL to prevent memory leak
+    URL.revokeObjectURL(photos[index].preview);
     const updated = photos.filter((_, i) => i !== index);
     onChange(updated);
   };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -11,6 +11,36 @@ export default function SetupPage() {
   const [address, setAddress] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  // Check if salon already exists - redirect to dashboard if so
+  useEffect(() => {
+    const checkExistingSalon = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      const { data: salon } = await supabase
+        .from("salons")
+        .select("id")
+        .eq("owner_id", user.id)
+        .single();
+
+      if (salon) {
+        router.push("/dashboard");
+        return;
+      }
+
+      setChecking(false);
+    };
+    checkExistingSalon();
+  }, [router]);
 
   const handleSetup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,8 +72,15 @@ export default function SetupPage() {
     }
 
     router.push("/dashboard");
-    router.refresh();
   };
+
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-text-light">読み込み中...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">

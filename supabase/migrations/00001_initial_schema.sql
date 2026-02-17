@@ -45,7 +45,7 @@ CREATE TABLE treatment_records (
   customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
   salon_id UUID REFERENCES salons(id) ON DELETE CASCADE,
   treatment_date DATE NOT NULL DEFAULT CURRENT_DATE,
-  menu_id UUID REFERENCES treatment_menus(id),
+  menu_id UUID REFERENCES treatment_menus(id) ON DELETE SET NULL,
   menu_name_snapshot TEXT,
   treatment_area TEXT,
   products_used TEXT,

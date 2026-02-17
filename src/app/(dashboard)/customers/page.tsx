@@ -21,14 +21,20 @@ export default function CustomersPage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const { data: salon } = await supabase
       .from("salons")
       .select("id")
       .eq("owner_id", user.id)
       .single<{ id: string }>();
-    if (!salon) return;
+    if (!salon) {
+      setLoading(false);
+      return;
+    }
 
     const { data } = await supabase
       .from("customers")

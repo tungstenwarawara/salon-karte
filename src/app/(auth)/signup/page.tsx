@@ -12,6 +12,7 @@ export default function SignupPage() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,9 +31,12 @@ export default function SignupPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
 
     if (error) {
@@ -41,9 +45,44 @@ export default function SignupPage() {
       return;
     }
 
-    router.push("/setup");
-    router.refresh();
+    // If session exists immediately (email confirmation disabled), go to setup
+    if (data.session) {
+      router.push("/setup");
+      return;
+    }
+
+    // Email confirmation required
+    setEmailSent(true);
+    setLoading(false);
   };
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-primary">サロンカルテ</h1>
+          </div>
+          <div className="bg-surface rounded-2xl shadow-sm border border-border p-6 space-y-4">
+            <h2 className="text-lg font-bold">確認メールを送信しました</h2>
+            <p className="text-sm text-text-light">
+              <span className="font-medium text-text">{email}</span>
+              <br />
+              に確認メールを送信しました。
+              <br />
+              メール内のリンクをクリックして登録を完了してください。
+            </p>
+            <Link
+              href="/login"
+              className="block text-sm text-accent font-medium hover:underline mt-4"
+            >
+              ログインページに戻る
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">

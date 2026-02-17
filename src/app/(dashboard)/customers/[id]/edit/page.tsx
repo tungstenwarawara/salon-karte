@@ -94,7 +94,6 @@ export default function EditCustomerPage() {
     }
 
     router.push(`/customers/${id}`);
-    router.refresh();
   };
 
   const handleDelete = async () => {
@@ -104,6 +103,26 @@ export default function EditCustomerPage() {
     setDeleting(true);
 
     const supabase = createClient();
+
+    // Clean up storage files for all treatment photos of this customer
+    const { data: records } = await supabase
+      .from("treatment_records")
+      .select("id")
+      .eq("customer_id", id);
+
+    if (records && records.length > 0) {
+      const recordIds = records.map((r) => r.id);
+      const { data: photos } = await supabase
+        .from("treatment_photos")
+        .select("storage_path")
+        .in("treatment_record_id", recordIds);
+
+      if (photos && photos.length > 0) {
+        const paths = photos.map((p) => p.storage_path);
+        await supabase.storage.from("treatment-photos").remove(paths);
+      }
+    }
+
     const { error } = await supabase.from("customers").delete().eq("id", id);
 
     if (error) {
@@ -113,7 +132,6 @@ export default function EditCustomerPage() {
     }
 
     router.push("/customers");
-    router.refresh();
   };
 
   return (

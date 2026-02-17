@@ -14,6 +14,7 @@ export default function MenusPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     name: "",
     category: "",
@@ -59,6 +60,7 @@ export default function MenusPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
 
     const supabase = createClient();
@@ -72,14 +74,24 @@ export default function MenusPage() {
     };
 
     if (editingId) {
-      await supabase
+      const { error } = await supabase
         .from("treatment_menus")
         .update(payload)
         .eq("id", editingId);
+      if (error) {
+        setError("メニューの更新に失敗しました");
+        setLoading(false);
+        return;
+      }
     } else {
-      await supabase
+      const { error } = await supabase
         .from("treatment_menus")
         .insert({ ...payload, salon_id: salonId });
+      if (error) {
+        setError("メニューの追加に失敗しました");
+        setLoading(false);
+        return;
+      }
     }
 
     setLoading(false);
@@ -100,8 +112,13 @@ export default function MenusPage() {
 
   const handleDelete = async (menuId: string) => {
     if (!confirm("このメニューを削除しますか？")) return;
+    setError("");
     const supabase = createClient();
-    await supabase.from("treatment_menus").delete().eq("id", menuId);
+    const { error } = await supabase.from("treatment_menus").delete().eq("id", menuId);
+    if (error) {
+      setError("メニューの削除に失敗しました");
+      return;
+    }
     loadMenus();
   };
 
@@ -118,6 +135,12 @@ export default function MenusPage() {
           </button>
         )}
       </div>
+
+      {error && (
+        <div className="bg-error/10 text-error text-sm rounded-lg p-3">
+          {error}
+        </div>
+      )}
 
       {/* Form */}
       {showForm && (

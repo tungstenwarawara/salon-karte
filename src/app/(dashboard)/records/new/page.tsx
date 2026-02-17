@@ -131,7 +131,6 @@ function NewRecordForm() {
     }
 
     router.push(`/customers/${customerId}`);
-    router.refresh();
   };
 
   return (
