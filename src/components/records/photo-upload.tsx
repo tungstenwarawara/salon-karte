@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { MAX_FILE_SIZE, ALLOWED_MIME_TYPES } from "@/lib/supabase/storage";
 
 type PhotoEntry = {
   file: File;
@@ -18,12 +19,33 @@ export function PhotoUpload({
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addingTypeRef = useRef<"before" | "after">("before");
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     const file = files[0];
+    setValidationError(null);
+
+    // クライアント側バリデーション（UXのため即時フィードバック）
+    if (file.size > MAX_FILE_SIZE) {
+      const sizeMB = Math.round(file.size / 1024 / 1024);
+      setValidationError(
+        `ファイルサイズが大きすぎます（${sizeMB}MB）。20MB以下の画像をお使いください。`
+      );
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      setValidationError(
+        "対応していないファイル形式です。JPEG, PNG, WebP, HEIC形式の画像をお使いください。"
+      );
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     const preview = URL.createObjectURL(file);
 
     onChange([
@@ -39,6 +61,7 @@ export function PhotoUpload({
 
   const handleAdd = (type: "before" | "after") => {
     addingTypeRef.current = type;
+    setValidationError(null);
     fileInputRef.current?.click();
   };
 
@@ -59,12 +82,24 @@ export function PhotoUpload({
 
   return (
     <div className="space-y-4">
-      <label className="block text-sm font-medium">施術写真</label>
+      <div className="flex items-center justify-between">
+        <label className="block text-sm font-medium">施術写真</label>
+        <span className="text-xs text-text-light">
+          JPEG・PNG・WebP・HEIC（20MBまで）
+        </span>
+      </div>
+
+      {/* バリデーションエラー表示 */}
+      {validationError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700">
+          {validationError}
+        </div>
+      )}
 
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
         capture="environment"
         onChange={handleFileSelect}
         className="hidden"
