@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-primary: #8B7B6B;
+  --color-primary-light: #A89888;
+  --color-primary-dark: #6E614F;
+  --color-accent: #C4956A;
+  --color-accent-light: #D4AD8A;
+  --color-background: #FAF8F5;
+  --color-surface: #FFFFFF;
+  --color-text: #3D3D3D;
+  --color-text-light: #6B6B6B;
+  --color-success: #7BAE7F;
+  --color-warning: #E8A87C;
+  --color-error: #D4726A;
+  --color-border: #E8E4E0;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+input, select, textarea {
+  font-size: 16px;
+}
