@@ -1,0 +1,318 @@
+import Link from "next/link";
+
+function StepCard({
+  number,
+  title,
+  description,
+  link,
+  linkLabel,
+}: {
+  number: number;
+  title: string;
+  description: string;
+  link: string;
+  linkLabel: string;
+}) {
+  return (
+    <div className="bg-surface border border-border rounded-2xl p-4">
+      <div className="flex items-start gap-3">
+        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-accent text-white text-sm font-bold flex items-center justify-center mt-0.5">
+          {number}
+        </span>
+        <div className="flex-1">
+          <h4 className="font-bold text-sm">{title}</h4>
+          <p className="text-sm text-text-light mt-1 leading-relaxed">
+            {description}
+          </p>
+          <Link
+            href={link}
+            className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
+          >
+            {linkLabel} →
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Section({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <h3 className="font-bold text-base flex items-center gap-2 mb-3">
+        <span className="text-lg">{icon}</span>
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+function FeatureCard({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="bg-surface border border-border rounded-xl p-3">
+      <h4 className="font-medium text-sm">{title}</h4>
+      <p className="text-xs text-text-light mt-1 leading-relaxed">
+        {description}
+      </p>
+    </div>
+  );
+}
+
+export default function GuidePage() {
+  return (
+    <div className="space-y-8">
+      {/* ヘッダー */}
+      <div>
+        <h2 className="text-xl font-bold">使い方ガイド</h2>
+        <p className="text-text-light text-sm mt-1">
+          サロンカルテの基本的な使い方をご紹介します
+        </p>
+      </div>
+
+      {/* はじめに */}
+      <div className="bg-accent/5 border border-accent/20 rounded-2xl p-4">
+        <h3 className="font-bold text-sm text-accent">
+          サロンカルテでできること
+        </h3>
+        <ul className="mt-2 space-y-1.5 text-sm text-text-light">
+          <li className="flex items-start gap-2">
+            <span className="text-accent mt-0.5">&#10003;</span>
+            <span>お客様の情報・施術履歴をカルテとして管理</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-accent mt-0.5">&#10003;</span>
+            <span>施術前後の写真をビフォーアフターで記録</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-accent mt-0.5">&#10003;</span>
+            <span>電話・LINE・ホットペッパー等すべての予約を一元管理</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-accent mt-0.5">&#10003;</span>
+            <span>来店が途切れたお客様を自動でお知らせ</span>
+          </li>
+        </ul>
+      </div>
+
+      {/* 1日の流れ */}
+      <Section title="1日の使い方（基本フロー）" icon="&#128197;">
+        <div className="space-y-3">
+          <StepCard
+            number={1}
+            title="朝：ダッシュボードで今日の予約を確認"
+            description="ログインすると、今日の予約一覧が表示されます。お客様の名前・メニュー・時間をひと目で確認できます。"
+            link="/dashboard"
+            linkLabel="ダッシュボードを開く"
+          />
+          <StepCard
+            number={2}
+            title="来店前：カルテで前回の施術内容を確認"
+            description="予約のお客様名をタップすると、顧客詳細画面に移動します。前回の施術内容・肌の状態・次回への申し送りを確認できます。"
+            link="/customers"
+            linkLabel="顧客一覧を開く"
+          />
+          <StepCard
+            number={3}
+            title="施術後：カルテを記入"
+            description="顧客詳細画面の「施術記録を追加」から、今日の施術内容を記録します。写真も一緒に保存できます。"
+            link="/customers"
+            linkLabel="顧客を選んで記録する"
+          />
+          <StepCard
+            number={4}
+            title="次回予約を登録"
+            description="次回の来店日が決まったら、予約を登録しておきましょう。ダッシュボードに自動で表示されます。"
+            link="/appointments/new"
+            linkLabel="予約を登録する"
+          />
+        </div>
+      </Section>
+
+      {/* 初期設定 */}
+      <Section title="最初にやること" icon="&#9881;">
+        <div className="space-y-3">
+          <StepCard
+            number={1}
+            title="施術メニューを登録する"
+            description="サロンで提供しているメニュー（フェイシャル、ボディケアなど）を登録しておくと、カルテ作成時にワンタップで選べます。"
+            link="/settings/menus"
+            linkLabel="メニューを登録する"
+          />
+          <StepCard
+            number={2}
+            title="お客様を登録する"
+            description="既存のお客様の情報を登録しましょう。名前（カナ）、電話番号、肌質、アレルギーなどを入力できます。"
+            link="/customers/new"
+            linkLabel="顧客を登録する"
+          />
+          <StepCard
+            number={3}
+            title="予約を入れてみる"
+            description="お客様の予約を登録してみましょう。ホットペッパー、電話、LINEなど予約元も記録できます。"
+            link="/appointments/new"
+            linkLabel="予約を登録する"
+          />
+        </div>
+      </Section>
+
+      {/* 各機能の説明 */}
+      <Section title="機能の詳細" icon="&#128218;">
+        <div className="space-y-3">
+          <FeatureCard
+            title="顧客管理"
+            description="お客様の基本情報（名前、電話番号、肌質、アレルギーなど）を管理します。カナ検索で素早く見つけられます。顧客一覧では来店回数や最終来店日も表示されます。"
+          />
+          <FeatureCard
+            title="施術記録（カルテ）"
+            description="施術日・メニュー・使用した化粧品・施術前の肌の状態・施術後の経過・次回への申し送りを記録できます。お客様ごとに時系列で確認できます。"
+          />
+          <FeatureCard
+            title="写真管理"
+            description="施術前後の写真を記録できます。スマホのカメラで直接撮影、またはギャラリーから選択できます。ビフォーアフターの比較表示にも対応しています。写真の位置情報は自動的に除去されます。"
+          />
+          <FeatureCard
+            title="予約管理"
+            description="日付・時間・お客様・メニューを指定して予約を登録します。予約元（ホットペッパー/電話/LINE/直接/その他）も記録できるので、すべてのチャネルの予約を一元管理できます。"
+          />
+          <FeatureCard
+            title="来店分析・離脱アラート"
+            description="60日以上来店のないお客様を「ご無沙汰のお客様」としてダッシュボードに表示します。フォローのタイミングを逃しません。"
+          />
+        </div>
+      </Section>
+
+      {/* セキュリティ */}
+      <Section title="セキュリティについて" icon="&#128274;">
+        <div className="bg-surface border border-border rounded-2xl p-4 space-y-3">
+          <p className="text-sm text-text-light leading-relaxed">
+            サロンカルテはお客様の大切な個人情報をお預かりしています。
+            以下の対策で安全にデータを保護しています。
+          </p>
+          <ul className="space-y-2 text-sm">
+            <li className="flex items-start gap-2">
+              <span className="text-success mt-0.5">&#128994;</span>
+              <span>
+                <strong>通信の暗号化</strong>
+                ：すべてのデータはHTTPS（SSL/TLS）で暗号化されて送受信されます
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-success mt-0.5">&#128994;</span>
+              <span>
+                <strong>アクセス制御</strong>
+                ：他のサロンのデータは一切閲覧・編集できません
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-success mt-0.5">&#128994;</span>
+              <span>
+                <strong>写真の保護</strong>
+                ：施術写真は暗号化された非公開ストレージに保存され、1時間で期限切れになる一時URLでのみ表示されます
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-success mt-0.5">&#128994;</span>
+              <span>
+                <strong>位置情報の除去</strong>
+                ：写真に含まれるGPS位置情報やデバイス情報は、アップロード時に自動的に除去されます
+              </span>
+            </li>
+          </ul>
+        </div>
+      </Section>
+
+      {/* よくある質問 */}
+      <Section title="よくある質問" icon="&#10067;">
+        <div className="space-y-3">
+          <details className="bg-surface border border-border rounded-xl overflow-hidden group">
+            <summary className="font-medium text-sm p-4 cursor-pointer hover:bg-background transition-colors list-none flex items-center justify-between">
+              <span>写真はどこに保存されますか？</span>
+              <span className="text-text-light text-xs group-open:rotate-180 transition-transform">
+                &#9660;
+              </span>
+            </summary>
+            <div className="px-4 pb-4 text-sm text-text-light leading-relaxed">
+              写真はクラウド上の暗号化された非公開ストレージに安全に保存されます。URLを知っていても直接アクセスすることはできず、ログインしたご本人のみが閲覧可能です。
+            </div>
+          </details>
+
+          <details className="bg-surface border border-border rounded-xl overflow-hidden group">
+            <summary className="font-medium text-sm p-4 cursor-pointer hover:bg-background transition-colors list-none flex items-center justify-between">
+              <span>スマホでもパソコンでも使えますか？</span>
+              <span className="text-text-light text-xs group-open:rotate-180 transition-transform">
+                &#9660;
+              </span>
+            </summary>
+            <div className="px-4 pb-4 text-sm text-text-light leading-relaxed">
+              はい、スマホ・タブレット・パソコンのすべてに対応しています。スマホでの操作に最適化されているので、施術の合間にサッと記録できます。
+            </div>
+          </details>
+
+          <details className="bg-surface border border-border rounded-xl overflow-hidden group">
+            <summary className="font-medium text-sm p-4 cursor-pointer hover:bg-background transition-colors list-none flex items-center justify-between">
+              <span>顧客データを削除したらどうなりますか？</span>
+              <span className="text-text-light text-xs group-open:rotate-180 transition-transform">
+                &#9660;
+              </span>
+            </summary>
+            <div className="px-4 pb-4 text-sm text-text-light leading-relaxed">
+              顧客データを削除すると、その顧客に紐づく施術記録・写真・予約もすべて完全に削除されます。この操作は取り消せないため、慎重に行ってください。
+            </div>
+          </details>
+
+          <details className="bg-surface border border-border rounded-xl overflow-hidden group">
+            <summary className="font-medium text-sm p-4 cursor-pointer hover:bg-background transition-colors list-none flex items-center justify-between">
+              <span>ホットペッパーとの連携はできますか？</span>
+              <span className="text-text-light text-xs group-open:rotate-180 transition-transform">
+                &#9660;
+              </span>
+            </summary>
+            <div className="px-4 pb-4 text-sm text-text-light leading-relaxed">
+              自動連携には対応していませんが、ホットペッパーで受けた予約を手動で登録して一元管理できます。予約元に「ホットペッパー」を選択すると、どのチャネルからの予約かも記録できます。
+            </div>
+          </details>
+
+          <details className="bg-surface border border-border rounded-xl overflow-hidden group">
+            <summary className="font-medium text-sm p-4 cursor-pointer hover:bg-background transition-colors list-none flex items-center justify-between">
+              <span>写真はどのくらい保存できますか？</span>
+              <span className="text-text-light text-xs group-open:rotate-180 transition-transform">
+                &#9660;
+              </span>
+            </summary>
+            <div className="px-4 pb-4 text-sm text-text-light leading-relaxed">
+              基本プランでは5GBまで保存できます。1枚あたり約2〜5MBとして、約1,000〜2,500枚の写真を保存可能です。JPEG、PNG、WebP、HEIC形式に対応しています。
+            </div>
+          </details>
+        </div>
+      </Section>
+
+      {/* サポート */}
+      <div className="bg-surface border border-border rounded-2xl p-4 text-center">
+        <p className="text-sm text-text-light">
+          ご不明な点がありましたら、お気軽にご連絡ください。
+        </p>
+        <Link
+          href="/dashboard"
+          className="inline-block mt-3 bg-accent hover:bg-accent-light text-white font-medium rounded-xl px-6 py-3 transition-colors text-sm min-h-[48px]"
+        >
+          ダッシュボードに戻る
+        </Link>
+      </div>
+    </div>
+  );
+}
