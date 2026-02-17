@@ -32,7 +32,10 @@ export default function EditAppointmentPage() {
   // Form state
   const [menuId, setMenuId] = useState("");
   const [appointmentDate, setAppointmentDate] = useState("");
-  const [startTime, setStartTime] = useState("");
+  const [startHour, setStartHour] = useState("10");
+  const [startMinute, setStartMinute] = useState("00");
+  const [endHour, setEndHour] = useState("11");
+  const [endMinute, setEndMinute] = useState("00");
   const [source, setSource] = useState("direct");
   const [memo, setMemo] = useState("");
 
@@ -79,7 +82,17 @@ export default function EditAppointmentPage() {
     setMenus(menuData ?? []);
     setMenuId(appointment.menu_id ?? "");
     setAppointmentDate(appointment.appointment_date);
-    setStartTime(appointment.start_time.slice(0, 5));
+    const [sH, sM] = appointment.start_time.slice(0, 5).split(":");
+    setStartHour(String(Number(sH)));
+    setStartMinute(sM);
+    if (appointment.end_time) {
+      const [eH, eM] = appointment.end_time.slice(0, 5).split(":");
+      setEndHour(String(Number(eH)));
+      setEndMinute(eM);
+    } else {
+      setEndHour(String(Number(sH) + 1));
+      setEndMinute(sM);
+    }
     setSource(appointment.source ?? "direct");
     setMemo(appointment.memo ?? "");
     if (appointment.customers) {
@@ -90,6 +103,17 @@ export default function EditAppointmentPage() {
 
   const selectedMenu = menus.find((m) => m.id === menuId);
 
+  // Auto-calculate end time when menu or start time changes (round up to 15min)
+  const updateEndTimeFromMenu = (menu: TreatmentMenu | undefined, sH: string, sM: string) => {
+    if (menu?.duration_minutes) {
+      const totalMin = Number(sH) * 60 + Number(sM) + menu.duration_minutes;
+      const rounded = Math.ceil(totalMin / 15) * 15;
+      const capped = Math.min(rounded, 23 * 60 + 45);
+      setEndHour(String(Math.floor(capped / 60)));
+      setEndMinute(String(capped % 60).padStart(2, "0"));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -97,12 +121,16 @@ export default function EditAppointmentPage() {
 
     const supabase = createClient();
 
-    // Calculate end_time from menu duration (cap at 23:59)
-    let endTime: string | null = null;
-    if (selectedMenu?.duration_minutes) {
-      const [h, m] = startTime.split(":").map(Number);
-      const totalMin = Math.min(h * 60 + m + selectedMenu.duration_minutes, 23 * 60 + 59);
-      endTime = `${String(Math.floor(totalMin / 60)).padStart(2, "0")}:${String(totalMin % 60).padStart(2, "0")}`;
+    const startTime = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
+    const endTime = `${endHour.padStart(2, "0")}:${endMinute.padStart(2, "0")}`;
+
+    // Validate end > start
+    const startMin = Number(startHour) * 60 + Number(startMinute);
+    const endMin = Number(endHour) * 60 + Number(endMinute);
+    if (endMin <= startMin) {
+      setError("終了時間は開始時間より後にしてください");
+      setSaving(false);
+      return;
     }
 
     // Check for overlapping appointments (exclude current)
@@ -119,13 +147,11 @@ export default function EditAppointmentPage() {
         const [hh, mm] = t.slice(0, 5).split(":").map(Number);
         return hh * 60 + mm;
       };
-      const newStartMin = toMin(startTime);
-      const newEndMin = endTime ? toMin(endTime) : newStartMin + 60;
 
       const overlap = existing.find((apt) => {
         const eStart = toMin(apt.start_time);
         const eEnd = apt.end_time ? toMin(apt.end_time) : eStart + 60;
-        return newStartMin < eEnd && eStart < newEndMin;
+        return startMin < eEnd && eStart < endMin;
       });
 
       if (overlap) {
@@ -137,7 +163,7 @@ export default function EditAppointmentPage() {
       }
     }
 
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from("appointments")
       .update({
         menu_id: menuId || null,
@@ -150,8 +176,9 @@ export default function EditAppointmentPage() {
       })
       .eq("id", appointmentId);
 
-    if (error) {
-      setError("予約の更新に失敗しました");
+    if (updateError) {
+      console.error("Appointment update error:", updateError);
+      setError(`予約の更新に失敗しました: ${updateError.message}`);
       setSaving(false);
       return;
     }
@@ -188,33 +215,76 @@ export default function EditAppointmentPage() {
           </div>
         )}
 
-        {/* Date and time */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="date" className="block text-sm font-medium mb-1.5">
-              予約日
-            </label>
-            <input
-              id="date"
-              type="date"
-              value={appointmentDate}
-              onChange={(e) => setAppointmentDate(e.target.value)}
-              required
-              className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-            />
+        {/* Date */}
+        <div>
+          <label htmlFor="date" className="block text-sm font-medium mb-1.5">
+            予約日
+          </label>
+          <input
+            id="date"
+            type="date"
+            value={appointmentDate}
+            onChange={(e) => setAppointmentDate(e.target.value)}
+            required
+            className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+          />
+        </div>
+
+        {/* Start time */}
+        <div>
+          <label className="block text-sm font-medium mb-1.5">開始時間</label>
+          <div className="flex items-center gap-2">
+            <select
+              value={startHour}
+              onChange={(e) => {
+                setStartHour(e.target.value);
+                updateEndTimeFromMenu(selectedMenu, e.target.value, startMinute);
+              }}
+              className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            >
+              {Array.from({ length: 24 }, (_, i) => (
+                <option key={i} value={String(i)}>{String(i).padStart(2, "0")}</option>
+              ))}
+            </select>
+            <span className="text-lg font-medium">:</span>
+            <select
+              value={startMinute}
+              onChange={(e) => {
+                setStartMinute(e.target.value);
+                updateEndTimeFromMenu(selectedMenu, startHour, e.target.value);
+              }}
+              className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            >
+              {["00", "15", "30", "45"].map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
           </div>
-          <div>
-            <label htmlFor="time" className="block text-sm font-medium mb-1.5">
-              開始時間
-            </label>
-            <input
-              id="time"
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              required
-              className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-            />
+        </div>
+
+        {/* End time */}
+        <div>
+          <label className="block text-sm font-medium mb-1.5">終了予定時間</label>
+          <div className="flex items-center gap-2">
+            <select
+              value={endHour}
+              onChange={(e) => setEndHour(e.target.value)}
+              className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            >
+              {Array.from({ length: 24 }, (_, i) => (
+                <option key={i} value={String(i)}>{String(i).padStart(2, "0")}</option>
+              ))}
+            </select>
+            <span className="text-lg font-medium">:</span>
+            <select
+              value={endMinute}
+              onChange={(e) => setEndMinute(e.target.value)}
+              className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            >
+              {["00", "15", "30", "45"].map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -226,7 +296,11 @@ export default function EditAppointmentPage() {
           <select
             id="menu"
             value={menuId}
-            onChange={(e) => setMenuId(e.target.value)}
+            onChange={(e) => {
+              setMenuId(e.target.value);
+              const m = menus.find((menu) => menu.id === e.target.value);
+              updateEndTimeFromMenu(m, startHour, startMinute);
+            }}
             className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
           >
             <option value="">メニューを選択</option>
