@@ -301,10 +301,207 @@ export default function GuidePage() {
         </div>
       </Section>
 
+      {/* 料金プラン */}
+      <Section title="料金プラン" icon="&#128176;">
+        <div className="space-y-4">
+          {/* テスター特典 */}
+          <div className="bg-accent/5 border border-accent/20 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                テスター特典
+              </span>
+            </div>
+            <p className="text-sm leading-relaxed">
+              テスター期間中は<strong>全機能を無料</strong>でお使いいただけます。
+              正式リリース後も、オプション機能は<strong>3ヶ月間無料</strong>でお試しいただけます。
+            </p>
+          </div>
+
+          {/* 基本プラン */}
+          <div className="bg-surface border border-border rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-bold text-sm">基本プラン</h4>
+              <div className="text-right">
+                <span className="text-xl font-bold text-accent">2,980</span>
+                <span className="text-xs text-text-light">円/月（税込）</span>
+              </div>
+            </div>
+            <ul className="space-y-1.5 text-sm text-text-light">
+              <li className="flex items-start gap-2">
+                <span className="text-accent mt-0.5">&#10003;</span>
+                <span>顧客管理（人数無制限）</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-accent mt-0.5">&#10003;</span>
+                <span>施術記録（カルテ）</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-accent mt-0.5">&#10003;</span>
+                <span>施術写真の保存（5GB）</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-accent mt-0.5">&#10003;</span>
+                <span>簡易予約管理</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-accent mt-0.5">&#10003;</span>
+                <span>来店分析・離脱アラート</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* お試しプラン */}
+          <div className="bg-surface border border-border rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-bold text-sm">お試しプラン</h4>
+              <div className="text-right">
+                <span className="text-xl font-bold">0</span>
+                <span className="text-xs text-text-light">円</span>
+              </div>
+            </div>
+            <p className="text-sm text-text-light">
+              顧客10件まで。写真保存・予約管理なし。まずは試してみたい方向け。
+            </p>
+          </div>
+
+          {/* 他社比較 */}
+          <div className="bg-surface border border-border rounded-2xl p-4">
+            <h4 className="font-bold text-sm mb-3">他のサービスとの比較</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between items-center py-1.5 border-b border-border">
+                <span className="text-text-light">他社A</span>
+                <span className="font-medium">月額 5,500円〜</span>
+              </div>
+              <div className="flex justify-between items-center py-1.5 border-b border-border">
+                <span className="text-text-light">他社B</span>
+                <span className="font-medium">月額 11,000円〜</span>
+              </div>
+              <div className="flex justify-between items-center py-1.5 border-b border-border">
+                <span className="text-text-light">他社C</span>
+                <span className="font-medium">月額 21,000円〜</span>
+              </div>
+              <div className="flex justify-between items-center py-1.5 bg-accent/5 rounded-lg px-2">
+                <span className="font-bold text-accent">サロンカルテ</span>
+                <span className="font-bold text-accent">月額 2,980円</span>
+              </div>
+            </div>
+            <p className="text-xs text-text-light mt-3">
+              既存サービスは使わない機能も含めたパック料金。サロンカルテは必要な機能だけ選んでお支払いいただけます。
+            </p>
+          </div>
+        </div>
+      </Section>
+
+      {/* 今後追加予定の機能 */}
+      <Section title="今後追加予定の機能" icon="&#128640;">
+        <div className="space-y-3">
+          <p className="text-sm text-text-light">
+            以下の機能は、必要な方だけオプションとして追加できる形を予定しています。
+            ご要望に応じて開発の優先度を決めていきますので、気になる機能があればぜひ教えてください。
+          </p>
+
+          <div className="bg-surface border border-border rounded-2xl overflow-hidden">
+            <div className="divide-y divide-border">
+              <div className="p-3 flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="font-medium text-sm">カウンセリングシート</h4>
+                  <p className="text-xs text-text-light mt-0.5">
+                    初回来店時にお客様自身がスマホで入力できるデジタル問診票
+                  </p>
+                </div>
+                <span className="text-xs text-text-light whitespace-nowrap ml-3">+500円/月</span>
+              </div>
+
+              <div className="p-3 flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="font-medium text-sm">カルテPDF出力</h4>
+                  <p className="text-xs text-text-light mt-0.5">
+                    カルテを印刷用PDFに。お客様への施術報告書としても
+                  </p>
+                </div>
+                <span className="text-xs text-text-light whitespace-nowrap ml-3">+300円/月</span>
+              </div>
+
+              <div className="p-3 flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="font-medium text-sm">写真容量の拡張</h4>
+                  <p className="text-xs text-text-light mt-0.5">
+                    保存容量を5GB → 20GBに拡張
+                  </p>
+                </div>
+                <span className="text-xs text-text-light whitespace-nowrap ml-3">+500円/月</span>
+              </div>
+
+              <div className="p-3 flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="font-medium text-sm">来店分析（詳細版）</h4>
+                  <p className="text-xs text-text-light mt-0.5">
+                    リピート率・来店間隔トレンド・月別集計グラフ
+                  </p>
+                </div>
+                <span className="text-xs text-text-light whitespace-nowrap ml-3">+500円/月</span>
+              </div>
+
+              <div className="p-3 flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="font-medium text-sm">LINE通知</h4>
+                  <p className="text-xs text-text-light mt-0.5">
+                    予約リマインドや施術後フォローを自動送信
+                  </p>
+                </div>
+                <span className="text-xs text-text-light whitespace-nowrap ml-3">+1,000円/月</span>
+              </div>
+
+              <div className="p-3 flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="font-medium text-sm">データエクスポート</h4>
+                  <p className="text-xs text-text-light mt-0.5">
+                    顧客データ・施術記録をCSVファイルで出力
+                  </p>
+                </div>
+                <span className="text-xs text-text-light whitespace-nowrap ml-3">+300円/月</span>
+              </div>
+
+              <div className="p-3 flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="font-medium text-sm">複数スタッフ対応</h4>
+                  <p className="text-xs text-text-light mt-0.5">
+                    スタッフアカウントの追加・権限管理
+                  </p>
+                </div>
+                <span className="text-xs text-text-light whitespace-nowrap ml-3">+1,000円/月</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 料金シミュレーション */}
+          <div className="bg-surface border border-border rounded-2xl p-4">
+            <h4 className="font-bold text-sm mb-3">料金シミュレーション</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-text-light">基本プランだけ</span>
+                <span className="font-bold">月 2,980円</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-text-light">+ カウンセリング + PDF出力</span>
+                <span className="font-bold">月 3,780円</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-text-light">全部入り</span>
+                <span className="font-bold">月 5,480円</span>
+              </div>
+            </div>
+            <p className="text-xs text-text-light mt-3">
+              使いたい機能だけ選べるので、不要な機能にお金を払う必要はありません。
+            </p>
+          </div>
+        </div>
+      </Section>
+
       {/* サポート */}
       <div className="bg-surface border border-border rounded-2xl p-4 text-center">
         <p className="text-sm text-text-light">
-          ご不明な点がありましたら、お気軽にご連絡ください。
+          ご不明な点やご要望がありましたら、お気軽にご連絡ください。
         </p>
         <Link
           href="/dashboard"
