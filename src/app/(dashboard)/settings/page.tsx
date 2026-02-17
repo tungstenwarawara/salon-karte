@@ -148,6 +148,22 @@ export default function SettingsPage() {
           <span className="text-text-light">→</span>
         </div>
       </Link>
+
+      {/* Guide link */}
+      <Link
+        href="/guide"
+        className="block bg-surface border border-border rounded-2xl p-5 hover:border-accent transition-colors"
+      >
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="font-bold">使い方ガイド</h3>
+            <p className="text-sm text-text-light mt-1">
+              基本的な操作方法・よくある質問
+            </p>
+          </div>
+          <span className="text-text-light">→</span>
+        </div>
+      </Link>
     </div>
   );
 }
