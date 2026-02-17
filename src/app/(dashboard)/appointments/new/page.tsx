@@ -113,6 +113,37 @@ function NewAppointmentForm() {
       endTime = `${String(Math.floor(totalMin / 60)).padStart(2, "0")}:${String(totalMin % 60).padStart(2, "0")}`;
     }
 
+    // Check for overlapping appointments
+    const { data: existing } = await supabase
+      .from("appointments")
+      .select("id, start_time, end_time, customers(last_name, first_name)")
+      .eq("salon_id", salonId)
+      .eq("appointment_date", appointmentDate)
+      .neq("status", "cancelled");
+
+    if (existing && existing.length > 0) {
+      const toMin = (t: string) => {
+        const [hh, mm] = t.slice(0, 5).split(":").map(Number);
+        return hh * 60 + mm;
+      };
+      const newStartMin = toMin(startTime);
+      const newEndMin = endTime ? toMin(endTime) : newStartMin + 60;
+
+      const overlap = existing.find((apt) => {
+        const eStart = toMin(apt.start_time);
+        const eEnd = apt.end_time ? toMin(apt.end_time) : eStart + 60;
+        return newStartMin < eEnd && eStart < newEndMin;
+      });
+
+      if (overlap) {
+        const c = overlap.customers as { last_name: string; first_name: string } | null;
+        const name = c ? `${c.last_name} ${c.first_name}` : "別の顧客";
+        setError(`この時間帯には既に${name}様の予約があります（${overlap.start_time.slice(0, 5)}〜）`);
+        setSaving(false);
+        return;
+      }
+    }
+
     const { error } = await supabase.from("appointments").insert({
       salon_id: salonId,
       customer_id: customerId,

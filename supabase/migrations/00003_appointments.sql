@@ -9,7 +9,7 @@ CREATE TABLE appointments (
   start_time TIME NOT NULL,
   end_time TIME,
   status TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'cancelled')),
-  source TEXT DEFAULT 'direct' CHECK (source IN ('hotpepper', 'phone', 'line', 'direct', 'other'))
+  source TEXT DEFAULT 'direct' CHECK (source IN ('hotpepper', 'phone', 'line', 'direct', 'other')),
   memo TEXT,
   treatment_record_id UUID REFERENCES treatment_records(id),
   created_at TIMESTAMPTZ DEFAULT now(),

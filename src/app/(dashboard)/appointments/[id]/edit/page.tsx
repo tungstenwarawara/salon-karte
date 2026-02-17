@@ -23,6 +23,7 @@ export default function EditAppointmentPage() {
   const appointmentId = params.id as string;
 
   const [menus, setMenus] = useState<TreatmentMenu[]>([]);
+  const [salonId, setSalonId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -52,6 +53,7 @@ export default function EditAppointmentPage() {
       .eq("owner_id", user.id)
       .single<{ id: string }>();
     if (!salon) return;
+    setSalonId(salon.id);
 
     // Load appointment
     const { data: appointment } = await supabase
@@ -101,6 +103,38 @@ export default function EditAppointmentPage() {
       const [h, m] = startTime.split(":").map(Number);
       const totalMin = Math.min(h * 60 + m + selectedMenu.duration_minutes, 23 * 60 + 59);
       endTime = `${String(Math.floor(totalMin / 60)).padStart(2, "0")}:${String(totalMin % 60).padStart(2, "0")}`;
+    }
+
+    // Check for overlapping appointments (exclude current)
+    const { data: existing } = await supabase
+      .from("appointments")
+      .select("id, start_time, end_time, customers(last_name, first_name)")
+      .eq("salon_id", salonId)
+      .eq("appointment_date", appointmentDate)
+      .neq("status", "cancelled")
+      .neq("id", appointmentId);
+
+    if (existing && existing.length > 0) {
+      const toMin = (t: string) => {
+        const [hh, mm] = t.slice(0, 5).split(":").map(Number);
+        return hh * 60 + mm;
+      };
+      const newStartMin = toMin(startTime);
+      const newEndMin = endTime ? toMin(endTime) : newStartMin + 60;
+
+      const overlap = existing.find((apt) => {
+        const eStart = toMin(apt.start_time);
+        const eEnd = apt.end_time ? toMin(apt.end_time) : eStart + 60;
+        return newStartMin < eEnd && eStart < newEndMin;
+      });
+
+      if (overlap) {
+        const c = overlap.customers as { last_name: string; first_name: string } | null;
+        const name = c ? `${c.last_name} ${c.first_name}` : "別の顧客";
+        setError(`この時間帯には既に${name}様の予約があります（${overlap.start_time.slice(0, 5)}〜）`);
+        setSaving(false);
+        return;
+      }
     }
 
     const { error } = await supabase
