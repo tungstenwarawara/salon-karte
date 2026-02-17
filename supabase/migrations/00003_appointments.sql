@@ -28,7 +28,7 @@ CREATE INDEX idx_appointments_salon_date_status ON appointments(salon_id, appoin
 CREATE TRIGGER update_appointments_updated_at
   BEFORE UPDATE ON appointments
   FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+  EXECUTE FUNCTION update_updated_at();
 
 -- RLS
 ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
