@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { BeforeAfterComparison } from "@/components/records/before-after";
 import type { Database } from "@/types/database";
 
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
@@ -83,26 +84,9 @@ export default async function RecordDetailPage({
         <DetailRow label="次回への申し送り" value={record.next_visit_memo} />
       </div>
 
-      {/* Photos */}
+      {/* Photos - Before/After comparison */}
       {photos && photos.length > 0 && (
-        <div>
-          <h3 className="font-bold mb-3">施術写真</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {photos.map((photo) => (
-              <div
-                key={photo.id}
-                className="bg-surface border border-border rounded-xl p-3"
-              >
-                <p className="text-xs text-text-light mb-2 font-medium">
-                  {photo.photo_type === "before" ? "施術前" : "施術後"}
-                </p>
-                {photo.memo && (
-                  <p className="text-xs text-text-light">{photo.memo}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        <BeforeAfterComparison photos={photos} />
       )}
     </div>
   );

@@ -35,6 +35,14 @@ export default async function HomePage() {
             新規登録
           </Link>
         </div>
+        <div className="flex gap-4 mt-8 text-xs text-text-light">
+          <Link href="/privacy" className="hover:underline">
+            プライバシーポリシー
+          </Link>
+          <Link href="/terms" className="hover:underline">
+            利用規約
+          </Link>
+        </div>
       </div>
     </div>
   );

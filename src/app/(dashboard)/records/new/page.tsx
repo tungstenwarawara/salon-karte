@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { uploadPhotos } from "@/lib/supabase/storage";
+import { PhotoUpload, type PhotoEntry } from "@/components/records/photo-upload";
 import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
@@ -25,6 +27,7 @@ function NewRecordForm() {
   const [error, setError] = useState("");
   const [salonId, setSalonId] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [photos, setPhotos] = useState<PhotoEntry[]>([]);
 
   const [form, setForm] = useState({
     treatment_date: new Date().toISOString().split("T")[0],
@@ -52,7 +55,6 @@ function NewRecordForm() {
       if (!salon) return;
       setSalonId(salon.id);
 
-      // Load menus
       const { data: menuData } = await supabase
         .from("treatment_menus")
         .select("*")
@@ -62,7 +64,6 @@ function NewRecordForm() {
         .returns<Menu[]>();
       setMenus(menuData ?? []);
 
-      // Load customer name
       if (customerId) {
         const { data: customer } = await supabase
           .from("customers")
@@ -93,23 +94,40 @@ function NewRecordForm() {
     const supabase = createClient();
     const selectedMenu = menus.find((m) => m.id === form.menu_id);
 
-    const { error } = await supabase.from("treatment_records").insert({
-      customer_id: customerId,
-      salon_id: salonId,
-      treatment_date: form.treatment_date,
-      menu_id: form.menu_id || null,
-      menu_name_snapshot: selectedMenu?.name ?? null,
-      treatment_area: form.treatment_area || null,
-      products_used: form.products_used || null,
-      skin_condition_before: form.skin_condition_before || null,
-      notes_after: form.notes_after || null,
-      next_visit_memo: form.next_visit_memo || null,
-    });
+    const { data: record, error: insertError } = await supabase
+      .from("treatment_records")
+      .insert({
+        customer_id: customerId,
+        salon_id: salonId,
+        treatment_date: form.treatment_date,
+        menu_id: form.menu_id || null,
+        menu_name_snapshot: selectedMenu?.name ?? null,
+        treatment_area: form.treatment_area || null,
+        products_used: form.products_used || null,
+        skin_condition_before: form.skin_condition_before || null,
+        notes_after: form.notes_after || null,
+        next_visit_memo: form.next_visit_memo || null,
+      })
+      .select("id")
+      .single<{ id: string }>();
 
-    if (error) {
+    if (insertError || !record) {
       setError("登録に失敗しました");
       setLoading(false);
       return;
+    }
+
+    if (photos.length > 0) {
+      const { errors: photoErrors } = await uploadPhotos(
+        record.id,
+        salonId,
+        photos
+      );
+      if (photoErrors.length > 0) {
+        setError(
+          "施術記録は保存されましたが、一部の写真のアップロードに失敗しました"
+        );
+      }
     }
 
     router.push(`/customers/${customerId}`);
@@ -228,6 +246,9 @@ function NewRecordForm() {
             className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
           />
         </div>
+
+        {/* Photo upload */}
+        <PhotoUpload photos={photos} onChange={setPhotos} />
 
         <div className="flex gap-3 pt-2">
           <button
