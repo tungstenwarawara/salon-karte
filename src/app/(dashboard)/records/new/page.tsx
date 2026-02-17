@@ -21,6 +21,7 @@ function NewRecordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const customerId = searchParams.get("customer");
+  const appointmentId = searchParams.get("appointment");
 
   const [menus, setMenus] = useState<Menu[]>([]);
   const [loading, setLoading] = useState(false);
@@ -128,6 +129,14 @@ function NewRecordForm() {
           "施術記録は保存されましたが、一部の写真のアップロードに失敗しました"
         );
       }
+    }
+
+    // Link appointment to treatment record if created from appointment
+    if (appointmentId) {
+      await supabase
+        .from("appointments")
+        .update({ treatment_record_id: record.id, status: "completed" })
+        .eq("id", appointmentId);
     }
 
     router.push(`/customers/${customerId}`);
