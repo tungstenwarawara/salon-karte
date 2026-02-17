@@ -1,12 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
-type Customer = Database["public"]["Tables"]["customers"]["Row"];
+type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
 type TreatmentMenu = Database["public"]["Tables"]["treatment_menus"]["Row"];
 
 const SOURCE_OPTIONS = [
@@ -17,35 +17,21 @@ const SOURCE_OPTIONS = [
   { value: "other", label: "その他" },
 ];
 
-export default function NewAppointmentPage() {
-  return (
-    <Suspense fallback={<div className="text-center text-text-light py-8">読み込み中...</div>}>
-      <NewAppointmentForm />
-    </Suspense>
-  );
-}
-
-function NewAppointmentForm() {
+export default function EditAppointmentPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const preselectedCustomerId = searchParams.get("customer");
+  const params = useParams();
+  const appointmentId = params.id as string;
 
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [menus, setMenus] = useState<TreatmentMenu[]>([]);
-  const [salonId, setSalonId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [customerName, setCustomerName] = useState("");
 
   // Form state
-  const [customerId, setCustomerId] = useState(preselectedCustomerId ?? "");
-  const [customerSearch, setCustomerSearch] = useState("");
   const [menuId, setMenuId] = useState("");
-  const [appointmentDate, setAppointmentDate] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  });
-  const [startTime, setStartTime] = useState("10:00");
+  const [appointmentDate, setAppointmentDate] = useState("");
+  const [startTime, setStartTime] = useState("");
   const [source, setSource] = useState("direct");
   const [memo, setMemo] = useState("");
 
@@ -67,26 +53,36 @@ function NewAppointmentForm() {
       .single<{ id: string }>();
     if (!salon) return;
 
-    setSalonId(salon.id);
+    // Load appointment
+    const { data: appointment } = await supabase
+      .from("appointments")
+      .select("*, customers(last_name, first_name)")
+      .eq("id", appointmentId)
+      .single<Appointment & { customers: { last_name: string; first_name: string } | null }>();
 
-    const [customersRes, menusRes] = await Promise.all([
-      supabase
-        .from("customers")
-        .select("*")
-        .eq("salon_id", salon.id)
-        .order("last_name_kana", { ascending: true })
-        .returns<Customer[]>(),
-      supabase
-        .from("treatment_menus")
-        .select("*")
-        .eq("salon_id", salon.id)
-        .eq("is_active", true)
-        .order("name")
-        .returns<TreatmentMenu[]>(),
-    ]);
+    if (!appointment) {
+      router.push("/appointments");
+      return;
+    }
 
-    setCustomers(customersRes.data ?? []);
-    setMenus(menusRes.data ?? []);
+    // Load menus
+    const { data: menuData } = await supabase
+      .from("treatment_menus")
+      .select("*")
+      .eq("salon_id", salon.id)
+      .eq("is_active", true)
+      .order("name")
+      .returns<TreatmentMenu[]>();
+
+    setMenus(menuData ?? []);
+    setMenuId(appointment.menu_id ?? "");
+    setAppointmentDate(appointment.appointment_date);
+    setStartTime(appointment.start_time.slice(0, 5));
+    setSource(appointment.source ?? "direct");
+    setMemo(appointment.memo ?? "");
+    if (appointment.customers) {
+      setCustomerName(`${appointment.customers.last_name} ${appointment.customers.first_name}`);
+    }
     setLoading(false);
   };
 
@@ -95,12 +91,6 @@ function NewAppointmentForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    if (!customerId) {
-      setError("顧客を選択してください");
-      return;
-    }
-
     setSaving(true);
 
     const supabase = createClient();
@@ -113,20 +103,21 @@ function NewAppointmentForm() {
       endTime = `${String(Math.floor(totalMin / 60)).padStart(2, "0")}:${String(totalMin % 60).padStart(2, "0")}`;
     }
 
-    const { error } = await supabase.from("appointments").insert({
-      salon_id: salonId,
-      customer_id: customerId,
-      menu_id: menuId || null,
-      menu_name_snapshot: selectedMenu?.name ?? null,
-      appointment_date: appointmentDate,
-      start_time: startTime,
-      end_time: endTime,
-      source,
-      memo: memo || null,
-    });
+    const { error } = await supabase
+      .from("appointments")
+      .update({
+        menu_id: menuId || null,
+        menu_name_snapshot: selectedMenu?.name ?? null,
+        appointment_date: appointmentDate,
+        start_time: startTime,
+        end_time: endTime,
+        source,
+        memo: memo || null,
+      })
+      .eq("id", appointmentId);
 
     if (error) {
-      setError("予約の登録に失敗しました");
+      setError("予約の更新に失敗しました");
       setSaving(false);
       return;
     }
@@ -134,29 +125,14 @@ function NewAppointmentForm() {
     router.push("/appointments");
   };
 
-  const filteredCustomers = customers.filter((c) => {
-    if (!customerSearch) return true;
-    const s = customerSearch.toLowerCase();
-    return (
-      `${c.last_name}${c.first_name}`.includes(s) ||
-      `${c.last_name_kana ?? ""}${c.first_name_kana ?? ""}`
-        .toLowerCase()
-        .includes(s)
-    );
-  });
-
-  const selectedCustomer = customers.find((c) => c.id === customerId);
-
   if (loading) {
-    return (
-      <div className="text-center text-text-light py-8">読み込み中...</div>
-    );
+    return <div className="text-center text-text-light py-8">読み込み中...</div>;
   }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">予約を登録</h2>
+        <h2 className="text-xl font-bold">予約を編集</h2>
         <Link
           href="/appointments"
           className="text-sm text-text-light hover:text-text transition-colors"
@@ -165,68 +141,18 @@ function NewAppointmentForm() {
         </Link>
       </div>
 
+      {customerName && (
+        <p className="text-text-light">
+          顧客: <span className="font-medium text-text">{customerName}</span>
+        </p>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
           <div className="bg-error/10 text-error text-sm rounded-lg p-3">
             {error}
           </div>
         )}
-
-        {/* Customer selection */}
-        <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
-          <label className="block text-sm font-medium">顧客</label>
-          {selectedCustomer ? (
-            <div className="flex items-center justify-between">
-              <span className="font-medium">
-                {selectedCustomer.last_name} {selectedCustomer.first_name}
-              </span>
-              <button
-                type="button"
-                onClick={() => setCustomerId("")}
-                className="text-sm text-text-light hover:text-text"
-              >
-                変更
-              </button>
-            </div>
-          ) : (
-            <>
-              <input
-                type="text"
-                value={customerSearch}
-                onChange={(e) => setCustomerSearch(e.target.value)}
-                placeholder="名前・カナで検索"
-                className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-              />
-              <div className="max-h-48 overflow-y-auto space-y-1">
-                {filteredCustomers.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => {
-                      setCustomerId(c.id);
-                      setCustomerSearch("");
-                    }}
-                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-background transition-colors"
-                  >
-                    <p className="font-medium text-sm">
-                      {c.last_name} {c.first_name}
-                    </p>
-                    {(c.last_name_kana || c.first_name_kana) && (
-                      <p className="text-xs text-text-light">
-                        {c.last_name_kana} {c.first_name_kana}
-                      </p>
-                    )}
-                  </button>
-                ))}
-                {filteredCustomers.length === 0 && (
-                  <p className="text-sm text-text-light text-center py-2">
-                    該当する顧客がいません
-                  </p>
-                )}
-              </div>
-            </>
-          )}
-        </div>
 
         {/* Date and time */}
         <div className="grid grid-cols-2 gap-3">
@@ -313,13 +239,22 @@ function NewAppointmentForm() {
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]"
-        >
-          {saving ? "登録中..." : "予約を登録"}
-        </button>
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex-1 bg-background border border-border text-text font-medium rounded-xl py-3 transition-colors min-h-[48px]"
+          >
+            キャンセル
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex-1 bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]"
+          >
+            {saving ? "更新中..." : "更新する"}
+          </button>
+        </div>
       </form>
     </div>
   );

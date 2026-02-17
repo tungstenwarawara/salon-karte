@@ -42,7 +42,10 @@ function getWeekDates(baseDate: Date): Date[] {
 }
 
 function toDateStr(d: Date) {
-  return d.toISOString().split("T")[0];
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 const DAY_NAMES = ["月", "火", "水", "木", "金", "土", "日"];
@@ -109,9 +112,34 @@ export default function AppointmentsPage() {
 
   const goToToday = () => setSelectedDate(new Date());
 
+  const [error, setError] = useState("");
+
   const handleStatusChange = async (id: string, newStatus: string) => {
+    setError("");
     const supabase = createClient();
-    await supabase.from("appointments").update({ status: newStatus }).eq("id", id);
+    const { error: updateError } = await supabase
+      .from("appointments")
+      .update({ status: newStatus })
+      .eq("id", id);
+    if (updateError) {
+      setError("ステータスの更新に失敗しました");
+      return;
+    }
+    loadAppointments(selectedDate, viewMode);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("この予約を削除しますか？")) return;
+    setError("");
+    const supabase = createClient();
+    const { error: deleteError } = await supabase
+      .from("appointments")
+      .delete()
+      .eq("id", id);
+    if (deleteError) {
+      setError("予約の削除に失敗しました");
+      return;
+    }
     loadAppointments(selectedDate, viewMode);
   };
 
@@ -148,6 +176,14 @@ export default function AppointmentsPage() {
               </span>
             )}
           </div>
+          {apt.status === "scheduled" && (
+            <Link
+              href={`/appointments/${apt.id}/edit`}
+              className="text-xs text-text-light hover:text-accent transition-colors"
+            >
+              編集
+            </Link>
+          )}
         </div>
 
         <div className="flex items-center justify-between">
@@ -171,7 +207,7 @@ export default function AppointmentsPage() {
         )}
 
         {/* Actions */}
-        <div className="flex gap-2 pt-1">
+        <div className="flex flex-wrap gap-2 pt-1">
           {apt.status === "scheduled" && (
             <>
               <button
@@ -204,6 +240,14 @@ export default function AppointmentsPage() {
               カルテを見る
             </Link>
           )}
+          {!apt.treatment_record_id && (
+            <button
+              onClick={() => handleDelete(apt.id)}
+              className="text-xs text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors min-h-[32px] ml-auto"
+            >
+              削除
+            </button>
+          )}
         </div>
       </div>
     );
@@ -220,6 +264,12 @@ export default function AppointmentsPage() {
           + 予約登録
         </Link>
       </div>
+
+      {error && (
+        <div className="bg-error/10 text-error text-sm rounded-lg p-3">
+          {error}
+        </div>
+      )}
 
       {/* View mode toggle */}
       <div className="flex gap-2">

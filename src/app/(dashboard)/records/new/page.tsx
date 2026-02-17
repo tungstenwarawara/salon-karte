@@ -30,14 +30,18 @@ function NewRecordForm() {
   const [customerName, setCustomerName] = useState("");
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
 
-  const [form, setForm] = useState({
-    treatment_date: new Date().toISOString().split("T")[0],
+  const [form, setForm] = useState(() => {
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return {
+    treatment_date: today,
     menu_id: "",
     treatment_area: "",
     products_used: "",
     skin_condition_before: "",
     notes_after: "",
     next_visit_memo: "",
+  };
   });
 
   useEffect(() => {

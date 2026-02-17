@@ -8,8 +8,8 @@ CREATE TABLE appointments (
   appointment_date DATE NOT NULL,
   start_time TIME NOT NULL,
   end_time TIME,
-  status TEXT NOT NULL DEFAULT 'scheduled', -- 'scheduled' / 'completed' / 'cancelled'
-  source TEXT DEFAULT 'direct', -- 'hotpepper' / 'phone' / 'line' / 'direct' / 'other'
+  status TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'cancelled')),
+  source TEXT DEFAULT 'direct' CHECK (source IN ('hotpepper', 'phone', 'line', 'direct', 'other'))
   memo TEXT,
   treatment_record_id UUID REFERENCES treatment_records(id),
   created_at TIMESTAMPTZ DEFAULT now(),
@@ -21,6 +21,8 @@ CREATE INDEX idx_appointments_salon_id ON appointments(salon_id);
 CREATE INDEX idx_appointments_customer_id ON appointments(customer_id);
 CREATE INDEX idx_appointments_date ON appointments(appointment_date);
 CREATE INDEX idx_appointments_salon_date ON appointments(salon_id, appointment_date);
+CREATE INDEX idx_appointments_status ON appointments(status);
+CREATE INDEX idx_appointments_salon_date_status ON appointments(salon_id, appointment_date, status);
 
 -- updated_atトリガー
 CREATE TRIGGER update_appointments_updated_at
