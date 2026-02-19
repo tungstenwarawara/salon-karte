@@ -40,7 +40,7 @@ function NewAppointmentForm() {
   // Form state
   const [customerId, setCustomerId] = useState(preselectedCustomerId ?? "");
   const [customerSearch, setCustomerSearch] = useState("");
-  const [menuId, setMenuId] = useState("");
+  const [selectedMenuIds, setSelectedMenuIds] = useState<string[]>([]);
   const [appointmentDate, setAppointmentDate] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -93,17 +93,27 @@ function NewAppointmentForm() {
     setLoading(false);
   };
 
-  const selectedMenu = menus.find((m) => m.id === menuId);
-
-  // Auto-calculate end time when menu or start time changes (round up to 15min)
-  const updateEndTimeFromMenu = (menu: TreatmentMenu | undefined, sH: string, sM: string) => {
-    if (menu?.duration_minutes) {
-      const totalMin = Number(sH) * 60 + Number(sM) + menu.duration_minutes;
+  // Auto-calculate end time from selected menus' total duration
+  const updateEndTimeFromMenus = (menuIds: string[], sH: string, sM: string) => {
+    const totalDuration = menuIds.reduce((sum, id) => {
+      const menu = menus.find((m) => m.id === id);
+      return sum + (menu?.duration_minutes ?? 0);
+    }, 0);
+    if (totalDuration > 0) {
+      const totalMin = Number(sH) * 60 + Number(sM) + totalDuration;
       const rounded = Math.ceil(totalMin / 15) * 15;
       const capped = Math.min(rounded, 23 * 60 + 45);
       setEndHour(String(Math.floor(capped / 60)));
       setEndMinute(String(capped % 60).padStart(2, "0"));
     }
+  };
+
+  const toggleMenu = (menuId: string) => {
+    const newIds = selectedMenuIds.includes(menuId)
+      ? selectedMenuIds.filter((id) => id !== menuId)
+      : [...selectedMenuIds, menuId];
+    setSelectedMenuIds(newIds);
+    updateEndTimeFromMenus(newIds, startHour, startMinute);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -160,23 +170,52 @@ function NewAppointmentForm() {
       }
     }
 
-    const { error: insertError } = await supabase.from("appointments").insert({
-      salon_id: salonId,
-      customer_id: customerId,
-      menu_id: menuId || null,
-      menu_name_snapshot: selectedMenu?.name ?? null,
-      appointment_date: appointmentDate,
-      start_time: startTime,
-      end_time: endTime,
-      source,
-      memo: memo || null,
+    // Build menu snapshot
+    const selectedMenusList = selectedMenuIds.map((id, index) => {
+      const menu = menus.find((m) => m.id === id);
+      return { id, menu, index };
     });
+    const menuNameSnapshot = selectedMenusList
+      .map(({ menu }) => menu?.name ?? "")
+      .filter(Boolean)
+      .join("、") || null;
 
-    if (insertError) {
+    // Insert appointment (keep first menu_id for backward compat)
+    const { data: inserted, error: insertError } = await supabase
+      .from("appointments")
+      .insert({
+        salon_id: salonId,
+        customer_id: customerId,
+        menu_id: selectedMenuIds[0] || null,
+        menu_name_snapshot: menuNameSnapshot,
+        appointment_date: appointmentDate,
+        start_time: startTime,
+        end_time: endTime,
+        source,
+        memo: memo || null,
+      })
+      .select("id")
+      .single<{ id: string }>();
+
+    if (insertError || !inserted) {
       console.error("Appointment insert error:", insertError);
-      setError(`予約の登録に失敗しました: ${insertError.message}`);
+      setError(`予約の登録に失敗しました: ${insertError?.message ?? "不明なエラー"}`);
       setSaving(false);
       return;
+    }
+
+    // Insert junction table rows
+    if (selectedMenuIds.length > 0) {
+      const junctionRows = selectedMenusList.map(({ id, menu, index }) => ({
+        appointment_id: inserted.id,
+        menu_id: id,
+        menu_name_snapshot: menu?.name ?? "",
+        price_snapshot: menu?.price ?? null,
+        duration_minutes_snapshot: menu?.duration_minutes ?? null,
+        sort_order: index,
+      }));
+
+      await supabase.from("appointment_menus").insert(junctionRows);
     }
 
     router.push("/appointments");
@@ -194,6 +233,16 @@ function NewAppointmentForm() {
   });
 
   const selectedCustomer = customers.find((c) => c.id === customerId);
+
+  // Calculate total duration and price of selected menus
+  const totalDuration = selectedMenuIds.reduce((sum, id) => {
+    const menu = menus.find((m) => m.id === id);
+    return sum + (menu?.duration_minutes ?? 0);
+  }, 0);
+  const totalPrice = selectedMenuIds.reduce((sum, id) => {
+    const menu = menus.find((m) => m.id === id);
+    return sum + (menu?.price ?? 0);
+  }, 0);
 
   if (loading) {
     return (
@@ -299,7 +348,7 @@ function NewAppointmentForm() {
               value={startHour}
               onChange={(e) => {
                 setStartHour(e.target.value);
-                updateEndTimeFromMenu(selectedMenu, e.target.value, startMinute);
+                updateEndTimeFromMenus(selectedMenuIds, e.target.value, startMinute);
               }}
               className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             >
@@ -312,7 +361,7 @@ function NewAppointmentForm() {
               value={startMinute}
               onChange={(e) => {
                 setStartMinute(e.target.value);
-                updateEndTimeFromMenu(selectedMenu, startHour, e.target.value);
+                updateEndTimeFromMenus(selectedMenuIds, startHour, e.target.value);
               }}
               className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             >
@@ -349,29 +398,45 @@ function NewAppointmentForm() {
           </div>
         </div>
 
-        {/* Menu */}
+        {/* Menu multi-select */}
         <div>
-          <label htmlFor="menu" className="block text-sm font-medium mb-1.5">
-            施術メニュー（任意）
+          <label className="block text-sm font-medium mb-1.5">
+            施術メニュー（任意・複数選択可）
           </label>
-          <select
-            id="menu"
-            value={menuId}
-            onChange={(e) => {
-              setMenuId(e.target.value);
-              const m = menus.find((menu) => menu.id === e.target.value);
-              updateEndTimeFromMenu(m, startHour, startMinute);
-            }}
-            className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-          >
-            <option value="">メニューを選択</option>
-            {menus.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-                {m.duration_minutes ? ` (${m.duration_minutes}分)` : ""}
-              </option>
-            ))}
-          </select>
+          {menus.length > 0 ? (
+            <div className="bg-surface border border-border rounded-xl p-3 max-h-52 overflow-y-auto space-y-1">
+              {menus.map((m) => (
+                <label
+                  key={m.id}
+                  className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-background transition-colors cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedMenuIds.includes(m.id)}
+                    onChange={() => toggleMenu(m.id)}
+                    className="w-4 h-4 rounded border-border text-accent focus:ring-accent/50"
+                  />
+                  <span className="text-sm flex-1">{m.name}</span>
+                  <span className="text-xs text-text-light whitespace-nowrap">
+                    {m.duration_minutes ? `${m.duration_minutes}分` : ""}
+                    {m.duration_minutes && m.price ? " / " : ""}
+                    {m.price ? `${m.price.toLocaleString()}円` : ""}
+                  </span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-surface border border-border rounded-xl p-3 text-sm text-text-light text-center">
+              メニューが登録されていません
+            </div>
+          )}
+          {selectedMenuIds.length > 0 && (
+            <p className="text-xs text-text-light mt-1.5">
+              選択中: {selectedMenuIds.length}件
+              {totalDuration > 0 && ` / 合計 ${totalDuration}分`}
+              {totalPrice > 0 && ` / ${totalPrice.toLocaleString()}円`}
+            </p>
+          )}
         </div>
 
         {/* Source */}
