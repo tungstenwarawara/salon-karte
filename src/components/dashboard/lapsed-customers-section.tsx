@@ -45,12 +45,12 @@ export function LapsedCustomersSection({
             60日以上
           </span>
         </h3>
-        {initialCustomers.length > 3 && (
+        {customers.length > 3 && (
           <Link
             href="/customers"
             className="text-xs text-accent hover:underline"
           >
-            他{initialCustomers.length - 3}名 →
+            他{customers.length - 3}名 →
           </Link>
         )}
       </div>

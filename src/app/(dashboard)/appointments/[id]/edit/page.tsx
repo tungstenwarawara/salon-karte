@@ -63,14 +63,20 @@ export default function EditAppointmentPage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const { data: salon } = await supabase
       .from("salons")
       .select("id, business_hours")
       .eq("owner_id", user.id)
       .single<{ id: string; business_hours: BusinessHours | null }>();
-    if (!salon) return;
+    if (!salon) {
+      setLoading(false);
+      return;
+    }
     setSalonId(salon.id);
     setBusinessHours(salon.business_hours);
 
@@ -355,6 +361,23 @@ export default function EditAppointmentPage() {
                 営業時間: {schedule.open_time} 〜 {schedule.close_time}
               </p>
               <div className="overflow-x-auto -mx-1 px-1">
+                {/* Time labels row */}
+                <div className="flex gap-0.5 mb-1" style={{ minWidth: `${slotCount * 20}px` }}>
+                  {Array.from({ length: slotCount }, (_, i) => {
+                    const slotMin = openMin + i * 15;
+                    const isHourMark = slotMin % 60 === 0;
+                    return (
+                      <div key={slotMin} className="flex-shrink-0 text-center" style={{ width: "20px" }}>
+                        {isHourMark && (
+                          <span className="text-[10px] text-text-light">
+                            {Math.floor(slotMin / 60)}:00
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Slot buttons row */}
                 <div className="flex gap-0.5" style={{ minWidth: `${slotCount * 20}px` }}>
                   {Array.from({ length: slotCount }, (_, i) => {
                     const slotMin = openMin + i * 15;
@@ -371,7 +394,6 @@ export default function EditAppointmentPage() {
                           return slotMin >= aStart && slotMin < aEnd;
                         })
                       : null;
-                    const isHourMark = slotMin % 60 === 0;
 
                     return (
                       <button
@@ -391,19 +413,13 @@ export default function EditAppointmentPage() {
                             updateEndTimeFromMenus(selectedMenuIds, String(h), String(m).padStart(2, "0"));
                           }
                         }}
-                        className={`h-8 flex-shrink-0 rounded-sm transition-colors relative ${
+                        className={`h-8 flex-shrink-0 rounded-sm transition-colors ${
                           isOccupied
                             ? "bg-accent/30 cursor-not-allowed"
                             : "bg-accent/10 hover:bg-accent/20 cursor-pointer"
                         }`}
                         style={{ width: "20px" }}
-                      >
-                        {isHourMark && (
-                          <span className="absolute -top-4 left-0 text-[10px] text-text-light whitespace-nowrap">
-                            {Math.floor(slotMin / 60)}
-                          </span>
-                        )}
-                      </button>
+                      />
                     );
                   })}
                 </div>

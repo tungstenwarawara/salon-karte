@@ -483,7 +483,7 @@ export default function AppointmentsPage() {
               </div>
 
               {/* Drill-down panel for selected day */}
-              {selectedDay !== null && (() => {
+              {selectedDay !== null && selectedDay <= daysInMonth && (() => {
                 const dayDate = new Date(year, month, selectedDay);
                 const dayStr = toDateStr(dayDate);
                 const dayApts = appointmentsByDate[dayStr] ?? [];
