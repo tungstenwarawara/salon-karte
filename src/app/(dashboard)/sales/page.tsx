@@ -285,54 +285,74 @@ export default function SalesPage() {
 
           {/* Vertical bar chart */}
           <div className="bg-surface border border-border rounded-2xl p-4 space-y-3">
-            <h3 className="font-bold text-sm">月別推移</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm">月別推移</h3>
+              {/* Y-axis max label */}
+              <span className="text-[10px] text-text-light">{formatYen(maxMonthly)}</span>
+            </div>
 
-            {/* Chart */}
-            <div className="relative h-44 flex items-end gap-1 pt-4">
-              {/* Y-axis reference lines */}
-              <div className="absolute inset-x-0 top-4 bottom-0 flex flex-col justify-between pointer-events-none">
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} className="border-t border-dashed border-border/40 w-full" />
+            {/* Chart area: fixed pixel height for reliable bar rendering */}
+            <div className="relative" style={{ height: "160px" }}>
+              {/* Y-axis reference lines with labels */}
+              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                {[1, 0.5, 0].map((ratio) => (
+                  <div key={ratio} className="flex items-center gap-1">
+                    <div className="flex-1 border-t border-dashed border-border/30" />
+                  </div>
                 ))}
               </div>
 
-              {/* Bars */}
-              {visibleData.map((m) => {
-                const total = getFilteredTotal(m, categoryFilter);
-                const heightPct = maxMonthly > 0 ? (total / maxMonthly) * 100 : 0;
-                const isCurrentMonth = m.month - 1 === currentMonth && year === currentYear;
-                const isDrilling = drillMonth === m.month;
+              {/* Bars container — uses absolute positioning for precise height */}
+              <div className="relative h-full flex items-end gap-1">
+                {visibleData.map((m) => {
+                  const total = getFilteredTotal(m, categoryFilter);
+                  const barHeight = maxMonthly > 0 ? Math.round((total / maxMonthly) * 148) : 0;
+                  const isCurrentMonth = m.month - 1 === currentMonth && year === currentYear;
+                  const isDrilling = drillMonth === m.month;
 
+                  return (
+                    <button
+                      key={m.month}
+                      onClick={() => setDrillMonth(drillMonth === m.month ? null : m.month)}
+                      className="flex-1 relative group"
+                      style={{ height: "100%" }}
+                    >
+                      {/* Bar — absolute bottom, pixel height */}
+                      <div
+                        className={`absolute bottom-0 left-0 right-0 rounded-t-md transition-all duration-500 ${
+                          isDrilling
+                            ? filterColor(categoryFilter)
+                            : isCurrentMonth
+                              ? `${filterColor(categoryFilter)} opacity-90`
+                              : `${filterColor(categoryFilter)} opacity-30 group-hover:opacity-60`
+                        }`}
+                        style={{ height: `${barHeight}px`, minHeight: total > 0 ? "4px" : "0" }}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Month labels — separate row below chart */}
+            <div className="flex gap-1">
+              {visibleData.map((m) => {
+                const isDrilling = drillMonth === m.month;
+                const isCurrentMonth = m.month - 1 === currentMonth && year === currentYear;
+                const total = getFilteredTotal(m, categoryFilter);
                 return (
-                  <button
-                    key={m.month}
-                    onClick={() => setDrillMonth(drillMonth === m.month ? null : m.month)}
-                    className="flex-1 flex flex-col items-center justify-end group relative z-10"
-                  >
-                    {/* Amount tooltip on hover/select */}
+                  <div key={m.month} className="flex-1 text-center">
                     {isDrilling && (
-                      <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[9px] font-bold text-accent whitespace-nowrap">
+                      <div className="text-[9px] font-bold text-accent truncate">
                         {formatYen(total)}
                       </div>
                     )}
-                    {/* Bar */}
-                    <div
-                      className={`w-full rounded-t-md transition-all duration-500 ${
-                        isDrilling
-                          ? filterColor(categoryFilter)
-                          : isCurrentMonth
-                            ? `${filterColor(categoryFilter)} opacity-90`
-                            : `${filterColor(categoryFilter)} opacity-30 group-hover:opacity-60`
-                      }`}
-                      style={{ height: `${heightPct}%`, minHeight: total > 0 ? "4px" : "0" }}
-                    />
-                    {/* Month label */}
-                    <span className={`text-[9px] mt-1 ${
+                    <span className={`text-[10px] ${
                       isDrilling ? "text-accent font-bold" : isCurrentMonth ? "font-bold text-text" : "text-text-light"
                     }`}>
                       {m.month}月
                     </span>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -390,7 +410,13 @@ export default function SalesPage() {
                         </div>
                       );
                     })}
-                  {drillData.every((d) => d.treatment + d.product + d.ticket === 0) && (
+                  {drillData.every((d) => {
+                    const t = categoryFilter === "treatment" ? d.treatment
+                      : categoryFilter === "product" ? d.product
+                      : categoryFilter === "ticket" ? d.ticket
+                      : d.treatment + d.product + d.ticket;
+                    return t === 0;
+                  }) && (
                     <p className="text-sm text-text-light text-center py-2">この月のデータはありません</p>
                   )}
                 </div>

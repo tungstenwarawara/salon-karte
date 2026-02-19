@@ -393,6 +393,23 @@ function NewAppointmentForm() {
                 営業時間: {schedule.open_time} 〜 {schedule.close_time}
               </p>
               <div className="overflow-x-auto -mx-1 px-1">
+                {/* Time labels row */}
+                <div className="flex gap-0.5 mb-1" style={{ minWidth: `${slotCount * 20}px` }}>
+                  {Array.from({ length: slotCount }, (_, i) => {
+                    const slotMin = openMin + i * 15;
+                    const isHourMark = slotMin % 60 === 0;
+                    return (
+                      <div key={slotMin} className="flex-shrink-0 text-center" style={{ width: "20px" }}>
+                        {isHourMark && (
+                          <span className="text-[10px] text-text-light">
+                            {Math.floor(slotMin / 60)}:00
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Slot buttons row */}
                 <div className="flex gap-0.5" style={{ minWidth: `${slotCount * 20}px` }}>
                   {Array.from({ length: slotCount }, (_, i) => {
                     const slotMin = openMin + i * 15;
@@ -409,7 +426,6 @@ function NewAppointmentForm() {
                           return slotMin >= aStart && slotMin < aEnd;
                         })
                       : null;
-                    const isHourMark = slotMin % 60 === 0;
 
                     return (
                       <button
@@ -429,19 +445,13 @@ function NewAppointmentForm() {
                             updateEndTimeFromMenus(selectedMenuIds, String(h), String(m).padStart(2, "0"));
                           }
                         }}
-                        className={`h-8 flex-shrink-0 rounded-sm transition-colors relative ${
+                        className={`h-8 flex-shrink-0 rounded-sm transition-colors ${
                           isOccupied
                             ? "bg-accent/30 cursor-not-allowed"
                             : "bg-accent/10 hover:bg-accent/20 cursor-pointer"
                         }`}
                         style={{ width: "20px" }}
-                      >
-                        {isHourMark && (
-                          <span className="absolute -top-4 left-0 text-[10px] text-text-light whitespace-nowrap">
-                            {Math.floor(slotMin / 60)}
-                          </span>
-                        )}
-                      </button>
+                      />
                     );
                   })}
                 </div>
