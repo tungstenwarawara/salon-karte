@@ -298,6 +298,16 @@ export default function AppointmentsPage() {
           月別
         </button>
         <button
+          onClick={() => setViewMode("month")}
+          className={`text-sm px-4 py-2 rounded-xl transition-colors min-h-[40px] ${
+            viewMode === "month"
+              ? "bg-accent text-white"
+              : "bg-surface border border-border text-text-light hover:text-text"
+          }`}
+        >
+          月別
+        </button>
+        <button
           onClick={goToToday}
           className={`text-sm px-4 py-2 rounded-xl transition-colors min-h-[40px] ml-auto ${
             isSelectedToday
