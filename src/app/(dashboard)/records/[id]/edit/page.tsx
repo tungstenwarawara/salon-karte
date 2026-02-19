@@ -45,22 +45,24 @@ export default function EditRecordPage() {
         .single<{ id: string }>();
       if (!salon) return;
 
-      // Load menus
-      const { data: menuData } = await supabase
-        .from("treatment_menus")
-        .select("*")
-        .eq("salon_id", salon.id)
-        .order("name")
-        .returns<Menu[]>();
-      setMenus(menuData ?? []);
+      // P8: menus + record を並列取得
+      const [menuRes, recordRes] = await Promise.all([
+        supabase
+          .from("treatment_menus")
+          .select("*")
+          .eq("salon_id", salon.id)
+          .order("name")
+          .returns<Menu[]>(),
+        supabase
+          .from("treatment_records")
+          .select("*")
+          .eq("id", id)
+          .single<TreatmentRecord>(),
+      ]);
 
-      // Load record
-      const { data: record } = await supabase
-        .from("treatment_records")
-        .select("*")
-        .eq("id", id)
-        .single<TreatmentRecord>();
+      setMenus(menuRes.data ?? []);
 
+      const record = recordRes.data;
       if (record) {
         setCustomerId(record.customer_id);
         setForm({

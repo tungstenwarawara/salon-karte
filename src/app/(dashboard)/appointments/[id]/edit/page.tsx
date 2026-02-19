@@ -80,42 +80,41 @@ export default function EditAppointmentPage() {
     setSalonId(salon.id);
     setBusinessHours(salon.business_hours);
 
-    // Load appointment
-    const { data: appointment } = await supabase
-      .from("appointments")
-      .select("*, customers(last_name, first_name)")
-      .eq("id", appointmentId)
-      .single<Appointment & { customers: { last_name: string; first_name: string } | null }>();
+    // P5: salon取得後、appointment + menus + junction を並列取得
+    const [appointmentRes, menuRes, junctionRes] = await Promise.all([
+      supabase
+        .from("appointments")
+        .select("*, customers(last_name, first_name)")
+        .eq("id", appointmentId)
+        .single<Appointment & { customers: { last_name: string; first_name: string } | null }>(),
+      supabase
+        .from("treatment_menus")
+        .select("*")
+        .eq("salon_id", salon.id)
+        .eq("is_active", true)
+        .order("name")
+        .returns<TreatmentMenu[]>(),
+      supabase
+        .from("appointment_menus")
+        .select("menu_id")
+        .eq("appointment_id", appointmentId)
+        .order("sort_order"),
+    ]);
 
+    const appointment = appointmentRes.data;
     if (!appointment) {
       router.push("/appointments");
       return;
     }
 
-    // Load menus
-    const { data: menuData } = await supabase
-      .from("treatment_menus")
-      .select("*")
-      .eq("salon_id", salon.id)
-      .eq("is_active", true)
-      .order("name")
-      .returns<TreatmentMenu[]>();
+    setMenus(menuRes.data ?? []);
 
-    setMenus(menuData ?? []);
-
-    // Load existing junction table rows
-    const { data: existingMenus } = await supabase
-      .from("appointment_menus")
-      .select("menu_id")
-      .eq("appointment_id", appointmentId)
-      .order("sort_order");
-
+    const existingMenus = junctionRes.data;
     if (existingMenus && existingMenus.length > 0) {
       setSelectedMenuIds(
         existingMenus.map((m) => m.menu_id).filter(Boolean) as string[]
       );
     } else if (appointment.menu_id) {
-      // Fallback for appointments without junction rows
       setSelectedMenuIds([appointment.menu_id]);
     }
 
