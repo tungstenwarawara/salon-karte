@@ -270,6 +270,9 @@ export default function EditAppointmentPage() {
 
     if (deleteError) {
       console.error("Junction delete error:", deleteError);
+      setError(`メニュー情報の更新に失敗しました: ${deleteError.message}`);
+      setSaving(false);
+      return;
     }
 
     if (selectedMenuIds.length > 0) {
@@ -285,6 +288,9 @@ export default function EditAppointmentPage() {
       const { error: junctionError } = await supabase.from("appointment_menus").insert(junctionRows);
       if (junctionError) {
         console.error("Junction insert error:", junctionError);
+        setError(`メニュー情報の保存に失敗しました: ${junctionError.message}`);
+        setSaving(false);
+        return;
       }
     }
 

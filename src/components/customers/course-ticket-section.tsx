@@ -32,20 +32,17 @@ export function CourseTicketSection({
     setProcessingId(ticketId);
 
     const supabase = createClient();
-    const newUsed = ticket.used_sessions + 1;
-    const newStatus =
-      newUsed >= ticket.total_sessions ? "completed" : "active";
 
-    const { error } = await supabase
-      .from("course_tickets")
-      .update({ used_sessions: newUsed, status: newStatus })
-      .eq("id", ticketId);
+    // アトミックにused_sessionsをインクリメント（競合状態を防止）
+    const { data, error } = await supabase.rpc("use_course_ticket_session", {
+      p_ticket_id: ticketId,
+    }) as { data: { used_sessions: number; status: string } | null; error: typeof Error | null };
 
-    if (!error) {
+    if (!error && data) {
       setTickets((prev) =>
         prev.map((t) =>
           t.id === ticketId
-            ? { ...t, used_sessions: newUsed, status: newStatus }
+            ? { ...t, used_sessions: data.used_sessions, status: data.status }
             : t
         )
       );

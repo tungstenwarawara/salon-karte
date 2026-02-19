@@ -69,6 +69,10 @@ export default function NewTicketPage() {
       setError("回数は1以上を入力してください");
       return;
     }
+    if (!salonId) {
+      setError("サロン情報の読み込み中です。しばらくお待ちください。");
+      return;
+    }
     setError("");
     setLoading(true);
 

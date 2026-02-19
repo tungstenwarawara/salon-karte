@@ -184,6 +184,22 @@ export async function getPhotoUrl(storagePath: string): Promise<string | null> {
 export async function deletePhoto(photoId: string, storagePath: string) {
   const supabase = createClient();
 
-  await supabase.storage.from("treatment-photos").remove([storagePath]);
-  await supabase.from("treatment_photos").delete().eq("id", photoId);
+  // DB レコードを先に削除（参照整合性を優先）
+  const { error: dbError } = await supabase
+    .from("treatment_photos")
+    .delete()
+    .eq("id", photoId);
+
+  if (dbError) {
+    throw new Error(`写真の削除に失敗しました: ${dbError.message}`);
+  }
+
+  // ストレージからファイル削除（失敗してもDB側は既に削除済み）
+  const { error: storageError } = await supabase.storage
+    .from("treatment-photos")
+    .remove([storagePath]);
+
+  if (storageError) {
+    console.error("Storage delete failed (orphaned file):", storageError.message);
+  }
 }
