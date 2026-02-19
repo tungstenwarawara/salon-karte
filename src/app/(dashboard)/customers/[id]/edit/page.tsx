@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import type { Database } from "@/types/database";
 
 type Customer = Database["public"]["Tables"]["customers"]["Row"];
@@ -342,31 +343,31 @@ export default function EditCustomerPage() {
             <label className="block text-sm font-medium mb-1.5">
               アレルギー・注意事項
             </label>
-            <textarea
+            <AutoResizeTextarea
               value={form.allergies}
               onChange={(e) => updateField("allergies", e.target.value)}
-              rows={2}
-              className={`${inputClass} resize-none`}
+              minRows={2}
+              className={inputClass}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1.5">施術の最終目標</label>
-            <textarea
+            <AutoResizeTextarea
               value={form.treatment_goal}
               onChange={(e) => updateField("treatment_goal", e.target.value)}
-              rows={2}
-              className={`${inputClass} resize-none`}
+              minRows={2}
+              className={inputClass}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1.5">メモ</label>
-            <textarea
+            <AutoResizeTextarea
               value={form.notes}
               onChange={(e) => updateField("notes", e.target.value)}
-              rows={2}
-              className={`${inputClass} resize-none`}
+              minRows={2}
+              className={inputClass}
             />
           </div>
         </div>

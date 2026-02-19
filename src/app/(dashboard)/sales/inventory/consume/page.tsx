@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import type { Database } from "@/types/database";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
@@ -212,12 +213,12 @@ export default function ConsumePage() {
 
         <div>
           <label className="block text-sm font-medium mb-1.5">理由メモ</label>
-          <textarea
+          <AutoResizeTextarea
             value={form.reason}
             onChange={(e) => setForm({ ...form, reason: e.target.value })}
             placeholder="理由や詳細を記録（任意）"
-            rows={2}
-            className={`${inputClass} resize-none`}
+            minRows={2}
+            className={inputClass}
           />
         </div>
 

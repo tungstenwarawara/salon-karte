@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import type { Database } from "@/types/database";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
@@ -255,12 +256,12 @@ export default function ProductsPage() {
 
           <div>
             <label className="block text-sm font-medium mb-1.5">メモ</label>
-            <textarea
+            <AutoResizeTextarea
               value={form.memo}
               onChange={(e) => setForm({ ...form, memo: e.target.value })}
               placeholder="仕入先など自由メモ"
-              rows={2}
-              className={`${inputClass} resize-none`}
+              minRows={2}
+              className={inputClass}
             />
           </div>
 

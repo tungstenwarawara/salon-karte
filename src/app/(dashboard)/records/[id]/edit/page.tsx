@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
@@ -211,11 +212,11 @@ export default function EditRecordPage() {
           <label className="block text-sm font-medium mb-1.5">
             使用した化粧品・機器
           </label>
-          <textarea
+          <AutoResizeTextarea
             value={form.products_used}
             onChange={(e) => updateField("products_used", e.target.value)}
-            rows={2}
-            className={`${inputClass} resize-none`}
+            minRows={2}
+            className={inputClass}
           />
         </div>
 
@@ -223,13 +224,13 @@ export default function EditRecordPage() {
           <label className="block text-sm font-medium mb-1.5">
             施術前の状態
           </label>
-          <textarea
+          <AutoResizeTextarea
             value={form.skin_condition_before}
             onChange={(e) =>
               updateField("skin_condition_before", e.target.value)
             }
-            rows={2}
-            className={`${inputClass} resize-none`}
+            minRows={2}
+            className={inputClass}
           />
         </div>
 
@@ -237,11 +238,11 @@ export default function EditRecordPage() {
           <label className="block text-sm font-medium mb-1.5">
             施術後の経過メモ
           </label>
-          <textarea
+          <AutoResizeTextarea
             value={form.notes_after}
             onChange={(e) => updateField("notes_after", e.target.value)}
-            rows={2}
-            className={`${inputClass} resize-none`}
+            minRows={2}
+            className={inputClass}
           />
         </div>
 
@@ -249,11 +250,11 @@ export default function EditRecordPage() {
           <label className="block text-sm font-medium mb-1.5">
             話した内容（会話メモ）
           </label>
-          <textarea
+          <AutoResizeTextarea
             value={form.conversation_notes}
             onChange={(e) => updateField("conversation_notes", e.target.value)}
-            rows={2}
-            className={`${inputClass} resize-none`}
+            minRows={3}
+            className={inputClass}
           />
         </div>
 
@@ -261,11 +262,11 @@ export default function EditRecordPage() {
           <label className="block text-sm font-medium mb-1.5">
             注意事項
           </label>
-          <textarea
+          <AutoResizeTextarea
             value={form.caution_notes}
             onChange={(e) => updateField("caution_notes", e.target.value)}
-            rows={2}
-            className={`${inputClass} resize-none`}
+            minRows={2}
+            className={inputClass}
           />
         </div>
 
@@ -273,11 +274,11 @@ export default function EditRecordPage() {
           <label className="block text-sm font-medium mb-1.5">
             次回への申し送り
           </label>
-          <textarea
+          <AutoResizeTextarea
             value={form.next_visit_memo}
             onChange={(e) => updateField("next_visit_memo", e.target.value)}
-            rows={2}
-            className={`${inputClass} resize-none`}
+            minRows={2}
+            className={inputClass}
           />
         </div>
 

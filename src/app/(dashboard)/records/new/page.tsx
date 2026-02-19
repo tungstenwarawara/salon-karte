@@ -8,6 +8,7 @@ import { PhotoUpload, type PhotoEntry } from "@/components/records/photo-upload"
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import { useFormDraft } from "@/lib/hooks/use-form-draft";
 import type { Database } from "@/types/database";
 
@@ -330,12 +331,12 @@ function NewRecordForm() {
             <label className="block text-sm font-medium mb-1.5">
               使用した化粧品・機器
             </label>
-            <textarea
+            <AutoResizeTextarea
               value={form.products_used}
               onChange={(e) => updateField("products_used", e.target.value)}
               placeholder="使用した化粧品や機器を記録"
-              rows={2}
-              className={`${inputClass} resize-none`}
+              minRows={2}
+              className={inputClass}
             />
           </div>
 
@@ -343,14 +344,14 @@ function NewRecordForm() {
             <label className="block text-sm font-medium mb-1.5">
               施術前の状態
             </label>
-            <textarea
+            <AutoResizeTextarea
               value={form.skin_condition_before}
               onChange={(e) =>
                 updateField("skin_condition_before", e.target.value)
               }
               placeholder="施術前の状態を記録"
-              rows={2}
-              className={`${inputClass} resize-none`}
+              minRows={2}
+              className={inputClass}
             />
           </div>
 
@@ -358,12 +359,12 @@ function NewRecordForm() {
             <label className="block text-sm font-medium mb-1.5">
               施術後の経過メモ
             </label>
-            <textarea
+            <AutoResizeTextarea
               value={form.notes_after}
               onChange={(e) => updateField("notes_after", e.target.value)}
               placeholder="施術後の状態や経過を記録"
-              rows={2}
-              className={`${inputClass} resize-none`}
+              minRows={2}
+              className={inputClass}
             />
           </div>
 
@@ -371,12 +372,12 @@ function NewRecordForm() {
             <label className="block text-sm font-medium mb-1.5">
               話した内容（会話メモ）
             </label>
-            <textarea
+            <AutoResizeTextarea
               value={form.conversation_notes}
               onChange={(e) => updateField("conversation_notes", e.target.value)}
               placeholder="お客様との会話で覚えておきたいこと"
-              rows={2}
-              className={`${inputClass} resize-none`}
+              minRows={3}
+              className={inputClass}
             />
           </div>
 
@@ -384,12 +385,12 @@ function NewRecordForm() {
             <label className="block text-sm font-medium mb-1.5">
               注意事項
             </label>
-            <textarea
+            <AutoResizeTextarea
               value={form.caution_notes}
               onChange={(e) => updateField("caution_notes", e.target.value)}
               placeholder="次回以降に注意すべきこと"
-              rows={2}
-              className={`${inputClass} resize-none`}
+              minRows={2}
+              className={inputClass}
             />
           </div>
 
@@ -397,12 +398,12 @@ function NewRecordForm() {
             <label className="block text-sm font-medium mb-1.5">
               次回への申し送り
             </label>
-            <textarea
+            <AutoResizeTextarea
               value={form.next_visit_memo}
               onChange={(e) => updateField("next_visit_memo", e.target.value)}
               placeholder="次回施術時の注意点やプランなど"
-              rows={2}
-              className={`${inputClass} resize-none`}
+              minRows={2}
+              className={inputClass}
             />
           </div>
         </CollapsibleSection>

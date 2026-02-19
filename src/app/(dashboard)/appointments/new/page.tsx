@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import type { Database, BusinessHours } from "@/types/database";
 import {
   getScheduleForDate,
@@ -650,13 +651,13 @@ function NewAppointmentForm() {
             <label htmlFor="memo" className="block text-sm font-medium mb-1.5">
               メモ
             </label>
-            <textarea
+            <AutoResizeTextarea
               id="memo"
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
-              rows={2}
+              minRows={2}
               placeholder="施術の要望や注意点など"
-              className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
+              className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             />
           </div>
         </CollapsibleSection>

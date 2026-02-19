@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 
 export default function NewTicketPage() {
   const router = useRouter();
@@ -216,14 +217,14 @@ export default function NewTicketPage() {
           <label className="block text-sm font-medium mb-1.5">
             メモ（任意）
           </label>
-          <textarea
+          <AutoResizeTextarea
             value={form.memo}
             onChange={(e) =>
               setForm((prev) => ({ ...prev, memo: e.target.value }))
             }
             placeholder="備考があれば記入"
-            rows={2}
-            className={`${inputClass} resize-none`}
+            minRows={2}
+            className={inputClass}
           />
         </div>
 

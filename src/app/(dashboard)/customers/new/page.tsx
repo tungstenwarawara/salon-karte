@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import { useFormDraft } from "@/lib/hooks/use-form-draft";
 
 const MARITAL_STATUSES = [
@@ -310,32 +311,32 @@ export default function NewCustomerPage() {
               <label className="block text-sm font-medium mb-1.5">
                 アレルギー・注意事項
               </label>
-              <textarea
+              <AutoResizeTextarea
                 value={form.allergies}
                 onChange={(e) => updateField("allergies", e.target.value)}
                 placeholder="アレルギーや施術時の注意事項"
-                rows={2}
-                className={`${inputClass} resize-none`}
+                minRows={2}
+                className={inputClass}
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">施術の最終目標</label>
-              <textarea
+              <AutoResizeTextarea
                 value={form.treatment_goal}
                 onChange={(e) => updateField("treatment_goal", e.target.value)}
                 placeholder="お客様の施術に対する最終目標"
-                rows={2}
-                className={`${inputClass} resize-none`}
+                minRows={2}
+                className={inputClass}
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">メモ</label>
-              <textarea
+              <AutoResizeTextarea
                 value={form.notes}
                 onChange={(e) => updateField("notes", e.target.value)}
                 placeholder="自由メモ"
-                rows={2}
-                className={`${inputClass} resize-none`}
+                minRows={2}
+                className={inputClass}
               />
             </div>
           </CollapsibleSection>
