@@ -6,7 +6,7 @@
 ## 開発ルール
 
 ### ブランチ戦略
-- `main`: 本番ブランチ（Netlifyが自動デプロイ）
+- `main`: 本番ブランチ（Vercelが自動デプロイ → salon-karte.vercel.app）
 - 機能開発は `claude/` プレフィックスのワークツリーで作業 → PR → main にマージ
 
 ### コーディング規約
