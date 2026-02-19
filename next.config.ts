@@ -4,13 +4,13 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // 認証済みルート: ブラウザキャッシュを無効化
-        // デプロイ後に古いHTMLが表示される問題を防止
+        // 認証済みルート: ブラウザバック/フォワードキャッシュ（bfcache）を有効にしつつ
+        // プロキシキャッシュは無効化。no-store だと bfcache も無効になりページ遷移が遅くなる。
         source: "/(dashboard|customers|appointments|records|settings)/:path*",
         headers: [
           {
             key: "Cache-Control",
-            value: "no-store, must-revalidate",
+            value: "no-cache, private, must-revalidate",
           },
         ],
       },

@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import type { Database } from "@/types/database";
 import { LapsedCustomersSection } from "@/components/dashboard/lapsed-customers-section";
 
-type Salon = Database["public"]["Tables"]["salons"]["Row"];
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
 
@@ -16,22 +15,11 @@ function getGreeting(): string {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, salon, supabase } = await getAuthAndSalon();
 
   if (!user) {
     redirect("/login");
   }
-
-  // サロン情報を取得
-  const { data: salon } = await supabase
-    .from("salons")
-    .select("*")
-    .eq("owner_id", user.id)
-    .single<Salon>();
 
   if (!salon) {
     redirect("/setup");
@@ -64,10 +52,10 @@ export default async function DashboardPage() {
     birthdayRes,
     recentRecordsRes,
   ] = await Promise.all([
-    // 今日の予約
+    // P10: 今日の予約（必要なカラムのみ取得）
     supabase
       .from("appointments")
-      .select("*, customers(last_name, first_name)")
+      .select("id, customer_id, start_time, status, menu_name_snapshot, customers(last_name, first_name)")
       .eq("salon_id", salon.id)
       .eq("appointment_date", today)
       .neq("status", "cancelled")
@@ -113,16 +101,16 @@ export default async function DashboardPage() {
       .eq("salon_id", salon.id)
       .gte("purchase_date", monthStart)
       .lt("purchase_date", monthEnd),
-    // 今月の誕生日
+    // P13: 今月の誕生日（DBでlike月フィルタ — 全顧客取得+JSフィルタを解消）
     supabase
       .from("customers")
       .select("id, last_name, first_name, birth_date")
       .eq("salon_id", salon.id)
-      .not("birth_date", "is", null),
-    // 最近の施術記録
+      .like("birth_date", `%-${String(currentMonth).padStart(2, "0")}-%`),
+    // P10: 最近の施術記録（必要なカラムのみ取得）
     supabase
       .from("treatment_records")
-      .select("*, customers(last_name, first_name)")
+      .select("id, treatment_date, menu_name_snapshot, customers(last_name, first_name)")
       .eq("salon_id", salon.id)
       .order("treatment_date", { ascending: false })
       .limit(3)
@@ -146,12 +134,9 @@ export default async function DashboardPage() {
 
   const monthlyTotal = monthlyTreatmentSales + monthlyProductSales + monthlyTicketSales;
 
+  // P13: DBで月フィルタ済みなのでJSフィルタ不要
   const birthdayCustomers = (birthdayRes.data ?? [])
-    .filter((c) => {
-      if (!c.birth_date) return false;
-      const month = parseInt(c.birth_date.split("-")[1], 10);
-      return month === currentMonth;
-    })
+    .filter((c) => c.birth_date) // null safety
     .map((c) => ({
       ...c,
       birth_day: parseInt(c.birth_date!.split("-")[2], 10),

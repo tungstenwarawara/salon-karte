@@ -99,71 +99,90 @@ async function stripExif(file: File): Promise<File> {
   });
 }
 
+// MIME→拡張子のマッピング（安全な拡張子を MIME タイプから決定して拡張子偽装を防ぐ）
+const MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/heic": "heic",
+  "image/heif": "heif",
+};
+
+/** 1枚の写真を検証 → EXIF除去 → アップロード → DB登録 */
+async function uploadSinglePhoto(
+  supabase: ReturnType<typeof createClient>,
+  recordId: string,
+  salonId: string,
+  photo: PhotoEntry,
+  index: number
+): Promise<string | null> {
+  // セキュリティ検証1: ファイルサイズチェック
+  if (photo.file.size > MAX_FILE_SIZE) {
+    const sizeMB = Math.round(photo.file.size / 1024 / 1024);
+    return `ファイルサイズが大きすぎます（${sizeMB}MB）。20MB以下の画像をお使いください。`;
+  }
+
+  // セキュリティ検証2: ファイルタイプの検証（マジックナンバー検証含む）
+  const isValid = await validateFileType(photo.file);
+  if (!isValid) {
+    return `対応していないファイル形式です。JPEG, PNG, WebP, HEIC形式の画像をお使いください。`;
+  }
+
+  // セキュリティ処理: EXIF情報を除去（位置情報・デバイス情報の漏洩防止）
+  const cleanFile = await stripExif(photo.file);
+
+  const ext = MIME_TO_EXT[cleanFile.type] || "jpg";
+  // index を付けてファイル名の衝突を防止（並列アップロード時にDate.now()が同一になるため）
+  const path = `${salonId}/${recordId}/${photo.type}_${Date.now()}_${index}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("treatment-photos")
+    .upload(path, cleanFile, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: cleanFile.type,
+    });
+
+  if (uploadError) {
+    return `写真のアップロードに失敗しました: ${uploadError.message}`;
+  }
+
+  const { error: dbError } = await supabase
+    .from("treatment_photos")
+    .insert({
+      treatment_record_id: recordId,
+      storage_path: path,
+      photo_type: photo.type,
+      memo: photo.memo || null,
+    });
+
+  if (dbError) {
+    return `写真情報の保存に失敗しました: ${dbError.message}`;
+  }
+
+  return null; // 成功
+}
+
 export async function uploadPhotos(
   recordId: string,
   salonId: string,
   photos: PhotoEntry[]
 ) {
   const supabase = createClient();
+
+  // P4: 全写真を並列アップロード（逐次 → 並列で3〜4秒改善）
+  const results = await Promise.allSettled(
+    photos.map((photo, index) =>
+      uploadSinglePhoto(supabase, recordId, salonId, photo, index)
+    )
+  );
+
   const errors: string[] = [];
-
-  for (const photo of photos) {
-    // セキュリティ検証1: ファイルサイズチェック
-    if (photo.file.size > MAX_FILE_SIZE) {
-      const sizeMB = Math.round(photo.file.size / 1024 / 1024);
-      errors.push(
-        `ファイルサイズが大きすぎます（${sizeMB}MB）。20MB以下の画像をお使いください。`
-      );
-      continue;
-    }
-
-    // セキュリティ検証2: ファイルタイプの検証（マジックナンバー検証含む）
-    const isValid = await validateFileType(photo.file);
-    if (!isValid) {
-      errors.push(
-        `対応していないファイル形式です。JPEG, PNG, WebP, HEIC形式の画像をお使いください。`
-      );
-      continue;
-    }
-
-    // セキュリティ処理: EXIF情報を除去（位置情報・デバイス情報の漏洩防止）
-    const cleanFile = await stripExif(photo.file);
-
-    // 安全な拡張子を MIME タイプから決定（拡張子偽装を防ぐ）
-    const mimeToExt: Record<string, string> = {
-      "image/jpeg": "jpg",
-      "image/png": "png",
-      "image/webp": "webp",
-      "image/heic": "heic",
-      "image/heif": "heif",
-    };
-    const ext = mimeToExt[cleanFile.type] || "jpg";
-    const path = `${salonId}/${recordId}/${photo.type}_${Date.now()}.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("treatment-photos")
-      .upload(path, cleanFile, {
-        cacheControl: "3600",
-        upsert: false,
-        contentType: cleanFile.type, // MIMEタイプを明示的に指定
-      });
-
-    if (uploadError) {
-      errors.push(`写真のアップロードに失敗しました: ${uploadError.message}`);
-      continue;
-    }
-
-    const { error: dbError } = await supabase
-      .from("treatment_photos")
-      .insert({
-        treatment_record_id: recordId,
-        storage_path: path,
-        photo_type: photo.type,
-        memo: photo.memo || null,
-      });
-
-    if (dbError) {
-      errors.push(`写真情報の保存に失敗しました: ${dbError.message}`);
+  for (const result of results) {
+    if (result.status === "fulfilled" && result.value) {
+      errors.push(result.value);
+    } else if (result.status === "rejected") {
+      errors.push(`写真のアップロード中にエラーが発生しました`);
     }
   }
 

@@ -88,16 +88,17 @@ function NewAppointmentForm() {
     setSalonId(salon.id);
     setBusinessHours(salon.business_hours);
 
+    // P12: 必要なカラムのみ取得（全カラムのSELECT *を回避）
     const [customersRes, menusRes] = await Promise.all([
       supabase
         .from("customers")
-        .select("*")
+        .select("id, last_name, first_name, last_name_kana, first_name_kana")
         .eq("salon_id", salon.id)
         .order("last_name_kana", { ascending: true })
         .returns<Customer[]>(),
       supabase
         .from("treatment_menus")
-        .select("*")
+        .select("id, name, duration_minutes, price, is_active")
         .eq("salon_id", salon.id)
         .eq("is_active", true)
         .order("name")

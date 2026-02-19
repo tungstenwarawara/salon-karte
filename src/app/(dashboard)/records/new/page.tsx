@@ -70,34 +70,37 @@ function NewRecordForm() {
       if (!salon) return;
       setSalonId(salon.id);
 
-      const { data: menuData } = await supabase
+      // P7: salon取得後、menus + customers/customerName を並列取得
+      const menusQuery = supabase
         .from("treatment_menus")
         .select("*")
         .eq("salon_id", salon.id)
         .eq("is_active", true)
         .order("name")
         .returns<Menu[]>();
-      setMenus(menuData ?? []);
 
-      // Load all customers for selector (when no preset customer)
       if (!presetCustomerId) {
-        const { data: customerData } = await supabase
+        const customerQuery = supabase
           .from("customers")
           .select("id, last_name, first_name, last_name_kana, first_name_kana")
           .eq("salon_id", salon.id)
           .order("last_name_kana", { ascending: true })
           .returns<CustomerOption[]>();
-        setCustomers(customerData ?? []);
-      }
 
-      if (presetCustomerId) {
-        const { data: customer } = await supabase
+        const [menuRes, customerRes] = await Promise.all([menusQuery, customerQuery]);
+        setMenus(menuRes.data ?? []);
+        setCustomers(customerRes.data ?? []);
+      } else {
+        const customerNameQuery = supabase
           .from("customers")
           .select("last_name, first_name")
           .eq("id", presetCustomerId)
           .single<{ last_name: string; first_name: string }>();
-        if (customer) {
-          setCustomerName(`${customer.last_name} ${customer.first_name}`);
+
+        const [menuRes, customerRes] = await Promise.all([menusQuery, customerNameQuery]);
+        setMenus(menuRes.data ?? []);
+        if (customerRes.data) {
+          setCustomerName(`${customerRes.data.last_name} ${customerRes.data.first_name}`);
         }
       }
     };

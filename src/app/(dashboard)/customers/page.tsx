@@ -57,11 +57,11 @@ export default function CustomersPage() {
       return;
     }
 
-    // 顧客と来店情報を並列取得（ウォーターフォール解消）
+    // P10: SELECT * → 一覧表示に必要なカラムのみ取得 + 来店情報を並列取得
     const [customersResult, visitResult] = await Promise.all([
       supabase
         .from("customers")
-        .select("*")
+        .select("id, last_name, first_name, last_name_kana, first_name_kana, phone")
         .eq("salon_id", salon.id)
         .order("last_name_kana", { ascending: true })
         .returns<Customer[]>(),

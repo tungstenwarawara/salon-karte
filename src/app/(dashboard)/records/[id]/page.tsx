@@ -1,6 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { BeforeAfterComparison } from "@/components/records/before-after";
 import type { Database } from "@/types/database";
 
@@ -17,30 +17,29 @@ export default async function RecordDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, supabase } = await getAuthAndSalon();
   if (!user) redirect("/login");
 
-  const { data: record } = await supabase
-    .from("treatment_records")
-    .select("*, customers(id, last_name, first_name)")
-    .eq("id", id)
-    .single<RecordWithCustomer>();
+  // P9: record と photos を並列取得
+  const [recordRes, photosRes] = await Promise.all([
+    supabase
+      .from("treatment_records")
+      .select("*, customers(id, last_name, first_name)")
+      .eq("id", id)
+      .single<RecordWithCustomer>(),
+    supabase
+      .from("treatment_photos")
+      .select("*")
+      .eq("treatment_record_id", id)
+      .order("photo_type")
+      .returns<TreatmentPhoto[]>(),
+  ]);
 
+  const record = recordRes.data;
   if (!record) notFound();
 
   const customer = record.customers;
-
-  // 写真を取得
-  const { data: photos } = await supabase
-    .from("treatment_photos")
-    .select("*")
-    .eq("treatment_record_id", id)
-    .order("photo_type")
-    .returns<TreatmentPhoto[]>();
+  const photos = photosRes.data;
 
   return (
     <div className="space-y-6">
