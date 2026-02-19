@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { uploadPhotos } from "@/lib/supabase/storage";
 import { PhotoUpload, type PhotoEntry } from "@/components/records/photo-upload";
+import { PageHeader } from "@/components/layout/page-header";
 import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
@@ -155,7 +156,7 @@ function NewRecordForm() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">施術記録を作成</h2>
+      <PageHeader title="施術記録を作成" backLabel="戻る" />
       {customerName && (
         <p className="text-text-light">
           顧客: <span className="font-medium text-text">{customerName}</span>

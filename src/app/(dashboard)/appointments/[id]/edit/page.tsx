@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { PageHeader } from "@/components/layout/page-header";
 import type { Database, BusinessHours } from "@/types/database";
 import {
   getScheduleForDate,
@@ -301,15 +301,7 @@ export default function EditAppointmentPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">予約を編集</h2>
-        <Link
-          href="/appointments"
-          className="text-sm text-text-light hover:text-text transition-colors"
-        >
-          戻る
-        </Link>
-      </div>
+      <PageHeader title="予約を編集" backLabel="予約一覧" backHref="/appointments" />
 
       {customerName && (
         <p className="text-text-light">

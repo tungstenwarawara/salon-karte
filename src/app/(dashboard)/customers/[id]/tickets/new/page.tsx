@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { PageHeader } from "@/components/layout/page-header";
 
 export default function NewTicketPage() {
   const router = useRouter();
@@ -99,7 +100,7 @@ export default function NewTicketPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">コースチケットを登録</h2>
+      <PageHeader title="コースチケットを登録" backLabel="戻る" />
       {customerName && (
         <p className="text-text-light">
           顧客: <span className="font-medium text-text">{customerName}</span>

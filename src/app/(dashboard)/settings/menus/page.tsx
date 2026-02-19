@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { PageHeader } from "@/components/layout/page-header";
 import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
@@ -124,8 +125,7 @@ export default function MenusPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">施術メニュー</h2>
+      <PageHeader title="施術メニュー" backLabel="設定" backHref="/settings">
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
@@ -134,7 +134,7 @@ export default function MenusPage() {
             + 追加
           </button>
         )}
-      </div>
+      </PageHeader>
 
       {error && (
         <div className="bg-error/10 text-error text-sm rounded-lg p-3">
