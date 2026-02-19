@@ -19,10 +19,10 @@ export default function NewTicketPage() {
     const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     return {
       ticket_name: "",
-      total_sessions: 5,
+      total_sessions: "5",
       purchase_date: today,
       expiry_date: "",
-      price: 0,
+      price: "",
       memo: "",
     };
   });
@@ -55,13 +55,16 @@ export default function NewTicketPage() {
     load();
   }, [customerId]);
 
+  const totalSessionsNum = Math.max(1, parseInt(form.total_sessions, 10) || 0);
+  const priceNum = Math.max(0, parseInt(form.price, 10) || 0);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.ticket_name.trim()) {
       setError("チケット名を入力してください");
       return;
     }
-    if (form.total_sessions < 1) {
+    if (totalSessionsNum < 1) {
       setError("回数は1以上を入力してください");
       return;
     }
@@ -75,10 +78,10 @@ export default function NewTicketPage() {
         salon_id: salonId,
         customer_id: customerId,
         ticket_name: form.ticket_name.trim(),
-        total_sessions: form.total_sessions,
+        total_sessions: totalSessionsNum,
         purchase_date: form.purchase_date,
         expiry_date: form.expiry_date || null,
-        price: form.price || null,
+        price: priceNum || null,
         memo: form.memo || null,
       });
 
@@ -141,10 +144,7 @@ export default function NewTicketPage() {
               onChange={(e) =>
                 setForm((prev) => ({
                   ...prev,
-                  total_sessions: Math.max(
-                    1,
-                    Number(e.target.value) || 1
-                  ),
+                  total_sessions: e.target.value,
                 }))
               }
               className={inputClass}
@@ -161,9 +161,10 @@ export default function NewTicketPage() {
               onChange={(e) =>
                 setForm((prev) => ({
                   ...prev,
-                  price: Math.max(0, Number(e.target.value) || 0),
+                  price: e.target.value,
                 }))
               }
+              placeholder="0"
               className={inputClass}
             />
           </div>
