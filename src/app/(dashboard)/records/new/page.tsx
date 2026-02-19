@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
+type CustomerOption = { id: string; last_name: string; first_name: string; last_name_kana: string | null; first_name_kana: string | null };
 
 export default function NewRecordPage() {
   return (
@@ -21,15 +22,21 @@ export default function NewRecordPage() {
 function NewRecordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const customerId = searchParams.get("customer");
+  const presetCustomerId = searchParams.get("customer");
   const appointmentId = searchParams.get("appointment");
 
   const [menus, setMenus] = useState<Menu[]>([]);
+  const [customers, setCustomers] = useState<CustomerOption[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState(presetCustomerId ?? "");
+  const [customerSearch, setCustomerSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [salonId, setSalonId] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
+
+  // Derived: the active customer ID (from URL or user selection)
+  const customerId = presetCustomerId ?? selectedCustomerId;
 
   const [form, setForm] = useState(() => {
     const d = new Date();
@@ -72,11 +79,22 @@ function NewRecordForm() {
         .returns<Menu[]>();
       setMenus(menuData ?? []);
 
-      if (customerId) {
+      // Load all customers for selector (when no preset customer)
+      if (!presetCustomerId) {
+        const { data: customerData } = await supabase
+          .from("customers")
+          .select("id, last_name, first_name, last_name_kana, first_name_kana")
+          .eq("salon_id", salon.id)
+          .order("last_name_kana", { ascending: true })
+          .returns<CustomerOption[]>();
+        setCustomers(customerData ?? []);
+      }
+
+      if (presetCustomerId) {
         const { data: customer } = await supabase
           .from("customers")
           .select("last_name, first_name")
-          .eq("id", customerId)
+          .eq("id", presetCustomerId)
           .single<{ last_name: string; first_name: string }>();
         if (customer) {
           setCustomerName(`${customer.last_name} ${customer.first_name}`);
@@ -84,7 +102,7 @@ function NewRecordForm() {
       }
     };
     load();
-  }, [customerId]);
+  }, [presetCustomerId]);
 
   const updateField = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -154,13 +172,85 @@ function NewRecordForm() {
   const inputClass =
     "w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors";
 
+  // Filter customers for search
+  const filteredCustomers = customerSearch
+    ? customers.filter((c) => {
+        const fullName = `${c.last_name}${c.first_name}`;
+        const fullKana = `${c.last_name_kana ?? ""}${c.first_name_kana ?? ""}`;
+        const q = customerSearch.toLowerCase();
+        return fullName.includes(q) || fullKana.includes(q);
+      })
+    : customers;
+
   return (
     <div className="space-y-4">
       <PageHeader title="施術記録を作成" backLabel="戻る" />
-      {customerName && (
+
+      {/* Customer display (when preset from URL) */}
+      {presetCustomerId && customerName && (
         <p className="text-text-light">
           顧客: <span className="font-medium text-text">{customerName}</span>
         </p>
+      )}
+
+      {/* Customer selector (when NOT preset) */}
+      {!presetCustomerId && (
+        <div className="bg-surface border border-border rounded-2xl p-4 space-y-3">
+          <label className="block text-sm font-bold">
+            顧客を選択 <span className="text-error">*</span>
+          </label>
+          <input
+            type="text"
+            value={customerSearch}
+            onChange={(e) => setCustomerSearch(e.target.value)}
+            placeholder="名前・カナで検索..."
+            className={inputClass}
+          />
+          {customers.length === 0 ? (
+            <p className="text-sm text-text-light text-center py-2">
+              顧客が登録されていません
+            </p>
+          ) : (
+            <div className="max-h-48 overflow-y-auto space-y-1">
+              {filteredCustomers.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCustomerId(c.id);
+                    setCustomerName(`${c.last_name} ${c.first_name}`);
+                    setCustomerSearch("");
+                  }}
+                  className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                    selectedCustomerId === c.id
+                      ? "bg-accent/10 border border-accent text-accent font-medium"
+                      : "hover:bg-background border border-transparent"
+                  }`}
+                >
+                  <span>{c.last_name} {c.first_name}</span>
+                  {c.last_name_kana && (
+                    <span className="text-xs text-text-light ml-2">
+                      {c.last_name_kana} {c.first_name_kana}
+                    </span>
+                  )}
+                </button>
+              ))}
+              {filteredCustomers.length === 0 && customerSearch && (
+                <p className="text-sm text-text-light text-center py-2">
+                  該当する顧客がいません
+                </p>
+              )}
+            </div>
+          )}
+          {selectedCustomerId && customerName && (
+            <div className="flex items-center gap-2 bg-accent/5 rounded-xl px-3 py-2">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-accent shrink-0">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+              </svg>
+              <span className="text-sm font-medium">{customerName}</span>
+            </div>
+          )}
+        </div>
       )}
 
       <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
