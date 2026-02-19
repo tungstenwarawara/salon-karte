@@ -143,6 +143,22 @@ export default function SettingsPage() {
         </div>
       </Link>
 
+      {/* Holidays link */}
+      <Link
+        href="/settings/holidays"
+        className="block bg-surface border border-border rounded-2xl p-5 hover:border-accent transition-colors"
+      >
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="font-bold">不定休設定</h3>
+            <p className="text-sm text-text-light mt-1">
+              臨時休業日の設定
+            </p>
+          </div>
+          <span className="text-text-light">→</span>
+        </div>
+      </Link>
+
       {/* Menu link */}
       <Link
         href="/settings/menus"

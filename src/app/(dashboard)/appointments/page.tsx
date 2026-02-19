@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Database, BusinessHours } from "@/types/database";
-import { getScheduleForDate, isBusinessDay } from "@/lib/business-hours";
+import { getScheduleForDate, isBusinessDay, isIrregularHoliday } from "@/lib/business-hours";
 import { ErrorAlert } from "@/components/ui/error-alert";
 
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
@@ -47,6 +47,7 @@ export default function AppointmentsPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
   const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
+  const [salonHolidays, setSalonHolidays] = useState<string[] | null>(null);
 
   const loadAppointments = useCallback(async (date: Date, mode: "day" | "month") => {
     const supabase = createClient();
@@ -57,11 +58,12 @@ export default function AppointmentsPage() {
 
     const { data: salon } = await supabase
       .from("salons")
-      .select("id, business_hours")
+      .select("id, business_hours, salon_holidays")
       .eq("owner_id", user.id)
-      .single<{ id: string; business_hours: BusinessHours | null }>();
+      .single<{ id: string; business_hours: BusinessHours | null; salon_holidays: string[] | null }>();
     if (!salon) return;
     setBusinessHours(salon.business_hours);
+    setSalonHolidays(salon.salon_holidays);
 
     let startDate: string;
     let endDate: string;
@@ -329,9 +331,11 @@ export default function AppointmentsPage() {
 
       {/* Business hours context for day view */}
       {viewMode === "day" && businessHours && (() => {
-        const schedule = getScheduleForDate(businessHours, selectedDate);
+        const schedule = getScheduleForDate(businessHours, selectedDate, salonHolidays);
         if (!schedule.is_open) return (
-          <p className="text-xs text-text-light text-center">休業日</p>
+          <p className="text-xs text-text-light text-center">
+            {isIrregularHoliday(salonHolidays, selectedDate) ? "臨時休業日" : "休業日"}
+          </p>
         );
         return (
           <p className="text-xs text-text-light text-center">
@@ -351,10 +355,16 @@ export default function AppointmentsPage() {
           </div>
         ) : (
           <div className="bg-surface border border-border rounded-xl p-6 text-center text-text-light">
-            {businessHours && !isBusinessDay(businessHours, selectedDate) ? (
+            {businessHours && !isBusinessDay(businessHours, selectedDate, salonHolidays) ? (
               <div className="space-y-1">
-                <p className="font-medium">休業日</p>
-                <p className="text-xs">この曜日は休業日に設定されています</p>
+                <p className="font-medium">
+                  {isIrregularHoliday(salonHolidays, selectedDate) ? "臨時休業日" : "休業日"}
+                </p>
+                <p className="text-xs">
+                  {isIrregularHoliday(salonHolidays, selectedDate)
+                    ? "この日は臨時休業日に設定されています"
+                    : "この曜日は休業日に設定されています"}
+                </p>
               </div>
             ) : (
               <p>この日の予約はありません</p>
@@ -415,7 +425,8 @@ export default function AppointmentsPage() {
                     const dayApts = appointmentsByDate[dateStr] ?? [];
                     const activeCount = dayApts.filter((a) => a.status !== "cancelled").length;
                     const dow = cellDate.getDay();
-                    const isHoliday = businessHours && !isBusinessDay(businessHours, cellDate);
+                    const isHoliday = businessHours && !isBusinessDay(businessHours, cellDate, salonHolidays);
+                    const isIrregular = isIrregularHoliday(salonHolidays, cellDate);
                     const isSelected = selectedDay === day;
 
                     return (
@@ -427,8 +438,10 @@ export default function AppointmentsPage() {
                             ? "bg-accent text-white font-bold"
                             : isSelected
                               ? "bg-accent/10 ring-2 ring-accent font-bold"
-                              : isHoliday
-                                ? "text-gray-300 bg-gray-50"
+                              : isIrregular
+                                ? "text-error/60 bg-error/5"
+                                : isHoliday
+                                  ? "text-gray-300 bg-gray-50"
                                 : dow === 0
                                   ? "text-red-400"
                                   : dow === 6
@@ -485,7 +498,8 @@ export default function AppointmentsPage() {
                 const dayStr = toDateStr(dayDate);
                 const dayApts = appointmentsByDate[dayStr] ?? [];
                 const activeApts = dayApts.filter((a) => a.status !== "cancelled");
-                const isHoliday = businessHours && !isBusinessDay(businessHours, dayDate);
+                const isHoliday = businessHours && !isBusinessDay(businessHours, dayDate, salonHolidays);
+                const isIrregular = isIrregularHoliday(salonHolidays, dayDate);
 
                 return (
                   <div className="bg-surface border border-border rounded-2xl p-4 space-y-3">
@@ -495,7 +509,10 @@ export default function AppointmentsPage() {
                         <h4 className="font-bold text-sm">
                           {month + 1}/{selectedDay}（{DAY_NAMES[dayDate.getDay()]}）
                         </h4>
-                        {isHoliday && (
+                        {isIrregular && (
+                          <span className="text-[10px] bg-error/10 text-error px-1.5 py-0.5 rounded-full">臨時休業</span>
+                        )}
+                        {isHoliday && !isIrregular && (
                           <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">休</span>
                         )}
                         {activeApts.length > 0 && (
@@ -545,7 +562,7 @@ export default function AppointmentsPage() {
                       </div>
                     ) : (
                       <p className="text-sm text-text-light">
-                        {isHoliday ? "休業日です" : "予約はありません"}
+                        {isIrregular ? "臨時休業日です" : isHoliday ? "休業日です" : "予約はありません"}
                       </p>
                     )}
                   </div>

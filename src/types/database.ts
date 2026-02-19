@@ -25,6 +25,7 @@ export type Database = {
           phone: string | null;
           address: string | null;
           business_hours: BusinessHours | null;
+          salon_holidays: string[] | null;
           created_at: string;
           updated_at: string;
         };
@@ -35,6 +36,7 @@ export type Database = {
           phone?: string | null;
           address?: string | null;
           business_hours?: BusinessHours | null;
+          salon_holidays?: string[] | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -45,6 +47,7 @@ export type Database = {
           phone?: string | null;
           address?: string | null;
           business_hours?: BusinessHours | null;
+          salon_holidays?: string[] | null;
           created_at?: string;
           updated_at?: string;
         };

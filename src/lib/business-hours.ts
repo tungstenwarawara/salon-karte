@@ -80,33 +80,66 @@ function toDate(date: Date | string): Date {
   return date;
 }
 
-/** 日付の曜日スケジュールを取得 */
+/** Date → "YYYY-MM-DD"（ローカルタイムゾーン） */
+export function toDateString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/** 不定休かどうかを判定 */
+export function isIrregularHoliday(
+  holidays: string[] | null | undefined,
+  date: Date | string
+): boolean {
+  if (!holidays || holidays.length === 0) return false;
+  const d = toDate(date);
+  return holidays.includes(toDateString(d));
+}
+
+/** 日付の曜日スケジュールを取得（不定休考慮） */
 export function getScheduleForDate(
   businessHours: BusinessHours | null,
-  date: Date | string
+  date: Date | string,
+  holidays?: string[] | null
 ): DaySchedule {
   const bh = businessHours ?? DEFAULT_BUSINESS_HOURS;
   const d = toDate(date);
+
+  // 不定休チェック: holidays に含まれる日付は休業扱い
+  if (holidays && holidays.length > 0) {
+    const dateStr = toDateString(d);
+    if (holidays.includes(dateStr)) {
+      // 元の曜日スケジュールの時間は保持しつつ is_open を false に
+      const dayKey = DAY_KEY_MAP[d.getDay()];
+      const original = bh[dayKey];
+      return { ...original, is_open: false };
+    }
+  }
+
   const dayKey = DAY_KEY_MAP[d.getDay()];
   return bh[dayKey];
 }
 
-/** 営業日かどうか */
+/** 営業日かどうか（不定休考慮） */
 export function isBusinessDay(
   businessHours: BusinessHours | null,
-  date: Date | string
+  date: Date | string,
+  holidays?: string[] | null
 ): boolean {
-  return getScheduleForDate(businessHours, date).is_open;
+  return getScheduleForDate(businessHours, date, holidays).is_open;
 }
 
-/** 時間帯が営業時間内かチェック */
+/** 時間帯が営業時間内かチェック（不定休考慮） */
 export function isWithinBusinessHours(
   businessHours: BusinessHours | null,
   date: Date | string,
   startTime: string,
-  endTime: string
+  endTime: string,
+  holidays?: string[] | null
 ): boolean {
-  const schedule = getScheduleForDate(businessHours, date);
+  const schedule = getScheduleForDate(businessHours, date, holidays);
   if (!schedule.is_open) return false;
   const openMin = timeToMinutes(schedule.open_time);
   const closeMin = timeToMinutes(schedule.close_time);

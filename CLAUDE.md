@@ -153,6 +153,7 @@ get_advisors(type: "security") → 新規WARN/ERRORがないか
 |--------|----------|
 | サロン情報編集 | 名前・電話・住所の更新 |
 | 営業時間設定 | 曜日別のON/OFF + 時間設定 |
+| 不定休設定 | カレンダー形式で臨時休業日を設定・削除 |
 | メニュー管理 | CRUD + カテゴリ + 価格 + 表示/非表示 |
 
 ---
@@ -182,14 +183,14 @@ src/
 ├── lib/supabase/          # client.ts, server.ts, middleware.ts
 └── types/database.ts      # Supabase型定義（唯一の真実）
 
-supabase/migrations/       # 00001〜00015（全てローカルに管理）
+supabase/migrations/       # 00001〜00016（全てローカルに管理）
 ```
 
 ## DB構成（11テーブル + 7 RPC関数）
 
 | テーブル | 用途 |
 |---------|------|
-| salons | サロン情報（1ユーザー1サロン） |
+| salons | サロン情報（1ユーザー1サロン、business_hours + salon_holidays JSONB） |
 | customers | 顧客マスタ |
 | treatment_menus | 施術メニューマスタ |
 | treatment_records | 施術カルテ |

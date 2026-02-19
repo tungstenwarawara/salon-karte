@@ -11,6 +11,7 @@ import {
   getScheduleForDate,
   isBusinessDay,
   isWithinBusinessHours,
+  isIrregularHoliday,
   timeToMinutes,
 } from "@/lib/business-hours";
 
@@ -43,6 +44,7 @@ export default function EditAppointmentPage() {
   const [error, setError] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
+  const [salonHolidays, setSalonHolidays] = useState<string[] | null>(null);
   const [dayAppointments, setDayAppointments] = useState<DayAppointment[]>([]);
 
   // Form state
@@ -72,15 +74,16 @@ export default function EditAppointmentPage() {
 
     const { data: salon } = await supabase
       .from("salons")
-      .select("id, business_hours")
+      .select("id, business_hours, salon_holidays")
       .eq("owner_id", user.id)
-      .single<{ id: string; business_hours: BusinessHours | null }>();
+      .single<{ id: string; business_hours: BusinessHours | null; salon_holidays: string[] | null }>();
     if (!salon) {
       setLoading(false);
       return;
     }
     setSalonId(salon.id);
     setBusinessHours(salon.business_hours);
+    setSalonHolidays(salon.salon_holidays);
 
     // P5: salon取得後、appointment + menus + junction を並列取得
     const [appointmentRes, menuRes, junctionRes] = await Promise.all([
@@ -349,15 +352,17 @@ export default function EditAppointmentPage() {
         </div>
 
         {/* Closed day warning */}
-        {appointmentDate && businessHours && !isBusinessDay(businessHours, appointmentDate) && (
+        {appointmentDate && businessHours && !isBusinessDay(businessHours, appointmentDate, salonHolidays) && (
           <div className="bg-warning/10 text-warning text-sm rounded-lg p-3">
-            この日は休業日に設定されています
+            {isIrregularHoliday(salonHolidays, appointmentDate)
+              ? "この日は臨時休業日に設定されています"
+              : "この日は休業日に設定されています"}
           </div>
         )}
 
         {/* Time slot visualization */}
         {appointmentDate && businessHours && (() => {
-          const schedule = getScheduleForDate(businessHours, appointmentDate);
+          const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays);
           if (!schedule.is_open) return null;
           const openMin = timeToMinutes(schedule.open_time);
           const closeMin = timeToMinutes(schedule.close_time);
@@ -530,14 +535,15 @@ export default function EditAppointmentPage() {
               自動計算に戻す
             </button>
           )}
-          {businessHours && appointmentDate && isBusinessDay(businessHours, appointmentDate) &&
+          {businessHours && appointmentDate && isBusinessDay(businessHours, appointmentDate, salonHolidays) &&
             !isWithinBusinessHours(
               businessHours,
               appointmentDate,
               `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`,
-              `${endHour.padStart(2, "0")}:${endMinute.padStart(2, "0")}`
+              `${endHour.padStart(2, "0")}:${endMinute.padStart(2, "0")}`,
+              salonHolidays
             ) && (() => {
-              const schedule = getScheduleForDate(businessHours, appointmentDate);
+              const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays);
               const startStr = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
               const endStr = `${endHour.padStart(2, "0")}:${endMinute.padStart(2, "0")}`;
               const isBefore = startStr < schedule.open_time;
