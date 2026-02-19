@@ -4,10 +4,22 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import type { Database } from "@/types/database";
+import type { Database, BusinessHours } from "@/types/database";
+import {
+  getScheduleForDate,
+  isBusinessDay,
+  isWithinBusinessHours,
+  timeToMinutes,
+} from "@/lib/business-hours";
 
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
 type TreatmentMenu = Database["public"]["Tables"]["treatment_menus"]["Row"];
+type DayAppointment = {
+  id: string;
+  start_time: string;
+  end_time: string | null;
+  customers: { last_name: string; first_name: string } | null;
+};
 
 const SOURCE_OPTIONS = [
   { value: "direct", label: "直接予約" },
@@ -28,6 +40,8 @@ export default function EditAppointmentPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
+  const [dayAppointments, setDayAppointments] = useState<DayAppointment[]>([]);
 
   // Form state
   const [selectedMenuIds, setSelectedMenuIds] = useState<string[]>([]);
@@ -53,11 +67,12 @@ export default function EditAppointmentPage() {
 
     const { data: salon } = await supabase
       .from("salons")
-      .select("id")
+      .select("id, business_hours")
       .eq("owner_id", user.id)
-      .single<{ id: string }>();
+      .single<{ id: string; business_hours: BusinessHours | null }>();
     if (!salon) return;
     setSalonId(salon.id);
+    setBusinessHours(salon.business_hours);
 
     // Load appointment
     const { data: appointment } = await supabase
@@ -117,6 +132,24 @@ export default function EditAppointmentPage() {
     }
     setLoading(false);
   };
+
+  // Fetch day appointments when date changes
+  useEffect(() => {
+    if (!salonId || !appointmentDate) return;
+    const loadDayAppointments = async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("appointments")
+        .select("id, start_time, end_time, customers(last_name, first_name)")
+        .eq("salon_id", salonId)
+        .eq("appointment_date", appointmentDate)
+        .neq("status", "cancelled")
+        .order("start_time", { ascending: true })
+        .returns<DayAppointment[]>();
+      setDayAppointments(data ?? []);
+    };
+    loadDayAppointments();
+  }, [salonId, appointmentDate]);
 
   // Auto-calculate end time from selected menus' total duration
   const updateEndTimeFromMenus = (menuIds: string[], sH: string, sM: string, forceCalc = false) => {
@@ -306,6 +339,97 @@ export default function EditAppointmentPage() {
           />
         </div>
 
+        {/* Closed day warning */}
+        {appointmentDate && businessHours && !isBusinessDay(businessHours, appointmentDate) && (
+          <div className="bg-warning/10 text-warning text-sm rounded-lg p-3">
+            この日は休業日に設定されています
+          </div>
+        )}
+
+        {/* Time slot visualization */}
+        {appointmentDate && businessHours && (() => {
+          const schedule = getScheduleForDate(businessHours, appointmentDate);
+          if (!schedule.is_open) return null;
+          const openMin = timeToMinutes(schedule.open_time);
+          const closeMin = timeToMinutes(schedule.close_time);
+          const slotCount = (closeMin - openMin) / 15;
+          if (slotCount <= 0) return null;
+          // Exclude current appointment from occupied slots
+          const otherAppointments = dayAppointments.filter((a) => a.id !== appointmentId);
+
+          return (
+            <div className="space-y-2">
+              <p className="text-xs text-text-light">
+                営業時間: {schedule.open_time} 〜 {schedule.close_time}
+              </p>
+              <div className="overflow-x-auto -mx-1 px-1">
+                <div className="flex gap-0.5" style={{ minWidth: `${slotCount * 20}px` }}>
+                  {Array.from({ length: slotCount }, (_, i) => {
+                    const slotMin = openMin + i * 15;
+                    const slotTime = `${String(Math.floor(slotMin / 60)).padStart(2, "0")}:${String(slotMin % 60).padStart(2, "0")}`;
+                    const isOccupied = otherAppointments.some((apt) => {
+                      const aStart = timeToMinutes(apt.start_time.slice(0, 5));
+                      const aEnd = apt.end_time ? timeToMinutes(apt.end_time.slice(0, 5)) : aStart + 60;
+                      return slotMin >= aStart && slotMin < aEnd;
+                    });
+                    const occupyingApt = isOccupied
+                      ? otherAppointments.find((apt) => {
+                          const aStart = timeToMinutes(apt.start_time.slice(0, 5));
+                          const aEnd = apt.end_time ? timeToMinutes(apt.end_time.slice(0, 5)) : aStart + 60;
+                          return slotMin >= aStart && slotMin < aEnd;
+                        })
+                      : null;
+                    const isHourMark = slotMin % 60 === 0;
+
+                    return (
+                      <button
+                        key={slotMin}
+                        type="button"
+                        title={
+                          isOccupied && occupyingApt?.customers
+                            ? `${slotTime} - ${occupyingApt.customers.last_name} ${occupyingApt.customers.first_name}様`
+                            : slotTime
+                        }
+                        onClick={() => {
+                          if (!isOccupied) {
+                            const h = Math.floor(slotMin / 60);
+                            const m = slotMin % 60;
+                            setStartHour(String(h));
+                            setStartMinute(String(m).padStart(2, "0"));
+                            updateEndTimeFromMenus(selectedMenuIds, String(h), String(m).padStart(2, "0"));
+                          }
+                        }}
+                        className={`h-8 flex-shrink-0 rounded-sm transition-colors relative ${
+                          isOccupied
+                            ? "bg-accent/30 cursor-not-allowed"
+                            : "bg-accent/10 hover:bg-accent/20 cursor-pointer"
+                        }`}
+                        style={{ width: "20px" }}
+                      >
+                        {isHourMark && (
+                          <span className="absolute -top-4 left-0 text-[10px] text-text-light whitespace-nowrap">
+                            {Math.floor(slotMin / 60)}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-[10px] text-text-light">
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-3 h-3 rounded-sm bg-accent/30" />
+                  予約あり
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-3 h-3 rounded-sm bg-accent/10" />
+                  空き
+                </span>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Start time */}
         <div>
           <label className="block text-sm font-medium mb-1.5">開始時間</label>
@@ -387,6 +511,17 @@ export default function EditAppointmentPage() {
               自動計算に戻す
             </button>
           )}
+          {businessHours && appointmentDate && isBusinessDay(businessHours, appointmentDate) &&
+            !isWithinBusinessHours(
+              businessHours,
+              appointmentDate,
+              `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`,
+              `${endHour.padStart(2, "0")}:${endMinute.padStart(2, "0")}`
+            ) && (
+              <p className="text-xs text-warning mt-1">
+                営業時間外の時間が含まれています
+              </p>
+            )}
         </div>
 
         {/* Menu multi-select */}

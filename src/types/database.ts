@@ -1,3 +1,19 @@
+export type DaySchedule = {
+  is_open: boolean;
+  open_time: string; // "HH:MM"
+  close_time: string; // "HH:MM"
+};
+
+export type BusinessHours = {
+  monday: DaySchedule;
+  tuesday: DaySchedule;
+  wednesday: DaySchedule;
+  thursday: DaySchedule;
+  friday: DaySchedule;
+  saturday: DaySchedule;
+  sunday: DaySchedule;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -8,6 +24,7 @@ export type Database = {
           name: string;
           phone: string | null;
           address: string | null;
+          business_hours: BusinessHours | null;
           created_at: string;
           updated_at: string;
         };
@@ -17,6 +34,7 @@ export type Database = {
           name: string;
           phone?: string | null;
           address?: string | null;
+          business_hours?: BusinessHours | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -26,6 +44,7 @@ export type Database = {
           name?: string;
           phone?: string | null;
           address?: string | null;
+          business_hours?: BusinessHours | null;
           created_at?: string;
           updated_at?: string;
         };
