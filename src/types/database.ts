@@ -343,6 +343,174 @@ export type Database = {
           },
         ];
       };
+      appointment_menus: {
+        Row: {
+          id: string;
+          appointment_id: string;
+          menu_id: string | null;
+          menu_name_snapshot: string;
+          price_snapshot: number | null;
+          duration_minutes_snapshot: number | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          appointment_id: string;
+          menu_id?: string | null;
+          menu_name_snapshot: string;
+          price_snapshot?: number | null;
+          duration_minutes_snapshot?: number | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          appointment_id?: string;
+          menu_id?: string | null;
+          menu_name_snapshot?: string;
+          price_snapshot?: number | null;
+          duration_minutes_snapshot?: number | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "appointment_menus_appointment_id_fkey";
+            columns: ["appointment_id"];
+            isOneToOne: false;
+            referencedRelation: "appointments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "appointment_menus_menu_id_fkey";
+            columns: ["menu_id"];
+            isOneToOne: false;
+            referencedRelation: "treatment_menus";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      purchases: {
+        Row: {
+          id: string;
+          salon_id: string;
+          customer_id: string;
+          purchase_date: string;
+          item_name: string;
+          quantity: number;
+          unit_price: number;
+          total_price: number;
+          memo: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          salon_id: string;
+          customer_id: string;
+          purchase_date?: string;
+          item_name: string;
+          quantity?: number;
+          unit_price?: number;
+          total_price?: number;
+          memo?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          salon_id?: string;
+          customer_id?: string;
+          purchase_date?: string;
+          item_name?: string;
+          quantity?: number;
+          unit_price?: number;
+          total_price?: number;
+          memo?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "purchases_salon_id_fkey";
+            columns: ["salon_id"];
+            isOneToOne: false;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchases_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      course_tickets: {
+        Row: {
+          id: string;
+          salon_id: string;
+          customer_id: string;
+          ticket_name: string;
+          total_sessions: number;
+          used_sessions: number;
+          purchase_date: string;
+          expiry_date: string | null;
+          price: number | null;
+          memo: string | null;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          salon_id: string;
+          customer_id: string;
+          ticket_name: string;
+          total_sessions: number;
+          used_sessions?: number;
+          purchase_date?: string;
+          expiry_date?: string | null;
+          price?: number | null;
+          memo?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          salon_id?: string;
+          customer_id?: string;
+          ticket_name?: string;
+          total_sessions?: number;
+          used_sessions?: number;
+          purchase_date?: string;
+          expiry_date?: string | null;
+          price?: number | null;
+          memo?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "course_tickets_salon_id_fkey";
+            columns: ["salon_id"];
+            isOneToOne: false;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "course_tickets_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

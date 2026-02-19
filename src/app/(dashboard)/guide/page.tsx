@@ -106,6 +106,10 @@ export default function GuidePage() {
             <span className="text-accent mt-0.5">&#10003;</span>
             <span>来店が途切れたお客様を自動でお知らせ</span>
           </li>
+          <li className="flex items-start gap-2">
+            <span className="text-accent mt-0.5">&#10003;</span>
+            <span>物販の購入履歴と回数券の残数を管理</span>
+          </li>
         </ul>
       </div>
 
@@ -187,11 +191,19 @@ export default function GuidePage() {
           />
           <FeatureCard
             title="予約管理"
-            description="日付・時間・お客様・メニューを指定して予約を登録します。予約元（ホットペッパー/電話/LINE/直接/その他）も記録できるので、すべてのチャネルの予約を一元管理できます。"
+            description="日付・時間・お客様・メニューを指定して予約を登録します。メニューは複数選択可能で、終了時間は合計所要時間から自動計算されます。予約元（ホットペッパー/電話/LINE/直接/その他）も記録できます。"
           />
           <FeatureCard
             title="来店分析・離脱アラート"
             description="60日以上来店のないお客様を「ご無沙汰のお客様」としてダッシュボードに表示します。フォローのタイミングを逃しません。"
+          />
+          <FeatureCard
+            title="物販購入管理"
+            description="お客様ごとに物販・商品の購入履歴を記録できます。商品名・数量・金額を管理し、合計金額も自動計算されます。顧客詳細画面から登録・確認できます。"
+          />
+          <FeatureCard
+            title="コースチケット（回数券）"
+            description="コースや回数券の残り回数を管理できます。来店時にワンタップで1回消化でき、残数がひと目でわかります。有効期限の設定にも対応しています。"
           />
         </div>
       </Section>

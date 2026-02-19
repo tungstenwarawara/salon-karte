@@ -2,10 +2,13 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { Database } from "@/types/database";
+import { CourseTicketSection } from "@/components/customers/course-ticket-section";
 
 type Customer = Database["public"]["Tables"]["customers"]["Row"];
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
+type Purchase = Database["public"]["Tables"]["purchases"]["Row"];
+type CourseTicket = Database["public"]["Tables"]["course_tickets"]["Row"];
 
 function calculateAge(birthDate: string): number {
   const today = new Date();
@@ -77,6 +80,24 @@ export default async function CustomerDetailPage({
     .order("appointment_date", { ascending: true })
     .limit(1)
     .single<Appointment>();
+
+  // 購入履歴を取得
+  const { data: purchases } = await supabase
+    .from("purchases")
+    .select("*")
+    .eq("customer_id", id)
+    .order("purchase_date", { ascending: false })
+    .returns<Purchase[]>();
+
+  const purchaseTotal = purchases?.reduce((sum, p) => sum + p.total_price, 0) ?? 0;
+
+  // コースチケットを取得
+  const { data: courseTickets } = await supabase
+    .from("course_tickets")
+    .select("*")
+    .eq("customer_id", id)
+    .order("created_at", { ascending: false })
+    .returns<CourseTicket[]>();
 
   // 年齢計算
   const age = customer.birth_date ? calculateAge(customer.birth_date) : null;
@@ -206,6 +227,70 @@ export default async function CustomerDetailPage({
         <InfoRow label="アレルギー" value={customer.allergies} />
         <InfoRow label="最終目標" value={customer.treatment_goal} />
         <InfoRow label="メモ" value={customer.notes} />
+      </div>
+
+      {/* Course tickets */}
+      <CourseTicketSection
+        customerId={id}
+        initialTickets={courseTickets ?? []}
+      />
+
+      {/* Purchase history */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold">
+            物販購入履歴
+            {purchaseTotal > 0 && (
+              <span className="text-sm font-normal text-text-light ml-2">
+                合計 {purchaseTotal.toLocaleString()}円
+              </span>
+            )}
+          </h3>
+          <Link
+            href={`/customers/${id}/purchases/new`}
+            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[40px] flex items-center"
+          >
+            + 購入記録
+          </Link>
+        </div>
+
+        {purchases && purchases.length > 0 ? (
+          <div className="space-y-2">
+            {purchases.map((purchase) => (
+              <div
+                key={purchase.id}
+                className="bg-surface border border-border rounded-xl p-3"
+              >
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-sm">
+                    {purchase.item_name}
+                  </span>
+                  <span className="text-sm text-text-light">
+                    {purchase.purchase_date}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mt-1">
+                  <span className="text-xs text-text-light">
+                    {purchase.unit_price.toLocaleString()}円 x{" "}
+                    {purchase.quantity}
+                  </span>
+                  <span className="text-sm font-medium">
+                    {purchase.total_price.toLocaleString()}円
+                  </span>
+                </div>
+                {purchase.memo && (
+                  <p className="text-xs text-text-light mt-1">
+                    {purchase.memo}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-surface border border-border rounded-xl p-6 text-center text-text-light">
+            購入記録はまだありません
+          </div>
+        )}
       </div>
 
       {/* Treatment records */}
