@@ -1,12 +1,14 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { uploadPhotos } from "@/lib/supabase/storage";
 import { PhotoUpload, type PhotoEntry } from "@/components/records/photo-upload";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { useFormDraft } from "@/lib/hooks/use-form-draft";
 import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
@@ -108,6 +110,9 @@ function NewRecordForm() {
     load();
   }, [presetCustomerId]);
 
+  const setFormCb = useCallback((val: typeof form) => setForm(val), []);
+  const { clearDraft, draftRestored, dismissDraftBanner } = useFormDraft("record-new", form, setFormCb);
+
   const updateField = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -170,6 +175,7 @@ function NewRecordForm() {
         .eq("id", appointmentId);
     }
 
+    clearDraft();
     router.push(`/customers/${customerId}`);
   };
 
@@ -188,7 +194,14 @@ function NewRecordForm() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="施術記録を作成" backLabel="戻る" />
+      <PageHeader
+        title="施術記録を作成"
+        backLabel="戻る"
+        breadcrumbs={[
+          ...(customerName ? [{ label: customerName, href: customerId ? `/customers/${customerId}` : undefined }] : []),
+          { label: "カルテ作成" },
+        ]}
+      />
 
       {/* Customer display (when preset from URL) */}
       {presetCustomerId && customerName && (
@@ -257,9 +270,17 @@ function NewRecordForm() {
         </div>
       )}
 
+      {draftRestored && (
+        <div className="bg-accent/10 text-accent text-sm rounded-xl px-4 py-3 flex items-center justify-between">
+          <span>前回の入力内容を復元しました</span>
+          <button type="button" onClick={dismissDraftBanner} className="text-xs underline">閉じる</button>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
         {error && <ErrorAlert message={error} />}
 
+        {/* 必須項目 */}
         <div>
           <label className="block text-sm font-medium mb-1.5">
             施術日 <span className="text-error">*</span>
@@ -303,85 +324,88 @@ function NewRecordForm() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            使用した化粧品・機器
-          </label>
-          <textarea
-            value={form.products_used}
-            onChange={(e) => updateField("products_used", e.target.value)}
-            placeholder="使用した化粧品や機器を記録"
-            rows={2}
-            className={`${inputClass} resize-none`}
-          />
-        </div>
+        {/* 任意の詳細項目（折りたたみ） */}
+        <CollapsibleSection label="詳細な記録を追加（任意）">
+          <div>
+            <label className="block text-sm font-medium mb-1.5">
+              使用した化粧品・機器
+            </label>
+            <textarea
+              value={form.products_used}
+              onChange={(e) => updateField("products_used", e.target.value)}
+              placeholder="使用した化粧品や機器を記録"
+              rows={2}
+              className={`${inputClass} resize-none`}
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            施術前の状態
-          </label>
-          <textarea
-            value={form.skin_condition_before}
-            onChange={(e) =>
-              updateField("skin_condition_before", e.target.value)
-            }
-            placeholder="施術前の状態を記録"
-            rows={2}
-            className={`${inputClass} resize-none`}
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">
+              施術前の状態
+            </label>
+            <textarea
+              value={form.skin_condition_before}
+              onChange={(e) =>
+                updateField("skin_condition_before", e.target.value)
+              }
+              placeholder="施術前の状態を記録"
+              rows={2}
+              className={`${inputClass} resize-none`}
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            施術後の経過メモ
-          </label>
-          <textarea
-            value={form.notes_after}
-            onChange={(e) => updateField("notes_after", e.target.value)}
-            placeholder="施術後の状態や経過を記録"
-            rows={2}
-            className={`${inputClass} resize-none`}
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">
+              施術後の経過メモ
+            </label>
+            <textarea
+              value={form.notes_after}
+              onChange={(e) => updateField("notes_after", e.target.value)}
+              placeholder="施術後の状態や経過を記録"
+              rows={2}
+              className={`${inputClass} resize-none`}
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            話した内容（会話メモ）
-          </label>
-          <textarea
-            value={form.conversation_notes}
-            onChange={(e) => updateField("conversation_notes", e.target.value)}
-            placeholder="お客様との会話で覚えておきたいこと"
-            rows={2}
-            className={`${inputClass} resize-none`}
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">
+              話した内容（会話メモ）
+            </label>
+            <textarea
+              value={form.conversation_notes}
+              onChange={(e) => updateField("conversation_notes", e.target.value)}
+              placeholder="お客様との会話で覚えておきたいこと"
+              rows={2}
+              className={`${inputClass} resize-none`}
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            注意事項
-          </label>
-          <textarea
-            value={form.caution_notes}
-            onChange={(e) => updateField("caution_notes", e.target.value)}
-            placeholder="次回以降に注意すべきこと"
-            rows={2}
-            className={`${inputClass} resize-none`}
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">
+              注意事項
+            </label>
+            <textarea
+              value={form.caution_notes}
+              onChange={(e) => updateField("caution_notes", e.target.value)}
+              placeholder="次回以降に注意すべきこと"
+              rows={2}
+              className={`${inputClass} resize-none`}
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            次回への申し送り
-          </label>
-          <textarea
-            value={form.next_visit_memo}
-            onChange={(e) => updateField("next_visit_memo", e.target.value)}
-            placeholder="次回施術時の注意点やプランなど"
-            rows={2}
-            className={`${inputClass} resize-none`}
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">
+              次回への申し送り
+            </label>
+            <textarea
+              value={form.next_visit_memo}
+              onChange={(e) => updateField("next_visit_memo", e.target.value)}
+              placeholder="次回施術時の注意点やプランなど"
+              rows={2}
+              className={`${inputClass} resize-none`}
+            />
+          </div>
+        </CollapsibleSection>
 
         {/* Photo upload */}
         <PhotoUpload photos={photos} onChange={setPhotos} />

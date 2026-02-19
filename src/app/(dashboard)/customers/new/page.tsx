@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { useFormDraft } from "@/lib/hooks/use-form-draft";
 
 const MARITAL_STATUSES = [
   { value: "", label: "選択してください" },
@@ -35,6 +37,9 @@ export default function NewCustomerPage() {
     treatment_goal: "",
     notes: "",
   });
+
+  const setFormCb = useCallback((val: typeof form) => setForm(val), []);
+  const { clearDraft, draftRestored, dismissDraftBanner } = useFormDraft("customer-new", form, setFormCb);
 
   const updateField = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -92,6 +97,7 @@ export default function NewCustomerPage() {
       return;
     }
 
+    clearDraft();
     router.push(`/customers/${newCustomer.id}`);
     router.refresh();
   };
@@ -101,7 +107,22 @@ export default function NewCustomerPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="顧客を追加" backLabel="顧客一覧" backHref="/customers" />
+      <PageHeader
+        title="顧客を追加"
+        backLabel="顧客一覧"
+        backHref="/customers"
+        breadcrumbs={[
+          { label: "顧客一覧", href: "/customers" },
+          { label: "新規登録" },
+        ]}
+      />
+
+      {draftRestored && (
+        <div className="bg-accent/10 text-accent text-sm rounded-xl px-4 py-3 flex items-center justify-between">
+          <span>前回の入力内容を復元しました</span>
+          <button type="button" onClick={dismissDraftBanner} className="text-xs underline">閉じる</button>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <ErrorAlert message={error} />}
@@ -215,14 +236,8 @@ export default function NewCustomerPage() {
         </div>
 
         {/* 詳細情報（折りたたみ） */}
-        <details className="bg-surface border border-border rounded-2xl">
-          <summary className="p-5 cursor-pointer font-bold text-sm text-text-light flex items-center justify-between list-none">
-            <span>詳細情報を追加（任意）</span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 transition-transform details-open-rotate">
-              <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-            </svg>
-          </summary>
-          <div className="px-5 pb-5 space-y-4 border-t border-border pt-4">
+        <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
+          <CollapsibleSection label="詳細情報を追加（任意）">
             {/* 属性情報 */}
             <h4 className="font-medium text-xs text-text-light uppercase tracking-wide">属性情報</h4>
             <div className="grid grid-cols-2 gap-3">
@@ -323,8 +338,8 @@ export default function NewCustomerPage() {
                 className={`${inputClass} resize-none`}
               />
             </div>
-          </div>
-        </details>
+          </CollapsibleSection>
+        </div>
 
         {/* Submit */}
         <div className="flex gap-3 pt-2">

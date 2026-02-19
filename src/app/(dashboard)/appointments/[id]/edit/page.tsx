@@ -313,7 +313,15 @@ export default function EditAppointmentPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="予約を編集" backLabel="予約一覧" backHref="/appointments" />
+      <PageHeader
+        title="予約を編集"
+        backLabel="予約一覧"
+        backHref="/appointments"
+        breadcrumbs={[
+          { label: "予約管理", href: "/appointments" },
+          { label: "編集" },
+        ]}
+      />
 
       {customerName && (
         <p className="text-text-light">
