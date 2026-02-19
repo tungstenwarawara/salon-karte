@@ -557,11 +557,23 @@ function NewAppointmentForm() {
               appointmentDate,
               `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`,
               `${endHour.padStart(2, "0")}:${endMinute.padStart(2, "0")}`
-            ) && (
-              <p className="text-xs text-warning mt-1">
-                営業時間外の時間が含まれています
-              </p>
-            )}
+            ) && (() => {
+              const schedule = getScheduleForDate(businessHours, appointmentDate);
+              const startStr = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
+              const endStr = `${endHour.padStart(2, "0")}:${endMinute.padStart(2, "0")}`;
+              const isBefore = startStr < schedule.open_time;
+              const isAfter = endStr > schedule.close_time;
+              return (
+                <p className="text-xs text-warning mt-1">
+                  {isBefore && isAfter
+                    ? `開始（${startStr}）が営業開始（${schedule.open_time}）より前、終了（${endStr}）が営業終了（${schedule.close_time}）より後です`
+                    : isBefore
+                      ? `開始時間（${startStr}）が営業開始（${schedule.open_time}）より前です`
+                      : `終了時間（${endStr}）が営業終了（${schedule.close_time}）を超えています`
+                  }
+                </p>
+              );
+            })()}
         </div>
 
         {/* Menu multi-select */}
