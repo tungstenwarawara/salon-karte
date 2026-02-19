@@ -52,6 +52,7 @@ export default async function DashboardPage() {
     monthlyTicketsRes,
     birthdayRes,
     recentRecordsRes,
+    productCountRes,
   ] = await Promise.all([
     // P10: 今日の予約（必要なカラムのみ取得）
     supabase
@@ -116,6 +117,12 @@ export default async function DashboardPage() {
       .order("treatment_date", { ascending: false })
       .limit(3)
       .returns<(TreatmentRecord & { customers: { last_name: string; first_name: string } | null })[]>(),
+    // 商品数（在庫アラート判定用・head:trueで最小コスト）
+    supabase
+      .from("products")
+      .select("*", { count: "exact", head: true })
+      .eq("salon_id", salon.id)
+      .eq("is_active", true),
   ]);
 
   const todayAppointments = todayAppointmentsRes.data;
@@ -123,6 +130,26 @@ export default async function DashboardPage() {
   const menuCount = menuCountRes.count;
   const lapsedCustomers = lapsedCustomersRes.data as LapsedCustomer[] | null;
   const recentRecords = recentRecordsRes.data;
+  const productCount = productCountRes.count ?? 0;
+
+  // 在庫アラート: 商品がある場合のみクエリ（パフォーマンス保護）
+  type InventoryAlertItem = {
+    product_id: string;
+    product_name: string;
+    current_stock: number;
+    reorder_point: number;
+  };
+  let lowStockItems: InventoryAlertItem[] = [];
+  if (productCount > 0) {
+    const { data: inventoryData } = await supabase.rpc("get_inventory_summary", {
+      p_salon_id: salon.id,
+    });
+    if (inventoryData) {
+      lowStockItems = (inventoryData as InventoryAlertItem[]).filter(
+        (item) => item.current_stock <= item.reorder_point
+      );
+    }
+  }
 
   const monthlyTreatmentSales = monthlyAptsRes.data?.reduce((sum, apt) => {
     const menus = (apt.appointment_menus ?? []) as { price_snapshot: number | null }[];
@@ -304,6 +331,33 @@ export default async function DashboardPage() {
           <p className="text-xs font-medium">顧客登録</p>
         </Link>
       </div>
+
+      {/* Inventory low-stock alert */}
+      {lowStockItems.length > 0 && (
+        <Link
+          href="/sales/inventory"
+          className="block bg-amber-50 border border-amber-200 rounded-2xl p-4 hover:border-amber-400 transition-colors"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-amber-600">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+            <span className="text-sm font-bold text-amber-700">
+              在庫アラート: {lowStockItems.length}商品が発注点以下
+            </span>
+          </div>
+          <div className="space-y-1 ml-7">
+            {lowStockItems.slice(0, 3).map((item) => (
+              <p key={item.product_id} className="text-xs text-amber-600">
+                {item.product_name}: 残り{item.current_stock}個
+              </p>
+            ))}
+            {lowStockItems.length > 3 && (
+              <p className="text-xs text-amber-500">他 {lowStockItems.length - 3}商品</p>
+            )}
+          </div>
+        </Link>
+      )}
 
       {/* Today's appointments timeline */}
       <div>

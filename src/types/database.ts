@@ -424,6 +424,9 @@ export type Database = {
           unit_price: number;
           total_price: number;
           memo: string | null;
+          product_id: string | null;
+          cost_price: number | null;
+          sell_price: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -437,6 +440,9 @@ export type Database = {
           unit_price?: number;
           total_price?: number;
           memo?: string | null;
+          product_id?: string | null;
+          cost_price?: number | null;
+          sell_price?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -450,6 +456,9 @@ export type Database = {
           unit_price?: number;
           total_price?: number;
           memo?: string | null;
+          product_id?: string | null;
+          cost_price?: number | null;
+          sell_price?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -466,6 +475,127 @@ export type Database = {
             columns: ["customer_id"];
             isOneToOne: false;
             referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchases_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      products: {
+        Row: {
+          id: string;
+          salon_id: string;
+          name: string;
+          category: string | null;
+          base_sell_price: number;
+          base_cost_price: number;
+          reorder_point: number;
+          is_active: boolean;
+          memo: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          salon_id: string;
+          name: string;
+          category?: string | null;
+          base_sell_price?: number;
+          base_cost_price?: number;
+          reorder_point?: number;
+          is_active?: boolean;
+          memo?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          salon_id?: string;
+          name?: string;
+          category?: string | null;
+          base_sell_price?: number;
+          base_cost_price?: number;
+          reorder_point?: number;
+          is_active?: boolean;
+          memo?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "products_salon_id_fkey";
+            columns: ["salon_id"];
+            isOneToOne: false;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      inventory_logs: {
+        Row: {
+          id: string;
+          salon_id: string;
+          product_id: string;
+          log_type: string;
+          quantity: number;
+          unit_cost_price: number | null;
+          unit_sell_price: number | null;
+          reason: string | null;
+          related_purchase_id: string | null;
+          logged_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          salon_id: string;
+          product_id: string;
+          log_type: string;
+          quantity: number;
+          unit_cost_price?: number | null;
+          unit_sell_price?: number | null;
+          reason?: string | null;
+          related_purchase_id?: string | null;
+          logged_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          salon_id?: string;
+          product_id?: string;
+          log_type?: string;
+          quantity?: number;
+          unit_cost_price?: number | null;
+          unit_sell_price?: number | null;
+          reason?: string | null;
+          related_purchase_id?: string | null;
+          logged_at?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "inventory_logs_salon_id_fkey";
+            columns: ["salon_id"];
+            isOneToOne: false;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "inventory_logs_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "inventory_logs_related_purchase_id_fkey";
+            columns: ["related_purchase_id"];
+            isOneToOne: false;
+            referencedRelation: "purchases";
             referencedColumns: ["id"];
           },
         ];
@@ -568,6 +698,57 @@ export type Database = {
         Returns: {
           used_sessions: number;
           status: string;
+        };
+      };
+      get_inventory_summary: {
+        Args: {
+          p_salon_id: string;
+        };
+        Returns: {
+          product_id: string;
+          product_name: string;
+          category: string | null;
+          base_sell_price: number;
+          base_cost_price: number;
+          reorder_point: number;
+          is_active: boolean;
+          current_stock: number;
+          stock_value: number;
+        }[];
+      };
+      record_product_sale: {
+        Args: {
+          p_salon_id: string;
+          p_customer_id: string;
+          p_product_id: string;
+          p_quantity: number;
+          p_sell_price: number;
+          p_purchase_date?: string;
+          p_memo?: string | null;
+        };
+        Returns: {
+          purchase_id: string;
+          remaining_stock: number;
+        };
+      };
+      get_tax_report: {
+        Args: {
+          p_salon_id: string;
+          p_year: number;
+        };
+        Returns: {
+          year: number;
+          opening_stock_value: number;
+          closing_stock_value: number;
+          total_purchases: number;
+          cost_of_goods_sold: number;
+          monthly_purchases: { month: number; amount: number }[];
+          closing_stock_details: {
+            product_name: string;
+            stock: number;
+            unit_price: number;
+            total_value: number;
+          }[];
         };
       };
     };

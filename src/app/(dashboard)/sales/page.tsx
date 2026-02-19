@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { ManagementTabs } from "@/components/inventory/management-tabs";
 
 type MonthlySales = {
   month: number;
@@ -191,6 +192,7 @@ export default function SalesPage() {
 
   return (
     <div className="space-y-4">
+      <ManagementTabs />
       <h2 className="text-xl font-bold">売上レポート</h2>
 
       {/* Year navigation */}

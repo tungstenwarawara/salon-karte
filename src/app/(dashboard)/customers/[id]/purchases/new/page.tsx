@@ -5,6 +5,10 @@ import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import type { Database } from "@/types/database";
+
+type Product = Database["public"]["Tables"]["products"]["Row"];
+type InputMode = "product" | "free";
 
 export default function NewPurchasePage() {
   const router = useRouter();
@@ -13,14 +17,18 @@ export default function NewPurchasePage() {
 
   const [salonId, setSalonId] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [inputMode, setInputMode] = useState<InputMode>("product");
+  const [remainingStock, setRemainingStock] = useState<number | null>(null);
 
   const [form, setForm] = useState(() => {
     const d = new Date();
     const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     return {
       purchase_date: today,
+      product_id: "",
       item_name: "",
       quantity: "1",
       unit_price: "",
@@ -44,17 +52,47 @@ export default function NewPurchasePage() {
       if (!salon) return;
       setSalonId(salon.id);
 
-      const { data: customer } = await supabase
-        .from("customers")
-        .select("last_name, first_name")
-        .eq("id", customerId)
-        .single<{ last_name: string; first_name: string }>();
-      if (customer) {
-        setCustomerName(`${customer.last_name} ${customer.first_name}`);
+      // 顧客名と商品を並列取得
+      const [customerRes, productsRes] = await Promise.all([
+        supabase
+          .from("customers")
+          .select("last_name, first_name")
+          .eq("id", customerId)
+          .single<{ last_name: string; first_name: string }>(),
+        supabase
+          .from("products")
+          .select("*")
+          .eq("salon_id", salon.id)
+          .eq("is_active", true)
+          .order("name")
+          .returns<Product[]>(),
+      ]);
+
+      if (customerRes.data) {
+        setCustomerName(`${customerRes.data.last_name} ${customerRes.data.first_name}`);
+      }
+
+      const productList = productsRes.data ?? [];
+      setProducts(productList);
+
+      // 商品がなければ自由入力モードに自動切替
+      if (productList.length === 0) {
+        setInputMode("free");
       }
     };
     load();
   }, [customerId]);
+
+  // 商品選択時に売価を自動セット
+  const handleProductChange = (productId: string) => {
+    const product = products.find((p) => p.id === productId);
+    setForm((prev) => ({
+      ...prev,
+      product_id: productId,
+      unit_price: product ? product.base_sell_price.toString() : "",
+    }));
+    setRemainingStock(null);
+  };
 
   const quantityNum = Math.max(1, parseInt(form.quantity, 10) || 0);
   const unitPriceNum = Math.max(0, parseInt(form.unit_price, 10) || 0);
@@ -62,7 +100,12 @@ export default function NewPurchasePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.item_name.trim()) {
+
+    if (inputMode === "product" && !form.product_id) {
+      setError("商品を選択してください");
+      return;
+    }
+    if (inputMode === "free" && !form.item_name.trim()) {
       setError("商品名を入力してください");
       return;
     }
@@ -74,23 +117,51 @@ export default function NewPurchasePage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error: insertError } = await supabase.from("purchases").insert({
-      salon_id: salonId,
-      customer_id: customerId,
-      purchase_date: form.purchase_date,
-      item_name: form.item_name.trim(),
-      quantity: quantityNum,
-      unit_price: unitPriceNum,
-      total_price: totalPrice,
-      memo: form.memo || null,
-    });
 
-    if (insertError) {
-      setError("登録に失敗しました");
-      setLoading(false);
-      return;
+    if (inputMode === "product") {
+      // 商品モード: RPC で在庫連動
+      const { data, error: rpcError } = await supabase.rpc("record_product_sale", {
+        p_salon_id: salonId,
+        p_customer_id: customerId,
+        p_product_id: form.product_id,
+        p_quantity: quantityNum,
+        p_sell_price: unitPriceNum,
+        p_purchase_date: form.purchase_date,
+        p_memo: form.memo || null,
+      });
+
+      if (rpcError) {
+        setError("登録に失敗しました");
+        setLoading(false);
+        return;
+      }
+
+      // 残り在庫を表示
+      const result = data as { purchase_id: string; remaining_stock: number } | null;
+      if (result) {
+        setRemainingStock(result.remaining_stock);
+      }
+    } else {
+      // 自由入力モード: 既存の挙動
+      const { error: insertError } = await supabase.from("purchases").insert({
+        salon_id: salonId,
+        customer_id: customerId,
+        purchase_date: form.purchase_date,
+        item_name: form.item_name.trim(),
+        quantity: quantityNum,
+        unit_price: unitPriceNum,
+        total_price: totalPrice,
+        memo: form.memo || null,
+      });
+
+      if (insertError) {
+        setError("登録に失敗しました");
+        setLoading(false);
+        return;
+      }
     }
 
+    setLoading(false);
     router.push(`/customers/${customerId}`);
   };
 
@@ -111,6 +182,34 @@ export default function NewPurchasePage() {
         <p className="text-text-light">
           顧客: <span className="font-medium text-text">{customerName}</span>
         </p>
+      )}
+
+      {/* Mode toggle (only show if products exist) */}
+      {products.length > 0 && (
+        <div className="flex gap-1.5 bg-background rounded-xl p-1">
+          <button
+            type="button"
+            onClick={() => setInputMode("product")}
+            className={`flex-1 text-center text-sm font-medium py-2.5 rounded-lg transition-colors min-h-[44px] ${
+              inputMode === "product"
+                ? "bg-accent text-white shadow-sm"
+                : "text-text-light hover:text-text"
+            }`}
+          >
+            商品から選ぶ
+          </button>
+          <button
+            type="button"
+            onClick={() => setInputMode("free")}
+            className={`flex-1 text-center text-sm font-medium py-2.5 rounded-lg transition-colors min-h-[44px] ${
+              inputMode === "free"
+                ? "bg-accent text-white shadow-sm"
+                : "text-text-light hover:text-text"
+            }`}
+          >
+            自由入力
+          </button>
+        </div>
       )}
 
       <form
@@ -134,21 +233,46 @@ export default function NewPurchasePage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            商品名 <span className="text-error">*</span>
-          </label>
-          <input
-            type="text"
-            value={form.item_name}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, item_name: e.target.value }))
-            }
-            placeholder="例: モイスチャークリーム"
-            required
-            className={inputClass}
-          />
-        </div>
+        {inputMode === "product" ? (
+          /* 商品選択モード */
+          <div>
+            <label className="block text-sm font-medium mb-1.5">
+              商品 <span className="text-error">*</span>
+            </label>
+            <select
+              value={form.product_id}
+              onChange={(e) => handleProductChange(e.target.value)}
+              required
+              className={inputClass}
+            >
+              <option value="">商品を選択</option>
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name}
+                  {product.category ? ` (${product.category})` : ""}
+                  {` - ¥${product.base_sell_price.toLocaleString()}`}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          /* 自由入力モード */
+          <div>
+            <label className="block text-sm font-medium mb-1.5">
+              商品名 <span className="text-error">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.item_name}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, item_name: e.target.value }))
+              }
+              placeholder="例: モイスチャークリーム"
+              required
+              className={inputClass}
+            />
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -192,6 +316,12 @@ export default function NewPurchasePage() {
             {totalPrice.toLocaleString()}円
           </span>
         </div>
+
+        {remainingStock !== null && (
+          <div className="bg-blue-50 text-blue-700 text-sm rounded-xl px-4 py-3">
+            残り在庫: {remainingStock}個
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium mb-1.5">
