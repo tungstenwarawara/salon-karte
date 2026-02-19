@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
+import { Toast, useToast } from "@/components/ui/toast";
+import { ErrorAlert } from "@/components/ui/error-alert";
 import type { BusinessHours, DaySchedule } from "@/types/database";
 import {
   ORDERED_DAYS,
@@ -18,8 +20,8 @@ export default function BusinessHoursPage() {
   const [hours, setHours] = useState<BusinessHours>(DEFAULT_BUSINESS_HOURS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
     const load = async () => {
@@ -56,7 +58,6 @@ export default function BusinessHoursPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setSaved(false);
 
     // Validate: close_time > open_time for open days
     for (const day of ORDERED_DAYS) {
@@ -88,8 +89,7 @@ export default function BusinessHoursPage() {
     if (updateError) {
       setError("保存に失敗しました");
     } else {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      showToast("営業時間を保存しました");
     }
     setSaving(false);
   };
@@ -112,19 +112,11 @@ export default function BusinessHoursPage() {
 
   return (
     <div className="space-y-4">
+      {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
       <PageHeader title="営業時間設定" backLabel="設定" backHref="/settings" />
 
       <form onSubmit={handleSave} className="space-y-4">
-        {error && (
-          <div className="bg-error/10 text-error text-sm rounded-lg p-3">
-            {error}
-          </div>
-        )}
-        {saved && (
-          <div className="bg-success/10 text-success text-sm rounded-lg p-3">
-            保存しました
-          </div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         <div className="bg-surface border border-border rounded-2xl p-4 space-y-3">
           {ORDERED_DAYS.map((day) => {

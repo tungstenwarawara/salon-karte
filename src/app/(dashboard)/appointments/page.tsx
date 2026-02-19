@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Database, BusinessHours } from "@/types/database";
 import { getScheduleForDate, isBusinessDay } from "@/lib/business-hours";
+import { ErrorAlert } from "@/components/ui/error-alert";
 
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
 type AppointmentWithCustomer = Appointment & {
@@ -266,11 +267,7 @@ export default function AppointmentsPage() {
         </Link>
       </div>
 
-      {error && (
-        <div className="bg-error/10 text-error text-sm rounded-lg p-3">
-          {error}
-        </div>
-      )}
+      {error && <ErrorAlert message={error} />}
 
       {/* View mode toggle: 2 tabs (day / month) */}
       <div className="flex gap-2">
@@ -431,7 +428,7 @@ export default function AppointmentsPage() {
                             : isSelected
                               ? "bg-accent/10 ring-2 ring-accent font-bold"
                               : isHoliday
-                                ? "text-gray-300"
+                                ? "text-gray-300 bg-gray-50"
                                 : dow === 0
                                   ? "text-red-400"
                                   : dow === 6

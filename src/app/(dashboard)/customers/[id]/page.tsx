@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { formatDateShort } from "@/lib/format";
 import type { Database } from "@/types/database";
 import { CourseTicketSection } from "@/components/customers/course-ticket-section";
 
@@ -122,6 +123,17 @@ export default async function CustomerDetailPage({
 
   return (
     <div className="space-y-6">
+      {/* Back link */}
+      <Link
+        href="/customers"
+        className="flex items-center gap-1 text-sm text-accent hover:underline"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+        </svg>
+        顧客一覧
+      </Link>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -176,7 +188,7 @@ export default async function CustomerDetailPage({
         )}
         {nextAppointment && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
-            次回予約: {nextAppointment.appointment_date}{" "}
+            次回予約: {formatDateShort(nextAppointment.appointment_date)}{" "}
             {(nextAppointment.start_time as string).slice(0, 5)}
             {nextAppointment.menu_name_snapshot && ` / ${nextAppointment.menu_name_snapshot}`}
           </div>
@@ -219,18 +231,38 @@ export default async function CustomerDetailPage({
       {/* Basic info */}
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
         <h3 className="font-bold text-sm text-text-light">基本情報</h3>
-        <InfoRow label="電話番号" value={customer.phone} />
-        <InfoRow label="メール" value={customer.email} />
-        <InfoRow
-          label="生年月日"
-          value={
-            customer.birth_date
-              ? age !== null
+        {customer.phone ? (
+          <div className="flex">
+            <span className="text-sm text-text-light w-24 shrink-0">電話番号</span>
+            <a href={`tel:${customer.phone}`} className="text-sm text-accent hover:underline">
+              {customer.phone}
+            </a>
+          </div>
+        ) : (
+          <InfoRowEmpty label="電話番号" editHref={`/customers/${id}/edit`} />
+        )}
+        {customer.email ? (
+          <div className="flex">
+            <span className="text-sm text-text-light w-24 shrink-0">メール</span>
+            <a href={`mailto:${customer.email}`} className="text-sm text-accent hover:underline break-all">
+              {customer.email}
+            </a>
+          </div>
+        ) : (
+          <InfoRowEmpty label="メール" editHref={`/customers/${id}/edit`} />
+        )}
+        {customer.birth_date ? (
+          <InfoRow
+            label="生年月日"
+            value={
+              age !== null
                 ? `${customer.birth_date}（${age}歳）`
                 : customer.birth_date
-              : null
-          }
-        />
+            }
+          />
+        ) : (
+          <InfoRowEmpty label="生年月日" editHref={`/customers/${id}/edit`} />
+        )}
         <InfoRow label="住所" value={customer.address} />
         <InfoRow label="婚姻状況" value={customer.marital_status} />
         <InfoRow
@@ -308,7 +340,7 @@ export default async function CustomerDetailPage({
                     {purchase.item_name}
                   </span>
                   <span className="text-sm text-text-light">
-                    {purchase.purchase_date}
+                    {formatDateShort(purchase.purchase_date)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center mt-1">
@@ -329,8 +361,14 @@ export default async function CustomerDetailPage({
             ))}
           </div>
         ) : (
-          <div className="bg-surface border border-border rounded-xl p-6 text-center text-text-light">
-            購入記録はまだありません
+          <div className="bg-surface border border-border rounded-xl p-6 text-center">
+            <p className="text-text-light text-sm">購入記録はまだありません</p>
+            <Link
+              href={`/customers/${id}/purchases/new`}
+              className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
+            >
+              最初の購入を記録する →
+            </Link>
           </div>
         )}
       </div>
@@ -360,7 +398,7 @@ export default async function CustomerDetailPage({
                     {record.menu_name_snapshot ?? "施術記録"}
                   </span>
                   <span className="text-sm text-text-light">
-                    {record.treatment_date}
+                    {formatDateShort(record.treatment_date)}
                   </span>
                 </div>
                 {record.next_visit_memo && (
@@ -372,8 +410,14 @@ export default async function CustomerDetailPage({
             ))}
           </div>
         ) : (
-          <div className="bg-surface border border-border rounded-xl p-6 text-center text-text-light">
-            施術記録はまだありません
+          <div className="bg-surface border border-border rounded-xl p-6 text-center">
+            <p className="text-text-light text-sm">施術記録はまだありません</p>
+            <Link
+              href={`/records/new?customer=${id}`}
+              className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
+            >
+              最初のカルテを作成する →
+            </Link>
           </div>
         )}
       </div>
@@ -387,6 +431,17 @@ function InfoRow({ label, value }: { label: string; value: string | null }) {
     <div className="flex">
       <span className="text-sm text-text-light w-24 shrink-0">{label}</span>
       <span className="text-sm">{value}</span>
+    </div>
+  );
+}
+
+function InfoRowEmpty({ label, editHref }: { label: string; editHref: string }) {
+  return (
+    <div className="flex">
+      <span className="text-sm text-text-light w-24 shrink-0">{label}</span>
+      <Link href={editHref} className="text-sm text-gray-400 hover:text-accent transition-colors">
+        未登録 →
+      </Link>
     </div>
   );
 }
