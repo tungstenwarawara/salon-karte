@@ -48,29 +48,7 @@ export default async function DashboardPage() {
     .select("*", { count: "exact", head: true })
     .eq("salon_id", salon.id);
 
-  // 離脱アラート: 60日以上来店がない顧客を取得
-  // Get all customers and their latest treatment record
-  const { data: allCustomers } = await supabase
-    .from("customers")
-    .select("id, last_name, first_name")
-    .eq("salon_id", salon.id);
-
-  const { data: allRecords } = await supabase
-    .from("treatment_records")
-    .select("customer_id, treatment_date")
-    .eq("salon_id", salon.id);
-
-  // Build last visit map
-  const lastVisitMap = new Map<string, string>();
-  if (allRecords) {
-    for (const record of allRecords) {
-      const existing = lastVisitMap.get(record.customer_id);
-      if (!existing || record.treatment_date > existing) {
-        lastVisitMap.set(record.customer_id, record.treatment_date);
-      }
-    }
-  }
-
+  // 離脱アラート: DB関数で効率的に取得
   type LapsedCustomer = {
     id: string;
     last_name: string;
@@ -79,26 +57,50 @@ export default async function DashboardPage() {
     days_since: number;
   };
 
-  const lapsedCustomers: LapsedCustomer[] = [];
-  if (allCustomers) {
-    const now = Date.now();
-    for (const c of allCustomers) {
-      const lastVisit = lastVisitMap.get(c.id);
-      if (lastVisit) {
-        const days = Math.floor((now - new Date(lastVisit).getTime()) / (1000 * 60 * 60 * 24));
-        if (days >= 60) {
-          lapsedCustomers.push({
-            id: c.id,
-            last_name: c.last_name,
-            first_name: c.first_name,
-            last_visit_date: lastVisit,
-            days_since: days,
-          });
-        }
-      }
-    }
-    lapsedCustomers.sort((a, b) => b.days_since - a.days_since);
-  }
+  const { data: lapsedCustomers } = await supabase
+    .rpc("get_lapsed_customers", {
+      p_salon_id: salon.id,
+      p_days_threshold: 60,
+    })
+    .returns<LapsedCustomer[]>();
+
+  // 今月の売上サマリー
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const monthEnd = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-01`;
+
+  const [monthlyAptsRes, monthlyPurchasesRes, monthlyTicketsRes] = await Promise.all([
+    supabase
+      .from("appointments")
+      .select("appointment_menus(price_snapshot)")
+      .eq("salon_id", salon.id)
+      .gte("appointment_date", monthStart)
+      .lt("appointment_date", monthEnd)
+      .eq("status", "completed"),
+    supabase
+      .from("purchases")
+      .select("total_price")
+      .eq("salon_id", salon.id)
+      .gte("purchase_date", monthStart)
+      .lt("purchase_date", monthEnd),
+    supabase
+      .from("course_tickets")
+      .select("price")
+      .eq("salon_id", salon.id)
+      .gte("purchase_date", monthStart)
+      .lt("purchase_date", monthEnd),
+  ]);
+
+  const monthlyTreatmentSales = monthlyAptsRes.data?.reduce((sum, apt) => {
+    const menus = (apt.appointment_menus ?? []) as { price_snapshot: number | null }[];
+    return sum + menus.reduce((mSum, m) => mSum + (m.price_snapshot ?? 0), 0);
+  }, 0) ?? 0;
+
+  const monthlyProductSales = monthlyPurchasesRes.data?.reduce((sum, p) => sum + (p as { total_price: number }).total_price, 0) ?? 0;
+
+  const monthlyTicketSales = monthlyTicketsRes.data?.reduce((sum, t) => sum + ((t as { price: number | null }).price ?? 0), 0) ?? 0;
+
+  const monthlyTotal = monthlyTreatmentSales + monthlyProductSales + monthlyTicketSales;
 
   // 最近の施術記録を取得
   const { data: recentRecords } = await supabase
@@ -141,6 +143,34 @@ export default async function DashboardPage() {
           <span className="text-2xl mb-0.5">+</span>
           <p className="text-xs text-text-light mt-0.5">顧客を追加</p>
         </Link>
+      </div>
+
+      {/* Monthly sales summary */}
+      <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
+        <h3 className="font-bold text-sm text-text-light">
+          今月の売上
+          <span className="ml-2 text-xs font-normal">
+            {now.getFullYear()}年{now.getMonth() + 1}月
+          </span>
+        </h3>
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div>
+            <p className="text-lg font-bold">{monthlyTreatmentSales.toLocaleString()}</p>
+            <p className="text-xs text-text-light">施術</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold">{monthlyProductSales.toLocaleString()}</p>
+            <p className="text-xs text-text-light">物販</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold">{monthlyTicketSales.toLocaleString()}</p>
+            <p className="text-xs text-text-light">回数券</p>
+          </div>
+        </div>
+        <div className="border-t border-border pt-2 text-center">
+          <p className="text-2xl font-bold text-accent">{monthlyTotal.toLocaleString()}円</p>
+          <p className="text-xs text-text-light">合計</p>
+        </div>
       </div>
 
       {/* Today's appointments */}
@@ -201,7 +231,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Lapsed customers alert */}
-      {lapsedCustomers.length > 0 && (
+      {lapsedCustomers && lapsedCustomers.length > 0 && (
         <div>
           <h3 className="font-bold mb-3">
             ご無沙汰のお客様

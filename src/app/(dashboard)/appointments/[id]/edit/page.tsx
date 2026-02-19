@@ -36,6 +36,7 @@ export default function EditAppointmentPage() {
   const [startMinute, setStartMinute] = useState("00");
   const [endHour, setEndHour] = useState("11");
   const [endMinute, setEndMinute] = useState("00");
+  const [isEndTimeManual, setIsEndTimeManual] = useState(false);
   const [source, setSource] = useState("direct");
   const [memo, setMemo] = useState("");
 
@@ -118,7 +119,8 @@ export default function EditAppointmentPage() {
   };
 
   // Auto-calculate end time from selected menus' total duration
-  const updateEndTimeFromMenus = (menuIds: string[], sH: string, sM: string) => {
+  const updateEndTimeFromMenus = (menuIds: string[], sH: string, sM: string, forceCalc = false) => {
+    if (!forceCalc && isEndTimeManual) return;
     const totalDuration = menuIds.reduce((sum, id) => {
       const menu = menus.find((m) => m.id === id);
       return sum + (menu?.duration_minutes ?? 0);
@@ -137,7 +139,8 @@ export default function EditAppointmentPage() {
       ? selectedMenuIds.filter((id) => id !== menuId)
       : [...selectedMenuIds, menuId];
     setSelectedMenuIds(newIds);
-    updateEndTimeFromMenus(newIds, startHour, startMinute);
+    setIsEndTimeManual(false);
+    updateEndTimeFromMenus(newIds, startHour, startMinute, true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -337,11 +340,21 @@ export default function EditAppointmentPage() {
 
         {/* End time */}
         <div>
-          <label className="block text-sm font-medium mb-1.5">終了予定時間</label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-sm font-medium">終了予定時間</label>
+            {selectedMenuIds.length > 0 && (
+              <span className={`text-xs ${isEndTimeManual ? "text-orange-500" : "text-accent"}`}>
+                {isEndTimeManual ? "手動設定" : "メニューから自動計算"}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <select
               value={endHour}
-              onChange={(e) => setEndHour(e.target.value)}
+              onChange={(e) => {
+                setEndHour(e.target.value);
+                setIsEndTimeManual(true);
+              }}
               className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             >
               {Array.from({ length: 24 }, (_, i) => (
@@ -351,7 +364,10 @@ export default function EditAppointmentPage() {
             <span className="text-lg font-medium">:</span>
             <select
               value={endMinute}
-              onChange={(e) => setEndMinute(e.target.value)}
+              onChange={(e) => {
+                setEndMinute(e.target.value);
+                setIsEndTimeManual(true);
+              }}
               className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             >
               {["00", "15", "30", "45"].map((m) => (
@@ -359,6 +375,18 @@ export default function EditAppointmentPage() {
               ))}
             </select>
           </div>
+          {isEndTimeManual && selectedMenuIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsEndTimeManual(false);
+                updateEndTimeFromMenus(selectedMenuIds, startHour, startMinute, true);
+              }}
+              className="text-xs text-accent hover:underline mt-1"
+            >
+              自動計算に戻す
+            </button>
+          )}
         </div>
 
         {/* Menu multi-select */}

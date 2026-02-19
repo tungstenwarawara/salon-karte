@@ -99,6 +99,23 @@ export default async function CustomerDetailPage({
     .order("created_at", { ascending: false })
     .returns<CourseTicket[]>();
 
+  // 施術合計を取得（appointment_menus経由）
+  const { data: appointmentMenusData } = await supabase
+    .from("appointments")
+    .select("appointment_menus(price_snapshot)")
+    .eq("customer_id", id);
+
+  const treatmentTotal = appointmentMenusData?.reduce((sum, apt) => {
+    const menus = (apt.appointment_menus ?? []) as { price_snapshot: number | null }[];
+    return sum + menus.reduce((mSum, m) => mSum + (m.price_snapshot ?? 0), 0);
+  }, 0) ?? 0;
+
+  // 回数券合計
+  const courseTicketTotal = courseTickets?.reduce((sum, t) => sum + (t.price ?? 0), 0) ?? 0;
+
+  // 総合計
+  const grandTotal = treatmentTotal + purchaseTotal + courseTicketTotal;
+
   // 年齢計算
   const age = customer.birth_date ? calculateAge(customer.birth_date) : null;
 
@@ -173,6 +190,31 @@ export default async function CustomerDetailPage({
         )}
       </div>
 
+      {/* Sales summary */}
+      {grandTotal > 0 && (
+        <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
+          <h3 className="font-bold text-sm text-text-light">売上サマリー</h3>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-text-light">施術合計</span>
+              <span>{treatmentTotal.toLocaleString()}円</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-text-light">物販合計</span>
+              <span>{purchaseTotal.toLocaleString()}円</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-text-light">回数券合計</span>
+              <span>{courseTicketTotal.toLocaleString()}円</span>
+            </div>
+            <div className="border-t border-border pt-2 flex justify-between text-sm font-bold">
+              <span>総合計</span>
+              <span className="text-accent">{grandTotal.toLocaleString()}円</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Basic info */}
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
         <h3 className="font-bold text-sm text-text-light">基本情報</h3>
@@ -215,7 +257,6 @@ export default async function CustomerDetailPage({
       {/* Treatment related info */}
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
         <h3 className="font-bold text-sm text-text-light">施術関連情報</h3>
-        <InfoRow label="肌質" value={customer.skin_type} />
         <InfoRow
           label="身長"
           value={customer.height_cm !== null ? `${customer.height_cm} cm` : null}
