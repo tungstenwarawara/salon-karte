@@ -1,6 +1,6 @@
 # salon-karte エコシステム計画書
 
-> 更新日: 2026-02-19（v3 — 在庫管理詳細設計・確定申告サポート・工数改訂）
+> 更新日: 2026-02-19（v3.1 — Phase 5完了を反映、実装状況・ロードマップ・技術情報を同期）
 
 ---
 
@@ -35,36 +35,75 @@
 | | 複数メニュー選択・終了時間自動計算 | ✅ 実装済み |
 | | 営業時間設定・空き時間スロット表示 | ✅ 実装済み |
 | | 休業日警告・営業時間外警告 | ✅ 実装済み |
-| 売上管理 | 月間売上集計（施術/物販/回数券） | ✅ 実装済み |
+| 売上管理 | 月間売上集計（施術/物販/回数券）+ 月別推移表示 | ✅ 実装済み |
 | | 顧客単位の売上サマリー | ✅ 実装済み |
+| | 売上レポート（月別・RPC活用） | ✅ 実装済み |
 | 物販管理 | 購入記録の登録・一覧 | ✅ 実装済み |
+| | 商品から選ぶ / 自由入力のデュアルモード | ✅ 実装済み |
+| | 物販登録→在庫自動減算（RPCアトミック処理） | ✅ 実装済み |
 | 回数券管理 | チケット登録・消化管理・有効期限 | ✅ 実装済み |
+| 在庫管理 | 商品マスタCRUD（インライン編集） | ✅ 実装済み |
+| | 在庫ダッシュボード（サマリー・発注点アラート・在庫評価額） | ✅ 実装済み |
+| | 仕入（入庫）記録 | ✅ 実装済み |
+| | サンプル消費・廃棄記録 | ✅ 実装済み |
+| | 棚卸し（全商品実数入力・差分自動調整） | ✅ 実装済み |
+| | ダッシュボード在庫アラート（発注点以下を警告） | ✅ 実装済み |
+| 確定申告 | 確定申告レポート（売上原価・棚卸明細・月別売上/仕入） | ✅ 実装済み |
+| | CSV出力（freee形式 / 弥生形式 / 汎用CSV） | ✅ 実装済み |
 | メニュー管理 | CRUD・カテゴリ・所要時間・料金 | ✅ 実装済み |
 | 営業時間 | 曜日別の営業/休業・開閉店時間管理 | ✅ 実装済み |
+| UI/UX | FAB（中央＋ボタン）による新規作成導線 | ✅ 実装済み |
+| | ボトムナビ再設計（ホーム/予約/+新規/顧客/経営） | ✅ 実装済み |
+| | パンくずナビ全ページ対応 | ✅ 実装済み |
+| | 初回オンボーディング（4ステップガイド） | ✅ 実装済み |
+| | ダッシュボード改善（挨拶・クイックアクション・タスクカード） | ✅ 実装済み |
+| | 経営タブ切替（売上レポート / 在庫管理） | ✅ 実装済み |
 | その他 | 離脱顧客アラート（60日/90日） | ✅ 実装済み |
-| | スケルトンスクリーン（4画面） | ✅ 実装済み |
+| | スケルトンスクリーン（全ページ対応） | ✅ 実装済み |
 | | キャッシュヘッダー最適化 | ✅ 実装済み |
 | | セキュリティヘッダー（CSP等） | ✅ 実装済み |
 
-### 画面一覧（17ルート）
+### 画面一覧（30ルート）
 
-- `/dashboard` - ダッシュボード
-- `/customers` - 顧客一覧
+**ダッシュボード**
+- `/dashboard` - ダッシュボード（挨拶・今日の予約・タスクカード・在庫アラート）
+
+**顧客管理**
+- `/customers` - 顧客一覧（カナ検索・ソート・離脱色分け）
 - `/customers/new` - 顧客新規登録
-- `/customers/[id]` - 顧客詳細
+- `/customers/[id]` - 顧客詳細（来店分析・売上サマリー）
 - `/customers/[id]/edit` - 顧客編集
-- `/customers/[id]/purchases/new` - 物販購入記録
+- `/customers/[id]/purchases/new` - 物販購入記録（商品選択/自由入力）
 - `/customers/[id]/tickets/new` - コースチケット登録
-- `/appointments` - 予約一覧
+
+**予約管理**
+- `/appointments` - 予約一覧（日別/週別）
 - `/appointments/new` - 予約新規登録
 - `/appointments/[id]/edit` - 予約編集
+
+**施術カルテ**
 - `/records/new` - 施術記録作成
 - `/records/[id]` - 施術記録詳細
 - `/records/[id]/edit` - 施術記録編集
-- `/settings` - 設定
-- `/settings/menus` - メニュー管理
+
+**経営（売上レポート + 在庫管理）**
+- `/sales` - 売上レポート（月別集計・施術/物販/回数券）
+- `/sales/inventory` - 在庫ダッシュボード（サマリー・商品リスト・クイックアクション）
+- `/sales/inventory/products` - 商品マスタ（インラインCRUD）
+- `/sales/inventory/receive` - 仕入（入庫）記録
+- `/sales/inventory/consume` - サンプル消費・廃棄記録
+- `/sales/inventory/stocktake` - 棚卸し
+- `/sales/inventory/tax-report` - 確定申告レポート + CSV出力
+
+**設定**
+- `/settings` - 設定メニュー
+- `/settings/menus` - メニュー管理（インラインCRUD）
 - `/settings/business-hours` - 営業時間設定
+
+**その他**
 - `/guide` - 使い方ガイド
+- 認証: `/auth/login`, `/auth/signup`, `/auth/callback`, `/auth/setup`
+- ランディング: `/`（LP）, `/terms`（利用規約）, `/privacy`（プライバシー）
 
 ---
 
@@ -77,7 +116,7 @@
 | Bionly FREE | 0円 | 0円 | ○(制限) | ○ | - | - | - | - | - | 美容室/エステ |
 | LiME 無料 | 0円 | 0円 | 5枚/人 | 5件/月 | - | - | - | - | - | 美容師 |
 | Square 予約 | 0~3,300円 | 0円 | x | ○ | - | - | ○ | - | - | 全業種 |
-| **salon-karte** | **2,980円** | **0円** | **○無制限** | **○** | **○** | **計画中** | **計画中** | **計画中** | **計画中** | **エステ** |
+| **salon-karte** | **2,980円** | **0円** | **○無制限** | **○** | **○** | **計画中** | **✅** | **計画中** | **✅** | **エステ** |
 | KaruteKun | 5,500円 | 0円 | ○ | ○ | - | +5,500円 | - | - | - | サロン全般 |
 | Bionly 有料 | 10,780円 | 0円 | ○ | ○ | - | - | ○ | - | - | 美容室/エステ |
 | BeSALO | 要問合 | 要問合 | ○ | ○ | ○ | ○ | ○ | - | - | 大規模 |
@@ -262,11 +301,11 @@
 
 ---
 
-## 6. UI/UX改善計画
+## 6. UI/UX改善計画（✅ Phase 4で実装済み）
 
-### 現状の課題分析
+### 改善前の課題分析（Phase 4で解決済み）
 
-現在17ルートに成長し、以下の課題が顕在化:
+Phase 3時点で17ルートに成長し、以下の課題が顕在化していた（Phase 4で全て対処済み）:
 
 | # | 課題 | 影響度 | 対象ユーザー |
 |---|------|-------|------------|
@@ -286,9 +325,9 @@
 4. **視覚的ガイド** — アイコン・色・バッジで状態を即座に理解
 5. **安心フィードバック** — 保存成功・エラー・未保存状態を明確に
 
-### 具体的な改善施策
+### 具体的な改善施策（Phase 4で実装済み）
 
-#### A. ナビゲーション改善（最優先）
+#### A. ナビゲーション改善 ✅
 
 ```
 【現状のボトムナビ】
@@ -309,7 +348,7 @@
 - 設定はヘッダーのギアアイコンに移動（毎日使うものではない）
 - 「メニュー」ボタンは「もっと」に変更して、設定・ガイド・在庫管理・ログアウト等を格納する案も検討
 
-#### B. ダッシュボード改善
+#### B. ダッシュボード改善 ✅
 
 ```
 【現状】
@@ -329,7 +368,7 @@
 4. 今日の予約タイムライン（シンプル版）
 ```
 
-#### C. 初回ガイド（オンボーディング）
+#### C. 初回ガイド（オンボーディング） ✅
 
 ```
 初回ログイン時のステップバイステップ:
@@ -343,7 +382,7 @@ Step 4: 「準備完了！ダッシュボードに戻る」→ /dashboard
 スキップ可能（「あとで設定する」ボタン）
 ```
 
-#### D. パンくずナビ + 戻るボタン
+#### D. パンくずナビ + 戻るボタン ✅
 
 ```
 [← 顧客一覧] > 山田花子 > カルテ #5
@@ -353,14 +392,14 @@ Step 4: 「準備完了！ダッシュボードに戻る」→ /dashboard
 - パンくず（現在位置の把握）
 ```
 
-#### E. フォーム改善
+#### E. フォーム改善（将来対応）
 
 - 長いフォームをステップ分割（特に顧客新規登録）
 - 必須項目を最小限に、任意項目は「詳細を追加」で展開
 - 入力中の自動保存（ドラフト機能）
 - バリデーションエラーは入力フィールドの直下に即座表示
 
-#### F. 機能ディスカバリー
+#### F. 機能ディスカバリー（将来対応）
 
 - 初回利用時のツールチップ（「ここをタップすると離脱顧客が見えます」）
 - ダッシュボードに「便利な機能」カード（週替わりで1つずつ紹介）
@@ -368,58 +407,58 @@ Step 4: 「準備完了！ダッシュボードに戻る」→ /dashboard
 
 ---
 
-## 7. 在庫管理 詳細設計
+## 7. 在庫管理 詳細設計（✅ Phase 5で実装済み）
 
-### 7-1. 商品マスタ（products テーブル）
+### 7-1. 商品マスタ（products テーブル） ✅
 
 ```sql
+-- 実装済み: supabase/migrations/00012_inventory_management.sql
 CREATE TABLE products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  salon_id UUID NOT NULL REFERENCES salons(id),
+  salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   name TEXT NOT NULL,                    -- 商品名（例: 「モイスチャー美容液」）
-  category TEXT,                         -- カテゴリ（例: 「スキンケア」「ヘアケア」「サプリ」）
-  sku TEXT,                              -- 管理番号（任意）
-  base_sell_price INTEGER NOT NULL,      -- 基本売単価（通常販売価格）
-  base_cost_price INTEGER NOT NULL,      -- 基本仕入単価（通常仕入価格）
-  reorder_point INTEGER DEFAULT 3,       -- 発注点（この数以下で警告）
-  is_active BOOLEAN DEFAULT true,        -- 取扱中フラグ
+  category TEXT,                         -- カテゴリ（自由テキスト入力）
+  base_sell_price INTEGER NOT NULL DEFAULT 0,  -- 基本売単価（通常販売価格）
+  base_cost_price INTEGER NOT NULL DEFAULT 0,  -- 基本仕入単価（通常仕入価格）
+  reorder_point INTEGER NOT NULL DEFAULT 3,    -- 発注点（この数以下で警告）
+  is_active BOOLEAN NOT NULL DEFAULT true,     -- 取扱中フラグ
   memo TEXT,                             -- メモ
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 ```
 
+> **設計変更点**: `sku`（管理番号）は実装時に省略。個人サロンでは不要と判断。
+
 **ポイント**:
 - `base_sell_price` / `base_cost_price` = マスタ上の「いつもの価格」
 - 実際の取引では都度の価格を記録（下記 inventory_logs / purchases で管理）
 - `reorder_point` = 在庫がこの数以下になったら警告表示
 
-### 7-2. 在庫入出庫ログ（inventory_logs テーブル）
+### 7-2. 在庫入出庫ログ（inventory_logs テーブル） ✅
 
 ```sql
+-- 実装済み: supabase/migrations/00012_inventory_management.sql
 CREATE TABLE inventory_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  salon_id UUID NOT NULL REFERENCES salons(id),
-  product_id UUID NOT NULL REFERENCES products(id),
-  log_type TEXT NOT NULL,                -- 'purchase_in'  = 仕入（入庫）
-                                         -- 'sale_out'     = 店頭販売（自動出庫）
-                                         -- 'ec_out'       = EC販売（自動出庫）
-                                         -- 'sample_out'   = サンプル使用・開封
-                                         -- 'waste_out'    = 破損・廃棄
-                                         -- 'adjust'       = 棚卸し調整
-                                         -- 'return_in'    = 返品（入庫）
+  salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  log_type TEXT NOT NULL CHECK (log_type IN (
+    'purchase_in','sale_out','sample_out','waste_out','adjust','return_in'
+  )),
   quantity INTEGER NOT NULL,             -- 増減数（入庫=正, 出庫=負）
   unit_cost_price INTEGER,               -- この取引の仕入単価（入庫時のみ）
   unit_sell_price INTEGER,               -- この取引の売単価（販売時のみ）
-  reason TEXT,                           -- 理由メモ（サンプル/廃棄/調整の場合必須）
-  related_purchase_id UUID,              -- 関連する物販記録ID（店頭販売時）
-  related_order_id UUID,                 -- 関連するEC注文ID（EC販売時）
-  logged_at TIMESTAMPTZ DEFAULT now(),   -- 記録日時
+  reason TEXT,                           -- 理由メモ（サンプル/廃棄/調整の場合）
+  related_purchase_id UUID REFERENCES purchases(id) ON DELETE SET NULL,
+  logged_at DATE NOT NULL DEFAULT CURRENT_DATE,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ```
 
-### 7-3. 在庫増減パターン一覧
+> **設計変更点**: `ec_out` と `related_order_id` は salon-ec 実装時に追加予定。`logged_at` は `DATE` 型に変更（日単位で十分）。
+
+### 7-3. 在庫増減パターン一覧 ✅
 
 | パターン | log_type | quantity | unit_cost_price | unit_sell_price | トリガー |
 |---------|----------|----------|-----------------|-----------------|---------|
@@ -431,7 +470,7 @@ CREATE TABLE inventory_logs (
 | 棚卸し調整 | `adjust` | ±N | — | — | 棚卸し画面で入力 |
 | 返品（顧客→サロン） | `return_in` | +N | — | -売価 | 手入力 |
 
-### 7-4. 価格管理の考え方
+### 7-4. 価格管理の考え方 ✅
 
 ```
 【マスタ価格 vs 都度価格】
@@ -458,7 +497,7 @@ CREATE TABLE inventory_logs (
   → 最終仕入原価法に基づく（確定申告で使う標準的な方法）
 ```
 
-### 7-5. 物販登録時の自動連動フロー
+### 7-5. 物販登録時の自動連動フロー ✅
 
 ```
 【オーナーが「物販を記録」する時の画面フロー】
@@ -478,7 +517,7 @@ CREATE TABLE inventory_logs (
   ④ もし在庫 ≤ 発注点 → ダッシュボードに「残りわずか」アラート
 ```
 
-### 7-6. 既存 purchases テーブルの拡張
+### 7-6. 既存 purchases テーブルの拡張 ✅
 
 ```sql
 -- 既存の purchases テーブルに以下カラムを追加
@@ -490,7 +529,7 @@ ALTER TABLE purchases ADD COLUMN sell_price INTEGER;       -- この取引の売
 -- product_id がある場合のみ在庫連動が動作
 ```
 
-### 7-7. 棚卸し機能
+### 7-7. 棚卸し機能 ✅
 
 ```
 【12/31 棚卸しの画面フロー】
@@ -509,7 +548,7 @@ ALTER TABLE purchases ADD COLUMN sell_price INTEGER;       -- この取引の売
 → 確定申告レポートの期末棚卸高に反映
 ```
 
-### 7-8. 確定申告サポート機能
+### 7-8. 確定申告サポート機能 ✅
 
 #### 背景: 個人事業主の確定申告で必要な数字
 
@@ -612,50 +651,49 @@ ALTER TABLE purchases ADD COLUMN sell_price INTEGER;       -- この取引の売
 3月10日: 「確定申告期限まであと5日」通知
 ```
 
-### 7-9. 在庫管理の追加画面一覧
+### 7-9. 在庫管理の画面一覧（✅ 実装済み）
 
 | ルート | 画面 | 内容 |
 |-------|------|------|
-| `/inventory` | 在庫一覧 | 全商品の現在庫・発注点アラート |
-| `/inventory/products` | 商品マスタ | 商品の追加・編集・削除 |
-| `/inventory/products/new` | 商品追加 | 商品名・基本売価・基本仕入価 |
-| `/inventory/products/[id]/edit` | 商品編集 | |
-| `/inventory/receive` | 仕入（入庫） | 商品選択・数量・都度仕入単価 |
-| `/inventory/consume` | サンプル/廃棄 | 商品選択・数量・理由メモ |
-| `/inventory/stocktake` | 棚卸し | 全商品の実数入力・差分調整 |
-| `/inventory/report` | 確定申告レポート | 年度選択 → レポート表示・出力 |
+| `/sales/inventory` | 在庫ダッシュボード | サマリーカード・商品リスト・クイックアクション |
+| `/sales/inventory/products` | 商品マスタ | インラインCRUD（追加・編集・削除・非表示切替） |
+| `/sales/inventory/receive` | 仕入（入庫） | 商品選択・数量・都度仕入単価・日付 |
+| `/sales/inventory/consume` | サンプル/廃棄 | 商品選択・数量・種別・理由メモ |
+| `/sales/inventory/stocktake` | 棚卸し | 全商品の実数入力・差分自動計算・一括確定 |
+| `/sales/inventory/tax-report` | 確定申告レポート | 年度選択 → 売上原価・月別売上/仕入・棚卸明細・CSV出力 |
+
+> **設計変更点**: ルートを `/inventory/*` ではなく `/sales/inventory/*` に配置。「経営」タブ内の「在庫管理」として統合。商品マスタは `/products/new` や `/products/[id]/edit` の別ページではなく、メニュー管理と同様のインラインCRUDパターンを採用。
 
 ---
 
 ## 8. 開発ロードマップ（改訂版）
 
-### Phase 4.0: UI/UX改善（最優先 — 次に着手）
+### Phase 4.0: UI/UX改善 ✅ 完了（2026-02-19）
 
-機能が増えた今、使いやすさの基盤を先に固める
+| # | 施策 | 状態 |
+|---|------|------|
+| 4-1 | ナビゲーション再設計（FAB中央配置 + ボトムナビ5項目 + ヘッダー設定/ガイド） | ✅ |
+| 4-2 | ダッシュボード改善（挨拶・クイックアクション・タスクカード・在庫アラート） | ✅ |
+| 4-3 | パンくずナビ + 戻るボタン全ページ対応 | ✅ |
+| 4-4 | 初回オンボーディングフロー（4ステップ） | ✅ |
+| 4-5 | フォームUX改善 | 将来対応 |
+| 4-6 | 機能ディスカバリー（ツールチップ・ナッジ） | 将来対応 |
 
-| # | 施策 | 工数目安 | 効果 |
-|---|------|---------|------|
-| 4-1 | ナビゲーション再設計（FAB + ヘッダー設定） | 1日 | 導線明確化 |
-| 4-2 | ダッシュボード改善（挨拶・クイックアクション・タスクカード） | 1日 | 初見わかりやすさ |
-| 4-3 | パンくずナビ + 戻るボタン全ページ対応 | 0.5日 | 迷子防止 |
-| 4-4 | 初回オンボーディングフロー | 1日 | 初期設定完遂率UP |
-| 4-5 | フォームUX改善（ステップ分割・自動保存） | 1日 | 入力離脱防止 |
-| 4-6 | 機能ディスカバリー（ツールチップ・ナッジ） | 0.5日 | 機能認知率UP |
-| | **小計** | **5日** | |
+### Phase 5.0: 在庫管理 + 確定申告サポート ✅ 完了（2026-02-19）
 
-### Phase 5.0: 在庫管理 + 確定申告サポート（salon-karte内オプション）
-
-| # | 施策 | 工数目安 |
-|---|------|---------|
-| 5-1 | 商品マスタ CRUD（基本売価+基本仕入価） | 0.5日 |
-| 5-2 | 在庫入出庫ログ（多パターン対応の inventory_logs） | 1日 |
-| 5-3 | 物販登録 → 自動出庫連動 + 都度価格入力対応 | 1日 |
-| 5-4 | 在庫一覧ダッシュボード（残数・発注点アラート・粗利表示） | 0.5日 |
-| 5-5 | 仕入（入庫）・サンプル消費・廃棄の入力画面 | 0.5日 |
-| 5-6 | 棚卸し機能（全商品実数入力・差分自動調整） | 0.5日 |
-| 5-7 | 確定申告レポート（期首/期末棚卸高・売上原価・月別売上/仕入） | 0.5日 |
-| 5-8 | CSV出力（freee/弥生/汎用形式） | 0.5日 |
-| | **小計** | **5日** |
+| # | 施策 | 状態 |
+|---|------|------|
+| 5-1 | DBマイグレーション（products + inventory_logs + 3 RPC） | ✅ |
+| 5-2 | 経営タブ（売上レポート / 在庫管理 タブ切替） | ✅ |
+| 5-3 | 商品マスタ インラインCRUD | ✅ |
+| 5-4 | 在庫ダッシュボード（サマリー・商品リスト・クイックアクション） | ✅ |
+| 5-5 | 仕入（入庫）記録画面 | ✅ |
+| 5-6 | サンプル消費・廃棄記録画面 | ✅ |
+| 5-7 | 物販登録の商品選択/自由入力デュアルモード + 自動出庫RPC | ✅ |
+| 5-8 | 棚卸し機能（全商品実数入力・差分自動調整） | ✅ |
+| 5-9 | 確定申告レポート（売上原価・月別売上/仕入・棚卸明細） | ✅ |
+| 5-10 | CSV出力（freee形式 / 弥生形式 / 汎用CSV） | ✅ |
+| 5-11 | ダッシュボード在庫アラート（条件付きクエリ） | ✅ |
 
 ### Phase 6.0: カルテ追加機能
 
@@ -707,8 +745,8 @@ ALTER TABLE purchases ADD COLUMN sell_price INTEGER;       -- この取引の売
 
 | 項目 | 内容 |
 |------|------|
-| 工数 | Phase 4: 5日 + Phase 5: 5日 + Phase 6: 6.5日 |
-| 合計 | **約16.5日（3〜3.5週間）** |
+| 完了済み | Phase 4（UI/UX改善）✅ + Phase 5（在庫管理+確定申告）✅ |
+| 残り | Phase 6（カルテ追加機能）: 約6.5日 |
 | 追加月額収益 | 在庫管理 +500円, カウンセリング +500円, LINE +1,500円 等 |
 | 技術リスク | 低（既存基盤の拡張） |
 
@@ -777,20 +815,22 @@ MEO対策:
 
 ### 見積もり総括
 
-| プロダクト | 工数 | 月額収益/サロン | 優先順位 |
-|-----------|------|---------------|---------|
-| salon-karte 強化（UI/UX + 在庫 + 確定申告 + 追加機能） | 約16.5日 | 2,980円 + オプション | ★★★ 最優先 |
-| salon-site（HP+Web予約） | 約9.5日 | 3,980円 | ★★ 次 |
-| salon-ec（ECサイト） | 約8.5日 | 2,980円 | ★ その次 |
-| **合計** | **約34.5日** | **最大 9,940円/サロン** | |
+| プロダクト | 工数 | 月額収益/サロン | 状態 |
+|-----------|------|---------------|------|
+| salon-karte Phase 4（UI/UX改善） | — | — | ✅ 完了 |
+| salon-karte Phase 5（在庫管理+確定申告） | — | +500円 | ✅ 完了 |
+| salon-karte Phase 6（カルテ追加機能） | 約6.5日 | +500〜1,500円 | 次に着手 |
+| salon-site（HP+Web予約） | 約9.5日 | 3,980円 | 計画中 |
+| salon-ec（ECサイト） | 約8.5日 | 2,980円 | 計画中 |
+| **残り合計** | **約24.5日** | **最大 9,940円/サロン** | |
 
 ```
-想定タイムライン:
-  3月前半:     Phase 4（UI/UX改善）           5日
-  3月後半:     Phase 5（在庫管理+確定申告）    5日
-  4月前半〜中: Phase 6（カルテ追加機能）       6.5日
-  4月後半〜5月: Phase 7（salon-site）         9.5日
-  5月中〜後半: Phase 8（salon-ec）            8.5日
+実績 + 想定タイムライン:
+  2月中旬:      Phase 4（UI/UX改善）           ✅ 完了
+  2月中旬:      Phase 5（在庫管理+確定申告）    ✅ 完了
+  3月前半〜中:   Phase 6（カルテ追加機能）       6.5日
+  3月後半〜4月:  Phase 7（salon-site）          9.5日
+  4月中〜後半:   Phase 8（salon-ec）            8.5日
 ```
 
 ---
@@ -804,7 +844,7 @@ MEO対策:
 | フロントエンド | Next.js 15 (App Router) + TypeScript + Tailwind CSS 4 |
 | バックエンド | Supabase (PostgreSQL + Auth + Storage + Realtime) |
 | ホスティング | Vercel |
-| DB | 10マイグレーション、9テーブル（+products, inventory_logs 追加予定）、1 RPC関数 |
+| DB | 12マイグレーション、11テーブル（salons, customers, records, record_photos, appointments, menus, business_hours, purchases, course_tickets, products, inventory_logs）、5 RPC関数 |
 
 ### salon-site 追加技術
 
