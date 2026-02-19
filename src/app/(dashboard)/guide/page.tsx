@@ -122,7 +122,7 @@ export default function GuidePage() {
           <StepCard
             number={2}
             title="来店前：カルテで前回の施術内容を確認"
-            description="予約のお客様名をタップすると、顧客詳細画面に移動します。前回の施術内容・肌の状態・次回への申し送りを確認できます。"
+            description="予約のお客様名をタップすると、顧客詳細画面に移動します。前回の施術内容・施術前の状態・次回への申し送りを確認できます。"
             link="/customers"
             linkLabel="顧客一覧を開く"
           />
@@ -179,7 +179,7 @@ export default function GuidePage() {
           />
           <FeatureCard
             title="施術記録（カルテ）"
-            description="施術日・メニュー・使用した化粧品・施術前の肌の状態・施術後の経過・次回への申し送りを記録できます。お客様ごとに時系列で確認できます。"
+            description="施術日・メニュー・使用した化粧品・施術前の状態・施術後の経過・会話メモ・注意事項・次回への申し送りを記録できます。お客様ごとに時系列で確認できます。"
           />
           <FeatureCard
             title="写真管理"

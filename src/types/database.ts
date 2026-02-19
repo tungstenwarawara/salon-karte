@@ -45,6 +45,13 @@ export type Database = {
           skin_type: string | null;
           allergies: string | null;
           notes: string | null;
+          address: string | null;
+          marital_status: string | null;
+          has_children: boolean | null;
+          dm_allowed: boolean | null;
+          height_cm: number | null;
+          weight_kg: number | null;
+          treatment_goal: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -61,6 +68,13 @@ export type Database = {
           skin_type?: string | null;
           allergies?: string | null;
           notes?: string | null;
+          address?: string | null;
+          marital_status?: string | null;
+          has_children?: boolean | null;
+          dm_allowed?: boolean | null;
+          height_cm?: number | null;
+          weight_kg?: number | null;
+          treatment_goal?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -77,6 +91,13 @@ export type Database = {
           skin_type?: string | null;
           allergies?: string | null;
           notes?: string | null;
+          address?: string | null;
+          marital_status?: string | null;
+          has_children?: boolean | null;
+          dm_allowed?: boolean | null;
+          height_cm?: number | null;
+          weight_kg?: number | null;
+          treatment_goal?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -144,6 +165,8 @@ export type Database = {
           skin_condition_before: string | null;
           notes_after: string | null;
           next_visit_memo: string | null;
+          conversation_notes: string | null;
+          caution_notes: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -159,6 +182,8 @@ export type Database = {
           skin_condition_before?: string | null;
           notes_after?: string | null;
           next_visit_memo?: string | null;
+          conversation_notes?: string | null;
+          caution_notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -174,6 +199,8 @@ export type Database = {
           skin_condition_before?: string | null;
           notes_after?: string | null;
           next_visit_memo?: string | null;
+          conversation_notes?: string | null;
+          caution_notes?: string | null;
           created_at?: string;
           updated_at?: string;
         };

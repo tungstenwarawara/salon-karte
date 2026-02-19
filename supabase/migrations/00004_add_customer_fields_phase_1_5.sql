@@ -1,0 +1,9 @@
+-- Phase 1.5: テスターFBによる顧客情報フィールド追加
+ALTER TABLE customers
+  ADD COLUMN IF NOT EXISTS address TEXT,
+  ADD COLUMN IF NOT EXISTS marital_status TEXT,
+  ADD COLUMN IF NOT EXISTS has_children BOOLEAN,
+  ADD COLUMN IF NOT EXISTS dm_allowed BOOLEAN DEFAULT true,
+  ADD COLUMN IF NOT EXISTS height_cm NUMERIC,
+  ADD COLUMN IF NOT EXISTS weight_kg NUMERIC,
+  ADD COLUMN IF NOT EXISTS treatment_goal TEXT;

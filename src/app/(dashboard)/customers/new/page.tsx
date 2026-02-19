@@ -13,6 +13,12 @@ const SKIN_TYPES = [
   { value: "敏感肌", label: "敏感肌" },
 ];
 
+const MARITAL_STATUSES = [
+  { value: "", label: "選択してください" },
+  { value: "未婚", label: "未婚" },
+  { value: "既婚", label: "既婚" },
+];
+
 export default function NewCustomerPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -26,8 +32,15 @@ export default function NewCustomerPage() {
     birth_date: "",
     phone: "",
     email: "",
+    address: "",
+    marital_status: "",
+    has_children: "",
+    dm_allowed: "true",
     skin_type: "",
+    height_cm: "",
+    weight_kg: "",
     allergies: "",
+    treatment_goal: "",
     notes: "",
   });
 
@@ -70,8 +83,15 @@ export default function NewCustomerPage() {
       birth_date: form.birth_date || null,
       phone: form.phone || null,
       email: form.email || null,
+      address: form.address || null,
+      marital_status: form.marital_status || null,
+      has_children: form.has_children === "" ? null : form.has_children === "true",
+      dm_allowed: form.dm_allowed === "true",
       skin_type: form.skin_type || null,
+      height_cm: form.height_cm ? parseFloat(form.height_cm) : null,
+      weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
       allergies: form.allergies || null,
+      treatment_goal: form.treatment_goal || null,
       notes: form.notes || null,
     });
 
@@ -85,148 +105,261 @@ export default function NewCustomerPage() {
     router.refresh();
   };
 
+  const inputClass =
+    "w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors";
+
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold">顧客を追加</h2>
 
-      <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="bg-error/10 text-error text-sm rounded-lg p-3">
             {error}
           </div>
         )}
 
-        {/* 氏名 */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* 基本情報 */}
+        <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
+          <h3 className="font-bold text-sm text-text-light">基本情報</h3>
+
+          {/* 氏名 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                姓 <span className="text-error">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.last_name}
+                onChange={(e) => updateField("last_name", e.target.value)}
+                required
+                placeholder="山田"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                名 <span className="text-error">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.first_name}
+                onChange={(e) => updateField("first_name", e.target.value)}
+                required
+                placeholder="花子"
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          {/* カナ */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">セイ</label>
+              <input
+                type="text"
+                value={form.last_name_kana}
+                onChange={(e) => updateField("last_name_kana", e.target.value)}
+                placeholder="ヤマダ"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">メイ</label>
+              <input
+                type="text"
+                value={form.first_name_kana}
+                onChange={(e) => updateField("first_name_kana", e.target.value)}
+                placeholder="ハナコ"
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          {/* 生年月日 */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">生年月日</label>
+            <input
+              type="date"
+              value={form.birth_date}
+              onChange={(e) => updateField("birth_date", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+
+          {/* 電話番号 */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">電話番号</label>
+            <input
+              type="tel"
+              value={form.phone}
+              onChange={(e) => updateField("phone", e.target.value)}
+              placeholder="090-1234-5678"
+              className={inputClass}
+            />
+          </div>
+
+          {/* メール */}
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              姓 <span className="text-error">*</span>
+              メールアドレス
             </label>
             <input
-              type="text"
-              value={form.last_name}
-              onChange={(e) => updateField("last_name", e.target.value)}
-              required
-              placeholder="山田"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+              type="email"
+              value={form.email}
+              onChange={(e) => updateField("email", e.target.value)}
+              placeholder="example@email.com"
+              className={inputClass}
             />
           </div>
+
+          {/* 住所 */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">住所</label>
+            <input
+              type="text"
+              value={form.address}
+              onChange={(e) => updateField("address", e.target.value)}
+              placeholder="東京都渋谷区..."
+              className={inputClass}
+            />
+          </div>
+        </div>
+
+        {/* 属性情報 */}
+        <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
+          <h3 className="font-bold text-sm text-text-light">属性情報</h3>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* 婚姻状況 */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">婚姻状況</label>
+              <select
+                value={form.marital_status}
+                onChange={(e) => updateField("marital_status", e.target.value)}
+                className={inputClass}
+              >
+                {MARITAL_STATUSES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* お子様 */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">お子様</label>
+              <select
+                value={form.has_children}
+                onChange={(e) => updateField("has_children", e.target.value)}
+                className={inputClass}
+              >
+                <option value="">選択してください</option>
+                <option value="true">あり</option>
+                <option value="false">なし</option>
+              </select>
+            </div>
+          </div>
+
+          {/* DM送付 */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">DM送付</label>
+            <select
+              value={form.dm_allowed}
+              onChange={(e) => updateField("dm_allowed", e.target.value)}
+              className={inputClass}
+            >
+              <option value="true">可</option>
+              <option value="false">不可</option>
+            </select>
+          </div>
+        </div>
+
+        {/* 施術関連情報 */}
+        <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
+          <h3 className="font-bold text-sm text-text-light">施術関連情報</h3>
+
+          {/* 肌質 */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">肌質</label>
+            <select
+              value={form.skin_type}
+              onChange={(e) => updateField("skin_type", e.target.value)}
+              className={inputClass}
+            >
+              {SKIN_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 身体情報 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">身長 (cm)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={form.height_cm}
+                onChange={(e) => updateField("height_cm", e.target.value)}
+                placeholder="160"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">体重 (kg)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={form.weight_kg}
+                onChange={(e) => updateField("weight_kg", e.target.value)}
+                placeholder="55"
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          {/* アレルギー */}
           <div>
             <label className="block text-sm font-medium mb-1.5">
-              名 <span className="text-error">*</span>
+              アレルギー・注意事項
             </label>
-            <input
-              type="text"
-              value={form.first_name}
-              onChange={(e) => updateField("first_name", e.target.value)}
-              required
-              placeholder="花子"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            <textarea
+              value={form.allergies}
+              onChange={(e) => updateField("allergies", e.target.value)}
+              placeholder="アレルギーや施術時の注意事項"
+              rows={2}
+              className={`${inputClass} resize-none`}
             />
           </div>
-        </div>
 
-        {/* カナ */}
-        <div className="grid grid-cols-2 gap-3">
+          {/* 施術の最終目標 */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">セイ</label>
-            <input
-              type="text"
-              value={form.last_name_kana}
-              onChange={(e) => updateField("last_name_kana", e.target.value)}
-              placeholder="ヤマダ"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            <label className="block text-sm font-medium mb-1.5">施術の最終目標</label>
+            <textarea
+              value={form.treatment_goal}
+              onChange={(e) => updateField("treatment_goal", e.target.value)}
+              placeholder="お客様の施術に対する最終目標"
+              rows={2}
+              className={`${inputClass} resize-none`}
             />
           </div>
+
+          {/* メモ */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">メイ</label>
-            <input
-              type="text"
-              value={form.first_name_kana}
-              onChange={(e) => updateField("first_name_kana", e.target.value)}
-              placeholder="ハナコ"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            <label className="block text-sm font-medium mb-1.5">メモ</label>
+            <textarea
+              value={form.notes}
+              onChange={(e) => updateField("notes", e.target.value)}
+              placeholder="自由メモ"
+              rows={2}
+              className={`${inputClass} resize-none`}
             />
           </div>
-        </div>
-
-        {/* 生年月日 */}
-        <div>
-          <label className="block text-sm font-medium mb-1.5">生年月日</label>
-          <input
-            type="date"
-            value={form.birth_date}
-            onChange={(e) => updateField("birth_date", e.target.value)}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-          />
-        </div>
-
-        {/* 電話番号 */}
-        <div>
-          <label className="block text-sm font-medium mb-1.5">電話番号</label>
-          <input
-            type="tel"
-            value={form.phone}
-            onChange={(e) => updateField("phone", e.target.value)}
-            placeholder="090-1234-5678"
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-          />
-        </div>
-
-        {/* メール */}
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            メールアドレス
-          </label>
-          <input
-            type="email"
-            value={form.email}
-            onChange={(e) => updateField("email", e.target.value)}
-            placeholder="example@email.com"
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-          />
-        </div>
-
-        {/* 肌質 */}
-        <div>
-          <label className="block text-sm font-medium mb-1.5">肌質</label>
-          <select
-            value={form.skin_type}
-            onChange={(e) => updateField("skin_type", e.target.value)}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-          >
-            {SKIN_TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* アレルギー */}
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            アレルギー・注意事項
-          </label>
-          <textarea
-            value={form.allergies}
-            onChange={(e) => updateField("allergies", e.target.value)}
-            placeholder="アレルギーや施術時の注意事項"
-            rows={2}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
-          />
-        </div>
-
-        {/* メモ */}
-        <div>
-          <label className="block text-sm font-medium mb-1.5">メモ</label>
-          <textarea
-            value={form.notes}
-            onChange={(e) => updateField("notes", e.target.value)}
-            placeholder="自由メモ"
-            rows={2}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
-          />
         </div>
 
         {/* Submit */}

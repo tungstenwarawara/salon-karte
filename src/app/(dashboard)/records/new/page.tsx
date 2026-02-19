@@ -41,6 +41,8 @@ function NewRecordForm() {
     skin_condition_before: "",
     notes_after: "",
     next_visit_memo: "",
+    conversation_notes: "",
+    caution_notes: "",
   };
   });
 
@@ -112,6 +114,8 @@ function NewRecordForm() {
         skin_condition_before: form.skin_condition_before || null,
         notes_after: form.notes_after || null,
         next_visit_memo: form.next_visit_memo || null,
+        conversation_notes: form.conversation_notes || null,
+        caution_notes: form.caution_notes || null,
       })
       .select("id")
       .single<{ id: string }>();
@@ -146,6 +150,9 @@ function NewRecordForm() {
     router.push(`/customers/${customerId}`);
   };
 
+  const inputClass =
+    "w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors";
+
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold">施術記録を作成</h2>
@@ -171,7 +178,7 @@ function NewRecordForm() {
             value={form.treatment_date}
             onChange={(e) => updateField("treatment_date", e.target.value)}
             required
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            className={inputClass}
           />
         </div>
 
@@ -182,7 +189,7 @@ function NewRecordForm() {
           <select
             value={form.menu_id}
             onChange={(e) => updateField("menu_id", e.target.value)}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            className={inputClass}
           >
             <option value="">選択してください</option>
             {menus.map((menu) => (
@@ -201,7 +208,7 @@ function NewRecordForm() {
             value={form.treatment_area}
             onChange={(e) => updateField("treatment_area", e.target.value)}
             placeholder="例: 顔全体、デコルテ"
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            className={inputClass}
           />
         </div>
 
@@ -214,22 +221,22 @@ function NewRecordForm() {
             onChange={(e) => updateField("products_used", e.target.value)}
             placeholder="使用した化粧品や機器を記録"
             rows={2}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
+            className={`${inputClass} resize-none`}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1.5">
-            施術前の肌の状態
+            施術前の状態
           </label>
           <textarea
             value={form.skin_condition_before}
             onChange={(e) =>
               updateField("skin_condition_before", e.target.value)
             }
-            placeholder="施術前の肌の状態を記録"
+            placeholder="施術前の状態を記録"
             rows={2}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
+            className={`${inputClass} resize-none`}
           />
         </div>
 
@@ -242,7 +249,33 @@ function NewRecordForm() {
             onChange={(e) => updateField("notes_after", e.target.value)}
             placeholder="施術後の状態や経過を記録"
             rows={2}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
+            className={`${inputClass} resize-none`}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1.5">
+            話した内容（会話メモ）
+          </label>
+          <textarea
+            value={form.conversation_notes}
+            onChange={(e) => updateField("conversation_notes", e.target.value)}
+            placeholder="お客様との会話で覚えておきたいこと"
+            rows={2}
+            className={`${inputClass} resize-none`}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1.5">
+            注意事項
+          </label>
+          <textarea
+            value={form.caution_notes}
+            onChange={(e) => updateField("caution_notes", e.target.value)}
+            placeholder="次回以降に注意すべきこと"
+            rows={2}
+            className={`${inputClass} resize-none`}
           />
         </div>
 
@@ -255,7 +288,7 @@ function NewRecordForm() {
             onChange={(e) => updateField("next_visit_memo", e.target.value)}
             placeholder="次回施術時の注意点やプランなど"
             rows={2}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
+            className={`${inputClass} resize-none`}
           />
         </div>
 
