@@ -215,7 +215,10 @@ function NewAppointmentForm() {
         sort_order: index,
       }));
 
-      await supabase.from("appointment_menus").insert(junctionRows);
+      const { error: junctionError } = await supabase.from("appointment_menus").insert(junctionRows);
+      if (junctionError) {
+        console.error("Junction insert error:", junctionError);
+      }
     }
 
     router.push("/appointments");

@@ -22,10 +22,14 @@ export function CourseTicketSection({
   initialTickets: CourseTicket[];
 }) {
   const [tickets, setTickets] = useState<CourseTicket[]>(initialTickets);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const handleUseSession = async (ticketId: string) => {
     const ticket = tickets.find((t) => t.id === ticketId);
     if (!ticket || ticket.used_sessions >= ticket.total_sessions) return;
+    if (processingId) return; // Prevent double-click
+
+    setProcessingId(ticketId);
 
     const supabase = createClient();
     const newUsed = ticket.used_sessions + 1;
@@ -46,6 +50,8 @@ export function CourseTicketSection({
         )
       );
     }
+
+    setProcessingId(null);
   };
 
   return (
@@ -94,9 +100,10 @@ export function CourseTicketSection({
                   {isActive && remaining > 0 && (
                     <button
                       onClick={() => handleUseSession(ticket.id)}
-                      className="text-xs bg-accent/10 text-accent px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-colors min-h-[32px]"
+                      disabled={processingId !== null}
+                      className="text-xs bg-accent/10 text-accent px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-colors min-h-[32px] disabled:opacity-50"
                     >
-                      1回使用する
+                      {processingId === ticket.id ? "処理中..." : "1回使用する"}
                     </button>
                   )}
                 </div>
