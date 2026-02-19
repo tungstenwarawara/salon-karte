@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { PageHeader } from "@/components/layout/page-header";
 
 type MonthlySales = {
   month: number;
@@ -11,10 +10,14 @@ type MonthlySales = {
   ticket_sales: number;
 };
 
-const MONTH_NAMES = [
-  "1月", "2月", "3月", "4月", "5月", "6月",
-  "7月", "8月", "9月", "10月", "11月", "12月",
-];
+type DailySales = {
+  day: number;
+  treatment: number;
+  product: number;
+  ticket: number;
+};
+
+type CategoryFilter = "all" | "treatment" | "product" | "ticket";
 
 function formatYen(amount: number): string {
   return `¥${amount.toLocaleString()}`;
@@ -29,10 +32,22 @@ function getChangePercent(current: number, previous: number): { text: string; co
   return { text: "±0%", color: "text-text-light" };
 }
 
+function getFilteredTotal(m: MonthlySales, filter: CategoryFilter): number {
+  if (filter === "treatment") return m.treatment_sales;
+  if (filter === "product") return m.product_sales;
+  if (filter === "ticket") return m.ticket_sales;
+  return m.treatment_sales + m.product_sales + m.ticket_sales;
+}
+
 export default function SalesPage() {
   const [data, setData] = useState<MonthlySales[]>([]);
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState(new Date().getFullYear());
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+  const [drillMonth, setDrillMonth] = useState<number | null>(null);
+  const [drillData, setDrillData] = useState<DailySales[]>([]);
+  const [drillLoading, setDrillLoading] = useState(false);
+  const [salonId, setSalonId] = useState<string | null>(null);
 
   const loadSales = useCallback(async (targetYear: number) => {
     setLoading(true);
@@ -48,6 +63,7 @@ export default function SalesPage() {
       .eq("owner_id", user.id)
       .single<{ id: string }>();
     if (!salon) return;
+    setSalonId(salon.id);
 
     const { data: salesData } = await supabase.rpc("get_monthly_sales_summary", {
       p_salon_id: salon.id,
@@ -60,13 +76,83 @@ export default function SalesPage() {
 
   useEffect(() => {
     loadSales(year);
+    setDrillMonth(null);
   }, [year, loadSales]);
+
+  // Load drill-down data when a month is selected
+  const loadDrillMonth = useCallback(async (month: number) => {
+    if (!salonId) return;
+    setDrillLoading(true);
+    const supabase = createClient();
+
+    const monthStr = String(month).padStart(2, "0");
+    const startDate = `${year}-${monthStr}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${monthStr}-${String(lastDay).padStart(2, "0")}`;
+
+    const [aptsRes, purchasesRes, ticketsRes] = await Promise.all([
+      supabase
+        .from("appointments")
+        .select("appointment_date, appointment_menus(price_snapshot)")
+        .eq("salon_id", salonId)
+        .gte("appointment_date", startDate)
+        .lte("appointment_date", endDate)
+        .eq("status", "completed"),
+      supabase
+        .from("purchases")
+        .select("purchase_date, total_price")
+        .eq("salon_id", salonId)
+        .gte("purchase_date", startDate)
+        .lte("purchase_date", endDate),
+      supabase
+        .from("course_tickets")
+        .select("purchase_date, price")
+        .eq("salon_id", salonId)
+        .gte("purchase_date", startDate)
+        .lte("purchase_date", endDate),
+    ]);
+
+    // Group by day
+    const dailyMap: Record<number, DailySales> = {};
+    for (let d = 1; d <= lastDay; d++) {
+      dailyMap[d] = { day: d, treatment: 0, product: 0, ticket: 0 };
+    }
+
+    for (const apt of aptsRes.data ?? []) {
+      const day = parseInt(apt.appointment_date.split("-")[2], 10);
+      const menus = (apt.appointment_menus ?? []) as { price_snapshot: number | null }[];
+      const total = menus.reduce((s, m) => s + (m.price_snapshot ?? 0), 0);
+      if (dailyMap[day]) dailyMap[day].treatment += total;
+    }
+
+    for (const p of purchasesRes.data ?? []) {
+      const day = parseInt((p.purchase_date as string).split("-")[2], 10);
+      if (dailyMap[day]) dailyMap[day].product += (p.total_price as number) ?? 0;
+    }
+
+    for (const t of ticketsRes.data ?? []) {
+      const day = parseInt((t.purchase_date as string).split("-")[2], 10);
+      if (dailyMap[day]) dailyMap[day].ticket += ((t.price as number | null) ?? 0);
+    }
+
+    setDrillData(Object.values(dailyMap));
+    setDrillLoading(false);
+  }, [salonId, year]);
+
+  useEffect(() => {
+    if (drillMonth !== null) loadDrillMonth(drillMonth);
+  }, [drillMonth, loadDrillMonth]);
 
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth(); // 0-indexed
 
-  // Calculate totals
-  const yearTotal = data.reduce(
+  // Filter data to visible months
+  const visibleData = data.filter(
+    (m) => !(year === currentYear && m.month - 1 > currentMonth)
+  );
+
+  // Calculate totals with filter
+  const yearTotal = visibleData.reduce(
     (acc, m) => ({
       treatment: acc.treatment + m.treatment_sales,
       product: acc.product + m.product_sales,
@@ -76,15 +162,36 @@ export default function SalesPage() {
   );
   const grandTotal = yearTotal.treatment + yearTotal.product + yearTotal.ticket;
 
-  // Find max monthly total for bar scaling
-  const monthlyTotals = data.map(
-    (m) => m.treatment_sales + m.product_sales + m.ticket_sales
-  );
-  const maxMonthly = Math.max(...monthlyTotals, 1);
+  // Max for bar scaling (filtered)
+  const filteredTotals = visibleData.map((m) => getFilteredTotal(m, categoryFilter));
+  const maxMonthly = Math.max(...filteredTotals, 1);
+
+  // Drill-down max
+  const drillFilteredTotals = drillData.map((d) => {
+    if (categoryFilter === "treatment") return d.treatment;
+    if (categoryFilter === "product") return d.product;
+    if (categoryFilter === "ticket") return d.ticket;
+    return d.treatment + d.product + d.ticket;
+  });
+  const drillMax = Math.max(...drillFilteredTotals, 1);
+
+  const categoryOptions: { key: CategoryFilter; label: string }[] = [
+    { key: "all", label: "全体" },
+    { key: "treatment", label: "施術" },
+    { key: "product", label: "物販" },
+    { key: "ticket", label: "回数券" },
+  ];
+
+  const filterColor = (filter: CategoryFilter) => {
+    if (filter === "treatment") return "bg-accent";
+    if (filter === "product") return "bg-blue-400";
+    if (filter === "ticket") return "bg-amber-400";
+    return "bg-accent";
+  };
 
   return (
     <div className="space-y-4">
-      <PageHeader title="売上レポート" backLabel="戻る" />
+      <h2 className="text-xl font-bold">売上レポート</h2>
 
       {/* Year navigation */}
       <div className="flex items-center justify-between bg-surface border border-border rounded-xl px-4 py-3">
@@ -109,7 +216,29 @@ export default function SalesPage() {
       </div>
 
       {loading ? (
-        <div className="text-center text-text-light py-8">読み込み中...</div>
+        /* Loading skeleton */
+        <div className="space-y-4">
+          <div className="bg-surface border border-border rounded-2xl p-5 animate-pulse space-y-3">
+            <div className="h-4 bg-border rounded w-20" />
+            <div className="h-8 bg-border rounded w-36" />
+            <div className="flex gap-3">
+              {[1, 2, 3].map((i) => <div key={i} className="h-3 bg-border rounded w-20" />)}
+            </div>
+          </div>
+          <div className="bg-surface border border-border rounded-2xl p-4 animate-pulse">
+            <div className="h-4 bg-border rounded w-24 mb-4" />
+            <div className="h-40 bg-border rounded" />
+          </div>
+        </div>
+      ) : visibleData.length === 0 || grandTotal === 0 ? (
+        /* Empty state */
+        <div className="bg-surface border border-border rounded-xl p-8 text-center text-text-light">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-12 h-12 mx-auto mb-3 text-border">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+          </svg>
+          <p className="font-medium">まだ売上データがありません</p>
+          <p className="text-xs mt-1">予約が完了すると集計されます</p>
+        </div>
       ) : (
         <>
           {/* Annual summary card */}
@@ -118,7 +247,7 @@ export default function SalesPage() {
               <span className="text-sm text-text-light">年間合計</span>
               <span className="text-2xl font-bold">{formatYen(grandTotal)}</span>
             </div>
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
               <div className="flex items-center gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-sm bg-accent" />
                 <span className="text-xs text-text-light">施術</span>
@@ -137,62 +266,191 @@ export default function SalesPage() {
             </div>
           </div>
 
-          {/* Monthly breakdown */}
+          {/* Category filter */}
+          <div className="flex gap-1.5">
+            {categoryOptions.map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setCategoryFilter(key)}
+                className={`text-xs px-3 py-1.5 rounded-full transition-colors min-h-[32px] ${
+                  categoryFilter === key
+                    ? "bg-accent text-white"
+                    : "bg-surface border border-border text-text-light"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Vertical bar chart */}
           <div className="bg-surface border border-border rounded-2xl p-4 space-y-3">
             <h3 className="font-bold text-sm">月別推移</h3>
-            <div className="space-y-2">
-              {data.map((m, idx) => {
-                const total = m.treatment_sales + m.product_sales + m.ticket_sales;
-                const prevTotal = idx > 0
-                  ? data[idx - 1].treatment_sales + data[idx - 1].product_sales + data[idx - 1].ticket_sales
-                  : 0;
-                const change = idx > 0 ? getChangePercent(total, prevTotal) : null;
 
-                // Skip future months in current year
-                if (year === currentYear && m.month - 1 > currentMonth) return null;
+            {/* Chart */}
+            <div className="relative h-44 flex items-end gap-1 pt-4">
+              {/* Y-axis reference lines */}
+              <div className="absolute inset-x-0 top-4 bottom-0 flex flex-col justify-between pointer-events-none">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="border-t border-dashed border-border/40 w-full" />
+                ))}
+              </div>
 
-                const treatmentPct = maxMonthly > 0 ? (m.treatment_sales / maxMonthly) * 100 : 0;
-                const productPct = maxMonthly > 0 ? (m.product_sales / maxMonthly) * 100 : 0;
-                const ticketPct = maxMonthly > 0 ? (m.ticket_sales / maxMonthly) * 100 : 0;
+              {/* Bars */}
+              {visibleData.map((m) => {
+                const total = getFilteredTotal(m, categoryFilter);
+                const heightPct = maxMonthly > 0 ? (total / maxMonthly) * 100 : 0;
+                const isCurrentMonth = m.month - 1 === currentMonth && year === currentYear;
+                const isDrilling = drillMonth === m.month;
 
                 return (
-                  <div key={m.month} className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium w-8 shrink-0">{MONTH_NAMES[m.month - 1]}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold">{formatYen(total)}</span>
-                        {change && (
-                          <span className={`text-[10px] font-medium ${change.color}`}>
-                            {change.text}
-                          </span>
-                        )}
+                  <button
+                    key={m.month}
+                    onClick={() => setDrillMonth(drillMonth === m.month ? null : m.month)}
+                    className="flex-1 flex flex-col items-center justify-end group relative z-10"
+                  >
+                    {/* Amount tooltip on hover/select */}
+                    {isDrilling && (
+                      <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[9px] font-bold text-accent whitespace-nowrap">
+                        {formatYen(total)}
                       </div>
-                    </div>
-                    {/* Stacked bar */}
-                    <div className="h-4 bg-background rounded-full overflow-hidden flex">
-                      {treatmentPct > 0 && (
-                        <div
-                          className="bg-accent h-full transition-all duration-500"
-                          style={{ width: `${treatmentPct}%` }}
-                        />
-                      )}
-                      {productPct > 0 && (
-                        <div
-                          className="bg-blue-400 h-full transition-all duration-500"
-                          style={{ width: `${productPct}%` }}
-                        />
-                      )}
-                      {ticketPct > 0 && (
-                        <div
-                          className="bg-amber-400 h-full transition-all duration-500"
-                          style={{ width: `${ticketPct}%` }}
-                        />
-                      )}
-                    </div>
-                  </div>
+                    )}
+                    {/* Bar */}
+                    <div
+                      className={`w-full rounded-t-md transition-all duration-500 ${
+                        isDrilling
+                          ? filterColor(categoryFilter)
+                          : isCurrentMonth
+                            ? `${filterColor(categoryFilter)} opacity-90`
+                            : `${filterColor(categoryFilter)} opacity-30 group-hover:opacity-60`
+                      }`}
+                      style={{ height: `${heightPct}%`, minHeight: total > 0 ? "4px" : "0" }}
+                    />
+                    {/* Month label */}
+                    <span className={`text-[9px] mt-1 ${
+                      isDrilling ? "text-accent font-bold" : isCurrentMonth ? "font-bold text-text" : "text-text-light"
+                    }`}>
+                      {m.month}月
+                    </span>
+                  </button>
                 );
               })}
             </div>
+          </div>
+
+          {/* Month drill-down */}
+          {drillMonth !== null && (
+            <div className="bg-surface border border-border rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-sm">{drillMonth}月 日別内訳</h3>
+                  {(() => {
+                    const m = data.find((d) => d.month === drillMonth);
+                    const total = m ? getFilteredTotal(m, categoryFilter) : 0;
+                    return <span className="text-xs text-text-light">{formatYen(total)}</span>;
+                  })()}
+                </div>
+                <button
+                  onClick={() => setDrillMonth(null)}
+                  className="text-xs text-text-light hover:text-text"
+                >
+                  閉じる
+                </button>
+              </div>
+
+              {drillLoading ? (
+                <div className="text-center text-text-light text-sm py-4">読み込み中...</div>
+              ) : (
+                <div className="space-y-1">
+                  {drillData
+                    .filter((d) => {
+                      const total = categoryFilter === "treatment" ? d.treatment
+                        : categoryFilter === "product" ? d.product
+                        : categoryFilter === "ticket" ? d.ticket
+                        : d.treatment + d.product + d.ticket;
+                      return total > 0;
+                    })
+                    .map((d) => {
+                      const total = categoryFilter === "treatment" ? d.treatment
+                        : categoryFilter === "product" ? d.product
+                        : categoryFilter === "ticket" ? d.ticket
+                        : d.treatment + d.product + d.ticket;
+                      const barWidth = drillMax > 0 ? (total / drillMax) * 100 : 0;
+
+                      return (
+                        <div key={d.day} className="flex items-center gap-2">
+                          <span className="text-xs text-text-light tabular-nums w-7 shrink-0 text-right">{d.day}日</span>
+                          <div className="flex-1 h-3 bg-background rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-300 ${filterColor(categoryFilter)} opacity-60`}
+                              style={{ width: `${barWidth}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-medium tabular-nums shrink-0 w-20 text-right">{formatYen(total)}</span>
+                        </div>
+                      );
+                    })}
+                  {drillData.every((d) => d.treatment + d.product + d.ticket === 0) && (
+                    <p className="text-sm text-text-light text-center py-2">この月のデータはありません</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Monthly summary list */}
+          <div className="bg-surface border border-border rounded-2xl p-4 space-y-2">
+            <h3 className="font-bold text-sm">月別サマリー</h3>
+            {visibleData.map((m, idx) => {
+              const total = getFilteredTotal(m, categoryFilter);
+              const prevTotal = idx > 0 ? getFilteredTotal(visibleData[idx - 1], categoryFilter) : 0;
+              const change = idx > 0 ? getChangePercent(total, prevTotal) : null;
+              const isCurrentMonth = m.month - 1 === currentMonth && year === currentYear;
+
+              return (
+                <button
+                  key={m.month}
+                  onClick={() => setDrillMonth(drillMonth === m.month ? null : m.month)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${
+                    drillMonth === m.month ? "bg-accent/5 border border-accent/20" : "hover:bg-background"
+                  }`}
+                >
+                  <span className={`text-xs font-medium w-8 shrink-0 ${isCurrentMonth ? "text-accent font-bold" : ""}`}>
+                    {m.month}月
+                  </span>
+                  {/* Mini stacked bar */}
+                  <div className="flex-1 h-2 bg-background rounded-full overflow-hidden flex">
+                    {categoryFilter === "all" ? (
+                      <>
+                        {m.treatment_sales > 0 && (
+                          <div className="bg-accent h-full" style={{ width: `${maxMonthly > 0 ? (m.treatment_sales / maxMonthly) * 100 : 0}%` }} />
+                        )}
+                        {m.product_sales > 0 && (
+                          <div className="bg-blue-400 h-full" style={{ width: `${maxMonthly > 0 ? (m.product_sales / maxMonthly) * 100 : 0}%` }} />
+                        )}
+                        {m.ticket_sales > 0 && (
+                          <div className="bg-amber-400 h-full" style={{ width: `${maxMonthly > 0 ? (m.ticket_sales / maxMonthly) * 100 : 0}%` }} />
+                        )}
+                      </>
+                    ) : (
+                      <div
+                        className={`h-full ${filterColor(categoryFilter)} opacity-60`}
+                        style={{ width: `${maxMonthly > 0 ? (total / maxMonthly) * 100 : 0}%` }}
+                      />
+                    )}
+                  </div>
+                  <span className="text-xs font-bold tabular-nums shrink-0 w-20 text-right">{formatYen(total)}</span>
+                  {change && (
+                    <span className={`text-[10px] font-medium shrink-0 w-10 text-right ${change.color}`}>
+                      {change.text}
+                    </span>
+                  )}
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 text-text-light shrink-0">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+              );
+            })}
           </div>
         </>
       )}

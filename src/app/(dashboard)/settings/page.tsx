@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 
 type Salon = Database["public"]["Tables"]["salons"]["Row"];
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [salon, setSalon] = useState<{
     name: string;
     phone: string;
@@ -180,6 +182,24 @@ export default function SettingsPage() {
           <span className="text-text-light">→</span>
         </div>
       </Link>
+
+      {/* Logout */}
+      <div className="pt-2">
+        <button
+          onClick={async () => {
+            const supabase = createClient();
+            await supabase.auth.signOut();
+            router.push("/login");
+            router.refresh();
+          }}
+          className="w-full flex items-center justify-center gap-2 text-sm text-red-500 hover:text-red-600 py-3 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+          </svg>
+          ログアウト
+        </button>
+      </div>
     </div>
   );
 }
