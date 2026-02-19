@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { Database } from "@/types/database";
+import { LapsedCustomersSection } from "@/components/dashboard/lapsed-customers-section";
 
 type Salon = Database["public"]["Tables"]["salons"]["Row"];
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
@@ -115,6 +116,26 @@ export default async function DashboardPage() {
   const monthlyTicketSales = monthlyTicketsRes.data?.reduce((sum, t) => sum + ((t as { price: number | null }).price ?? 0), 0) ?? 0;
 
   const monthlyTotal = monthlyTreatmentSales + monthlyProductSales + monthlyTicketSales;
+
+  // 今月の誕生日の顧客を取得
+  const currentMonth = now.getMonth() + 1;
+  const { data: allCustomersForBirthday } = await supabase
+    .from("customers")
+    .select("id, last_name, first_name, birth_date")
+    .eq("salon_id", salon.id)
+    .not("birth_date", "is", null);
+
+  const birthdayCustomers = (allCustomersForBirthday ?? [])
+    .filter((c) => {
+      if (!c.birth_date) return false;
+      const month = parseInt(c.birth_date.split("-")[1], 10);
+      return month === currentMonth;
+    })
+    .map((c) => ({
+      ...c,
+      birth_day: parseInt(c.birth_date!.split("-")[2], 10),
+    }))
+    .sort((a, b) => a.birth_day - b.birth_day);
 
   // 最近の施術記録を取得
   const { data: recentRecords } = await supabase
@@ -343,12 +364,46 @@ export default async function DashboardPage() {
         )}
       </div>
 
+      {/* Birthday customers this month */}
+      {birthdayCustomers.length > 0 && (
+        <div className="bg-surface border border-border rounded-2xl p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-pink-400">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+            </svg>
+            <h3 className="font-bold text-sm">今月のお誕生日</h3>
+            <span className="text-xs text-text-light">{currentMonth}月</span>
+          </div>
+          <div className="space-y-1">
+            {birthdayCustomers.map((c) => (
+              <Link
+                key={c.id}
+                href={`/customers/${c.id}`}
+                className="flex items-center justify-between p-2 rounded-xl hover:bg-background transition-colors"
+              >
+                <span className="text-sm font-medium">
+                  {c.last_name} {c.first_name}
+                </span>
+                <span className="text-xs text-text-light tabular-nums">
+                  {currentMonth}/{c.birth_day}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Monthly sales summary */}
       <div className="bg-surface border border-border rounded-2xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-sm">
             今月の売上
           </h3>
+          <Link href="/sales" className="text-xs text-accent hover:underline">
+            詳しく見る →
+          </Link>
+        </div>
+        <div className="flex items-center justify-between mb-1">
           <span className="text-xs text-text-light">
             {now.getFullYear()}年{now.getMonth() + 1}月
           </span>
@@ -372,45 +427,9 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Lapsed customers alert */}
+      {/* Lapsed customers alert (client component for graduation action) */}
       {lapsedCustomers && lapsedCustomers.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold">
-              ご無沙汰のお客様
-              <span className="text-xs font-normal text-text-light ml-2">
-                60日以上
-              </span>
-            </h3>
-            {lapsedCustomers.length > 3 && (
-              <Link href="/customers" className="text-xs text-accent hover:underline">
-                他{lapsedCustomers.length - 3}名 →
-              </Link>
-            )}
-          </div>
-          <div className="space-y-2">
-            {lapsedCustomers.slice(0, 3).map((c) => (
-              <Link
-                key={c.id}
-                href={`/customers/${c.id}`}
-                className="block bg-surface border border-orange-200 rounded-xl p-3 hover:border-accent transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">
-                    {c.last_name} {c.first_name}
-                  </span>
-                  <span
-                    className={`text-xs font-medium ${
-                      c.days_since >= 90 ? "text-red-500" : "text-orange-500"
-                    }`}
-                  >
-                    {c.days_since}日前
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
+        <LapsedCustomersSection initialCustomers={lapsedCustomers} />
       )}
 
       {/* Recent records */}

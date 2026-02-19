@@ -71,6 +71,7 @@ export type Database = {
           height_cm: number | null;
           weight_kg: number | null;
           treatment_goal: string | null;
+          graduated_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -94,6 +95,7 @@ export type Database = {
           height_cm?: number | null;
           weight_kg?: number | null;
           treatment_goal?: string | null;
+          graduated_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -117,6 +119,7 @@ export type Database = {
           height_cm?: number | null;
           weight_kg?: number | null;
           treatment_goal?: string | null;
+          graduated_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -544,6 +547,18 @@ export type Database = {
           first_name: string;
           last_visit_date: string;
           days_since: number;
+        }[];
+      };
+      get_monthly_sales_summary: {
+        Args: {
+          p_salon_id: string;
+          p_year: number;
+        };
+        Returns: {
+          month: number;
+          treatment_sales: number;
+          product_sales: number;
+          ticket_sales: number;
         }[];
       };
     };

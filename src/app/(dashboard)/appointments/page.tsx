@@ -54,11 +54,11 @@ const DAY_NAMES = ["月", "火", "水", "木", "金", "土", "日"];
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<AppointmentWithCustomer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"day" | "week">("day");
+  const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
 
-  const loadAppointments = useCallback(async (date: Date, mode: "day" | "week") => {
+  const loadAppointments = useCallback(async (date: Date, mode: "day" | "week" | "month") => {
     const supabase = createClient();
     const {
       data: { user },
@@ -79,10 +79,16 @@ export default function AppointmentsPage() {
     if (mode === "day") {
       startDate = toDateStr(date);
       endDate = startDate;
-    } else {
+    } else if (mode === "week") {
       const week = getWeekDates(date);
       startDate = toDateStr(week[0]);
       endDate = toDateStr(week[6]);
+    } else {
+      // month mode
+      const first = new Date(date.getFullYear(), date.getMonth(), 1);
+      const last = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      startDate = toDateStr(first);
+      endDate = toDateStr(last);
     }
 
     const { data } = await supabase
@@ -107,8 +113,10 @@ export default function AppointmentsPage() {
     const d = new Date(selectedDate);
     if (viewMode === "day") {
       d.setDate(d.getDate() + offset);
-    } else {
+    } else if (viewMode === "week") {
       d.setDate(d.getDate() + offset * 7);
+    } else {
+      d.setMonth(d.getMonth() + offset);
     }
     setSelectedDate(d);
   };
@@ -152,7 +160,9 @@ export default function AppointmentsPage() {
   const dateLabel =
     viewMode === "day"
       ? `${selectedDate.getFullYear()}/${selectedDate.getMonth() + 1}/${selectedDate.getDate()}（${DAY_NAMES[(selectedDate.getDay() + 6) % 7]}）`
-      : `${weekDates[0].getMonth() + 1}/${weekDates[0].getDate()} 〜 ${weekDates[6].getMonth() + 1}/${weekDates[6].getDate()}`;
+      : viewMode === "week"
+        ? `${weekDates[0].getMonth() + 1}/${weekDates[0].getDate()} 〜 ${weekDates[6].getMonth() + 1}/${weekDates[6].getDate()}`
+        : `${selectedDate.getFullYear()}年${selectedDate.getMonth() + 1}月`;
 
   const renderAppointmentCard = (apt: AppointmentWithCustomer) => {
     const statusInfo = STATUS_LABELS[apt.status] ?? STATUS_LABELS.scheduled;
@@ -297,6 +307,16 @@ export default function AppointmentsPage() {
           週別
         </button>
         <button
+          onClick={() => setViewMode("month")}
+          className={`text-sm px-4 py-2 rounded-xl transition-colors min-h-[40px] ${
+            viewMode === "month"
+              ? "bg-accent text-white"
+              : "bg-surface border border-border text-text-light hover:text-text"
+          }`}
+        >
+          月別
+        </button>
+        <button
           onClick={goToToday}
           className="text-sm px-4 py-2 rounded-xl bg-surface border border-border text-text-light hover:text-text transition-colors min-h-[40px] ml-auto"
         >
@@ -359,7 +379,7 @@ export default function AppointmentsPage() {
             )}
           </div>
         )
-      ) : (
+      ) : viewMode === "week" ? (
         /* Week view */
         <div className="space-y-4">
           {weekDates.map((date, i) => {
@@ -404,6 +424,129 @@ export default function AppointmentsPage() {
             );
           })}
         </div>
+      ) : (
+        /* Month calendar view */
+        (() => {
+          const year = selectedDate.getFullYear();
+          const month = selectedDate.getMonth();
+          const firstDay = new Date(year, month, 1);
+          const lastDay = new Date(year, month + 1, 0);
+          const daysInMonth = lastDay.getDate();
+          // Sunday=0 start for Japanese calendar
+          const startDow = firstDay.getDay();
+
+          // Group appointments by date
+          const appointmentsByDate: Record<string, AppointmentWithCustomer[]> = {};
+          for (const apt of appointments) {
+            if (!appointmentsByDate[apt.appointment_date]) {
+              appointmentsByDate[apt.appointment_date] = [];
+            }
+            appointmentsByDate[apt.appointment_date].push(apt);
+          }
+
+          const calendarDayHeaders = ["日", "月", "火", "水", "木", "金", "土"];
+          const cells: (number | null)[] = [];
+          for (let i = 0; i < startDow; i++) cells.push(null);
+          for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+          // Fill remaining cells to complete the grid row
+          while (cells.length % 7 !== 0) cells.push(null);
+
+          return (
+            <div className="bg-surface border border-border rounded-2xl p-4">
+              {/* Calendar header */}
+              <div className="grid grid-cols-7 mb-2">
+                {calendarDayHeaders.map((name, i) => (
+                  <div
+                    key={name}
+                    className={`text-center text-xs font-medium py-1 ${
+                      i === 0 ? "text-red-400" : i === 6 ? "text-blue-400" : "text-text-light"
+                    }`}
+                  >
+                    {name}
+                  </div>
+                ))}
+              </div>
+
+              {/* Calendar grid */}
+              <div className="grid grid-cols-7 gap-px">
+                {cells.map((day, idx) => {
+                  if (day === null) {
+                    return <div key={`empty-${idx}`} className="aspect-square" />;
+                  }
+
+                  const cellDate = new Date(year, month, day);
+                  const dateStr = toDateStr(cellDate);
+                  const isToday = dateStr === todayStr;
+                  const dayApts = appointmentsByDate[dateStr] ?? [];
+                  const activeCount = dayApts.filter((a) => a.status !== "cancelled").length;
+                  const dow = cellDate.getDay();
+                  const isHoliday = businessHours && !isBusinessDay(businessHours, cellDate);
+
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => {
+                        setSelectedDate(cellDate);
+                        setViewMode("day");
+                      }}
+                      className={`aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition-colors relative ${
+                        isToday
+                          ? "bg-accent text-white font-bold"
+                          : isHoliday
+                            ? "text-gray-300"
+                            : dow === 0
+                              ? "text-red-400"
+                              : dow === 6
+                                ? "text-blue-400"
+                                : "text-text"
+                      } hover:bg-accent/10`}
+                    >
+                      <span className={`${isToday ? "text-white" : ""} text-sm`}>{day}</span>
+                      {activeCount > 0 && (
+                        <div className="flex items-center justify-center mt-0.5">
+                          {activeCount <= 3 ? (
+                            <div className="flex gap-0.5">
+                              {Array.from({ length: activeCount }).map((_, i) => (
+                                <div
+                                  key={i}
+                                  className={`w-1 h-1 rounded-full ${
+                                    isToday ? "bg-white" : "bg-accent"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <span
+                              className={`text-[10px] font-bold ${
+                                isToday ? "text-white" : "text-accent"
+                              }`}
+                            >
+                              {activeCount}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Legend */}
+              <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-border">
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent" />
+                  <span className="text-[10px] text-text-light">予約あり</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded bg-accent flex items-center justify-center">
+                    <span className="text-[8px] text-white font-bold">N</span>
+                  </div>
+                  <span className="text-[10px] text-text-light">4件以上</span>
+                </div>
+              </div>
+            </div>
+          );
+        })()
       )}
     </div>
   );
