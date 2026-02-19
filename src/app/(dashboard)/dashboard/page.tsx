@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
+import { formatDateRelative } from "@/lib/format";
 import type { Database } from "@/types/database";
 import { LapsedCustomersSection } from "@/components/dashboard/lapsed-customers-section";
 
@@ -378,9 +379,19 @@ export default async function DashboardPage() {
                 href={`/customers/${c.id}`}
                 className="flex items-center justify-between p-2 rounded-xl hover:bg-background transition-colors"
               >
-                <span className="text-sm font-medium">
-                  {c.last_name} {c.first_name}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">
+                    {c.last_name} {c.first_name}
+                  </span>
+                  {c.birth_date && (() => {
+                    const birth = new Date(c.birth_date!);
+                    const today = new Date();
+                    let age = today.getFullYear() - birth.getFullYear();
+                    const m = today.getMonth() - birth.getMonth();
+                    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+                    return <span className="text-xs text-text-light">（{age}歳）</span>;
+                  })()}
+                </div>
                 <span className="text-xs text-text-light tabular-nums">
                   {currentMonth}/{c.birth_day}
                 </span>
@@ -407,15 +418,15 @@ export default async function DashboardPage() {
         </div>
         <div className="grid grid-cols-3 gap-3 text-center">
           <div>
-            <p className="text-base font-bold">{monthlyTreatmentSales.toLocaleString()}</p>
+            <p className="text-base font-bold">{monthlyTreatmentSales.toLocaleString()}<span className="text-xs font-normal text-text-light">円</span></p>
             <p className="text-[10px] text-text-light">施術</p>
           </div>
           <div>
-            <p className="text-base font-bold">{monthlyProductSales.toLocaleString()}</p>
+            <p className="text-base font-bold">{monthlyProductSales.toLocaleString()}<span className="text-xs font-normal text-text-light">円</span></p>
             <p className="text-[10px] text-text-light">物販</p>
           </div>
           <div>
-            <p className="text-base font-bold">{monthlyTicketSales.toLocaleString()}</p>
+            <p className="text-base font-bold">{monthlyTicketSales.toLocaleString()}<span className="text-xs font-normal text-text-light">円</span></p>
             <p className="text-[10px] text-text-light">回数券</p>
           </div>
         </div>
@@ -434,6 +445,12 @@ export default async function DashboardPage() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold">最近のカルテ</h3>
+            <Link
+              href="/customers"
+              className="text-xs text-accent hover:underline"
+            >
+              顧客一覧 →
+            </Link>
           </div>
           <div className="space-y-2">
             {recentRecords.map((record) => {
@@ -451,7 +468,7 @@ export default async function DashboardPage() {
                         : "不明"}
                     </span>
                     <span className="text-xs text-text-light">
-                      {record.treatment_date}
+                      {formatDateRelative(record.treatment_date)}
                     </span>
                   </div>
                   {record.menu_name_snapshot && (

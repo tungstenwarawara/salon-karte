@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
+import { ErrorAlert } from "@/components/ui/error-alert";
 
 export default function NewPurchasePage() {
   const router = useRouter();
@@ -109,11 +110,7 @@ export default function NewPurchasePage() {
         onSubmit={handleSubmit}
         className="bg-surface border border-border rounded-2xl p-5 space-y-4"
       >
-        {error && (
-          <div className="bg-error/10 text-error text-sm rounded-lg p-3">
-            {error}
-          </div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         <div>
           <label className="block text-sm font-medium mb-1.5">

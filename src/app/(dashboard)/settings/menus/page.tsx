@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
+import { Toast, useToast } from "@/components/ui/toast";
+import { ErrorAlert } from "@/components/ui/error-alert";
 import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
@@ -16,6 +18,7 @@ export default function MenusPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { toast, showToast, hideToast } = useToast();
   const [form, setForm] = useState({
     name: "",
     category: "",
@@ -97,6 +100,7 @@ export default function MenusPage() {
 
     setLoading(false);
     resetForm();
+    showToast(editingId ? "メニューを更新しました" : "メニューを追加しました");
     loadMenus();
   };
 
@@ -109,6 +113,20 @@ export default function MenusPage() {
     });
     setEditingId(menu.id);
     setShowForm(true);
+  };
+
+  const handleToggleActive = async (menuId: string, currentActive: boolean) => {
+    setError("");
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("treatment_menus")
+      .update({ is_active: !currentActive })
+      .eq("id", menuId);
+    if (error) {
+      setError("ステータスの変更に失敗しました");
+      return;
+    }
+    loadMenus();
   };
 
   const handleDelete = async (menuId: string) => {
@@ -125,6 +143,7 @@ export default function MenusPage() {
 
   return (
     <div className="space-y-4">
+      {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
       <PageHeader title="施術メニュー" backLabel="設定" backHref="/settings">
         {!showForm && (
           <button
@@ -136,11 +155,7 @@ export default function MenusPage() {
         )}
       </PageHeader>
 
-      {error && (
-        <div className="bg-error/10 text-error text-sm rounded-lg p-3">
-          {error}
-        </div>
-      )}
+      {error && <ErrorAlert message={error} />}
 
       {/* Form */}
       {showForm && (
@@ -235,11 +250,16 @@ export default function MenusPage() {
           {menus.map((menu) => (
             <div
               key={menu.id}
-              className="bg-surface border border-border rounded-xl p-4"
+              className={`bg-surface border rounded-xl p-4 ${menu.is_active ? "border-border" : "border-border opacity-60"}`}
             >
               <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-medium">{menu.name}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{menu.name}</p>
+                    {!menu.is_active && (
+                      <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full shrink-0">非表示</span>
+                    )}
+                  </div>
                   <div className="flex gap-3 mt-1 text-sm text-text-light">
                     {menu.category && <span>{menu.category}</span>}
                     {menu.duration_minutes && (
@@ -250,7 +270,15 @@ export default function MenusPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-3 shrink-0 ml-3">
+                  {/* Active toggle */}
+                  <button
+                    onClick={() => handleToggleActive(menu.id, menu.is_active)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${menu.is_active ? "bg-accent" : "bg-gray-200"}`}
+                    aria-label={menu.is_active ? "非表示にする" : "表示にする"}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${menu.is_active ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
                   <button
                     onClick={() => startEdit(menu)}
                     className="text-sm text-accent hover:underline"
@@ -270,8 +298,14 @@ export default function MenusPage() {
         </div>
       ) : (
         !showForm && (
-          <div className="bg-surface border border-border rounded-xl p-6 text-center text-text-light">
-            メニューが登録されていません
+          <div className="bg-surface border border-border rounded-xl p-6 text-center">
+            <p className="text-text-light">メニューが登録されていません</p>
+            <button
+              onClick={() => setShowForm(true)}
+              className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
+            >
+              最初のメニューを追加する →
+            </button>
           </div>
         )
       )}

@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
+import { ErrorAlert } from "@/components/ui/error-alert";
 import type { Database, BusinessHours } from "@/types/database";
 import {
   getScheduleForDate,
@@ -295,11 +296,7 @@ function NewAppointmentForm() {
       <PageHeader title="予約を登録" backLabel="予約一覧" backHref="/appointments" />
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {error && (
-          <div className="bg-error/10 text-error text-sm rounded-lg p-3">
-            {error}
-          </div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         {/* Customer selection */}
         <div className="bg-surface border border-border rounded-xl p-4 space-y-3">

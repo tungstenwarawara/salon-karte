@@ -143,7 +143,14 @@ export default function CustomersPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">顧客一覧</h2>
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-xl font-bold">顧客一覧</h2>
+          {!loading && (
+            <span className="text-sm text-text-light">
+              {search ? `${sorted.length}/${customers.length}名` : `${customers.length}名`}
+            </span>
+          )}
+        </div>
         <Link
           href="/customers/new"
           className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[40px] flex items-center"
@@ -153,13 +160,26 @@ export default function CustomersPage() {
       </div>
 
       {/* Search */}
-      <input
-        type="text"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="名前・カナ・電話番号で検索"
-        className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-      />
+      <div className="relative">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="名前・カナ・電話番号で検索"
+          className="w-full rounded-xl border border-border bg-surface px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light hover:text-text p-1"
+            aria-label="検索をクリア"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+      </div>
 
       {/* Sort */}
       <div className="flex gap-2">
@@ -228,8 +248,20 @@ export default function CustomersPage() {
           })}
         </div>
       ) : (
-        <div className="bg-surface border border-border rounded-xl p-6 text-center text-text-light">
-          {search ? "該当する顧客が見つかりません" : "顧客が登録されていません"}
+        <div className="bg-surface border border-border rounded-xl p-6 text-center">
+          {search ? (
+            <p className="text-text-light">該当する顧客が見つかりません</p>
+          ) : (
+            <>
+              <p className="text-text-light">顧客が登録されていません</p>
+              <Link
+                href="/customers/new"
+                className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
+              >
+                最初のお客様を登録する →
+              </Link>
+            </>
+          )}
         </div>
       )}
     </div>

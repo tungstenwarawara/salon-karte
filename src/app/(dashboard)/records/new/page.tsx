@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { uploadPhotos } from "@/lib/supabase/storage";
 import { PhotoUpload, type PhotoEntry } from "@/components/records/photo-upload";
 import { PageHeader } from "@/components/layout/page-header";
+import { ErrorAlert } from "@/components/ui/error-alert";
 import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
@@ -257,11 +258,7 @@ function NewRecordForm() {
       )}
 
       <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
-        {error && (
-          <div className="bg-error/10 text-error text-sm rounded-lg p-3">
-            {error}
-          </div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         <div>
           <label className="block text-sm font-medium mb-1.5">

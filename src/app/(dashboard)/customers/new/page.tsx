@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
+import { ErrorAlert } from "@/components/ui/error-alert";
 
 const MARITAL_STATUSES = [
   { value: "", label: "選択してください" },
@@ -65,7 +66,7 @@ export default function NewCustomerPage() {
       return;
     }
 
-    const { error } = await supabase.from("customers").insert({
+    const { data: newCustomer, error } = await supabase.from("customers").insert({
       salon_id: salon.id,
       last_name: form.last_name,
       first_name: form.first_name,
@@ -83,15 +84,15 @@ export default function NewCustomerPage() {
       allergies: form.allergies || null,
       treatment_goal: form.treatment_goal || null,
       notes: form.notes || null,
-    });
+    }).select("id").single<{ id: string }>();
 
-    if (error) {
+    if (error || !newCustomer) {
       setError("登録に失敗しました。もう一度お試しください");
       setLoading(false);
       return;
     }
 
-    router.push("/customers");
+    router.push(`/customers/${newCustomer.id}`);
     router.refresh();
   };
 
@@ -103,11 +104,7 @@ export default function NewCustomerPage() {
       <PageHeader title="顧客を追加" backLabel="顧客一覧" backHref="/customers" />
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="bg-error/10 text-error text-sm rounded-lg p-3">
-            {error}
-          </div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         {/* 基本情報 */}
         <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
+import { ErrorAlert } from "@/components/ui/error-alert";
 import type { Database, BusinessHours } from "@/types/database";
 import {
   getScheduleForDate,
@@ -321,11 +322,7 @@ export default function EditAppointmentPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {error && (
-          <div className="bg-error/10 text-error text-sm rounded-lg p-3">
-            {error}
-          </div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         {/* Date */}
         <div>

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Toast, useToast } from "@/components/ui/toast";
+import { ErrorAlert } from "@/components/ui/error-alert";
 import type { Database } from "@/types/database";
 
 type Salon = Database["public"]["Tables"]["salons"]["Row"];
@@ -16,8 +18,8 @@ export default function SettingsPage() {
     address: string;
   }>({ name: "", phone: "", address: "" });
   const [loading, setLoading] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
     const load = async () => {
@@ -47,7 +49,6 @@ export default function SettingsPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setSaved(false);
     setLoading(true);
 
     const supabase = createClient();
@@ -68,30 +69,21 @@ export default function SettingsPage() {
     if (error) {
       setError("保存に失敗しました");
     } else {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      showToast("サロン情報を保存しました");
     }
     setLoading(false);
   };
 
   return (
     <div className="space-y-6">
+      {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
       <h2 className="text-xl font-bold">設定</h2>
 
       {/* Salon info */}
       <form onSubmit={handleSave} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
         <h3 className="font-bold">サロン情報</h3>
 
-        {error && (
-          <div className="bg-error/10 text-error text-sm rounded-lg p-3">
-            {error}
-          </div>
-        )}
-        {saved && (
-          <div className="bg-success/10 text-success text-sm rounded-lg p-3">
-            保存しました
-          </div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         <div>
           <label className="block text-sm font-medium mb-1.5">

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
+import { ErrorAlert } from "@/components/ui/error-alert";
 import type { Database } from "@/types/database";
 
 type Customer = Database["public"]["Tables"]["customers"]["Row"];
@@ -155,14 +156,10 @@ export default function EditCustomerPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="顧客情報を編集" backHref="/customers" />
+      <PageHeader title="顧客情報を編集" backLabel="顧客詳細" backHref={`/customers/${id}`} />
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="bg-error/10 text-error text-sm rounded-lg p-3">
-            {error}
-          </div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         {/* 基本情報 */}
         <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
