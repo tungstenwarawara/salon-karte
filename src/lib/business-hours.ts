@@ -57,7 +57,9 @@ export const DEFAULT_BUSINESS_HOURS: BusinessHours = {
 
 /** "HH:MM" → 分 */
 export function timeToMinutes(time: string): number {
-  const [h, m] = time.split(":").map(Number);
+  const parts = time.split(":");
+  const h = Number(parts[0]) || 0;
+  const m = Number(parts[1]) || 0;
   return h * 60 + m;
 }
 

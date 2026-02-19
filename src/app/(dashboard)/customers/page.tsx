@@ -57,23 +57,27 @@ export default function CustomersPage() {
       return;
     }
 
-    // Get customers
-    const { data: customerData } = await supabase
-      .from("customers")
-      .select("*")
-      .eq("salon_id", salon.id)
-      .returns<Customer[]>();
+    // 顧客と来店情報を並列取得（ウォーターフォール解消）
+    const [customersResult, visitResult] = await Promise.all([
+      supabase
+        .from("customers")
+        .select("*")
+        .eq("salon_id", salon.id)
+        .order("last_name_kana", { ascending: true })
+        .returns<Customer[]>(),
+      supabase
+        .from("treatment_records")
+        .select("customer_id, treatment_date")
+        .eq("salon_id", salon.id),
+    ]);
 
+    const customerData = customersResult.data;
     if (!customerData) {
       setLoading(false);
       return;
     }
 
-    // Get visit info from treatment_records (aggregate per customer)
-    const { data: visitData } = await supabase
-      .from("treatment_records")
-      .select("customer_id, treatment_date")
-      .eq("salon_id", salon.id);
+    const visitData = visitResult.data;
 
     // Build visit stats map
     const visitMap = new Map<string, { count: number; lastDate: string | null }>();

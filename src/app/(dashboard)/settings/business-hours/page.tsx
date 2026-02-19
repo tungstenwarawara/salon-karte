@@ -74,7 +74,11 @@ export default function BusinessHoursPage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setError("認証エラーです。再ログインしてください。");
+      setSaving(false);
+      return;
+    }
 
     const { error: updateError } = await supabase
       .from("salons")

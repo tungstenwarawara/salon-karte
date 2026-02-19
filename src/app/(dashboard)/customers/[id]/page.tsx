@@ -42,13 +42,49 @@ export default async function CustomerDetailPage({
 
   if (!customer) notFound();
 
-  // 施術記録を取得
-  const { data: records } = await supabase
-    .from("treatment_records")
-    .select("*")
-    .eq("customer_id", id)
-    .order("treatment_date", { ascending: false })
-    .returns<TreatmentRecord[]>();
+  // 全クエリを並列実行（ウォーターフォール解消）
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+  const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult, appointmentMenusResult] = await Promise.all([
+    supabase
+      .from("treatment_records")
+      .select("*")
+      .eq("customer_id", id)
+      .order("treatment_date", { ascending: false })
+      .returns<TreatmentRecord[]>(),
+    supabase
+      .from("appointments")
+      .select("*")
+      .eq("customer_id", id)
+      .eq("status", "scheduled")
+      .gte("appointment_date", today)
+      .order("appointment_date", { ascending: true })
+      .limit(1)
+      .maybeSingle<Appointment>(),
+    supabase
+      .from("purchases")
+      .select("*")
+      .eq("customer_id", id)
+      .order("purchase_date", { ascending: false })
+      .returns<Purchase[]>(),
+    supabase
+      .from("course_tickets")
+      .select("*")
+      .eq("customer_id", id)
+      .order("created_at", { ascending: false })
+      .returns<CourseTicket[]>(),
+    supabase
+      .from("appointments")
+      .select("appointment_menus(price_snapshot)")
+      .eq("customer_id", id),
+  ]);
+
+  const records = recordsResult.data;
+  const nextAppointment = appointmentResult.data;
+  const purchases = purchasesResult.data;
+  const courseTickets = courseTicketsResult.data;
+  const appointmentMenusData = appointmentMenusResult.data;
 
   // 来店分析
   const visitCount = records?.length ?? 0;
@@ -68,42 +104,7 @@ export default async function CustomerDetailPage({
     avgInterval = Math.round(totalDays / (dates.length - 1));
   }
 
-  // 次回予約を取得
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const { data: nextAppointment } = await supabase
-    .from("appointments")
-    .select("*")
-    .eq("customer_id", id)
-    .eq("status", "scheduled")
-    .gte("appointment_date", today)
-    .order("appointment_date", { ascending: true })
-    .limit(1)
-    .single<Appointment>();
-
-  // 購入履歴を取得
-  const { data: purchases } = await supabase
-    .from("purchases")
-    .select("*")
-    .eq("customer_id", id)
-    .order("purchase_date", { ascending: false })
-    .returns<Purchase[]>();
-
   const purchaseTotal = purchases?.reduce((sum, p) => sum + p.total_price, 0) ?? 0;
-
-  // コースチケットを取得
-  const { data: courseTickets } = await supabase
-    .from("course_tickets")
-    .select("*")
-    .eq("customer_id", id)
-    .order("created_at", { ascending: false })
-    .returns<CourseTicket[]>();
-
-  // 施術合計を取得（appointment_menus経由）
-  const { data: appointmentMenusData } = await supabase
-    .from("appointments")
-    .select("appointment_menus(price_snapshot)")
-    .eq("customer_id", id);
 
   const treatmentTotal = appointmentMenusData?.reduce((sum, apt) => {
     const menus = (apt.appointment_menus ?? []) as { price_snapshot: number | null }[];

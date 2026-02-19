@@ -65,6 +65,10 @@ export default function NewPurchasePage() {
       setError("商品名を入力してください");
       return;
     }
+    if (!salonId) {
+      setError("サロン情報の読み込み中です。しばらくお待ちください。");
+      return;
+    }
     setError("");
     setLoading(true);
 

@@ -561,6 +561,15 @@ export type Database = {
           ticket_sales: number;
         }[];
       };
+      use_course_ticket_session: {
+        Args: {
+          p_ticket_id: string;
+        };
+        Returns: {
+          used_sessions: number;
+          status: string;
+        };
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

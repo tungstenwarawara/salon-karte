@@ -185,8 +185,8 @@ export default function EditRecordPage() {
           >
             <option value="">選択してください</option>
             {menus.map((menu) => (
-              <option key={menu.id} value={menu.id}>
-                {menu.name}
+              <option key={menu.id} value={menu.id} disabled={!menu.is_active && menu.id !== form.menu_id}>
+                {menu.name}{!menu.is_active ? "（非アクティブ）" : ""}
               </option>
             ))}
           </select>
