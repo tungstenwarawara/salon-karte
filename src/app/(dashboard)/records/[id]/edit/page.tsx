@@ -25,6 +25,8 @@ export default function EditRecordPage() {
     skin_condition_before: "",
     notes_after: "",
     next_visit_memo: "",
+    conversation_notes: "",
+    caution_notes: "",
   });
 
   useEffect(() => {
@@ -68,6 +70,8 @@ export default function EditRecordPage() {
           skin_condition_before: record.skin_condition_before ?? "",
           notes_after: record.notes_after ?? "",
           next_visit_memo: record.next_visit_memo ?? "",
+          conversation_notes: record.conversation_notes ?? "",
+          caution_notes: record.caution_notes ?? "",
         });
       }
     };
@@ -97,6 +101,8 @@ export default function EditRecordPage() {
         skin_condition_before: form.skin_condition_before || null,
         notes_after: form.notes_after || null,
         next_visit_memo: form.next_visit_memo || null,
+        conversation_notes: form.conversation_notes || null,
+        caution_notes: form.caution_notes || null,
       })
       .eq("id", id);
 
@@ -140,6 +146,9 @@ export default function EditRecordPage() {
     router.push(customerId ? `/customers/${customerId}` : "/dashboard");
   };
 
+  const inputClass =
+    "w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors";
+
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold">施術記録を編集</h2>
@@ -160,7 +169,7 @@ export default function EditRecordPage() {
             value={form.treatment_date}
             onChange={(e) => updateField("treatment_date", e.target.value)}
             required
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            className={inputClass}
           />
         </div>
 
@@ -171,7 +180,7 @@ export default function EditRecordPage() {
           <select
             value={form.menu_id}
             onChange={(e) => updateField("menu_id", e.target.value)}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            className={inputClass}
           >
             <option value="">選択してください</option>
             {menus.map((menu) => (
@@ -188,7 +197,7 @@ export default function EditRecordPage() {
             type="text"
             value={form.treatment_area}
             onChange={(e) => updateField("treatment_area", e.target.value)}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            className={inputClass}
           />
         </div>
 
@@ -200,13 +209,13 @@ export default function EditRecordPage() {
             value={form.products_used}
             onChange={(e) => updateField("products_used", e.target.value)}
             rows={2}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
+            className={`${inputClass} resize-none`}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1.5">
-            施術前の肌の状態
+            施術前の状態
           </label>
           <textarea
             value={form.skin_condition_before}
@@ -214,7 +223,7 @@ export default function EditRecordPage() {
               updateField("skin_condition_before", e.target.value)
             }
             rows={2}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
+            className={`${inputClass} resize-none`}
           />
         </div>
 
@@ -226,7 +235,31 @@ export default function EditRecordPage() {
             value={form.notes_after}
             onChange={(e) => updateField("notes_after", e.target.value)}
             rows={2}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
+            className={`${inputClass} resize-none`}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1.5">
+            話した内容（会話メモ）
+          </label>
+          <textarea
+            value={form.conversation_notes}
+            onChange={(e) => updateField("conversation_notes", e.target.value)}
+            rows={2}
+            className={`${inputClass} resize-none`}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1.5">
+            注意事項
+          </label>
+          <textarea
+            value={form.caution_notes}
+            onChange={(e) => updateField("caution_notes", e.target.value)}
+            rows={2}
+            className={`${inputClass} resize-none`}
           />
         </div>
 
@@ -238,7 +271,7 @@ export default function EditRecordPage() {
             value={form.next_visit_memo}
             onChange={(e) => updateField("next_visit_memo", e.target.value)}
             rows={2}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
+            className={`${inputClass} resize-none`}
           />
         </div>
 

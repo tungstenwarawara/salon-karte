@@ -7,6 +7,17 @@ type Customer = Database["public"]["Tables"]["customers"]["Row"];
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
 
+function calculateAge(birthDate: string): number {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
 export default async function CustomerDetailPage({
   params,
 }: {
@@ -66,6 +77,9 @@ export default async function CustomerDetailPage({
     .order("appointment_date", { ascending: true })
     .limit(1)
     .single<Appointment>();
+
+  // 年齢計算
+  const age = customer.birth_date ? calculateAge(customer.birth_date) : null;
 
   return (
     <div className="space-y-6">
@@ -143,9 +157,54 @@ export default async function CustomerDetailPage({
         <h3 className="font-bold text-sm text-text-light">基本情報</h3>
         <InfoRow label="電話番号" value={customer.phone} />
         <InfoRow label="メール" value={customer.email} />
-        <InfoRow label="生年月日" value={customer.birth_date} />
+        <InfoRow
+          label="生年月日"
+          value={
+            customer.birth_date
+              ? age !== null
+                ? `${customer.birth_date}（${age}歳）`
+                : customer.birth_date
+              : null
+          }
+        />
+        <InfoRow label="住所" value={customer.address} />
+        <InfoRow label="婚姻状況" value={customer.marital_status} />
+        <InfoRow
+          label="お子様"
+          value={
+            customer.has_children === null
+              ? null
+              : customer.has_children
+                ? "あり"
+                : "なし"
+          }
+        />
+        <InfoRow
+          label="DM送付"
+          value={
+            customer.dm_allowed === null
+              ? null
+              : customer.dm_allowed
+                ? "可"
+                : "不可"
+          }
+        />
+      </div>
+
+      {/* Treatment related info */}
+      <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
+        <h3 className="font-bold text-sm text-text-light">施術関連情報</h3>
         <InfoRow label="肌質" value={customer.skin_type} />
+        <InfoRow
+          label="身長"
+          value={customer.height_cm !== null ? `${customer.height_cm} cm` : null}
+        />
+        <InfoRow
+          label="体重"
+          value={customer.weight_kg !== null ? `${customer.weight_kg} kg` : null}
+        />
         <InfoRow label="アレルギー" value={customer.allergies} />
+        <InfoRow label="最終目標" value={customer.treatment_goal} />
         <InfoRow label="メモ" value={customer.notes} />
       </div>
 

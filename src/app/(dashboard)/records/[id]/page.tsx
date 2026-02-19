@@ -79,8 +79,10 @@ export default async function RecordDetailPage({
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
         <DetailRow label="施術部位" value={record.treatment_area} />
         <DetailRow label="使用化粧品・機器" value={record.products_used} />
-        <DetailRow label="施術前の肌の状態" value={record.skin_condition_before} />
+        <DetailRow label="施術前の状態" value={record.skin_condition_before} />
         <DetailRow label="施術後の経過" value={record.notes_after} />
+        <DetailRow label="話した内容" value={record.conversation_notes} />
+        <DetailRow label="注意事項" value={record.caution_notes} />
         <DetailRow label="次回への申し送り" value={record.next_visit_memo} />
       </div>
 
