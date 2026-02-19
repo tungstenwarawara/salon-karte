@@ -39,31 +39,11 @@ export default async function DashboardPage() {
 
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const monthEnd = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-01`;
+  const currentMonth = now.getMonth() + 1;
 
-  // 今日の予約を取得
-  const { data: todayAppointments } = await supabase
-    .from("appointments")
-    .select("*, customers(last_name, first_name)")
-    .eq("salon_id", salon.id)
-    .eq("appointment_date", today)
-    .neq("status", "cancelled")
-    .order("start_time", { ascending: true })
-    .returns<(Appointment & { customers: { last_name: string; first_name: string } | null })[]>();
-
-  // 顧客数を取得
-  const { count: customerCount } = await supabase
-    .from("customers")
-    .select("*", { count: "exact", head: true })
-    .eq("salon_id", salon.id);
-
-  // メニュー数を取得（オンボーディング判定用）
-  const { count: menuCount } = await supabase
-    .from("treatment_menus")
-    .select("*", { count: "exact", head: true })
-    .eq("salon_id", salon.id)
-    .eq("is_active", true);
-
-  // 離脱アラート: DB関数で効率的に取得
   type LapsedCustomer = {
     id: string;
     last_name: string;
@@ -72,19 +52,46 @@ export default async function DashboardPage() {
     days_since: number;
   };
 
-  const { data: lapsedCustomers } = await supabase
-    .rpc("get_lapsed_customers", {
-      p_salon_id: salon.id,
-      p_days_threshold: 60,
-    })
-    .returns<LapsedCustomer[]>();
-
-  // 今月の売上サマリー
-  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const monthEnd = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-01`;
-
-  const [monthlyAptsRes, monthlyPurchasesRes, monthlyTicketsRes] = await Promise.all([
+  // 全クエリを並列実行（レスポンス大幅改善）
+  const [
+    todayAppointmentsRes,
+    customerCountRes,
+    menuCountRes,
+    lapsedCustomersRes,
+    monthlyAptsRes,
+    monthlyPurchasesRes,
+    monthlyTicketsRes,
+    birthdayRes,
+    recentRecordsRes,
+  ] = await Promise.all([
+    // 今日の予約
+    supabase
+      .from("appointments")
+      .select("*, customers(last_name, first_name)")
+      .eq("salon_id", salon.id)
+      .eq("appointment_date", today)
+      .neq("status", "cancelled")
+      .order("start_time", { ascending: true })
+      .returns<(Appointment & { customers: { last_name: string; first_name: string } | null })[]>(),
+    // 顧客数
+    supabase
+      .from("customers")
+      .select("*", { count: "exact", head: true })
+      .eq("salon_id", salon.id),
+    // メニュー数（オンボーディング判定用）
+    supabase
+      .from("treatment_menus")
+      .select("*", { count: "exact", head: true })
+      .eq("salon_id", salon.id)
+      .eq("is_active", true),
+    // 離脱アラート
+    supabase
+      .rpc("get_lapsed_customers", {
+        p_salon_id: salon.id,
+        p_days_threshold: 60,
+      })
+      .returns<LapsedCustomer[]>(),
+    // 今月の売上（施術）
     supabase
       .from("appointments")
       .select("appointment_menus(price_snapshot)")
@@ -92,19 +99,41 @@ export default async function DashboardPage() {
       .gte("appointment_date", monthStart)
       .lt("appointment_date", monthEnd)
       .eq("status", "completed"),
+    // 今月の売上（物販）
     supabase
       .from("purchases")
       .select("total_price")
       .eq("salon_id", salon.id)
       .gte("purchase_date", monthStart)
       .lt("purchase_date", monthEnd),
+    // 今月の売上（回数券）
     supabase
       .from("course_tickets")
       .select("price")
       .eq("salon_id", salon.id)
       .gte("purchase_date", monthStart)
       .lt("purchase_date", monthEnd),
+    // 今月の誕生日
+    supabase
+      .from("customers")
+      .select("id, last_name, first_name, birth_date")
+      .eq("salon_id", salon.id)
+      .not("birth_date", "is", null),
+    // 最近の施術記録
+    supabase
+      .from("treatment_records")
+      .select("*, customers(last_name, first_name)")
+      .eq("salon_id", salon.id)
+      .order("treatment_date", { ascending: false })
+      .limit(3)
+      .returns<(TreatmentRecord & { customers: { last_name: string; first_name: string } | null })[]>(),
   ]);
+
+  const todayAppointments = todayAppointmentsRes.data;
+  const customerCount = customerCountRes.count;
+  const menuCount = menuCountRes.count;
+  const lapsedCustomers = lapsedCustomersRes.data as LapsedCustomer[] | null;
+  const recentRecords = recentRecordsRes.data;
 
   const monthlyTreatmentSales = monthlyAptsRes.data?.reduce((sum, apt) => {
     const menus = (apt.appointment_menus ?? []) as { price_snapshot: number | null }[];
@@ -117,15 +146,7 @@ export default async function DashboardPage() {
 
   const monthlyTotal = monthlyTreatmentSales + monthlyProductSales + monthlyTicketSales;
 
-  // 今月の誕生日の顧客を取得
-  const currentMonth = now.getMonth() + 1;
-  const { data: allCustomersForBirthday } = await supabase
-    .from("customers")
-    .select("id, last_name, first_name, birth_date")
-    .eq("salon_id", salon.id)
-    .not("birth_date", "is", null);
-
-  const birthdayCustomers = (allCustomersForBirthday ?? [])
+  const birthdayCustomers = (birthdayRes.data ?? [])
     .filter((c) => {
       if (!c.birth_date) return false;
       const month = parseInt(c.birth_date.split("-")[1], 10);
@@ -136,15 +157,6 @@ export default async function DashboardPage() {
       birth_day: parseInt(c.birth_date!.split("-")[2], 10),
     }))
     .sort((a, b) => a.birth_day - b.birth_day);
-
-  // 最近の施術記録を取得
-  const { data: recentRecords } = await supabase
-    .from("treatment_records")
-    .select("*, customers(last_name, first_name)")
-    .eq("salon_id", salon.id)
-    .order("treatment_date", { ascending: false })
-    .limit(3)
-    .returns<(TreatmentRecord & { customers: { last_name: string; first_name: string } | null })[]>();
 
   const appointmentCount = todayAppointments?.filter((a) => a.status === "scheduled").length ?? 0;
   const lapsedCount = lapsedCustomers?.length ?? 0;
