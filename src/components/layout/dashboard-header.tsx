@@ -9,7 +9,7 @@ const navItems = [
   { href: "/appointments", label: "予約", icon: "calendar" },
   // FAB goes here (rendered separately)
   { href: "/customers", label: "顧客", icon: "customers" },
-  { href: "/sales", label: "売上", icon: "sales" },
+  { href: "/sales", label: "経営", icon: "sales" },
 ];
 
 const fabActions = [
