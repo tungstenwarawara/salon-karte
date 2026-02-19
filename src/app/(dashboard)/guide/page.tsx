@@ -133,7 +133,7 @@ export default function GuidePage() {
           <StepCard
             number={3}
             title="施術後：カルテを記入"
-            description="顧客詳細画面の「施術記録を追加」から、今日の施術内容を記録します。写真も一緒に保存できます。"
+            description="顧客詳細画面の「+ カルテ作成」から、今日の施術内容を記録します。写真も一緒に保存できます。"
             link="/customers"
             linkLabel="顧客を選んで記録する"
           />
@@ -500,7 +500,7 @@ export default function GuidePage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-text-light">全部入り</span>
-                <span className="font-bold">月 5,480円</span>
+                <span className="font-bold">月 7,080円</span>
               </div>
             </div>
             <p className="text-xs text-text-light mt-3">

@@ -221,10 +221,14 @@ export default function EditAppointmentPage() {
     }
 
     // Update junction table: delete old, insert new
-    await supabase
+    const { error: deleteError } = await supabase
       .from("appointment_menus")
       .delete()
       .eq("appointment_id", appointmentId);
+
+    if (deleteError) {
+      console.error("Junction delete error:", deleteError);
+    }
 
     if (selectedMenuIds.length > 0) {
       const junctionRows = selectedMenusList.map(({ id, menu, index }) => ({
@@ -236,7 +240,10 @@ export default function EditAppointmentPage() {
         sort_order: index,
       }));
 
-      await supabase.from("appointment_menus").insert(junctionRows);
+      const { error: junctionError } = await supabase.from("appointment_menus").insert(junctionRows);
+      if (junctionError) {
+        console.error("Junction insert error:", junctionError);
+      }
     }
 
     router.push("/appointments");
