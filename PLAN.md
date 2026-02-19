@@ -598,12 +598,32 @@ CREATE TABLE inventory_logs (
 - [x] 物販デュアルモード・自動出庫・在庫アラート
 - [x] 確定申告レポート・CSV出力3形式
 
-### Phase 6: テスターサロンのHP/LP作成 ← 次
+### Phase 6: 売上・回数券の会計修正 ← 次
+
+**課題**: 施術売上と回数券売上が二重計上されている
+- 予約完了時、`appointment_menus.price_snapshot` が全額 treatment_sales に計上
+- 回数券購入時、`course_tickets.price` が ticket_sales に計上
+- 回数券で支払った施術も treatment_sales に含まれ、**合計が実際の収入より膨らむ**
+
+**現状の構造的問題**:
+- `appointment_menus` に「支払方法（現金/回数券）」の区分がない
+- `course_tickets` に「どのメニューに使えるか」の紐づけがない
+- 1予約内で「メニューAは回数券、メニューBは現金」の混在が表現できない
+
+**対応方針（要設計）**:
+1. `appointment_menus` に `payment_type` (cash/ticket) + `ticket_id` カラム追加
+2. `course_tickets` にメニュー紐づけ（任意）を追加
+3. 回数券消化時に `appointment_menus.payment_type = 'ticket'` を記録
+4. `get_monthly_sales_summary` を修正: treatment_sales から ticket支払い分を除外
+5. 確定申告レポートも同様に修正
+6. 回数券 = 前受金として会計的に正しく処理
+
+### Phase 7: テスターサロンのHP/LP作成
 - [ ] テスターサロンのヒアリング（コンセプト、メニュー、写真素材等）
 - [ ] サロンHP/LPのデザイン・実装
 - [ ] 独自ドメイン設定・公開
 
-### Phase 7: サロンカルテのLP作成 + 商用化
+### Phase 8: サロンカルテのLP作成 + 商用化
 - [ ] サロンカルテ自体の宣伝用LP作成
 - [ ] テスターの実績・声の掲載
 - [ ] お試しプラン制限・Stripe課金連携

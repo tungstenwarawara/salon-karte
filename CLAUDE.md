@@ -211,7 +211,16 @@ supabase/migrations/       # 00001〜00015（全てローカルに管理）
 | get_tax_report | 確定申告レポート |
 | update_updated_at | トリガー用タイムスタンプ更新 |
 
-## 今回の教訓（品質管理失敗ログ）
+## ⚠️ 既知の問題（Phase 6で対応予定）
+
+### 売上レポートの二重計上
+- `get_monthly_sales_summary` の treatment_sales に回数券支払い分の施術も含まれている
+- 回数券購入額（ticket_sales）と施術売上（treatment_sales）が重複し、合計が実収入より大きくなる
+- **原因**: `appointment_menus` に支払方法（現金/回数券）の区分がない
+- **影響範囲**: `/sales`（売上レポート）、`/sales/inventory/tax-report`（確定申告レポート）
+- **Phase 6で対応**: appointment_menusにpayment_type追加、RPC修正
+
+## 教訓ログ（品質管理失敗ログ）
 
 ### 2026-02-19: 商品追加エラー
 **原因**: `00012_inventory_management.sql` が本番DBに未適用のままデプロイされていた
