@@ -28,7 +28,7 @@
 
 ## 技術スタック
 
-- **フロントエンド**: Next.js (App Router) + TypeScript + Tailwind CSS
+- **フロントエンド**: Next.js 15 (App Router) + TypeScript + Tailwind CSS 4
 - **バックエンド/DB**: Supabase (PostgreSQL + Auth + Storage)
 - **ホスティング**: Vercel
 - **認証**: Supabase Auth（メール/パスワード）
@@ -49,7 +49,7 @@
 #### 1. 認証 ✅ 実装済み
 - サロンオーナーのアカウント登録（メール/パスワード）
 - ログイン/ログアウト
-- パスワードリセット ← 未実装（テスター提供前に実装）
+- パスワードリセット
 
 #### 2. 顧客管理 ✅ 実装済み → 🔄 項目追加予定
 - 顧客の新規登録
@@ -131,14 +131,36 @@
 | 予約の入り方 | お客様がネットで予約 | オーナーが手動登録（HP・電話・LINE含む） |
 | カルテ連動 | なし | あり |
 
-#### 7. 来店分析（基本版） 🆕 テスター提供前に実装
+#### 7. 来店分析（基本版） ✅ 実装済み
 スプレッドシートとの最大の差別化ポイント。
 
 - 顧客ごとの最終来店日・来店回数の表示
 - 顧客一覧での来店情報ソート
 - しばらく来店していない顧客のハイライト（離脱アラート）
-  - 例: 60日以上来店なし → 「ご無沙汰のお客様」としてダッシュボードに表示
+  - 60日以上来店なし → 「ご無沙汰のお客様」としてダッシュボードに表示
 - ダッシュボードに来店分析サマリーを表示
+- 卒業機能（離脱顧客のステータス管理）
+
+#### 8. 売上レポート ✅ 実装済み
+- 年間/月別売上推移グラフ（施術/物販/回数券の内訳表示）
+- カテゴリフィルタ（施術/物販/回数券の切替）
+- 月→日の日別ドリルダウン
+- 前月比の変化率表示
+
+#### 9. 在庫管理 ✅ 実装済み
+- 商品マスタCRUD（商品名/カテゴリ/売価/仕入価/発注点/メモ）
+- 在庫ダッシュボード（商品数/要発注数/在庫評価額/商品別在庫一覧）
+- 入出庫記録（仕入/消費・サンプル/廃棄/返品/棚卸し調整）
+- 物販連動（商品選択時に在庫を自動減算、RPCでアトミック処理）
+- 棚卸し（全商品の実在庫を入力→差分を自動調整）
+- ダッシュボードに在庫アラート（発注点以下の商品を通知）
+
+#### 10. 確定申告サポート ✅ 実装済み
+- 確定申告レポート（売上原価計算: 期首棚卸高+仕入高-期末棚卸高）
+- 粗利サマリー（年間売上合計 - 売上原価）
+- 月別売上・仕入の一覧表
+- 期末棚卸明細（商品名/在庫数/仕入単価/金額）
+- CSV出力3形式（汎用/freee/弥生）
 
 ### オプションモジュール（任意追加・Phase 2以降）
 
@@ -279,12 +301,97 @@ CREATE TABLE subscriptions (
 CREATE TABLE subscription_modules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   subscription_id UUID REFERENCES subscriptions(id) ON DELETE CASCADE,
-  module_key TEXT NOT NULL, -- 'photo_expand' / 'counseling_sheet' / 'pdf_export' / 'analytics' / 'line_notify' / 'booking_memo' / 'data_export' / 'multi_staff'
+  module_key TEXT NOT NULL,
   is_active BOOLEAN DEFAULT true,
   activated_at TIMESTAMPTZ DEFAULT now(),
   deactivated_at TIMESTAMPTZ
 );
+
+-- 物販・購入記録（Phase 1.5で追加）
+CREATE TABLE purchases (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  salon_id UUID REFERENCES salons(id) ON DELETE CASCADE,
+  customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
+  purchase_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  item_name TEXT NOT NULL,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  unit_price INTEGER NOT NULL DEFAULT 0,
+  total_price INTEGER NOT NULL DEFAULT 0,
+  memo TEXT,
+  product_id UUID REFERENCES products(id) ON DELETE SET NULL,  -- Phase 5で追加
+  cost_price INTEGER,                                           -- Phase 5で追加
+  sell_price INTEGER,                                           -- Phase 5で追加
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 回数券管理（Phase 1.5で追加）
+CREATE TABLE course_tickets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  salon_id UUID REFERENCES salons(id) ON DELETE CASCADE,
+  customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
+  ticket_name TEXT NOT NULL,
+  total_count INTEGER NOT NULL,
+  used_count INTEGER NOT NULL DEFAULT 0,
+  price INTEGER,
+  purchase_date DATE DEFAULT CURRENT_DATE,
+  expiry_date DATE,
+  memo TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 予約メニュー中間テーブル（Phase 1.5で追加）
+CREATE TABLE appointment_menus (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  appointment_id UUID NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
+  menu_id UUID REFERENCES treatment_menus(id) ON DELETE SET NULL,
+  menu_name_snapshot TEXT NOT NULL,
+  duration_snapshot INTEGER,
+  price_snapshot INTEGER
+);
+
+-- 商品マスタ（Phase 5で追加）
+CREATE TABLE products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  category TEXT,
+  base_sell_price INTEGER NOT NULL DEFAULT 0,
+  base_cost_price INTEGER NOT NULL DEFAULT 0,
+  reorder_point INTEGER NOT NULL DEFAULT 3,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  memo TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 在庫ログ（Phase 5で追加）
+CREATE TABLE inventory_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  log_type TEXT NOT NULL CHECK (log_type IN (
+    'purchase_in','sale_out','sample_out','waste_out','adjust','return_in'
+  )),
+  quantity INTEGER NOT NULL,  -- 正数=入庫、負数=出庫
+  unit_cost_price INTEGER,
+  unit_sell_price INTEGER,
+  reason TEXT,
+  related_purchase_id UUID REFERENCES purchases(id) ON DELETE SET NULL,
+  logged_at DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 ```
+
+### RPC関数
+
+| 関数名 | 用途 |
+|--------|------|
+| `get_monthly_sales_summary(p_salon_id, p_year)` | 月別売上集計（施術/物販/回数券） |
+| `get_lapsed_customers(p_salon_id, p_days_threshold)` | 離脱顧客の検出 |
+| `get_inventory_summary(p_salon_id)` | 全商品の在庫サマリー |
+| `record_product_sale(...)` | 物販登録+自動出庫のアトミック処理 |
+| `get_tax_report(p_salon_id, p_year)` | 確定申告用の年間集計データ |
 
 ### Row Level Security (RLS) 方針
 
@@ -302,26 +409,56 @@ CREATE POLICY "Salon owners can manage their customers"
   );
 ```
 
-## 画面構成
+## 画面構成（30ページ）
 
 ```
-/                       → ランディングページ（未ログイン時）
+── 認証 ──
 /login                  → ログイン画面
 /signup                 → アカウント登録画面
 /reset-password         → パスワードリセット申請画面
-/update-password        → 新パスワード設定画面（リセットメールからのリダイレクト先）
-/dashboard              → ダッシュボード（今日の予約一覧 + 離脱アラート + 最近のカルテ）
-/customers              → 顧客一覧（来店情報付き）
+/update-password        → 新パスワード設定画面
+/setup                  → サロン初期設定
+
+── 公開ページ ──
+/                       → ランディングページ
+/privacy                → プライバシーポリシー
+/terms                  → 利用規約
+
+── ダッシュボード ──
+/dashboard              → ダッシュボード（予約一覧/離脱アラート/在庫アラート/誕生日/売上サマリー/最近のカルテ/オンボーディング）
+/guide                  → 使い方ガイド
+
+── 顧客管理 ──
+/customers              → 顧客一覧（検索・来店情報付き）
 /customers/new          → 顧客新規登録
-/customers/[id]         → 顧客詳細（基本情報+施術履歴+来店分析）
+/customers/[id]         → 顧客詳細（基本情報/施術履歴/購入履歴/回数券/来店分析）
 /customers/[id]/edit    → 顧客情報編集
-/records/new?customer=[id] → 施術記録の新規作成
+/customers/[id]/purchases/new → 物販記録登録（商品選択/自由入力デュアルモード）
+/customers/[id]/tickets/new   → 回数券登録
+
+── 施術記録 ──
+/records/new            → 施術記録の新規作成（顧客選択UI付き）
 /records/[id]           → 施術記録詳細（写真含む）
 /records/[id]/edit      → 施術記録編集
-/appointments           → 予約一覧（カレンダー表示）
-/appointments/new       → 予約の新規登録
+
+── 予約管理 ──
+/appointments           → 予約一覧（月別/週別/日別カレンダー）
+/appointments/new       → 予約の新規登録（メニュー複数選択対応）
+/appointments/[id]/edit → 予約編集
+
+── 経営（売上+在庫） ──
+/sales                  → 売上レポート（年間/月別推移グラフ、日別ドリルダウン、カテゴリフィルタ）
+/sales/inventory        → 在庫ダッシュボード（サマリー/在庫一覧/クイックアクション）
+/sales/inventory/products  → 商品マスタCRUD
+/sales/inventory/receive   → 仕入記録（入庫）
+/sales/inventory/consume   → 消費・廃棄記録（サンプル/廃棄/返品）
+/sales/inventory/stocktake → 棚卸し
+/sales/inventory/tax-report → 確定申告レポート（COGS計算/CSV出力）
+
+── 設定 ──
 /settings               → サロン設定
 /settings/menus         → 施術メニュー管理
+/settings/business-hours → 営業時間設定
 ```
 
 ## UI/UX方針
@@ -457,9 +594,11 @@ CREATE POLICY "Salon owners can manage their customers"
 
 ## 全体の優先順位
 
-1. **テスター向け基本プラン完成**（Phase 1 完了 + 新機能追加）
-2. **テスター経営者のサロンHP/LP作成**（テスター特典・実績づくり）
-3. **サロンカルテ自体のLP作成**（新規サロンオーナー獲得用）
+1. ~~テスター向け基本プラン完成~~（✅ Phase 1〜1.5で完了）
+2. ~~品質改善・パフォーマンス最適化~~（✅ Phase 2〜4で完了）
+3. ~~在庫管理・確定申告サポート~~（✅ Phase 5で完了）
+4. **テスター経営者のサロンHP/LP作成**（テスター特典・実績づくり）← 次
+5. **サロンカルテ自体のLP作成**（新規サロンオーナー獲得用）
 
 ## 開発スケジュール
 
@@ -467,7 +606,7 @@ CREATE POLICY "Salon owners can manage their customers"
 - [x] GitHubリポジトリ作成・初期設定
 - [x] Next.js + Tailwind CSS プロジェクトセットアップ
 - [x] Supabaseプロジェクト作成・DB構築
-- [x] 認証機能（サインアップ/ログイン/ログアウト）
+- [x] 認証機能（サインアップ/ログイン/ログアウト/パスワードリセット）
 - [x] サロン初期設定フロー
 - [x] 顧客一覧・検索機能
 - [x] 顧客登録・編集・削除
@@ -486,7 +625,6 @@ CREATE POLICY "Salon owners can manage their customers"
 
 ### Phase 1.5: テスターFB対応 ✅ 完了
 テスター（サロンオーナー）からの実運用フィードバックを反映。
-優先度Aから順に実装する。
 
 #### 優先度A: 顧客情報フィールド追加 ✅ 完了
 - [x] DB migration: customersに新カラム追加（address, marital_status, has_children, dm_allowed, height_cm, weight_kg, treatment_goal）
@@ -517,22 +655,78 @@ CREATE POLICY "Salon owners can manage their customers"
 - [x] 顧客詳細にチケット残数表示 +「1回使用する」ボタン
 - [x] ガイドページに新機能の説明追加
 
-### Phase 2: 機能拡張
-- [ ] パスワードリセット機能
-- [ ] お試しプラン制限（顧客10件・写真なし・予約なし）
-- [ ] スタッフ管理
-- [ ] 営業日・休日設定
-- [ ] 空き枠表示
+### Phase 2: UI/UX刷新 + 機能拡充 ✅ 完了
+テスター運用開始に向けたUI全面改善と機能拡充。
 
-### Phase 3: テスターサロンのHP/LP作成
+- [x] FABナビゲーション（新規作成: 予約追加/カルテ作成/顧客登録）
+- [x] オンボーディングチェックリスト（初期設定ガイド）
+- [x] パンくずナビゲーション（全ページ）
+- [x] 卒業機能（離脱顧客のステータス管理）
+- [x] 誕生日アラート（今月の誕生日をダッシュボードに表示）
+- [x] 月別カレンダー表示（予約管理）
+- [x] 売上レポート（年間/月別推移グラフ、施術/物販/回数券の内訳）
+- [x] 日別ドリルダウン（売上レポートから月→日の詳細表示）
+- [x] カテゴリフィルタ（施術/物販/回数券の切替）
+- [x] 営業時間設定（settings/business-hours）
+
+### Phase 3: 品質改善・セキュリティ強化 ✅ 完了
+パフォーマンス、セキュリティ、データ整合性の包括的修正。
+
+- [x] RLS最適化（IN句サブクエリ統一、全テーブルカバレッジ確認）
+- [x] DBトリガー追加（在庫整合性、FK整合性）
+- [x] クエリ最適化（必要カラムのみSELECT、不要joinの削除）
+- [x] 月別売上サマリーRPC化（get_monthly_sales_summary）
+- [x] 離脱顧客RPC化（get_lapsed_customers）
+- [x] バグ修正8件（売上グラフ・タイムライン・カレンダー等）
+
+### Phase 4: UI/UX改善（レスポンス・操作性） ✅ 完了
+テスター提供品質に向けた操作性の磨き込み。
+
+- [x] Middleware最適化（静的アセットスキップ、パス判定効率化）
+- [x] 全クエリ並列化（Promise.all活用、ダッシュボードで9クエリ→1リクエスト）
+- [x] 写真アップロード並列化
+- [x] 日付フォーマット統一（「○日前」「今日」「昨日」等の相対表示）
+- [x] トースト通知コンポーネント（成功/エラー/警告の統一UI）
+- [x] エラー時自動スクロール
+- [x] CollapsibleSection（カルテフォームの折りたたみUI）
+- [x] 下書き自動保存（localStorage活用）
+- [x] パンくずナビ全ページ統一
+- [x] UI/UX改善17項目（フォーム体験・視覚的フィードバック等）
+
+### Phase 5: 在庫管理 + 確定申告サポート ✅ 完了
+商品マスタ・入出庫管理・棚卸し・確定申告レポートの一括実装。
+
+- [x] DB: productsテーブル + inventory_logsテーブル + purchasesテーブル拡張
+- [x] RPC: get_inventory_summary / record_product_sale / get_tax_report
+- [x] ナビ「売上」→「経営」改名、[売上レポート | 在庫管理] タブ切替UI
+- [x] 商品マスタCRUD（名前/カテゴリ/売価/仕入価/発注点/メモ）
+- [x] 在庫ダッシュボード（サマリーカード/在庫一覧/クイックアクション/オンボーディング）
+- [x] 仕入記録（入庫: purchase_in）
+- [x] 消費・廃棄記録（sample_out/waste_out/return_in）
+- [x] 棚卸し（全商品の実在庫入力→差分adjustログ一括生成）
+- [x] 物販フロー強化: 商品選択/自由入力デュアルモード、在庫自動連動（RPCアトミック処理）
+- [x] ダッシュボードに在庫アラート追加（条件付きクエリでパフォーマンス保護）
+- [x] 確定申告レポート（売上原価計算/粗利/月別売上・仕入/期末棚卸明細）
+- [x] CSV出力3形式（汎用/freee/弥生）
+
+### Phase 6: テスターサロンのHP/LP作成
 - [ ] テスターサロンのヒアリング（サロンのコンセプト、メニュー、写真素材等）
 - [ ] サロンHP/LPのデザイン・実装
 - [ ] 独自ドメイン設定・公開
 
-### Phase 4: サロンカルテのLP作成
+### Phase 7: サロンカルテのLP作成 + 商用化
 - [ ] サロンカルテ自体の宣伝用LP作成（新規サロンオーナー獲得用）
 - [ ] テスターの実績・声の掲載
 - [ ] 料金プラン・機能紹介の掲載
+- [ ] お試しプラン制限（顧客10件・写真なし・予約なし）
+- [ ] Stripe課金連携
+
+### 将来Phase: さらなる機能拡張
+- [ ] スタッフ管理（複数スタッフ対応）
+- [ ] 空き枠表示（予約カレンダー連動）
+- [ ] LINE通知（リマインド・フォローメッセージ）
+- [ ] カウンセリングシート（デジタル問診票）
+- [ ] カルテPDF出力
 
 ## テスター運用プラン
 
@@ -566,46 +760,72 @@ salon-karte/
 │   │   │   ├── login/page.tsx
 │   │   │   ├── signup/page.tsx
 │   │   │   ├── setup/page.tsx
-│   │   │   ├── reset-password/page.tsx    # 🆕 パスワードリセット申請
-│   │   │   └── update-password/page.tsx   # 🆕 新パスワード設定
+│   │   │   ├── reset-password/page.tsx
+│   │   │   └── update-password/page.tsx
 │   │   ├── (dashboard)/
-│   │   │   ├── dashboard/page.tsx         # 強化: 今日の予約 + 離脱アラート
+│   │   │   ├── dashboard/page.tsx           # Server Component, 10クエリ並列
+│   │   │   ├── guide/page.tsx
 │   │   │   ├── customers/
-│   │   │   │   ├── page.tsx               # 強化: 来店情報付き
+│   │   │   │   ├── page.tsx
 │   │   │   │   ├── new/page.tsx
 │   │   │   │   └── [id]/
-│   │   │   │       ├── page.tsx           # 強化: 来店分析表示
-│   │   │   │       └── edit/page.tsx
+│   │   │   │       ├── page.tsx
+│   │   │   │       ├── edit/page.tsx
+│   │   │   │       ├── purchases/new/page.tsx    # 物販記録（デュアルモード）
+│   │   │   │       └── tickets/new/page.tsx      # 回数券登録
 │   │   │   ├── records/
 │   │   │   │   ├── new/page.tsx
 │   │   │   │   └── [id]/
 │   │   │   │       ├── page.tsx
 │   │   │   │       └── edit/page.tsx
-│   │   │   ├── appointments/              # 🆕 予約管理
-│   │   │   │   ├── page.tsx               # 予約一覧（カレンダー）
-│   │   │   │   └── new/page.tsx           # 予約新規登録
+│   │   │   ├── appointments/
+│   │   │   │   ├── page.tsx                      # カレンダー（月/週/日）
+│   │   │   │   ├── new/page.tsx
+│   │   │   │   └── [id]/edit/page.tsx
+│   │   │   ├── sales/
+│   │   │   │   ├── page.tsx                      # 売上レポート
+│   │   │   │   └── inventory/
+│   │   │   │       ├── page.tsx                  # 在庫ダッシュボード
+│   │   │   │       ├── loading.tsx               # スケルトン
+│   │   │   │       ├── products/page.tsx         # 商品マスタCRUD
+│   │   │   │       ├── receive/page.tsx          # 仕入記録
+│   │   │   │       ├── consume/page.tsx          # 消費・廃棄記録
+│   │   │   │       ├── stocktake/page.tsx        # 棚卸し
+│   │   │   │       └── tax-report/page.tsx       # 確定申告レポート+CSV
 │   │   │   └── settings/
 │   │   │       ├── page.tsx
-│   │   │       └── menus/page.tsx
+│   │   │       ├── menus/page.tsx
+│   │   │       └── business-hours/page.tsx
 │   │   ├── auth/callback/route.ts
 │   │   ├── layout.tsx
-│   │   ├── page.tsx                       # ランディングページ
+│   │   ├── page.tsx                              # ランディングページ
 │   │   ├── privacy/page.tsx
 │   │   └── terms/page.tsx
 │   ├── components/
 │   │   ├── layout/
-│   │   │   └── dashboard-header.tsx
+│   │   │   ├── dashboard-header.tsx              # 上部ヘッダー + 下部ナビ + FAB
+│   │   │   └── page-header.tsx                   # パンくず付きページヘッダー
 │   │   ├── records/
 │   │   │   ├── photo-upload.tsx
 │   │   │   └── before-after.tsx
-│   │   └── appointments/                  # 🆕 予約関連コンポーネント
-│   │       └── calendar-view.tsx
+│   │   ├── customers/
+│   │   │   └── course-ticket-section.tsx
+│   │   ├── dashboard/
+│   │   │   └── lapsed-customers-section.tsx
+│   │   ├── inventory/
+│   │   │   └── management-tabs.tsx               # 売上/在庫タブ切替
+│   │   └── ui/
+│   │       ├── collapsible-section.tsx
+│   │       ├── error-alert.tsx
+│   │       └── toast.tsx
 │   ├── lib/
 │   │   ├── supabase/
 │   │   │   ├── client.ts
 │   │   │   ├── server.ts
 │   │   │   ├── middleware.ts
+│   │   │   ├── auth-helpers.ts
 │   │   │   └── storage.ts
+│   │   ├── format.ts                             # 日付フォーマットユーティリティ
 │   │   └── middleware.ts
 │   └── types/
 │       └── database.ts
@@ -614,7 +834,16 @@ salon-karte/
 │   └── migrations/
 │       ├── 00001_initial_schema.sql
 │       ├── 00002_storage_bucket.sql
-│       └── 00003_appointments.sql         # 🆕 予約テーブル
+│       ├── 00003_appointments.sql
+│       ├── 00004_add_customer_fields_phase_1_5.sql
+│       ├── 00005_add_treatment_record_fields_phase_1_5.sql
+│       ├── 00006_appointment_menus.sql
+│       ├── 00007_purchases.sql
+│       ├── 00008_course_tickets.sql
+│       ├── 00009_lapsed_customers_function.sql
+│       ├── 00010_business_hours.sql
+│       ├── 00011_security_and_integrity_fixes.sql
+│       └── 00012_inventory_management.sql
 ├── .env.local
 ├── next.config.ts
 ├── tsconfig.json
@@ -658,11 +887,13 @@ salon-karte/
 - 月額2,980円（年36,000円）は「とても魅力的」
 - 機能が合えば他のオーナーにも勧めたいとのこと
 
-#### 対応方針
-- 顧客情報・カルテのフィールド追加 → Phase 1.5で即対応
-- ラベルの汎用化 → Phase 1.5で即対応
-- 物販管理・予約メニュー複数選択 → Phase 2で対応
-- スタッフ管理・営業日設定 → Phase 2以降
+#### 対応方針・対応状況
+- 顧客情報・カルテのフィールド追加 → ✅ Phase 1.5で対応済み
+- ラベルの汎用化 → ✅ Phase 1.5で対応済み
+- 物販管理・予約メニュー複数選択 → ✅ Phase 1.5で対応済み
+- 商品在庫管理・確定申告 → ✅ Phase 5で対応済み
+- 営業日設定 → ✅ Phase 2で対応済み
+- スタッフ管理・空き枠表示 → 将来Phaseで対応予定
 
 ## 注意事項・Claude Code向けメモ
 
