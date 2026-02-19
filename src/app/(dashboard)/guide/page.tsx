@@ -110,6 +110,10 @@ export default function GuidePage() {
             <span className="text-accent mt-0.5">&#10003;</span>
             <span>物販の購入履歴と回数券の残数を管理</span>
           </li>
+          <li className="flex items-start gap-2">
+            <span className="text-accent mt-0.5">&#10003;</span>
+            <span>施術・物販・回数券の売上を自動集計</span>
+          </li>
         </ul>
       </div>
 
@@ -160,7 +164,7 @@ export default function GuidePage() {
           <StepCard
             number={2}
             title="お客様を登録する"
-            description="既存のお客様の情報を登録しましょう。名前（カナ）、電話番号、肌質、アレルギーなどを入力できます。"
+            description="既存のお客様の情報を登録しましょう。名前（カナ）、電話番号、アレルギー、施術目標などを入力できます。"
             link="/customers/new"
             linkLabel="顧客を登録する"
           />
@@ -179,7 +183,7 @@ export default function GuidePage() {
         <div className="space-y-3">
           <FeatureCard
             title="顧客管理"
-            description="お客様の基本情報（名前、電話番号、肌質、アレルギーなど）を管理します。カナ検索で素早く見つけられます。顧客一覧では来店回数や最終来店日も表示されます。"
+            description="お客様の基本情報（名前、電話番号、アレルギー、施術目標など）を管理します。カナ検索で素早く見つけられます。顧客一覧では来店回数や最終来店日も表示されます。"
           />
           <FeatureCard
             title="施術記録（カルテ）"
@@ -330,7 +334,7 @@ export default function GuidePage() {
           </div>
 
           {/* 基本プラン */}
-          <div className="bg-surface border border-border rounded-2xl p-4">
+          <div className="bg-surface border-2 border-accent rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-bold text-sm">基本プラン</h4>
               <div className="text-right">
@@ -345,15 +349,27 @@ export default function GuidePage() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-accent mt-0.5">&#10003;</span>
-                <span>施術記録（カルテ）</span>
+                <span>施術記録（カルテ）・枚数無制限</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-accent mt-0.5">&#10003;</span>
-                <span>施術写真の保存（5GB）</span>
+                <span>ビフォーアフター写真の保存（5GB）</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-accent mt-0.5">&#10003;</span>
-                <span>簡易予約管理</span>
+                <span>予約管理（営業日設定・空き時間表示）</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-accent mt-0.5">&#10003;</span>
+                <span>物販購入履歴の管理</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-accent mt-0.5">&#10003;</span>
+                <span>回数券・コースチケット管理</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-accent mt-0.5">&#10003;</span>
+                <span>売上集計（施術・物販・回数券）</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-accent mt-0.5">&#10003;</span>
@@ -381,15 +397,19 @@ export default function GuidePage() {
             <h4 className="font-bold text-sm mb-3">他のサービスとの比較</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between items-center py-1.5 border-b border-border">
-                <span className="text-text-light">他社A</span>
+                <span className="text-text-light">KaruteKun</span>
                 <span className="font-medium">月額 5,500円〜</span>
               </div>
               <div className="flex justify-between items-center py-1.5 border-b border-border">
-                <span className="text-text-light">他社B</span>
-                <span className="font-medium">月額 11,000円〜</span>
+                <span className="text-text-light">Bionly</span>
+                <span className="font-medium">月額 10,780円〜</span>
               </div>
               <div className="flex justify-between items-center py-1.5 border-b border-border">
-                <span className="text-text-light">他社C</span>
+                <span className="text-text-light">coming-soon</span>
+                <span className="font-medium">月額 14,300円〜</span>
+              </div>
+              <div className="flex justify-between items-center py-1.5 border-b border-border">
+                <span className="text-text-light">リザービア</span>
                 <span className="font-medium">月額 21,000円〜</span>
               </div>
               <div className="flex justify-between items-center py-1.5 bg-accent/5 rounded-lg px-2">
@@ -398,7 +418,8 @@ export default function GuidePage() {
               </div>
             </div>
             <p className="text-xs text-text-light mt-3">
-              既存サービスは使わない機能も含めたパック料金。サロンカルテは必要な機能だけ選んでお支払いいただけます。
+              サロンカルテは初期費用0円。物販・回数券管理が基本料金に含まれるのはほぼ唯一です。
+              必要な機能だけ選べるので、不要なオプションにお金を払う必要はありません。
             </p>
           </div>
         </div>
@@ -426,6 +447,16 @@ export default function GuidePage() {
 
               <div className="p-3 flex items-center justify-between">
                 <div className="flex-1">
+                  <h4 className="font-medium text-sm">LINE連携</h4>
+                  <p className="text-xs text-text-light mt-0.5">
+                    予約リマインド・施術後フォロー・来店促進メッセージを自動送信
+                  </p>
+                </div>
+                <span className="text-xs text-text-light whitespace-nowrap ml-3">+1,500円/月</span>
+              </div>
+
+              <div className="p-3 flex items-center justify-between">
+                <div className="flex-1">
                   <h4 className="font-medium text-sm">カルテPDF出力</h4>
                   <p className="text-xs text-text-light mt-0.5">
                     カルテを印刷用PDFに。お客様への施術報告書としても
@@ -436,39 +467,9 @@ export default function GuidePage() {
 
               <div className="p-3 flex items-center justify-between">
                 <div className="flex-1">
-                  <h4 className="font-medium text-sm">写真容量の拡張</h4>
-                  <p className="text-xs text-text-light mt-0.5">
-                    保存容量を5GB → 20GBに拡張
-                  </p>
-                </div>
-                <span className="text-xs text-text-light whitespace-nowrap ml-3">+500円/月</span>
-              </div>
-
-              <div className="p-3 flex items-center justify-between">
-                <div className="flex-1">
-                  <h4 className="font-medium text-sm">来店分析（詳細版）</h4>
-                  <p className="text-xs text-text-light mt-0.5">
-                    リピート率・来店間隔トレンド・月別集計グラフ
-                  </p>
-                </div>
-                <span className="text-xs text-text-light whitespace-nowrap ml-3">+500円/月</span>
-              </div>
-
-              <div className="p-3 flex items-center justify-between">
-                <div className="flex-1">
-                  <h4 className="font-medium text-sm">LINE通知</h4>
-                  <p className="text-xs text-text-light mt-0.5">
-                    予約リマインドや施術後フォローを自動送信
-                  </p>
-                </div>
-                <span className="text-xs text-text-light whitespace-nowrap ml-3">+1,000円/月</span>
-              </div>
-
-              <div className="p-3 flex items-center justify-between">
-                <div className="flex-1">
                   <h4 className="font-medium text-sm">データエクスポート</h4>
                   <p className="text-xs text-text-light mt-0.5">
-                    顧客データ・施術記録をCSVファイルで出力
+                    顧客データ・売上データをCSVファイルで出力。確定申告にも
                   </p>
                 </div>
                 <span className="text-xs text-text-light whitespace-nowrap ml-3">+300円/月</span>
@@ -476,12 +477,42 @@ export default function GuidePage() {
 
               <div className="p-3 flex items-center justify-between">
                 <div className="flex-1">
-                  <h4 className="font-medium text-sm">複数スタッフ対応</h4>
+                  <h4 className="font-medium text-sm">写真容量の拡張</h4>
                   <p className="text-xs text-text-light mt-0.5">
-                    スタッフアカウントの追加・権限管理
+                    保存容量を5GB → 20GBに拡張（約5,000〜10,000枚）
                   </p>
                 </div>
-                <span className="text-xs text-text-light whitespace-nowrap ml-3">+1,000円/月</span>
+                <span className="text-xs text-text-light whitespace-nowrap ml-3">+500円/月</span>
+              </div>
+
+              <div className="p-3 flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="font-medium text-sm">詳細分析レポート</h4>
+                  <p className="text-xs text-text-light mt-0.5">
+                    リピート率・顧客LTV・メニュー別収益・月次比較グラフ
+                  </p>
+                </div>
+                <span className="text-xs text-text-light whitespace-nowrap ml-3">+500円/月</span>
+              </div>
+
+              <div className="p-3 flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="font-medium text-sm">Web予約ページ</h4>
+                  <p className="text-xs text-text-light mt-0.5">
+                    お客様がスマホから24時間予約できる専用ページを自動生成
+                  </p>
+                </div>
+                <span className="text-xs text-text-light whitespace-nowrap ml-3">+1,500円/月</span>
+              </div>
+
+              <div className="p-3 flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="font-medium text-sm">複数スタッフ対応</h4>
+                  <p className="text-xs text-text-light mt-0.5">
+                    スタッフアカウントの追加・閲覧/編集の権限管理
+                  </p>
+                </div>
+                <span className="text-xs text-text-light whitespace-nowrap ml-3">+1,500円/月</span>
               </div>
             </div>
           </div>
@@ -495,16 +526,24 @@ export default function GuidePage() {
                 <span className="font-bold">月 2,980円</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-text-light">+ カウンセリング + PDF出力</span>
-                <span className="font-bold">月 3,780円</span>
+                <span className="text-text-light">+ カウンセリングシート</span>
+                <span className="font-bold">月 3,480円</span>
               </div>
               <div className="flex justify-between items-center">
+                <span className="text-text-light">+ LINE連携</span>
+                <span className="font-bold">月 4,480円</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-text-light">しっかり管理セット</span>
+                <span className="font-bold">月 5,280円</span>
+              </div>
+              <div className="flex justify-between items-center border-t border-border pt-2 mt-1">
                 <span className="text-text-light">全部入り</span>
-                <span className="font-bold">月 7,080円</span>
+                <span className="font-bold">月 9,760円</span>
               </div>
             </div>
             <p className="text-xs text-text-light mt-3">
-              使いたい機能だけ選べるので、不要な機能にお金を払う必要はありません。
+              全部入りでも他社サービスより安価。使いたい機能だけ選べるので無駄がありません。
             </p>
           </div>
         </div>
