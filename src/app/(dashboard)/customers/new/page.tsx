@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { PageHeader } from "@/components/layout/page-header";
 
 const MARITAL_STATUSES = [
   { value: "", label: "選択してください" },
@@ -99,7 +100,7 @@ export default function NewCustomerPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">顧客を追加</h2>
+      <PageHeader title="顧客を追加" backLabel="顧客一覧" backHref="/customers" />
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
@@ -216,124 +217,117 @@ export default function NewCustomerPage() {
           </div>
         </div>
 
-        {/* 属性情報 */}
-        <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
-          <h3 className="font-bold text-sm text-text-light">属性情報</h3>
-
-          <div className="grid grid-cols-2 gap-3">
-            {/* 婚姻状況 */}
+        {/* 詳細情報（折りたたみ） */}
+        <details className="bg-surface border border-border rounded-2xl">
+          <summary className="p-5 cursor-pointer font-bold text-sm text-text-light flex items-center justify-between list-none">
+            <span>詳細情報を追加（任意）</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 transition-transform details-open-rotate">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+            </svg>
+          </summary>
+          <div className="px-5 pb-5 space-y-4 border-t border-border pt-4">
+            {/* 属性情報 */}
+            <h4 className="font-medium text-xs text-text-light uppercase tracking-wide">属性情報</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">婚姻状況</label>
+                <select
+                  value={form.marital_status}
+                  onChange={(e) => updateField("marital_status", e.target.value)}
+                  className={inputClass}
+                >
+                  {MARITAL_STATUSES.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">お子様</label>
+                <select
+                  value={form.has_children}
+                  onChange={(e) => updateField("has_children", e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">選択してください</option>
+                  <option value="true">あり</option>
+                  <option value="false">なし</option>
+                </select>
+              </div>
+            </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">婚姻状況</label>
+              <label className="block text-sm font-medium mb-1.5">DM送付</label>
               <select
-                value={form.marital_status}
-                onChange={(e) => updateField("marital_status", e.target.value)}
+                value={form.dm_allowed}
+                onChange={(e) => updateField("dm_allowed", e.target.value)}
                 className={inputClass}
               >
-                {MARITAL_STATUSES.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
+                <option value="true">可</option>
+                <option value="false">不可</option>
               </select>
             </div>
 
-            {/* お子様 */}
-            <div>
-              <label className="block text-sm font-medium mb-1.5">お子様</label>
-              <select
-                value={form.has_children}
-                onChange={(e) => updateField("has_children", e.target.value)}
-                className={inputClass}
-              >
-                <option value="">選択してください</option>
-                <option value="true">あり</option>
-                <option value="false">なし</option>
-              </select>
+            {/* 施術関連情報 */}
+            <h4 className="font-medium text-xs text-text-light uppercase tracking-wide pt-2">施術関連情報</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">身長 (cm)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={form.height_cm}
+                  onChange={(e) => updateField("height_cm", e.target.value)}
+                  placeholder="160"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">体重 (kg)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={form.weight_kg}
+                  onChange={(e) => updateField("weight_kg", e.target.value)}
+                  placeholder="55"
+                  className={inputClass}
+                />
+              </div>
             </div>
-          </div>
-
-          {/* DM送付 */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5">DM送付</label>
-            <select
-              value={form.dm_allowed}
-              onChange={(e) => updateField("dm_allowed", e.target.value)}
-              className={inputClass}
-            >
-              <option value="true">可</option>
-              <option value="false">不可</option>
-            </select>
-          </div>
-        </div>
-
-        {/* 施術関連情報 */}
-        <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
-          <h3 className="font-bold text-sm text-text-light">施術関連情報</h3>
-
-          {/* 身体情報 */}
-          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1.5">身長 (cm)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={form.height_cm}
-                onChange={(e) => updateField("height_cm", e.target.value)}
-                placeholder="160"
-                className={inputClass}
+              <label className="block text-sm font-medium mb-1.5">
+                アレルギー・注意事項
+              </label>
+              <textarea
+                value={form.allergies}
+                onChange={(e) => updateField("allergies", e.target.value)}
+                placeholder="アレルギーや施術時の注意事項"
+                rows={2}
+                className={`${inputClass} resize-none`}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">体重 (kg)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={form.weight_kg}
-                onChange={(e) => updateField("weight_kg", e.target.value)}
-                placeholder="55"
-                className={inputClass}
+              <label className="block text-sm font-medium mb-1.5">施術の最終目標</label>
+              <textarea
+                value={form.treatment_goal}
+                onChange={(e) => updateField("treatment_goal", e.target.value)}
+                placeholder="お客様の施術に対する最終目標"
+                rows={2}
+                className={`${inputClass} resize-none`}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">メモ</label>
+              <textarea
+                value={form.notes}
+                onChange={(e) => updateField("notes", e.target.value)}
+                placeholder="自由メモ"
+                rows={2}
+                className={`${inputClass} resize-none`}
               />
             </div>
           </div>
-
-          {/* アレルギー */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5">
-              アレルギー・注意事項
-            </label>
-            <textarea
-              value={form.allergies}
-              onChange={(e) => updateField("allergies", e.target.value)}
-              placeholder="アレルギーや施術時の注意事項"
-              rows={2}
-              className={`${inputClass} resize-none`}
-            />
-          </div>
-
-          {/* 施術の最終目標 */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5">施術の最終目標</label>
-            <textarea
-              value={form.treatment_goal}
-              onChange={(e) => updateField("treatment_goal", e.target.value)}
-              placeholder="お客様の施術に対する最終目標"
-              rows={2}
-              className={`${inputClass} resize-none`}
-            />
-          </div>
-
-          {/* メモ */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5">メモ</label>
-            <textarea
-              value={form.notes}
-              onChange={(e) => updateField("notes", e.target.value)}
-              placeholder="自由メモ"
-              rows={2}
-              className={`${inputClass} resize-none`}
-            />
-          </div>
-        </div>
+        </details>
 
         {/* Submit */}
         <div className="flex gap-3 pt-2">

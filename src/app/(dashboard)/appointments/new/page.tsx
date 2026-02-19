@@ -2,8 +2,8 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { PageHeader } from "@/components/layout/page-header";
 import type { Database, BusinessHours } from "@/types/database";
 import {
   getScheduleForDate,
@@ -291,15 +291,7 @@ function NewAppointmentForm() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">予約を登録</h2>
-        <Link
-          href="/appointments"
-          className="text-sm text-text-light hover:text-text transition-colors"
-        >
-          戻る
-        </Link>
-      </div>
+      <PageHeader title="予約を登録" backLabel="予約一覧" backHref="/appointments" />
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (

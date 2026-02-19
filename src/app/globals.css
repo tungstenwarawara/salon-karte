@@ -34,3 +34,12 @@ html {
 input, select, textarea {
   font-size: 16px;
 }
+
+/* Details/Summary chevron rotation */
+details[open] .details-open-rotate {
+  transform: rotate(180deg);
+}
+
+details summary::-webkit-details-marker {
+  display: none;
+}

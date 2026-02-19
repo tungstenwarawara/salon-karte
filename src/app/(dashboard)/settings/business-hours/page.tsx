@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { PageHeader } from "@/components/layout/page-header";
 import type { BusinessHours, DaySchedule } from "@/types/database";
 import {
   ORDERED_DAYS,
@@ -108,15 +108,7 @@ export default function BusinessHoursPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">営業時間設定</h2>
-        <Link
-          href="/settings"
-          className="text-sm text-text-light hover:text-text transition-colors"
-        >
-          戻る
-        </Link>
-      </div>
+      <PageHeader title="営業時間設定" backLabel="設定" backHref="/settings" />
 
       <form onSubmit={handleSave} className="space-y-4">
         {error && (

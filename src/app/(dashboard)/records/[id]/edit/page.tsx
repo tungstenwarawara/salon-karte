@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { PageHeader } from "@/components/layout/page-header";
 import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
@@ -151,7 +152,7 @@ export default function EditRecordPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">施術記録を編集</h2>
+      <PageHeader title="施術記録を編集" backLabel="戻る" />
 
       <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
         {error && (
