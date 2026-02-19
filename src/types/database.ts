@@ -513,7 +513,21 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      get_lapsed_customers: {
+        Args: {
+          p_salon_id: string;
+          p_days_threshold?: number;
+        };
+        Returns: {
+          id: string;
+          last_name: string;
+          first_name: string;
+          last_visit_date: string;
+          days_since: number;
+        }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

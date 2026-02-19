@@ -4,6 +4,17 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // 認証済みルート: ブラウザキャッシュを無効化
+        // デプロイ後に古いHTMLが表示される問題を防止
+        source: "/(dashboard|customers|appointments|records|settings)/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, must-revalidate",
+          },
+        ],
+      },
+      {
         // 全ページに適用
         source: "/(.*)",
         headers: [

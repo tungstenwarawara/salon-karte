@@ -7,15 +7,6 @@ import type { Database } from "@/types/database";
 
 type Customer = Database["public"]["Tables"]["customers"]["Row"];
 
-const SKIN_TYPES = [
-  { value: "", label: "選択してください" },
-  { value: "普通肌", label: "普通肌" },
-  { value: "乾燥肌", label: "乾燥肌" },
-  { value: "脂性肌", label: "脂性肌" },
-  { value: "混合肌", label: "混合肌" },
-  { value: "敏感肌", label: "敏感肌" },
-];
-
 const MARITAL_STATUSES = [
   { value: "", label: "選択してください" },
   { value: "未婚", label: "未婚" },
@@ -40,7 +31,6 @@ export default function EditCustomerPage() {
     marital_status: "",
     has_children: "",
     dm_allowed: "true",
-    skin_type: "",
     height_cm: "",
     weight_kg: "",
     allergies: "",
@@ -69,7 +59,6 @@ export default function EditCustomerPage() {
           marital_status: data.marital_status ?? "",
           has_children: data.has_children === null ? "" : data.has_children ? "true" : "false",
           dm_allowed: data.dm_allowed === false ? "false" : "true",
-          skin_type: data.skin_type ?? "",
           height_cm: data.height_cm !== null ? String(data.height_cm) : "",
           weight_kg: data.weight_kg !== null ? String(data.weight_kg) : "",
           allergies: data.allergies ?? "",
@@ -105,7 +94,6 @@ export default function EditCustomerPage() {
         marital_status: form.marital_status || null,
         has_children: form.has_children === "" ? null : form.has_children === "true",
         dm_allowed: form.dm_allowed === "true",
-        skin_type: form.skin_type || null,
         height_cm: form.height_cm ? parseFloat(form.height_cm) : null,
         weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
         allergies: form.allergies || null,
@@ -319,21 +307,6 @@ export default function EditCustomerPage() {
         {/* 施術関連情報 */}
         <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
           <h3 className="font-bold text-sm text-text-light">施術関連情報</h3>
-
-          <div>
-            <label className="block text-sm font-medium mb-1.5">肌質</label>
-            <select
-              value={form.skin_type}
-              onChange={(e) => updateField("skin_type", e.target.value)}
-              className={inputClass}
-            >
-              {SKIN_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
