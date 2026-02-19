@@ -155,7 +155,13 @@ export default function EditRecordPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="施術記録を編集" backLabel="戻る" />
+      <PageHeader
+        title="施術記録を編集"
+        backLabel="戻る"
+        breadcrumbs={[
+          { label: "カルテ編集" },
+        ]}
+      />
 
       <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
         {error && <ErrorAlert message={error} />}

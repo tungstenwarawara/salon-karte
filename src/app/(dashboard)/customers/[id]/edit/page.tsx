@@ -156,7 +156,16 @@ export default function EditCustomerPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="顧客情報を編集" backLabel="顧客詳細" backHref={`/customers/${id}`} />
+      <PageHeader
+        title="顧客情報を編集"
+        backLabel="顧客詳細"
+        backHref={`/customers/${id}`}
+        breadcrumbs={[
+          { label: "顧客一覧", href: "/customers" },
+          { label: form.last_name ? `${form.last_name} ${form.first_name}` : "顧客", href: `/customers/${id}` },
+          { label: "編集" },
+        ]}
+      />
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <ErrorAlert message={error} />}

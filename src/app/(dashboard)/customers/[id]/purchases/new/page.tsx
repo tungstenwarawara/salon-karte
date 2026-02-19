@@ -99,7 +99,14 @@ export default function NewPurchasePage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="購入記録を登録" backLabel="戻る" />
+      <PageHeader
+        title="購入記録を登録"
+        backLabel="戻る"
+        breadcrumbs={[
+          ...(customerName ? [{ label: customerName, href: `/customers/${customerId}` }] : []),
+          { label: "物販記録" },
+        ]}
+      />
       {customerName && (
         <p className="text-text-light">
           顧客: <span className="font-medium text-text">{customerName}</span>

@@ -144,7 +144,15 @@ export default function MenusPage() {
   return (
     <div className="space-y-4">
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
-      <PageHeader title="施術メニュー" backLabel="設定" backHref="/settings">
+      <PageHeader
+        title="施術メニュー"
+        backLabel="設定"
+        backHref="/settings"
+        breadcrumbs={[
+          { label: "設定", href: "/settings" },
+          { label: "施術メニュー" },
+        ]}
+      >
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}

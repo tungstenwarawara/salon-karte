@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import type { Database, BusinessHours } from "@/types/database";
 import {
   getScheduleForDate,
@@ -293,7 +294,15 @@ function NewAppointmentForm() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="予約を登録" backLabel="予約一覧" backHref="/appointments" />
+      <PageHeader
+        title="予約を登録"
+        backLabel="予約一覧"
+        backHref="/appointments"
+        breadcrumbs={[
+          { label: "予約管理", href: "/appointments" },
+          { label: "新規登録" },
+        ]}
+      />
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && <ErrorAlert message={error} />}
@@ -615,39 +624,42 @@ function NewAppointmentForm() {
           )}
         </div>
 
-        {/* Source */}
-        <div>
-          <label htmlFor="source" className="block text-sm font-medium mb-1.5">
-            予約経路
-          </label>
-          <select
-            id="source"
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-            className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-          >
-            {SOURCE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* 任意項目（折りたたみ） */}
+        <CollapsibleSection label="その他のオプション（任意）">
+          {/* Source */}
+          <div>
+            <label htmlFor="source" className="block text-sm font-medium mb-1.5">
+              予約経路
+            </label>
+            <select
+              id="source"
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            >
+              {SOURCE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        {/* Memo */}
-        <div>
-          <label htmlFor="memo" className="block text-sm font-medium mb-1.5">
-            メモ（任意）
-          </label>
-          <textarea
-            id="memo"
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            rows={2}
-            placeholder="施術の要望や注意点など"
-            className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
-          />
-        </div>
+          {/* Memo */}
+          <div>
+            <label htmlFor="memo" className="block text-sm font-medium mb-1.5">
+              メモ
+            </label>
+            <textarea
+              id="memo"
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              rows={2}
+              placeholder="施術の要望や注意点など"
+              className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors resize-none"
+            />
+          </div>
+        </CollapsibleSection>
 
         <button
           type="submit"
