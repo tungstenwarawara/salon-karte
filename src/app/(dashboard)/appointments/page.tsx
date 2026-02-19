@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import type { Database } from "@/types/database";
+import type { Database, BusinessHours } from "@/types/database";
+import { getScheduleForDate, isBusinessDay } from "@/lib/business-hours";
 
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
 type AppointmentWithCustomer = Appointment & {
@@ -55,6 +56,7 @@ export default function AppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"day" | "week">("day");
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
 
   const loadAppointments = useCallback(async (date: Date, mode: "day" | "week") => {
     const supabase = createClient();
@@ -65,10 +67,11 @@ export default function AppointmentsPage() {
 
     const { data: salon } = await supabase
       .from("salons")
-      .select("id")
+      .select("id, business_hours")
       .eq("owner_id", user.id)
-      .single<{ id: string }>();
+      .single<{ id: string; business_hours: BusinessHours | null }>();
     if (!salon) return;
+    setBusinessHours(salon.business_hours);
 
     let startDate: string;
     let endDate: string;
@@ -322,6 +325,19 @@ export default function AppointmentsPage() {
         </button>
       </div>
 
+      {/* Business hours context for day view */}
+      {viewMode === "day" && businessHours && (() => {
+        const schedule = getScheduleForDate(businessHours, selectedDate);
+        if (!schedule.is_open) return (
+          <p className="text-xs text-text-light text-center">休業日</p>
+        );
+        return (
+          <p className="text-xs text-text-light text-center">
+            営業時間: {schedule.open_time} 〜 {schedule.close_time}
+          </p>
+        );
+      })()}
+
       {/* Content */}
       {loading ? (
         <div className="text-center text-text-light py-8">読み込み中...</div>
@@ -333,7 +349,14 @@ export default function AppointmentsPage() {
           </div>
         ) : (
           <div className="bg-surface border border-border rounded-xl p-6 text-center text-text-light">
-            <p>この日の予約はありません</p>
+            {businessHours && !isBusinessDay(businessHours, selectedDate) ? (
+              <div className="space-y-1">
+                <p className="font-medium">休業日</p>
+                <p className="text-xs">この曜日は休業日に設定されています</p>
+              </div>
+            ) : (
+              <p>この日の予約はありません</p>
+            )}
           </div>
         )
       ) : (
@@ -359,6 +382,11 @@ export default function AppointmentsPage() {
                       今日
                     </span>
                   )}
+                  {businessHours && !isBusinessDay(businessHours, date) && (
+                    <span className="ml-1 text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
+                      休
+                    </span>
+                  )}
                   <span className="ml-2 text-xs">
                     {dayAppointments.filter((a) => a.status !== "cancelled").length}件
                   </span>
@@ -369,7 +397,7 @@ export default function AppointmentsPage() {
                   </div>
                 ) : (
                   <div className="bg-surface border border-border rounded-xl p-3 text-center text-text-light text-sm">
-                    予約なし
+                    {businessHours && !isBusinessDay(businessHours, date) ? "休業日" : "予約なし"}
                   </div>
                 )}
               </div>

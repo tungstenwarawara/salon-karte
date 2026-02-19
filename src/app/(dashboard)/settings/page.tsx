@@ -133,6 +133,22 @@ export default function SettingsPage() {
         </button>
       </form>
 
+      {/* Business hours link */}
+      <Link
+        href="/settings/business-hours"
+        className="block bg-surface border border-border rounded-2xl p-5 hover:border-accent transition-colors"
+      >
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="font-bold">営業時間設定</h3>
+            <p className="text-sm text-text-light mt-1">
+              曜日ごとの営業時間・休業日の設定
+            </p>
+          </div>
+          <span className="text-text-light">→</span>
+        </div>
+      </Link>
+
       {/* Menu link */}
       <Link
         href="/settings/menus"
