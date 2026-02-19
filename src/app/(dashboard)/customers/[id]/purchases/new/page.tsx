@@ -20,8 +20,8 @@ export default function NewPurchasePage() {
     return {
       purchase_date: today,
       item_name: "",
-      quantity: 1,
-      unit_price: 0,
+      quantity: "1",
+      unit_price: "",
       memo: "",
     };
   });
@@ -54,7 +54,9 @@ export default function NewPurchasePage() {
     load();
   }, [customerId]);
 
-  const totalPrice = form.quantity * form.unit_price;
+  const quantityNum = Math.max(1, parseInt(form.quantity, 10) || 0);
+  const unitPriceNum = Math.max(0, parseInt(form.unit_price, 10) || 0);
+  const totalPrice = quantityNum * unitPriceNum;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,8 +73,8 @@ export default function NewPurchasePage() {
       customer_id: customerId,
       purchase_date: form.purchase_date,
       item_name: form.item_name.trim(),
-      quantity: form.quantity,
-      unit_price: form.unit_price,
+      quantity: quantityNum,
+      unit_price: unitPriceNum,
       total_price: totalPrice,
       memo: form.memo || null,
     });
@@ -149,7 +151,7 @@ export default function NewPurchasePage() {
               onChange={(e) =>
                 setForm((prev) => ({
                   ...prev,
-                  quantity: Math.max(1, Number(e.target.value) || 1),
+                  quantity: e.target.value,
                 }))
               }
               className={inputClass}
@@ -166,9 +168,10 @@ export default function NewPurchasePage() {
               onChange={(e) =>
                 setForm((prev) => ({
                   ...prev,
-                  unit_price: Math.max(0, Number(e.target.value) || 0),
+                  unit_price: e.target.value,
                 }))
               }
+              placeholder="0"
               className={inputClass}
             />
           </div>
