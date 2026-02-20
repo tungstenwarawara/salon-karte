@@ -22,6 +22,7 @@ type MenuPaymentInfo = {
   menuId: string;
   paymentType: "cash" | "credit" | "ticket" | "service";
   ticketId: string | null;
+  priceOverride: number | null; // null = メニュー設定金額を使用
 };
 
 export default function NewRecordPage() {
@@ -142,6 +143,7 @@ function NewRecordForm() {
             menuId,
             paymentType: "cash",
             ticketId: null,
+            priceOverride: null,
           })));
         }
       }
@@ -204,7 +206,7 @@ function NewRecordForm() {
 
     // 支払情報の同期
     if (newIds.includes(menuId) && !menuPayments.find((mp) => mp.menuId === menuId)) {
-      setMenuPayments((prev) => [...prev, { menuId, paymentType: "cash", ticketId: null }]);
+      setMenuPayments((prev) => [...prev, { menuId, paymentType: "cash", ticketId: null, priceOverride: null }]);
     } else if (!newIds.includes(menuId)) {
       setMenuPayments((prev) => prev.filter((mp) => mp.menuId !== menuId));
     }
@@ -215,6 +217,15 @@ function NewRecordForm() {
     setMenuPayments((prev) =>
       prev.map((mp) =>
         mp.menuId === menuId ? { ...mp, paymentType, ticketId: paymentType === "ticket" ? ticketId : null } : mp
+      )
+    );
+  };
+
+  // メニューの金額上書き
+  const updateMenuPrice = (menuId: string, price: number | null) => {
+    setMenuPayments((prev) =>
+      prev.map((mp) =>
+        mp.menuId === menuId ? { ...mp, priceOverride: price } : mp
       )
     );
   };
@@ -279,7 +290,7 @@ function NewRecordForm() {
           treatment_record_id: record.id,
           menu_id: menuId,
           menu_name_snapshot: menu?.name ?? "",
-          price_snapshot: menu?.price ?? null,
+          price_snapshot: payment?.priceOverride ?? menu?.price ?? null,
           duration_minutes_snapshot: menu?.duration_minutes ?? null,
           payment_type: payment?.paymentType ?? "cash",
           ticket_id: payment?.ticketId ?? null,
@@ -355,7 +366,8 @@ function NewRecordForm() {
   }, 0);
   const totalPrice = selectedMenuIds.reduce((sum, id) => {
     const menu = menus.find((m) => m.id === id);
-    return sum + (menu?.price ?? 0);
+    const payment = menuPayments.find((mp) => mp.menuId === id);
+    return sum + (payment?.priceOverride ?? menu?.price ?? 0);
   }, 0);
 
   // 当日支払い金額（回数券・サービスを除く）
@@ -363,7 +375,7 @@ function NewRecordForm() {
     const menu = menus.find((m) => m.id === id);
     const payment = menuPayments.find((mp) => mp.menuId === id);
     if (payment?.paymentType === "cash" || payment?.paymentType === "credit") {
-      return sum + (menu?.price ?? 0);
+      return sum + (payment?.priceOverride ?? menu?.price ?? 0);
     }
     return sum;
   }, 0);
@@ -524,14 +536,20 @@ function NewRecordForm() {
             <div className="flex gap-1.5 mb-2">
               <button
                 type="button"
-                onClick={() => setMenuPayments(selectedMenuIds.map((mid) => ({ menuId: mid, paymentType: "cash", ticketId: null })))}
+                onClick={() => setMenuPayments((prev) => selectedMenuIds.map((mid) => {
+                  const existing = prev.find((mp) => mp.menuId === mid);
+                  return { menuId: mid, paymentType: "cash" as const, ticketId: null, priceOverride: existing?.priceOverride ?? null };
+                }))}
                 className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-accent/5 hover:border-accent hover:text-accent transition-colors"
               >
                 全て現金
               </button>
               <button
                 type="button"
-                onClick={() => setMenuPayments(selectedMenuIds.map((mid) => ({ menuId: mid, paymentType: "credit", ticketId: null })))}
+                onClick={() => setMenuPayments((prev) => selectedMenuIds.map((mid) => {
+                  const existing = prev.find((mp) => mp.menuId === mid);
+                  return { menuId: mid, paymentType: "credit" as const, ticketId: null, priceOverride: existing?.priceOverride ?? null };
+                }))}
                 className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-accent/5 hover:border-accent hover:text-accent transition-colors"
               >
                 全てクレジット
@@ -546,6 +564,24 @@ function NewRecordForm() {
                   <div key={menuId} className="space-y-1.5">
                     <div className="flex items-center gap-2">
                       <span className="text-sm flex-1 truncate">{menu.name}</span>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={payment?.priceOverride ?? menu.price ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "" || val === String(menu.price ?? "")) {
+                              updateMenuPrice(menuId, null);
+                            } else {
+                              updateMenuPrice(menuId, parseInt(val, 10) || 0);
+                            }
+                          }}
+                          className={`w-20 text-xs text-right rounded-lg border bg-surface px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent/50 ${
+                            payment?.priceOverride != null ? "border-accent text-accent font-medium" : "border-border"
+                          }`}
+                        />
+                        <span className="text-xs text-text-light ml-0.5">円</span>
+                      </div>
                       <select
                         value={payment?.paymentType ?? "cash"}
                         onChange={(e) => {

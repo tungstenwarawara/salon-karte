@@ -17,6 +17,7 @@ type MenuPaymentInfo = {
   menuId: string;
   paymentType: "cash" | "credit" | "ticket" | "service";
   ticketId: string | null;
+  priceOverride: number | null; // null = メニュー設定金額を使用
 };
 
 export default function EditRecordPage() {
@@ -106,15 +107,22 @@ export default function EditRecordPage() {
         if (existingMenus.length > 0) {
           const ids = existingMenus.map((rm) => rm.menu_id).filter(Boolean) as string[];
           setSelectedMenuIds(ids);
-          setMenuPayments(existingMenus.map((rm) => ({
-            menuId: rm.menu_id ?? "",
-            paymentType: (rm.payment_type as MenuPaymentInfo["paymentType"]) ?? "cash",
-            ticketId: rm.ticket_id,
-          })).filter((mp) => mp.menuId));
+          const allMenus = menuRes.data ?? [];
+          setMenuPayments(existingMenus.map((rm) => {
+            const currentMenu = allMenus.find((m) => m.id === rm.menu_id);
+            // price_snapshotがメニューの現在価格と同じならnull（上書きなし）
+            const isOverridden = rm.price_snapshot != null && currentMenu?.price != null && rm.price_snapshot !== currentMenu.price;
+            return {
+              menuId: rm.menu_id ?? "",
+              paymentType: (rm.payment_type as MenuPaymentInfo["paymentType"]) ?? "cash",
+              ticketId: rm.ticket_id,
+              priceOverride: isOverridden ? rm.price_snapshot : null,
+            };
+          }).filter((mp) => mp.menuId));
         } else if (record.menu_id) {
           // 旧データ: menu_idから復元
           setSelectedMenuIds([record.menu_id]);
-          setMenuPayments([{ menuId: record.menu_id, paymentType: "cash", ticketId: null }]);
+          setMenuPayments([{ menuId: record.menu_id, paymentType: "cash", ticketId: null, priceOverride: null }]);
         }
 
         // 回数券を取得
@@ -153,7 +161,7 @@ export default function EditRecordPage() {
     setSelectedMenuIds(newIds);
 
     if (newIds.includes(menuId) && !menuPayments.find((mp) => mp.menuId === menuId)) {
-      setMenuPayments((prev) => [...prev, { menuId, paymentType: "cash", ticketId: null }]);
+      setMenuPayments((prev) => [...prev, { menuId, paymentType: "cash", ticketId: null, priceOverride: null }]);
     } else if (!newIds.includes(menuId)) {
       setMenuPayments((prev) => prev.filter((mp) => mp.menuId !== menuId));
     }
@@ -171,6 +179,15 @@ export default function EditRecordPage() {
     setMenuPayments((prev) =>
       prev.map((mp) =>
         mp.menuId === menuId ? { ...mp, ticketId } : mp
+      )
+    );
+  };
+
+  // メニューの金額上書き
+  const updateMenuPrice = (menuId: string, price: number | null) => {
+    setMenuPayments((prev) =>
+      prev.map((mp) =>
+        mp.menuId === menuId ? { ...mp, priceOverride: price } : mp
       )
     );
   };
@@ -224,7 +241,7 @@ export default function EditRecordPage() {
           treatment_record_id: id,
           menu_id: menuId,
           menu_name_snapshot: menu?.name ?? "",
-          price_snapshot: menu?.price ?? null,
+          price_snapshot: payment?.priceOverride ?? menu?.price ?? null,
           duration_minutes_snapshot: menu?.duration_minutes ?? null,
           payment_type: payment?.paymentType ?? "cash",
           ticket_id: payment?.ticketId ?? null,
@@ -285,7 +302,8 @@ export default function EditRecordPage() {
   }, 0);
   const totalPrice = selectedMenuIds.reduce((sum, mid) => {
     const menu = menus.find((m) => m.id === mid);
-    return sum + (menu?.price ?? 0);
+    const payment = menuPayments.find((mp) => mp.menuId === mid);
+    return sum + (payment?.priceOverride ?? menu?.price ?? 0);
   }, 0);
 
   return (
@@ -370,14 +388,20 @@ export default function EditRecordPage() {
             <div className="flex gap-1.5 mb-2">
               <button
                 type="button"
-                onClick={() => setMenuPayments(selectedMenuIds.map((mid) => ({ menuId: mid, paymentType: "cash", ticketId: null })))}
+                onClick={() => setMenuPayments((prev) => selectedMenuIds.map((mid) => {
+                  const existing = prev.find((mp) => mp.menuId === mid);
+                  return { menuId: mid, paymentType: "cash" as const, ticketId: null, priceOverride: existing?.priceOverride ?? null };
+                }))}
                 className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-accent/5 hover:border-accent hover:text-accent transition-colors"
               >
                 全て現金
               </button>
               <button
                 type="button"
-                onClick={() => setMenuPayments(selectedMenuIds.map((mid) => ({ menuId: mid, paymentType: "credit", ticketId: null })))}
+                onClick={() => setMenuPayments((prev) => selectedMenuIds.map((mid) => {
+                  const existing = prev.find((mp) => mp.menuId === mid);
+                  return { menuId: mid, paymentType: "credit" as const, ticketId: null, priceOverride: existing?.priceOverride ?? null };
+                }))}
                 className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-accent/5 hover:border-accent hover:text-accent transition-colors"
               >
                 全てクレジット
@@ -392,6 +416,24 @@ export default function EditRecordPage() {
                   <div key={menuId} className="space-y-1.5">
                     <div className="flex items-center gap-2">
                       <span className="text-sm flex-1 truncate">{menu.name}</span>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={payment?.priceOverride ?? menu.price ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "" || val === String(menu.price ?? "")) {
+                              updateMenuPrice(menuId, null);
+                            } else {
+                              updateMenuPrice(menuId, parseInt(val, 10) || 0);
+                            }
+                          }}
+                          className={`w-20 text-xs text-right rounded-lg border bg-surface px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent/50 ${
+                            payment?.priceOverride != null ? "border-accent text-accent font-medium" : "border-border"
+                          }`}
+                        />
+                        <span className="text-xs text-text-light ml-0.5">円</span>
+                      </div>
                       <select
                         value={payment?.paymentType ?? "cash"}
                         onChange={(e) => {
