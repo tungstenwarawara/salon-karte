@@ -42,6 +42,7 @@ const DAY_NAMES = ["日", "月", "火", "水", "木", "金", "土"];
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<AppointmentWithCustomer[]>([]);
+  const [salonId, setSalonId] = useState("");
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"day" | "month">("month");
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -62,6 +63,7 @@ export default function AppointmentsPage() {
       .eq("owner_id", user.id)
       .single<{ id: string; business_hours: BusinessHours | null; salon_holidays: string[] | null }>();
     if (!salon) return;
+    setSalonId(salon.id);
     setBusinessHours(salon.business_hours);
     setSalonHolidays(salon.salon_holidays);
 
@@ -124,7 +126,8 @@ export default function AppointmentsPage() {
     const { error: updateError } = await supabase
       .from("appointments")
       .update({ status: newStatus })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("salon_id", salonId);
     if (updateError) {
       setError("ステータスの更新に失敗しました");
       return;
@@ -139,7 +142,8 @@ export default function AppointmentsPage() {
     const { error: deleteError } = await supabase
       .from("appointments")
       .delete()
-      .eq("id", id);
+      .eq("id", id)
+      .eq("salon_id", salonId);
     if (deleteError) {
       setError("予約の削除に失敗しました");
       return;

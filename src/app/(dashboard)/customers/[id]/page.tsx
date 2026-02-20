@@ -1,6 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { formatDateShort } from "@/lib/format";
 import type { Database } from "@/types/database";
 import { CourseTicketSection } from "@/components/customers/course-ticket-section";
@@ -33,17 +33,15 @@ export default async function CustomerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, salon, supabase } = await getAuthAndSalon();
   if (!user) redirect("/login");
+  if (!salon) redirect("/setup");
 
   const { data: customer } = await supabase
     .from("customers")
     .select("*")
     .eq("id", id)
+    .eq("salon_id", salon.id)
     .single<Customer>();
 
   if (!customer) notFound();

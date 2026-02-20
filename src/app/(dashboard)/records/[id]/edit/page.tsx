@@ -25,6 +25,7 @@ export default function EditRecordPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [menus, setMenus] = useState<Menu[]>([]);
+  const [salonId, setSalonId] = useState("");
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -73,6 +74,7 @@ export default function EditRecordPage() {
         .eq("owner_id", user.id)
         .single<{ id: string }>();
       if (!salon) return;
+      setSalonId(salon.id);
 
       // P8: menus + record + record_menus + purchases + tickets を並列取得
       const [menuRes, recordRes, recordMenusRes, purchasesRes, linkedTicketsRes] = await Promise.all([
@@ -86,6 +88,7 @@ export default function EditRecordPage() {
           .from("treatment_records")
           .select("*")
           .eq("id", id)
+          .eq("salon_id", salon.id)
           .single<TreatmentRecord>(),
         supabase
           .from("treatment_record_menus")
@@ -251,7 +254,8 @@ export default function EditRecordPage() {
         conversation_notes: form.conversation_notes || null,
         caution_notes: form.caution_notes || null,
       })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("salon_id", salonId);
 
     if (updateError) {
       setError("更新に失敗しました");
@@ -290,7 +294,7 @@ export default function EditRecordPage() {
       }
     }
 
-    // 回数券消化のdiff処理
+    // 回数券消化のdiff処理（回数ベース: 同一チケットが複数メニューに使われるケースを正しく処理）
     const newTicketPayments = new Map<string, string>();
     menuPayments.forEach((mp) => {
       if (mp.paymentType === "ticket" && mp.ticketId) {
@@ -298,38 +302,42 @@ export default function EditRecordPage() {
       }
     });
 
-    // 取り消すべきチケット: 元にあるが新にない、またはticketIdが変わった
-    const ticketsToUndo = new Set<string>();
-    originalTicketPayments.forEach((oldTicketId, menuId) => {
-      const newTicketId = newTicketPayments.get(menuId);
-      if (!newTicketId || newTicketId !== oldTicketId) {
-        ticketsToUndo.add(oldTicketId);
-      }
+    // チケットごとの使用回数を集計
+    const oldTicketCounts = new Map<string, number>();
+    originalTicketPayments.forEach((ticketId) => {
+      oldTicketCounts.set(ticketId, (oldTicketCounts.get(ticketId) ?? 0) + 1);
+    });
+    const newTicketCounts = new Map<string, number>();
+    newTicketPayments.forEach((ticketId) => {
+      newTicketCounts.set(ticketId, (newTicketCounts.get(ticketId) ?? 0) + 1);
     });
 
-    // 消化すべきチケット: 新にあるが元にない、またはticketIdが変わった
-    const ticketsToUse = new Set<string>();
-    newTicketPayments.forEach((newTicketId, menuId) => {
-      const oldTicketId = originalTicketPayments.get(menuId);
-      if (!oldTicketId || oldTicketId !== newTicketId) {
-        ticketsToUse.add(newTicketId);
+    // 全チケットIDを集める
+    const allTicketIds = new Set([...oldTicketCounts.keys(), ...newTicketCounts.keys()]);
+
+    // 差分を計算して取り消し/消化を実行
+    for (const ticketId of allTicketIds) {
+      const oldCount = oldTicketCounts.get(ticketId) ?? 0;
+      const newCount = newTicketCounts.get(ticketId) ?? 0;
+      const diff = newCount - oldCount;
+
+      if (diff > 0) {
+        // 追加消化が必要
+        for (let i = 0; i < diff; i++) {
+          const { error: useError } = await supabase.rpc("use_course_ticket_session", {
+            p_ticket_id: ticketId,
+          });
+          if (useError) console.error("Ticket consumption error:", useError);
+        }
+      } else if (diff < 0) {
+        // 取り消しが必要
+        for (let i = 0; i < Math.abs(diff); i++) {
+          const { error: undoError } = await supabase.rpc("undo_course_ticket_session", {
+            p_ticket_id: ticketId,
+          });
+          if (undoError) console.error("Ticket undo error:", undoError);
+        }
       }
-    });
-
-    // 取り消し実行
-    for (const ticketId of ticketsToUndo) {
-      const { error: undoError } = await supabase.rpc("undo_course_ticket_session", {
-        p_ticket_id: ticketId,
-      });
-      if (undoError) console.error("Ticket undo error:", undoError);
-    }
-
-    // 消化実行
-    for (const ticketId of ticketsToUse) {
-      const { error: useError } = await supabase.rpc("use_course_ticket_session", {
-        p_ticket_id: ticketId,
-      });
-      if (useError) console.error("Ticket consumption error:", useError);
     }
 
     router.push(`/records/${id}`);
@@ -352,7 +360,7 @@ export default function EditRecordPage() {
       await supabase.storage.from("treatment-photos").remove(paths);
     }
 
-    // 削除前に回数券消化を取り消す
+    // 削除前に回数券消化を取り消す（回数ベース: 同一チケットが複数メニューの場合を考慮）
     const { data: recordMenusToUndo } = await supabase
       .from("treatment_record_menus")
       .select("ticket_id")
@@ -371,10 +379,35 @@ export default function EditRecordPage() {
       }
     }
 
+    // 削除前に紐づく物販の在庫を戻す
+    const { data: linkedPurchasesToReverse } = await supabase
+      .from("purchases")
+      .select("id, product_id")
+      .eq("treatment_record_id", id);
+
+    if (linkedPurchasesToReverse) {
+      for (const purchase of linkedPurchasesToReverse) {
+        if (purchase.product_id) {
+          // 在庫連動あり: RPC で在庫戻し + 物販レコード削除
+          const { error: reverseErr } = await supabase.rpc("reverse_product_sale", {
+            p_purchase_id: purchase.id,
+          });
+          if (reverseErr) console.error("Purchase reverse on delete error:", reverseErr);
+        } else {
+          // 自由入力の物販: 直接削除
+          await supabase.from("purchases").delete().eq("id", purchase.id);
+        }
+      }
+    }
+
+    // 紐づく回数券購入も削除
+    await supabase.from("course_tickets").delete().eq("treatment_record_id", id);
+
     const { error } = await supabase
       .from("treatment_records")
       .delete()
-      .eq("id", id);
+      .eq("id", id)
+      .eq("salon_id", salonId);
 
     if (error) {
       setError("削除に失敗しました");

@@ -279,6 +279,14 @@ function NewRecordForm() {
       setError("顧客が選択されていません");
       return;
     }
+    // 回数券支払いでチケット未選択のチェック
+    const unselectedTicket = menuPayments.find(
+      (mp) => mp.paymentType === "ticket" && !mp.ticketId
+    );
+    if (unselectedTicket) {
+      setError("回数券支払いのメニューでチケットが選択されていません");
+      return;
+    }
     setError("");
     setLoading(true);
 
@@ -315,6 +323,9 @@ function NewRecordForm() {
       return;
     }
 
+    // 回数券消化エラーの蓄積用
+    const ticketErrors: string[] = [];
+
     // treatment_record_menus 中間テーブルに複数メニューを挿入
     if (selectedMenuIds.length > 0) {
       const junctionRows = selectedMenuIds.map((menuId, index) => {
@@ -341,18 +352,28 @@ function NewRecordForm() {
       }
 
       // 回数券消化: ticket支払いのメニューがあれば use_course_ticket_session を呼び出す
-      const ticketPayments = menuPayments.filter(
-        (mp) => mp.paymentType === "ticket" && mp.ticketId
-      );
-      for (const tp of ticketPayments) {
-        const { error: ticketError } = await supabase.rpc("use_course_ticket_session", {
-          p_ticket_id: tp.ticketId!,
-        });
-        if (ticketError) {
-          console.error("Ticket consumption error:", ticketError);
+      // 同一チケットが複数メニューに割り当てられた場合、回数分だけ消化する
+      const ticketUseCounts = new Map<string, number>();
+      menuPayments.forEach((mp) => {
+        if (mp.paymentType === "ticket" && mp.ticketId) {
+          ticketUseCounts.set(mp.ticketId, (ticketUseCounts.get(mp.ticketId) ?? 0) + 1);
+        }
+      });
+      for (const [ticketId, count] of ticketUseCounts) {
+        for (let i = 0; i < count; i++) {
+          const { error: ticketError } = await supabase.rpc("use_course_ticket_session", {
+            p_ticket_id: ticketId,
+          });
+          if (ticketError) {
+            console.error("Ticket consumption error:", ticketError);
+            ticketErrors.push(`回数券の消化に失敗しました: ${ticketError.message}`);
+          }
         }
       }
     }
+
+    // 関連処理のエラーを蓄積（カルテ本体は保存済み）
+    const warnings: string[] = [...ticketErrors];
 
     // Phase 6-2: 回数券販売の保存
     if (pendingTickets.length > 0) {
@@ -371,6 +392,7 @@ function NewRecordForm() {
         .insert(ticketRows);
       if (ticketInsertError) {
         console.error("Ticket insert error:", ticketInsertError);
+        warnings.push("回数券の登録に失敗しました");
       }
     }
 
@@ -390,6 +412,7 @@ function NewRecordForm() {
         });
         if (rpcError) {
           console.error("Product sale RPC error:", rpcError);
+          warnings.push("物販の在庫連動に失敗しました");
         }
       } else {
         // 自由入力モード
@@ -406,6 +429,7 @@ function NewRecordForm() {
         });
         if (purchaseError) {
           console.error("Purchase insert error:", purchaseError);
+          warnings.push("物販の登録に失敗しました");
         }
       }
     }
@@ -418,9 +442,7 @@ function NewRecordForm() {
         photos
       );
       if (photoErrors.length > 0) {
-        setError(
-          "施術記録は保存されましたが、一部の写真のアップロードに失敗しました"
-        );
+        warnings.push("一部の写真のアップロードに失敗しました");
       }
     }
 
@@ -430,6 +452,13 @@ function NewRecordForm() {
         .from("appointments")
         .update({ treatment_record_id: record.id, status: "completed" })
         .eq("id", appointmentId);
+    }
+
+    // 関連処理にエラーがあった場合、ユーザーに通知
+    if (warnings.length > 0) {
+      setError(`施術記録は保存されましたが、以下の問題があります: ${warnings.join("、")}`);
+      setLoading(false);
+      return;
     }
 
     clearDraft();
