@@ -7,31 +7,15 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
-import type { Database, BusinessHours } from "@/types/database";
-import {
-  getScheduleForDate,
-  isBusinessDay,
-  isWithinBusinessHours,
-  isIrregularHoliday,
-  timeToMinutes,
-} from "@/lib/business-hours";
+import { TimeSlotVisualization } from "@/components/appointments/time-slot-visualization";
+import { TimePicker } from "@/components/appointments/time-picker";
+import { AppointmentMenuSelector } from "@/components/appointments/appointment-menu-selector";
+import { ClosedDayWarning, getOutsideHoursWarning } from "@/components/appointments/business-hours-warning";
+import { INPUT_CLASS, SOURCE_OPTIONS } from "@/components/appointments/types";
+import type { TreatmentMenu, DayAppointment, BusinessHours } from "@/components/appointments/types";
+import type { Database } from "@/types/database";
 
 type Customer = Database["public"]["Tables"]["customers"]["Row"];
-type TreatmentMenu = Database["public"]["Tables"]["treatment_menus"]["Row"];
-type DayAppointment = {
-  id: string;
-  start_time: string;
-  end_time: string | null;
-  customers: { last_name: string; first_name: string } | null;
-};
-
-const SOURCE_OPTIONS = [
-  { value: "direct", label: "直接予約" },
-  { value: "hotpepper", label: "ホットペッパー" },
-  { value: "phone", label: "電話" },
-  { value: "line", label: "LINE" },
-  { value: "other", label: "その他" },
-];
 
 export default function NewAppointmentPage() {
   return (
@@ -78,9 +62,7 @@ function NewAppointmentForm() {
 
   const loadData = async () => {
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const { data: salon } = await supabase
@@ -94,7 +76,6 @@ function NewAppointmentForm() {
     setBusinessHours(salon.business_hours);
     setSalonHolidays(salon.salon_holidays);
 
-    // P12: 必要なカラムのみ取得（全カラムのSELECT *を回避）
     const [customersRes, menusRes] = await Promise.all([
       supabase
         .from("customers")
@@ -116,7 +97,7 @@ function NewAppointmentForm() {
     setLoading(false);
   };
 
-  // Fetch day appointments when date changes
+  // 日付変更時に当日の予約を取得
   useEffect(() => {
     if (!salonId || !appointmentDate) return;
     const loadDayAppointments = async () => {
@@ -134,7 +115,7 @@ function NewAppointmentForm() {
     loadDayAppointments();
   }, [salonId, appointmentDate]);
 
-  // Auto-calculate end time from selected menus' total duration
+  // メニュー合計時間から終了時間を自動計算
   const updateEndTimeFromMenus = (menuIds: string[], sH: string, sM: string, forceCalc = false) => {
     if (!forceCalc && isEndTimeManual) return;
     const totalDuration = menuIds.reduce((sum, id) => {
@@ -169,13 +150,11 @@ function NewAppointmentForm() {
     }
 
     setSaving(true);
-
     const supabase = createClient();
 
     const startTime = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
     const endTime = `${endHour.padStart(2, "0")}:${endMinute.padStart(2, "0")}`;
 
-    // Validate end > start
     const startMin = Number(startHour) * 60 + Number(startMinute);
     const endMin = Number(endHour) * 60 + Number(endMinute);
     if (endMin <= startMin) {
@@ -184,7 +163,7 @@ function NewAppointmentForm() {
       return;
     }
 
-    // Check for overlapping appointments
+    // 重複チェック
     const { data: existing } = await supabase
       .from("appointments")
       .select("id, start_time, end_time, customers(last_name, first_name)")
@@ -197,13 +176,11 @@ function NewAppointmentForm() {
         const [hh, mm] = t.slice(0, 5).split(":").map(Number);
         return hh * 60 + mm;
       };
-
       const overlap = existing.find((apt) => {
         const eStart = toMin(apt.start_time);
         const eEnd = apt.end_time ? toMin(apt.end_time) : eStart + 60;
         return startMin < eEnd && eStart < endMin;
       });
-
       if (overlap) {
         const c = overlap.customers as { last_name: string; first_name: string } | null;
         const name = c ? `${c.last_name} ${c.first_name}` : "別の顧客";
@@ -213,7 +190,7 @@ function NewAppointmentForm() {
       }
     }
 
-    // Build menu snapshot
+    // メニュースナップショット作成
     const selectedMenusList = selectedMenuIds.map((id, index) => {
       const menu = menus.find((m) => m.id === id);
       return { id, menu, index };
@@ -223,7 +200,6 @@ function NewAppointmentForm() {
       .filter(Boolean)
       .join("、") || null;
 
-    // Insert appointment (keep first menu_id for backward compat)
     const { data: inserted, error: insertError } = await supabase
       .from("appointments")
       .insert({
@@ -247,7 +223,7 @@ function NewAppointmentForm() {
       return;
     }
 
-    // Insert junction table rows
+    // 中間テーブル挿入
     if (selectedMenuIds.length > 0) {
       const junctionRows = selectedMenusList.map(({ id, menu, index }) => ({
         appointment_id: inserted.id,
@@ -257,11 +233,8 @@ function NewAppointmentForm() {
         duration_minutes_snapshot: menu?.duration_minutes ?? null,
         sort_order: index,
       }));
-
       const { error: junctionError } = await supabase.from("appointment_menus").insert(junctionRows);
-      if (junctionError) {
-        console.error("Junction insert error:", junctionError);
-      }
+      if (junctionError) console.error("Junction insert error:", junctionError);
     }
 
     router.push("/appointments");
@@ -272,15 +245,12 @@ function NewAppointmentForm() {
     const s = customerSearch.toLowerCase();
     return (
       `${c.last_name}${c.first_name}`.includes(s) ||
-      `${c.last_name_kana ?? ""}${c.first_name_kana ?? ""}`
-        .toLowerCase()
-        .includes(s)
+      `${c.last_name_kana ?? ""}${c.first_name_kana ?? ""}`.toLowerCase().includes(s)
     );
   });
 
   const selectedCustomer = customers.find((c) => c.id === customerId);
 
-  // Calculate total duration and price of selected menus
   const totalDuration = selectedMenuIds.reduce((sum, id) => {
     const menu = menus.find((m) => m.id === id);
     return sum + (menu?.duration_minutes ?? 0);
@@ -291,9 +261,7 @@ function NewAppointmentForm() {
   }, 0);
 
   if (loading) {
-    return (
-      <div className="text-center text-text-light py-8">読み込み中...</div>
-    );
+    return <div className="text-center text-text-light py-8">読み込み中...</div>;
   }
 
   return (
@@ -311,7 +279,7 @@ function NewAppointmentForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && <ErrorAlert message={error} />}
 
-        {/* Customer selection */}
+        {/* 顧客選択 */}
         <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
           <label className="block text-sm font-medium">顧客</label>
           {selectedCustomer ? (
@@ -319,11 +287,7 @@ function NewAppointmentForm() {
               <span className="font-medium">
                 {selectedCustomer.last_name} {selectedCustomer.first_name}
               </span>
-              <button
-                type="button"
-                onClick={() => setCustomerId("")}
-                className="text-sm text-text-light hover:text-text"
-              >
+              <button type="button" onClick={() => setCustomerId("")} className="text-sm text-text-light hover:text-text">
                 変更
               </button>
             </div>
@@ -334,336 +298,125 @@ function NewAppointmentForm() {
                 value={customerSearch}
                 onChange={(e) => setCustomerSearch(e.target.value)}
                 placeholder="名前・カナで検索"
-                className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+                className={INPUT_CLASS}
               />
               <div className="max-h-48 overflow-y-auto space-y-1">
                 {filteredCustomers.map((c) => (
                   <button
                     key={c.id}
                     type="button"
-                    onClick={() => {
-                      setCustomerId(c.id);
-                      setCustomerSearch("");
-                    }}
+                    onClick={() => { setCustomerId(c.id); setCustomerSearch(""); }}
                     className="w-full text-left px-3 py-2 rounded-lg hover:bg-background transition-colors"
                   >
-                    <p className="font-medium text-sm">
-                      {c.last_name} {c.first_name}
-                    </p>
+                    <p className="font-medium text-sm">{c.last_name} {c.first_name}</p>
                     {(c.last_name_kana || c.first_name_kana) && (
-                      <p className="text-xs text-text-light">
-                        {c.last_name_kana} {c.first_name_kana}
-                      </p>
+                      <p className="text-xs text-text-light">{c.last_name_kana} {c.first_name_kana}</p>
                     )}
                   </button>
                 ))}
                 {filteredCustomers.length === 0 && (
-                  <p className="text-sm text-text-light text-center py-2">
-                    該当する顧客がいません
-                  </p>
+                  <p className="text-sm text-text-light text-center py-2">該当する顧客がいません</p>
                 )}
               </div>
             </>
           )}
         </div>
 
-        {/* Date */}
+        {/* 予約日 */}
         <div>
-          <label htmlFor="date" className="block text-sm font-medium mb-1.5">
-            予約日
-          </label>
+          <label htmlFor="date" className="block text-sm font-medium mb-1.5">予約日</label>
           <input
             id="date"
             type="date"
             value={appointmentDate}
             onChange={(e) => setAppointmentDate(e.target.value)}
             required
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            className={INPUT_CLASS}
           />
         </div>
 
-        {/* Closed day warning */}
-        {appointmentDate && businessHours && !isBusinessDay(businessHours, appointmentDate, salonHolidays) && (
-          <div className="bg-warning/10 text-warning text-sm rounded-lg p-3">
-            {isIrregularHoliday(salonHolidays, appointmentDate)
-              ? "この日は臨時休業日に設定されています"
-              : "この日は休業日に設定されています"}
-          </div>
+        {/* 休業日警告 */}
+        {businessHours && (
+          <ClosedDayWarning
+            appointmentDate={appointmentDate}
+            businessHours={businessHours}
+            salonHolidays={salonHolidays}
+          />
         )}
 
-        {/* Time slot visualization */}
-        {appointmentDate && businessHours && (() => {
-          const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays);
-          if (!schedule.is_open) return null;
-          const openMin = timeToMinutes(schedule.open_time);
-          const closeMin = timeToMinutes(schedule.close_time);
-          const slotCount = (closeMin - openMin) / 15;
-          if (slotCount <= 0) return null;
+        {/* タイムスロット可視化 */}
+        {appointmentDate && businessHours && (
+          <TimeSlotVisualization
+            appointmentDate={appointmentDate}
+            businessHours={businessHours}
+            salonHolidays={salonHolidays}
+            dayAppointments={dayAppointments}
+            onSlotClick={(h, m) => {
+              setStartHour(String(h));
+              setStartMinute(String(m).padStart(2, "0"));
+              updateEndTimeFromMenus(selectedMenuIds, String(h), String(m).padStart(2, "0"));
+            }}
+          />
+        )}
 
-          return (
-            <div className="space-y-2">
-              <p className="text-xs text-text-light">
-                営業時間: {schedule.open_time} 〜 {schedule.close_time}
-              </p>
-              <div className="overflow-x-auto -mx-1 px-1">
-                {/* Time labels row */}
-                <div className="flex gap-0.5 mb-1" style={{ minWidth: `${slotCount * 20}px` }}>
-                  {Array.from({ length: slotCount }, (_, i) => {
-                    const slotMin = openMin + i * 15;
-                    const isHourMark = slotMin % 60 === 0;
-                    return (
-                      <div key={slotMin} className="flex-shrink-0 text-center" style={{ width: "20px" }}>
-                        {isHourMark && (
-                          <span className="text-[10px] text-text-light">
-                            {Math.floor(slotMin / 60)}:00
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                {/* Slot buttons row */}
-                <div className="flex gap-0.5" style={{ minWidth: `${slotCount * 20}px` }}>
-                  {Array.from({ length: slotCount }, (_, i) => {
-                    const slotMin = openMin + i * 15;
-                    const slotTime = `${String(Math.floor(slotMin / 60)).padStart(2, "0")}:${String(slotMin % 60).padStart(2, "0")}`;
-                    const isOccupied = dayAppointments.some((apt) => {
-                      const aStart = timeToMinutes(apt.start_time.slice(0, 5));
-                      const aEnd = apt.end_time ? timeToMinutes(apt.end_time.slice(0, 5)) : aStart + 60;
-                      return slotMin >= aStart && slotMin < aEnd;
-                    });
-                    const occupyingApt = isOccupied
-                      ? dayAppointments.find((apt) => {
-                          const aStart = timeToMinutes(apt.start_time.slice(0, 5));
-                          const aEnd = apt.end_time ? timeToMinutes(apt.end_time.slice(0, 5)) : aStart + 60;
-                          return slotMin >= aStart && slotMin < aEnd;
-                        })
-                      : null;
+        {/* 開始時間 */}
+        <TimePicker
+          label="開始時間"
+          hour={startHour}
+          minute={startMinute}
+          onHourChange={(h) => { setStartHour(h); updateEndTimeFromMenus(selectedMenuIds, h, startMinute); }}
+          onMinuteChange={(m) => { setStartMinute(m); updateEndTimeFromMenus(selectedMenuIds, startHour, m); }}
+        />
 
-                    return (
-                      <button
-                        key={slotMin}
-                        type="button"
-                        title={
-                          isOccupied && occupyingApt?.customers
-                            ? `${slotTime} - ${occupyingApt.customers.last_name} ${occupyingApt.customers.first_name}様`
-                            : slotTime
-                        }
-                        onClick={() => {
-                          if (!isOccupied) {
-                            const h = Math.floor(slotMin / 60);
-                            const m = slotMin % 60;
-                            setStartHour(String(h));
-                            setStartMinute(String(m).padStart(2, "0"));
-                            updateEndTimeFromMenus(selectedMenuIds, String(h), String(m).padStart(2, "0"));
-                          }
-                        }}
-                        className={`h-8 flex-shrink-0 rounded-sm transition-colors ${
-                          isOccupied
-                            ? "bg-accent/30 cursor-not-allowed"
-                            : "bg-accent/10 hover:bg-accent/20 cursor-pointer"
-                        }`}
-                        style={{ width: "20px" }}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="flex items-center gap-3 text-[10px] text-text-light">
-                <span className="flex items-center gap-1">
-                  <span className="inline-block w-3 h-3 rounded-sm bg-accent/30" />
-                  予約あり
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="inline-block w-3 h-3 rounded-sm bg-accent/10" />
-                  空き
-                </span>
-              </div>
-            </div>
-          );
-        })()}
+        {/* 終了時間 */}
+        <TimePicker
+          label="終了予定時間"
+          hour={endHour}
+          minute={endMinute}
+          onHourChange={(h) => { setEndHour(h); setIsEndTimeManual(true); }}
+          onMinuteChange={(m) => { setEndMinute(m); setIsEndTimeManual(true); }}
+          autoCalcInfo={{
+            isManual: isEndTimeManual,
+            hasMenus: selectedMenuIds.length > 0,
+            onResetAuto: () => {
+              setIsEndTimeManual(false);
+              updateEndTimeFromMenus(selectedMenuIds, startHour, startMinute, true);
+            },
+          }}
+          warningMessage={businessHours ? getOutsideHoursWarning({
+            appointmentDate, businessHours, salonHolidays,
+            startHour, startMinute, endHour, endMinute,
+          }) : null}
+        />
 
-        {/* Start time */}
-        <div>
-          <label className="block text-sm font-medium mb-1.5">開始時間</label>
-          <div className="flex items-center gap-2">
-            <select
-              value={startHour}
-              onChange={(e) => {
-                setStartHour(e.target.value);
-                updateEndTimeFromMenus(selectedMenuIds, e.target.value, startMinute);
-              }}
-              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-            >
-              {Array.from({ length: 24 }, (_, i) => (
-                <option key={i} value={String(i)}>{String(i).padStart(2, "0")}</option>
-              ))}
-            </select>
-            <span className="text-lg font-medium">:</span>
-            <select
-              value={startMinute}
-              onChange={(e) => {
-                setStartMinute(e.target.value);
-                updateEndTimeFromMenus(selectedMenuIds, startHour, e.target.value);
-              }}
-              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-            >
-              {["00", "15", "30", "45"].map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          </div>
-        </div>
+        {/* メニュー選択 */}
+        <AppointmentMenuSelector
+          menus={menus}
+          selectedMenuIds={selectedMenuIds}
+          onToggle={toggleMenu}
+          totalDuration={totalDuration}
+          totalPrice={totalPrice}
+        />
 
-        {/* End time */}
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-sm font-medium">終了予定時間</label>
-            {selectedMenuIds.length > 0 && (
-              <span className={`text-xs ${isEndTimeManual ? "text-orange-500" : "text-accent"}`}>
-                {isEndTimeManual ? "手動設定" : "メニューから自動計算"}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <select
-              value={endHour}
-              onChange={(e) => {
-                setEndHour(e.target.value);
-                setIsEndTimeManual(true);
-              }}
-              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-            >
-              {Array.from({ length: 24 }, (_, i) => (
-                <option key={i} value={String(i)}>{String(i).padStart(2, "0")}</option>
-              ))}
-            </select>
-            <span className="text-lg font-medium">:</span>
-            <select
-              value={endMinute}
-              onChange={(e) => {
-                setEndMinute(e.target.value);
-                setIsEndTimeManual(true);
-              }}
-              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-            >
-              {["00", "15", "30", "45"].map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          </div>
-          {isEndTimeManual && selectedMenuIds.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                setIsEndTimeManual(false);
-                updateEndTimeFromMenus(selectedMenuIds, startHour, startMinute, true);
-              }}
-              className="text-xs text-accent hover:underline mt-1"
-            >
-              自動計算に戻す
-            </button>
-          )}
-          {businessHours && appointmentDate && isBusinessDay(businessHours, appointmentDate, salonHolidays) &&
-            !isWithinBusinessHours(
-              businessHours,
-              appointmentDate,
-              `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`,
-              `${endHour.padStart(2, "0")}:${endMinute.padStart(2, "0")}`,
-              salonHolidays
-            ) && (() => {
-              const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays);
-              const startStr = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
-              const endStr = `${endHour.padStart(2, "0")}:${endMinute.padStart(2, "0")}`;
-              const isBefore = startStr < schedule.open_time;
-              const isAfter = endStr > schedule.close_time;
-              return (
-                <p className="text-xs text-warning mt-1">
-                  {isBefore && isAfter
-                    ? `開始（${startStr}）が営業開始（${schedule.open_time}）より前、終了（${endStr}）が営業終了（${schedule.close_time}）より後です`
-                    : isBefore
-                      ? `開始時間（${startStr}）が営業開始（${schedule.open_time}）より前です`
-                      : `終了時間（${endStr}）が営業終了（${schedule.close_time}）を超えています`
-                  }
-                </p>
-              );
-            })()}
-        </div>
-
-        {/* Menu multi-select */}
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            施術メニュー（任意・複数選択可）
-          </label>
-          {menus.length > 0 ? (
-            <div className="bg-surface border border-border rounded-xl p-3 max-h-52 overflow-y-auto space-y-1">
-              {menus.map((m) => (
-                <label
-                  key={m.id}
-                  className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-background transition-colors cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedMenuIds.includes(m.id)}
-                    onChange={() => toggleMenu(m.id)}
-                    className="w-4 h-4 rounded border-border text-accent focus:ring-accent/50"
-                  />
-                  <span className="text-sm flex-1">{m.name}</span>
-                  <span className="text-xs text-text-light whitespace-nowrap">
-                    {m.duration_minutes ? `${m.duration_minutes}分` : ""}
-                    {m.duration_minutes && m.price ? " / " : ""}
-                    {m.price ? `${m.price.toLocaleString()}円` : ""}
-                  </span>
-                </label>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-surface border border-border rounded-xl p-3 text-sm text-text-light text-center">
-              メニューが登録されていません
-            </div>
-          )}
-          {selectedMenuIds.length > 0 && (
-            <p className="text-xs text-text-light mt-1.5">
-              選択中: {selectedMenuIds.length}件
-              {totalDuration > 0 && ` / 合計 ${totalDuration}分`}
-              {totalPrice > 0 && ` / ${totalPrice.toLocaleString()}円`}
-            </p>
-          )}
-        </div>
-
-        {/* 任意項目（折りたたみ） */}
+        {/* 任意項目 */}
         <CollapsibleSection label="その他のオプション（任意）">
-          {/* Source */}
           <div>
-            <label htmlFor="source" className="block text-sm font-medium mb-1.5">
-              予約経路
-            </label>
-            <select
-              id="source"
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-            >
+            <label htmlFor="source" className="block text-sm font-medium mb-1.5">予約経路</label>
+            <select id="source" value={source} onChange={(e) => setSource(e.target.value)} className={INPUT_CLASS}>
               {SOURCE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
           </div>
-
-          {/* Memo */}
           <div>
-            <label htmlFor="memo" className="block text-sm font-medium mb-1.5">
-              メモ
-            </label>
+            <label htmlFor="memo" className="block text-sm font-medium mb-1.5">メモ</label>
             <AutoResizeTextarea
               id="memo"
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
               minRows={2}
               placeholder="施術の要望や注意点など"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+              className={INPUT_CLASS}
             />
           </div>
         </CollapsibleSection>
