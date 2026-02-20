@@ -555,6 +555,29 @@ function NewRecordForm() {
         </div>
       )}
 
+      {/* 顧客の有効な回数券（情報表示） */}
+      {customerId && courseTickets.length > 0 && (
+        <div className="bg-accent/5 border border-accent/20 rounded-2xl p-4 space-y-2">
+          <h3 className="text-sm font-bold">
+            有効な回数券（{courseTickets.length}件）
+          </h3>
+          {courseTickets.map((t) => {
+            const remaining = t.total_sessions - t.used_sessions;
+            return (
+              <div key={t.id} className="flex items-center justify-between">
+                <span className="text-sm">{t.ticket_name}</span>
+                <span className="text-sm font-bold text-accent">
+                  残 {remaining}/{t.total_sessions}回
+                </span>
+              </div>
+            );
+          })}
+          <p className="text-xs text-text-light">
+            支払方法で「回数券」を選ぶと消化できます
+          </p>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
         {error && <ErrorAlert message={error} />}
 
@@ -817,7 +840,7 @@ function NewRecordForm() {
         </CollapsibleSection>
 
         {/* Phase 6-2: 回数券販売セクション */}
-        <CollapsibleSection label={`回数券を販売（任意）${pendingTickets.length > 0 ? ` — ${pendingTickets.length}件` : ""}`}>
+        <CollapsibleSection label={`新しい回数券を販売（任意）${pendingTickets.length > 0 ? ` — ${pendingTickets.length}件` : ""}`}>
           {/* 追加済みリスト */}
           {pendingTickets.length > 0 && (
             <div className="space-y-2 mb-3">

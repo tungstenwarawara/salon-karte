@@ -804,6 +804,16 @@ export type Database = {
           remaining_stock: number | null;
         };
       };
+      adjust_course_ticket_sessions: {
+        Args: {
+          p_ticket_id: string;
+          p_new_used_sessions: number;
+        };
+        Returns: {
+          used_sessions: number;
+          status: string;
+        };
+      };
       get_inventory_summary: {
         Args: {
           p_salon_id: string;
