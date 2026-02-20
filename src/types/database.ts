@@ -786,6 +786,24 @@ export type Database = {
           status: string;
         };
       };
+      undo_course_ticket_session: {
+        Args: {
+          p_ticket_id: string;
+        };
+        Returns: {
+          used_sessions: number;
+          status: string;
+        };
+      };
+      reverse_product_sale: {
+        Args: {
+          p_purchase_id: string;
+        };
+        Returns: {
+          deleted_purchase_id: string;
+          remaining_stock: number | null;
+        };
+      };
       get_inventory_summary: {
         Args: {
           p_salon_id: string;

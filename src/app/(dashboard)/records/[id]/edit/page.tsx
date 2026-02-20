@@ -12,6 +12,7 @@ type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
 type TreatmentRecordMenu = Database["public"]["Tables"]["treatment_record_menus"]["Row"];
 type CourseTicket = Database["public"]["Tables"]["course_tickets"]["Row"];
+type Purchase = Database["public"]["Tables"]["purchases"]["Row"];
 
 type MenuPaymentInfo = {
   menuId: string;
@@ -37,6 +38,15 @@ export default function EditRecordPage() {
   // 回数券
   const [courseTickets, setCourseTickets] = useState<CourseTicket[]>([]);
   const [hasTickets, setHasTickets] = useState(false);
+
+  // 回数券消化のdiff用: 元の支払い状態を保存（menuId → ticketId）
+  const [originalTicketPayments, setOriginalTicketPayments] = useState<Map<string, string>>(new Map());
+
+  // 紐づく物販・回数券販売（Phase 6-3a）
+  const [linkedPurchases, setLinkedPurchases] = useState<Purchase[]>([]);
+  const [linkedTickets, setLinkedTickets] = useState<CourseTicket[]>([]);
+  const [deletingPurchaseId, setDeletingPurchaseId] = useState<string | null>(null);
+  const [deletingTicketId, setDeletingTicketId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     treatment_date: "",
@@ -64,8 +74,8 @@ export default function EditRecordPage() {
         .single<{ id: string }>();
       if (!salon) return;
 
-      // P8: menus + record + record_menus を並列取得
-      const [menuRes, recordRes, recordMenusRes] = await Promise.all([
+      // P8: menus + record + record_menus + purchases + tickets を並列取得
+      const [menuRes, recordRes, recordMenusRes, purchasesRes, linkedTicketsRes] = await Promise.all([
         supabase
           .from("treatment_menus")
           .select("*")
@@ -83,11 +93,24 @@ export default function EditRecordPage() {
           .eq("treatment_record_id", id)
           .order("sort_order")
           .returns<TreatmentRecordMenu[]>(),
+        supabase
+          .from("purchases")
+          .select("*")
+          .eq("treatment_record_id", id)
+          .order("created_at")
+          .returns<Purchase[]>(),
+        supabase
+          .from("course_tickets")
+          .select("*")
+          .eq("treatment_record_id", id)
+          .order("created_at")
+          .returns<CourseTicket[]>(),
       ]);
 
       setMenus(menuRes.data ?? []);
+      setLinkedPurchases(purchasesRes.data ?? []);
+      setLinkedTickets(linkedTicketsRes.data ?? []);
       const existingMenus = recordMenusRes.data ?? [];
-      // existingMenus の復元は以下で処理
 
       const record = recordRes.data;
       if (record) {
@@ -119,6 +142,15 @@ export default function EditRecordPage() {
               priceOverride: isOverridden ? rm.price_snapshot : null,
             };
           }).filter((mp) => mp.menuId));
+
+          // 回数券消化diff用: 元の支払い状態を保存
+          const origTickets = new Map<string, string>();
+          existingMenus.forEach((rm) => {
+            if (rm.payment_type === "ticket" && rm.ticket_id && rm.menu_id) {
+              origTickets.set(rm.menu_id, rm.ticket_id);
+            }
+          });
+          setOriginalTicketPayments(origTickets);
         } else if (record.menu_id) {
           // 旧データ: menu_idから復元
           setSelectedMenuIds([record.menu_id]);
@@ -258,6 +290,48 @@ export default function EditRecordPage() {
       }
     }
 
+    // 回数券消化のdiff処理
+    const newTicketPayments = new Map<string, string>();
+    menuPayments.forEach((mp) => {
+      if (mp.paymentType === "ticket" && mp.ticketId) {
+        newTicketPayments.set(mp.menuId, mp.ticketId);
+      }
+    });
+
+    // 取り消すべきチケット: 元にあるが新にない、またはticketIdが変わった
+    const ticketsToUndo = new Set<string>();
+    originalTicketPayments.forEach((oldTicketId, menuId) => {
+      const newTicketId = newTicketPayments.get(menuId);
+      if (!newTicketId || newTicketId !== oldTicketId) {
+        ticketsToUndo.add(oldTicketId);
+      }
+    });
+
+    // 消化すべきチケット: 新にあるが元にない、またはticketIdが変わった
+    const ticketsToUse = new Set<string>();
+    newTicketPayments.forEach((newTicketId, menuId) => {
+      const oldTicketId = originalTicketPayments.get(menuId);
+      if (!oldTicketId || oldTicketId !== newTicketId) {
+        ticketsToUse.add(newTicketId);
+      }
+    });
+
+    // 取り消し実行
+    for (const ticketId of ticketsToUndo) {
+      const { error: undoError } = await supabase.rpc("undo_course_ticket_session", {
+        p_ticket_id: ticketId,
+      });
+      if (undoError) console.error("Ticket undo error:", undoError);
+    }
+
+    // 消化実行
+    for (const ticketId of ticketsToUse) {
+      const { error: useError } = await supabase.rpc("use_course_ticket_session", {
+        p_ticket_id: ticketId,
+      });
+      if (useError) console.error("Ticket consumption error:", useError);
+    }
+
     router.push(`/records/${id}`);
   };
 
@@ -278,6 +352,25 @@ export default function EditRecordPage() {
       await supabase.storage.from("treatment-photos").remove(paths);
     }
 
+    // 削除前に回数券消化を取り消す
+    const { data: recordMenusToUndo } = await supabase
+      .from("treatment_record_menus")
+      .select("ticket_id")
+      .eq("treatment_record_id", id)
+      .eq("payment_type", "ticket")
+      .not("ticket_id", "is", null);
+
+    if (recordMenusToUndo) {
+      for (const rm of recordMenusToUndo) {
+        if (rm.ticket_id) {
+          const { error: undoErr } = await supabase.rpc("undo_course_ticket_session", {
+            p_ticket_id: rm.ticket_id,
+          });
+          if (undoErr) console.error("Ticket undo on delete error:", undoErr);
+        }
+      }
+    }
+
     const { error } = await supabase
       .from("treatment_records")
       .delete()
@@ -290,6 +383,55 @@ export default function EditRecordPage() {
     }
 
     router.push(customerId ? `/customers/${customerId}` : "/dashboard");
+  };
+
+  // 物販の削除
+  const handleDeletePurchase = async (purchaseId: string) => {
+    if (!confirm("この物販記録を削除しますか？")) return;
+    setDeletingPurchaseId(purchaseId);
+    const supabase = createClient();
+
+    const purchase = linkedPurchases.find((p) => p.id === purchaseId);
+
+    if (purchase?.product_id) {
+      // 在庫連動あり: RPC で削除 + 在庫戻し
+      const { error: rpcError } = await supabase.rpc("reverse_product_sale", {
+        p_purchase_id: purchaseId,
+      });
+      if (rpcError) {
+        setError("物販の削除に失敗しました");
+        setDeletingPurchaseId(null);
+        return;
+      }
+    } else {
+      // 自由入力の物販: 直接削除
+      const { error: delError } = await supabase.from("purchases").delete().eq("id", purchaseId);
+      if (delError) {
+        setError("物販の削除に失敗しました");
+        setDeletingPurchaseId(null);
+        return;
+      }
+    }
+
+    setLinkedPurchases((prev) => prev.filter((p) => p.id !== purchaseId));
+    setDeletingPurchaseId(null);
+  };
+
+  // 回数券販売の削除
+  const handleDeleteLinkedTicket = async (ticketId: string) => {
+    if (!confirm("この回数券を削除しますか？")) return;
+    setDeletingTicketId(ticketId);
+    const supabase = createClient();
+
+    const { error: delError } = await supabase.from("course_tickets").delete().eq("id", ticketId);
+    if (delError) {
+      setError("回数券の削除に失敗しました");
+      setDeletingTicketId(null);
+      return;
+    }
+
+    setLinkedTickets((prev) => prev.filter((t) => t.id !== ticketId));
+    setDeletingTicketId(null);
   };
 
   const inputClass =
@@ -559,6 +701,69 @@ export default function EditRecordPage() {
             className={inputClass}
           />
         </div>
+
+        {/* 紐づく回数券販売 */}
+        {linkedTickets.length > 0 && (
+          <div className="border-t border-border pt-3">
+            <h3 className="text-sm font-bold mb-2">回数券販売</h3>
+            <div className="space-y-2">
+              {linkedTickets.map((ticket) => (
+                <div key={ticket.id} className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{ticket.ticket_name}</p>
+                    <p className="text-xs text-text-light">
+                      {ticket.total_sessions}回{ticket.price != null ? ` / ${ticket.price.toLocaleString()}円` : ""}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteLinkedTicket(ticket.id)}
+                    disabled={deletingTicketId === ticket.id}
+                    className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
+                  >
+                    {deletingTicketId === ticket.id ? "削除中..." : "削除"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 紐づく物販記録 */}
+        {linkedPurchases.length > 0 && (
+          <div className="border-t border-border pt-3">
+            <h3 className="text-sm font-bold mb-2">物販記録</h3>
+            <div className="space-y-2">
+              {linkedPurchases.map((purchase) => (
+                <div key={purchase.id} className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{purchase.item_name}</p>
+                    <p className="text-xs text-text-light">
+                      {purchase.quantity}個 × {purchase.unit_price.toLocaleString()}円 = {purchase.total_price.toLocaleString()}円
+                      {purchase.product_id && " (在庫連動)"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeletePurchase(purchase.id)}
+                    disabled={deletingPurchaseId === purchase.id}
+                    className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
+                  >
+                    {deletingPurchaseId === purchase.id ? "削除中..." : "削除"}
+                  </button>
+                </div>
+              ))}
+              {linkedPurchases.length > 1 && (
+                <div className="flex items-center justify-between bg-accent/5 rounded-xl px-3 py-2">
+                  <span className="text-xs text-text-light">合計</span>
+                  <span className="text-sm font-bold text-accent">
+                    {linkedPurchases.reduce((s, p) => s + p.total_price, 0).toLocaleString()}円
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-3 pt-2">
           <button
