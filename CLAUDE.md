@@ -186,7 +186,7 @@ src/
 supabase/migrations/       # 00001〜00016（全てローカルに管理）
 ```
 
-## DB構成（11テーブル + 7 RPC関数）
+## DB構成（12テーブル + 10 RPC関数）
 
 | テーブル | 用途 |
 |---------|------|
@@ -194,11 +194,12 @@ supabase/migrations/       # 00001〜00016（全てローカルに管理）
 | customers | 顧客マスタ |
 | treatment_menus | 施術メニューマスタ |
 | treatment_records | 施術カルテ |
+| treatment_record_menus | カルテ-メニュー中間テーブル（payment_type, ticket_id付き） |
 | treatment_photos | 施術写真（Supabase Storage連携） |
 | appointments | 予約 |
 | appointment_menus | 予約-メニュー中間テーブル |
-| purchases | 物販記録 |
-| course_tickets | 回数券 |
+| purchases | 物販記録（product_id, treatment_record_id付き） |
+| course_tickets | 回数券（treatment_record_id付き） |
 | products | 商品マスタ（在庫管理） |
 | inventory_logs | 入出庫ログ |
 
@@ -206,20 +207,21 @@ supabase/migrations/       # 00001〜00016（全てローカルに管理）
 |---------|------|
 | get_lapsed_customers | 離脱顧客取得 |
 | use_course_ticket_session | 回数券消化（アトミック） |
-| get_monthly_sales_summary | 月別売上集計 |
+| undo_course_ticket_session | 回数券消化取消（Phase 6-3a） |
+| adjust_course_ticket_sessions | 回数券消化回数の手動調整（Phase 6-4） |
+| get_monthly_sales_summary | 月別売上集計（cash/creditのみ） |
 | get_inventory_summary | 在庫サマリー |
 | record_product_sale | 物販+出庫のアトミック処理 |
+| reverse_product_sale | 物販取消+在庫戻し（Phase 6-3a） |
 | get_tax_report | 確定申告レポート |
 | update_updated_at | トリガー用タイムスタンプ更新 |
 
-## ⚠️ 既知の問題（Phase 6で対応予定）
+## ✅ 解決済みの問題
 
-### 売上レポートの二重計上
-- `get_monthly_sales_summary` の treatment_sales に回数券支払い分の施術も含まれている
-- 回数券購入額（ticket_sales）と施術売上（treatment_sales）が重複し、合計が実収入より大きくなる
-- **原因**: `appointment_menus` に支払方法（現金/回数券）の区分がない
-- **影響範囲**: `/sales`（売上レポート）、`/sales/inventory/tax-report`（確定申告レポート）
-- **Phase 6で対応**: appointment_menusにpayment_type追加、RPC修正
+### 売上レポートの二重計上 → Phase 6-3で修正済み
+- `treatment_record_menus` に `payment_type` カラムを追加（cash/credit/ticket/service）
+- `get_monthly_sales_summary` を修正: 施術売上はcash/creditのみ集計
+- `/sales` ページのドリルダウンも同様にフィルタ済み
 
 ## 教訓ログ（品質管理失敗ログ）
 
