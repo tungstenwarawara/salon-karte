@@ -7,9 +7,17 @@ import type { Database } from "@/types/database";
 
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
 type TreatmentPhoto = Database["public"]["Tables"]["treatment_photos"]["Row"];
+type TreatmentRecordMenu = Database["public"]["Tables"]["treatment_record_menus"]["Row"];
 
 type RecordWithCustomer = TreatmentRecord & {
   customers: { id: string; last_name: string; first_name: string } | null;
+};
+
+const PAYMENT_TYPE_LABELS: Record<string, string> = {
+  cash: "現金",
+  credit: "クレジット",
+  ticket: "回数券",
+  service: "サービス",
 };
 
 export default async function RecordDetailPage({
@@ -21,8 +29,8 @@ export default async function RecordDetailPage({
   const { user, supabase } = await getAuthAndSalon();
   if (!user) redirect("/login");
 
-  // P9: record と photos を並列取得
-  const [recordRes, photosRes] = await Promise.all([
+  // P9: record, photos, record_menus を並列取得
+  const [recordRes, photosRes, recordMenusRes] = await Promise.all([
     supabase
       .from("treatment_records")
       .select("*, customers(id, last_name, first_name)")
@@ -34,6 +42,12 @@ export default async function RecordDetailPage({
       .eq("treatment_record_id", id)
       .order("photo_type")
       .returns<TreatmentPhoto[]>(),
+    supabase
+      .from("treatment_record_menus")
+      .select("*")
+      .eq("treatment_record_id", id)
+      .order("sort_order")
+      .returns<TreatmentRecordMenu[]>(),
   ]);
 
   const record = recordRes.data;
@@ -41,6 +55,12 @@ export default async function RecordDetailPage({
 
   const customer = record.customers;
   const photos = photosRes.data;
+  const recordMenus = recordMenusRes.data ?? [];
+
+  // メニュー名の表示用: 中間テーブルがあればそちらを優先、なければ旧menu_name_snapshot
+  const menuDisplay = recordMenus.length > 0
+    ? recordMenus.map((rm) => rm.menu_name_snapshot).join("、")
+    : record.menu_name_snapshot ?? "施術記録";
 
   return (
     <div className="space-y-6">
@@ -60,9 +80,7 @@ export default async function RecordDetailPage({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold">
-            {record.menu_name_snapshot ?? "施術記録"}
-          </h2>
+          <h2 className="text-xl font-bold">{menuDisplay}</h2>
           <p className="text-sm text-text-light mt-1">
             {formatDateJa(record.treatment_date)}
           </p>
@@ -86,6 +104,36 @@ export default async function RecordDetailPage({
             {customer.last_name} {customer.first_name}
           </span>
         </Link>
+      )}
+
+      {/* 施術メニュー一覧（複数メニューがある場合） */}
+      {recordMenus.length > 0 && (
+        <div className="bg-surface border border-border rounded-2xl p-5 space-y-2">
+          <h3 className="text-sm font-bold mb-2">施術メニュー</h3>
+          {recordMenus.map((rm) => (
+            <div key={rm.id} className="flex items-center justify-between py-1.5">
+              <div className="flex-1">
+                <span className="text-sm">{rm.menu_name_snapshot}</span>
+                {rm.duration_minutes_snapshot && (
+                  <span className="text-xs text-text-light ml-2">{rm.duration_minutes_snapshot}分</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {rm.price_snapshot != null && (
+                  <span className="text-sm">{rm.price_snapshot.toLocaleString()}円</span>
+                )}
+                <span className={`text-xs px-1.5 py-0.5 rounded ${
+                  rm.payment_type === "ticket" ? "bg-blue-100 text-blue-700" :
+                  rm.payment_type === "service" ? "bg-green-100 text-green-700" :
+                  rm.payment_type === "credit" ? "bg-purple-100 text-purple-700" :
+                  "bg-gray-100 text-gray-700"
+                }`}>
+                  {PAYMENT_TYPE_LABELS[rm.payment_type] ?? rm.payment_type}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Record details */}

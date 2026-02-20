@@ -603,6 +603,67 @@ export type Database = {
           },
         ];
       };
+      treatment_record_menus: {
+        Row: {
+          id: string;
+          treatment_record_id: string;
+          menu_id: string | null;
+          menu_name_snapshot: string;
+          price_snapshot: number | null;
+          duration_minutes_snapshot: number | null;
+          payment_type: string;
+          ticket_id: string | null;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          treatment_record_id: string;
+          menu_id?: string | null;
+          menu_name_snapshot: string;
+          price_snapshot?: number | null;
+          duration_minutes_snapshot?: number | null;
+          payment_type?: string;
+          ticket_id?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          treatment_record_id?: string;
+          menu_id?: string | null;
+          menu_name_snapshot?: string;
+          price_snapshot?: number | null;
+          duration_minutes_snapshot?: number | null;
+          payment_type?: string;
+          ticket_id?: string | null;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "treatment_record_menus_treatment_record_id_fkey";
+            columns: ["treatment_record_id"];
+            isOneToOne: false;
+            referencedRelation: "treatment_records";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "treatment_record_menus_menu_id_fkey";
+            columns: ["menu_id"];
+            isOneToOne: false;
+            referencedRelation: "treatment_menus";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "treatment_record_menus_ticket_id_fkey";
+            columns: ["ticket_id"];
+            isOneToOne: false;
+            referencedRelation: "course_tickets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       course_tickets: {
         Row: {
           id: string;

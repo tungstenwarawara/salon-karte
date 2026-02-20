@@ -13,7 +13,16 @@ import { useFormDraft } from "@/lib/hooks/use-form-draft";
 import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
+type CourseTicket = Database["public"]["Tables"]["course_tickets"]["Row"];
 type CustomerOption = { id: string; last_name: string; first_name: string; last_name_kana: string | null; first_name_kana: string | null };
+type AppointmentMenu = Database["public"]["Tables"]["appointment_menus"]["Row"];
+
+// 各メニューの支払情報
+type MenuPaymentInfo = {
+  menuId: string;
+  paymentType: "cash" | "credit" | "ticket" | "service";
+  ticketId: string | null;
+};
 
 export default function NewRecordPage() {
   return (
@@ -39,6 +48,14 @@ function NewRecordForm() {
   const [customerName, setCustomerName] = useState("");
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
 
+  // 複数メニュー選択
+  const [selectedMenuIds, setSelectedMenuIds] = useState<string[]>([]);
+  const [menuPayments, setMenuPayments] = useState<MenuPaymentInfo[]>([]);
+
+  // 回数券（段階的開示: 顧客選択後に取得）
+  const [courseTickets, setCourseTickets] = useState<CourseTicket[]>([]);
+  const [hasTickets, setHasTickets] = useState(false);
+
   // Derived: the active customer ID (from URL or user selection)
   const customerId = presetCustomerId ?? selectedCustomerId;
 
@@ -46,18 +63,18 @@ function NewRecordForm() {
     const d = new Date();
     const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     return {
-    treatment_date: today,
-    menu_id: "",
-    treatment_area: "",
-    products_used: "",
-    skin_condition_before: "",
-    notes_after: "",
-    next_visit_memo: "",
-    conversation_notes: "",
-    caution_notes: "",
-  };
+      treatment_date: today,
+      treatment_area: "",
+      products_used: "",
+      skin_condition_before: "",
+      notes_after: "",
+      next_visit_memo: "",
+      conversation_notes: "",
+      caution_notes: "",
+    };
   });
 
+  // 初期データ読み込み
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
@@ -107,15 +124,108 @@ function NewRecordForm() {
           setCustomerName(`${customerRes.data.last_name} ${customerRes.data.first_name}`);
         }
       }
+
+      // 予約から遷移: appointment_menus を取得してプリセット
+      if (appointmentId) {
+        const { data: appointmentMenus } = await supabase
+          .from("appointment_menus")
+          .select("*")
+          .eq("appointment_id", appointmentId)
+          .order("sort_order")
+          .returns<AppointmentMenu[]>();
+
+        if (appointmentMenus && appointmentMenus.length > 0) {
+          const ids = appointmentMenus.map((am) => am.menu_id).filter(Boolean) as string[];
+          setSelectedMenuIds(ids);
+          // デフォルトは現金支払い
+          setMenuPayments(ids.map((menuId) => ({
+            menuId,
+            paymentType: "cash",
+            ticketId: null,
+          })));
+        }
+      }
     };
     load();
-  }, [presetCustomerId]);
+  }, [presetCustomerId, appointmentId]);
+
+  // 条件付きフェッチ: 顧客選択後に回数券の有無を確認
+  useEffect(() => {
+    if (!customerId || !salonId) {
+      setCourseTickets([]);
+      setHasTickets(false);
+      return;
+    }
+
+    const loadTickets = async () => {
+      const supabase = createClient();
+
+      // head: true で有無だけ確認（パフォーマンス最適化）
+      const { count } = await supabase
+        .from("course_tickets")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_id", customerId)
+        .eq("salon_id", salonId)
+        .eq("status", "active");
+
+      if (count && count > 0) {
+        setHasTickets(true);
+        // 有効なチケットがある場合のみ詳細取得
+        const { data } = await supabase
+          .from("course_tickets")
+          .select("*")
+          .eq("customer_id", customerId)
+          .eq("salon_id", salonId)
+          .eq("status", "active")
+          .order("purchase_date", { ascending: false })
+          .returns<CourseTicket[]>();
+        setCourseTickets(data ?? []);
+      } else {
+        setHasTickets(false);
+        setCourseTickets([]);
+      }
+    };
+    loadTickets();
+  }, [customerId, salonId]);
 
   const setFormCb = useCallback((val: typeof form) => setForm(val), []);
   const { clearDraft, draftRestored, dismissDraftBanner } = useFormDraft("record-new", form, setFormCb);
 
   const updateField = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // メニュー選択トグル
+  const toggleMenu = (menuId: string) => {
+    const newIds = selectedMenuIds.includes(menuId)
+      ? selectedMenuIds.filter((id) => id !== menuId)
+      : [...selectedMenuIds, menuId];
+    setSelectedMenuIds(newIds);
+
+    // 支払情報の同期
+    if (newIds.includes(menuId) && !menuPayments.find((mp) => mp.menuId === menuId)) {
+      setMenuPayments((prev) => [...prev, { menuId, paymentType: "cash", ticketId: null }]);
+    } else if (!newIds.includes(menuId)) {
+      setMenuPayments((prev) => prev.filter((mp) => mp.menuId !== menuId));
+    }
+  };
+
+  // メニューの支払方法変更
+  const updateMenuPayment = (menuId: string, paymentType: MenuPaymentInfo["paymentType"], ticketId: string | null = null) => {
+    setMenuPayments((prev) =>
+      prev.map((mp) =>
+        mp.menuId === menuId ? { ...mp, paymentType, ticketId: paymentType === "ticket" ? ticketId : null } : mp
+      )
+    );
+  };
+
+  // メニューの回数券選択
+  const updateMenuTicket = (menuId: string, ticketId: string) => {
+    setMenuPayments((prev) =>
+      prev.map((mp) =>
+        mp.menuId === menuId ? { ...mp, ticketId } : mp
+      )
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -128,7 +238,12 @@ function NewRecordForm() {
     setLoading(true);
 
     const supabase = createClient();
-    const selectedMenu = menus.find((m) => m.id === form.menu_id);
+
+    // 先頭メニューのスナップショット（後方互換用）
+    const firstMenuId = selectedMenuIds[0] || null;
+    const menuNameSnapshot = selectedMenuIds.length > 0
+      ? selectedMenuIds.map((id) => menus.find((m) => m.id === id)?.name).filter(Boolean).join("、")
+      : null;
 
     const { data: record, error: insertError } = await supabase
       .from("treatment_records")
@@ -136,8 +251,8 @@ function NewRecordForm() {
         customer_id: customerId,
         salon_id: salonId,
         treatment_date: form.treatment_date,
-        menu_id: form.menu_id || null,
-        menu_name_snapshot: selectedMenu?.name ?? null,
+        menu_id: firstMenuId,
+        menu_name_snapshot: menuNameSnapshot,
         treatment_area: form.treatment_area || null,
         products_used: form.products_used || null,
         skin_condition_before: form.skin_condition_before || null,
@@ -155,6 +270,46 @@ function NewRecordForm() {
       return;
     }
 
+    // treatment_record_menus 中間テーブルに複数メニューを挿入
+    if (selectedMenuIds.length > 0) {
+      const junctionRows = selectedMenuIds.map((menuId, index) => {
+        const menu = menus.find((m) => m.id === menuId);
+        const payment = menuPayments.find((mp) => mp.menuId === menuId);
+        return {
+          treatment_record_id: record.id,
+          menu_id: menuId,
+          menu_name_snapshot: menu?.name ?? "",
+          price_snapshot: menu?.price ?? null,
+          duration_minutes_snapshot: menu?.duration_minutes ?? null,
+          payment_type: payment?.paymentType ?? "cash",
+          ticket_id: payment?.ticketId ?? null,
+          sort_order: index,
+        };
+      });
+
+      const { error: junctionError } = await supabase
+        .from("treatment_record_menus")
+        .insert(junctionRows);
+
+      if (junctionError) {
+        console.error("Junction insert error:", junctionError);
+      }
+
+      // 回数券消化: ticket支払いのメニューがあれば use_course_ticket_session を呼び出す
+      const ticketPayments = menuPayments.filter(
+        (mp) => mp.paymentType === "ticket" && mp.ticketId
+      );
+      for (const tp of ticketPayments) {
+        const { error: ticketError } = await supabase.rpc("use_course_ticket_session", {
+          p_ticket_id: tp.ticketId!,
+        });
+        if (ticketError) {
+          console.error("Ticket consumption error:", ticketError);
+        }
+      }
+    }
+
+    // 写真アップロード
     if (photos.length > 0) {
       const { errors: photoErrors } = await uploadPhotos(
         record.id,
@@ -192,6 +347,26 @@ function NewRecordForm() {
         return fullName.includes(q) || fullKana.includes(q);
       })
     : customers;
+
+  // 合計金額・合計時間
+  const totalDuration = selectedMenuIds.reduce((sum, id) => {
+    const menu = menus.find((m) => m.id === id);
+    return sum + (menu?.duration_minutes ?? 0);
+  }, 0);
+  const totalPrice = selectedMenuIds.reduce((sum, id) => {
+    const menu = menus.find((m) => m.id === id);
+    return sum + (menu?.price ?? 0);
+  }, 0);
+
+  // 当日支払い金額（回数券・サービスを除く）
+  const cashTotal = selectedMenuIds.reduce((sum, id) => {
+    const menu = menus.find((m) => m.id === id);
+    const payment = menuPayments.find((mp) => mp.menuId === id);
+    if (payment?.paymentType === "cash" || payment?.paymentType === "credit") {
+      return sum + (menu?.price ?? 0);
+    }
+    return sum;
+  }, 0);
 
   return (
     <div className="space-y-4">
@@ -281,7 +456,7 @@ function NewRecordForm() {
       <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
         {error && <ErrorAlert message={error} />}
 
-        {/* 必須項目 */}
+        {/* 施術日 */}
         <div>
           <label className="block text-sm font-medium mb-1.5">
             施術日 <span className="text-error">*</span>
@@ -295,25 +470,109 @@ function NewRecordForm() {
           />
         </div>
 
+        {/* 施術メニュー（複数選択） */}
         <div>
           <label className="block text-sm font-medium mb-1.5">
-            施術メニュー
+            施術メニュー（複数選択可）
           </label>
-          <select
-            value={form.menu_id}
-            onChange={(e) => updateField("menu_id", e.target.value)}
-            className={inputClass}
-          >
-            <option value="">選択してください</option>
-            {menus.map((menu) => (
-              <option key={menu.id} value={menu.id}>
-                {menu.name}
-                {menu.duration_minutes ? ` (${menu.duration_minutes}分)` : ""}
-              </option>
-            ))}
-          </select>
+          {menus.length > 0 ? (
+            <div className="bg-background border border-border rounded-xl p-3 max-h-64 overflow-y-auto space-y-1">
+              {menus.map((m) => {
+                const isSelected = selectedMenuIds.includes(m.id);
+                const payment = menuPayments.find((mp) => mp.menuId === m.id);
+                return (
+                  <div key={m.id} className="space-y-2">
+                    <label
+                      className={`flex items-center gap-3 px-2 py-2.5 rounded-lg transition-colors cursor-pointer ${
+                        isSelected ? "bg-accent/5" : "hover:bg-surface"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleMenu(m.id)}
+                        className="w-4 h-4 rounded border-border text-accent focus:ring-accent/50"
+                      />
+                      <span className="text-sm flex-1">{m.name}</span>
+                      <span className="text-xs text-text-light whitespace-nowrap">
+                        {m.duration_minutes ? `${m.duration_minutes}分` : ""}
+                        {m.duration_minutes && m.price ? " / " : ""}
+                        {m.price ? `${m.price.toLocaleString()}円` : ""}
+                      </span>
+                    </label>
+
+                    {/* 段階的開示: 選択中 + 回数券ありの場合のみ支払方法を表示 */}
+                    {isSelected && hasTickets && (
+                      <div className="ml-9 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-text-light shrink-0">支払い:</span>
+                          <select
+                            value={payment?.paymentType ?? "cash"}
+                            onChange={(e) => {
+                              const pt = e.target.value as MenuPaymentInfo["paymentType"];
+                              updateMenuPayment(m.id, pt, pt === "ticket" && courseTickets.length === 1 ? courseTickets[0].id : null);
+                            }}
+                            className="text-xs rounded-lg border border-border bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent/50"
+                          >
+                            <option value="cash">現金</option>
+                            <option value="credit">クレジット</option>
+                            <option value="ticket">回数券</option>
+                            <option value="service">サービス（無料）</option>
+                          </select>
+                        </div>
+
+                        {/* 回数券選択: 複数チケットの場合のみ表示（1つなら自動選択済み） */}
+                        {payment?.paymentType === "ticket" && courseTickets.length > 1 && (
+                          <div className="ml-0">
+                            <select
+                              value={payment.ticketId ?? ""}
+                              onChange={(e) => updateMenuTicket(m.id, e.target.value)}
+                              className="text-xs rounded-lg border border-border bg-background px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-accent/50"
+                            >
+                              <option value="">チケットを選択...</option>
+                              {courseTickets.map((t) => (
+                                <option key={t.id} value={t.id}>
+                                  {t.ticket_name}（残{t.total_sessions - t.used_sessions}回）
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {/* 回数券が1つの場合: 自動選択の表示 */}
+                        {payment?.paymentType === "ticket" && courseTickets.length === 1 && (
+                          <p className="text-xs text-accent ml-0">
+                            {courseTickets[0].ticket_name}（残{courseTickets[0].total_sessions - courseTickets[0].used_sessions}回）
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-background border border-border rounded-xl p-3 text-sm text-text-light text-center">
+              メニューが登録されていません
+            </div>
+          )}
+          {selectedMenuIds.length > 0 && (
+            <div className="text-xs text-text-light mt-1.5 space-y-0.5">
+              <p>
+                選択中: {selectedMenuIds.length}件
+                {totalDuration > 0 && ` / 合計 ${totalDuration}分`}
+                {totalPrice > 0 && ` / ${totalPrice.toLocaleString()}円`}
+              </p>
+              {hasTickets && cashTotal !== totalPrice && (
+                <p className="text-accent font-medium">
+                  当日お支払い: {cashTotal.toLocaleString()}円
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
+        {/* 施術部位 */}
         <div>
           <label className="block text-sm font-medium mb-1.5">施術部位</label>
           <input

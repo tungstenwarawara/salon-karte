@@ -7,9 +7,14 @@ import { CourseTicketSection } from "@/components/customers/course-ticket-sectio
 
 type Customer = Database["public"]["Tables"]["customers"]["Row"];
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
+type TreatmentRecordMenu = Database["public"]["Tables"]["treatment_record_menus"]["Row"];
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
 type Purchase = Database["public"]["Tables"]["purchases"]["Row"];
 type CourseTicket = Database["public"]["Tables"]["course_tickets"]["Row"];
+
+type RecordWithMenus = TreatmentRecord & {
+  treatment_record_menus: TreatmentRecordMenu[];
+};
 
 function calculateAge(birthDate: string): number {
   const today = new Date();
@@ -50,10 +55,10 @@ export default async function CustomerDetailPage({
   const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult, appointmentMenusResult] = await Promise.all([
     supabase
       .from("treatment_records")
-      .select("*")
+      .select("*, treatment_record_menus(*)")
       .eq("customer_id", id)
       .order("treatment_date", { ascending: false })
-      .returns<TreatmentRecord[]>(),
+      .returns<RecordWithMenus[]>(),
     supabase
       .from("appointments")
       .select("*")
@@ -387,27 +392,34 @@ export default async function CustomerDetailPage({
 
         {records && records.length > 0 ? (
           <div className="space-y-2">
-            {records.map((record) => (
-              <Link
-                key={record.id}
-                href={`/records/${record.id}`}
-                className="block bg-surface border border-border rounded-xl p-3 hover:border-accent transition-colors"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">
-                    {record.menu_name_snapshot ?? "施術記録"}
-                  </span>
-                  <span className="text-sm text-text-light">
-                    {formatDateShort(record.treatment_date)}
-                  </span>
-                </div>
-                {record.next_visit_memo && (
-                  <p className="text-sm text-text-light mt-1 truncate">
-                    次回: {record.next_visit_memo}
-                  </p>
-                )}
-              </Link>
-            ))}
+            {records.map((record) => {
+              // treatment_record_menus があればそちらを優先、なければ旧 menu_name_snapshot
+              const recordMenus = (record as RecordWithMenus).treatment_record_menus ?? [];
+              const menuDisplay = recordMenus.length > 0
+                ? recordMenus.map((rm) => rm.menu_name_snapshot).join("、")
+                : record.menu_name_snapshot ?? "施術記録";
+              return (
+                <Link
+                  key={record.id}
+                  href={`/records/${record.id}`}
+                  className="block bg-surface border border-border rounded-xl p-3 hover:border-accent transition-colors"
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-sm truncate mr-2">
+                      {menuDisplay}
+                    </span>
+                    <span className="text-sm text-text-light shrink-0">
+                      {formatDateShort(record.treatment_date)}
+                    </span>
+                  </div>
+                  {record.next_visit_memo && (
+                    <p className="text-sm text-text-light mt-1 truncate">
+                      次回: {record.next_visit_memo}
+                    </p>
+                  )}
+                </Link>
+              );
+            })}
           </div>
         ) : (
           <div className="bg-surface border border-border rounded-xl p-6 text-center">

@@ -10,6 +10,14 @@ import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
+type TreatmentRecordMenu = Database["public"]["Tables"]["treatment_record_menus"]["Row"];
+type CourseTicket = Database["public"]["Tables"]["course_tickets"]["Row"];
+
+type MenuPaymentInfo = {
+  menuId: string;
+  paymentType: "cash" | "credit" | "ticket" | "service";
+  ticketId: string | null;
+};
 
 export default function EditRecordPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,9 +28,17 @@ export default function EditRecordPage() {
   const [error, setError] = useState("");
   const [customerId, setCustomerId] = useState("");
 
+  // 複数メニュー
+  const [selectedMenuIds, setSelectedMenuIds] = useState<string[]>([]);
+  const [menuPayments, setMenuPayments] = useState<MenuPaymentInfo[]>([]);
+  // existingMenus はロード時に選択状態の復元に使用（stateとしては保持不要）
+
+  // 回数券
+  const [courseTickets, setCourseTickets] = useState<CourseTicket[]>([]);
+  const [hasTickets, setHasTickets] = useState(false);
+
   const [form, setForm] = useState({
     treatment_date: "",
-    menu_id: "",
     treatment_area: "",
     products_used: "",
     skin_condition_before: "",
@@ -47,8 +63,8 @@ export default function EditRecordPage() {
         .single<{ id: string }>();
       if (!salon) return;
 
-      // P8: menus + record を並列取得
-      const [menuRes, recordRes] = await Promise.all([
+      // P8: menus + record + record_menus を並列取得
+      const [menuRes, recordRes, recordMenusRes] = await Promise.all([
         supabase
           .from("treatment_menus")
           .select("*")
@@ -60,16 +76,23 @@ export default function EditRecordPage() {
           .select("*")
           .eq("id", id)
           .single<TreatmentRecord>(),
+        supabase
+          .from("treatment_record_menus")
+          .select("*")
+          .eq("treatment_record_id", id)
+          .order("sort_order")
+          .returns<TreatmentRecordMenu[]>(),
       ]);
 
       setMenus(menuRes.data ?? []);
+      const existingMenus = recordMenusRes.data ?? [];
+      // existingMenus の復元は以下で処理
 
       const record = recordRes.data;
       if (record) {
         setCustomerId(record.customer_id);
         setForm({
           treatment_date: record.treatment_date,
-          menu_id: record.menu_id ?? "",
           treatment_area: record.treatment_area ?? "",
           products_used: record.products_used ?? "",
           skin_condition_before: record.skin_condition_before ?? "",
@@ -78,6 +101,42 @@ export default function EditRecordPage() {
           conversation_notes: record.conversation_notes ?? "",
           caution_notes: record.caution_notes ?? "",
         });
+
+        // 既存の treatment_record_menus からメニュー選択を復元
+        if (existingMenus.length > 0) {
+          const ids = existingMenus.map((rm) => rm.menu_id).filter(Boolean) as string[];
+          setSelectedMenuIds(ids);
+          setMenuPayments(existingMenus.map((rm) => ({
+            menuId: rm.menu_id ?? "",
+            paymentType: (rm.payment_type as MenuPaymentInfo["paymentType"]) ?? "cash",
+            ticketId: rm.ticket_id,
+          })).filter((mp) => mp.menuId));
+        } else if (record.menu_id) {
+          // 旧データ: menu_idから復元
+          setSelectedMenuIds([record.menu_id]);
+          setMenuPayments([{ menuId: record.menu_id, paymentType: "cash", ticketId: null }]);
+        }
+
+        // 回数券を取得
+        const { count } = await supabase
+          .from("course_tickets")
+          .select("id", { count: "exact", head: true })
+          .eq("customer_id", record.customer_id)
+          .eq("salon_id", salon.id)
+          .eq("status", "active");
+
+        if (count && count > 0) {
+          setHasTickets(true);
+          const { data: tickets } = await supabase
+            .from("course_tickets")
+            .select("*")
+            .eq("customer_id", record.customer_id)
+            .eq("salon_id", salon.id)
+            .eq("status", "active")
+            .order("purchase_date", { ascending: false })
+            .returns<CourseTicket[]>();
+          setCourseTickets(tickets ?? []);
+        }
       }
     };
     load();
@@ -87,20 +146,54 @@ export default function EditRecordPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const toggleMenu = (menuId: string) => {
+    const newIds = selectedMenuIds.includes(menuId)
+      ? selectedMenuIds.filter((mid) => mid !== menuId)
+      : [...selectedMenuIds, menuId];
+    setSelectedMenuIds(newIds);
+
+    if (newIds.includes(menuId) && !menuPayments.find((mp) => mp.menuId === menuId)) {
+      setMenuPayments((prev) => [...prev, { menuId, paymentType: "cash", ticketId: null }]);
+    } else if (!newIds.includes(menuId)) {
+      setMenuPayments((prev) => prev.filter((mp) => mp.menuId !== menuId));
+    }
+  };
+
+  const updateMenuPayment = (menuId: string, paymentType: MenuPaymentInfo["paymentType"], ticketId: string | null = null) => {
+    setMenuPayments((prev) =>
+      prev.map((mp) =>
+        mp.menuId === menuId ? { ...mp, paymentType, ticketId: paymentType === "ticket" ? ticketId : null } : mp
+      )
+    );
+  };
+
+  const updateMenuTicket = (menuId: string, ticketId: string) => {
+    setMenuPayments((prev) =>
+      prev.map((mp) =>
+        mp.menuId === menuId ? { ...mp, ticketId } : mp
+      )
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     const supabase = createClient();
-    const selectedMenu = menus.find((m) => m.id === form.menu_id);
 
-    const { error } = await supabase
+    // 先頭メニューのスナップショット（後方互換用）
+    const firstMenuId = selectedMenuIds[0] || null;
+    const menuNameSnapshot = selectedMenuIds.length > 0
+      ? selectedMenuIds.map((mid) => menus.find((m) => m.id === mid)?.name).filter(Boolean).join("、")
+      : null;
+
+    const { error: updateError } = await supabase
       .from("treatment_records")
       .update({
         treatment_date: form.treatment_date,
-        menu_id: form.menu_id || null,
-        menu_name_snapshot: selectedMenu?.name ?? null,
+        menu_id: firstMenuId,
+        menu_name_snapshot: menuNameSnapshot,
         treatment_area: form.treatment_area || null,
         products_used: form.products_used || null,
         skin_condition_before: form.skin_condition_before || null,
@@ -111,10 +204,41 @@ export default function EditRecordPage() {
       })
       .eq("id", id);
 
-    if (error) {
+    if (updateError) {
       setError("更新に失敗しました");
       setLoading(false);
       return;
+    }
+
+    // treatment_record_menus: delete → re-insert
+    await supabase
+      .from("treatment_record_menus")
+      .delete()
+      .eq("treatment_record_id", id);
+
+    if (selectedMenuIds.length > 0) {
+      const junctionRows = selectedMenuIds.map((menuId, index) => {
+        const menu = menus.find((m) => m.id === menuId);
+        const payment = menuPayments.find((mp) => mp.menuId === menuId);
+        return {
+          treatment_record_id: id,
+          menu_id: menuId,
+          menu_name_snapshot: menu?.name ?? "",
+          price_snapshot: menu?.price ?? null,
+          duration_minutes_snapshot: menu?.duration_minutes ?? null,
+          payment_type: payment?.paymentType ?? "cash",
+          ticket_id: payment?.ticketId ?? null,
+          sort_order: index,
+        };
+      });
+
+      const { error: junctionError } = await supabase
+        .from("treatment_record_menus")
+        .insert(junctionRows);
+
+      if (junctionError) {
+        console.error("Junction re-insert error:", junctionError);
+      }
     }
 
     router.push(`/records/${id}`);
@@ -126,7 +250,7 @@ export default function EditRecordPage() {
 
     const supabase = createClient();
 
-    // First, clean up storage files for associated photos
+    // Clean up storage files for associated photos
     const { data: photos } = await supabase
       .from("treatment_photos")
       .select("storage_path")
@@ -154,6 +278,16 @@ export default function EditRecordPage() {
   const inputClass =
     "w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors";
 
+  // 合計金額・合計時間
+  const totalDuration = selectedMenuIds.reduce((sum, mid) => {
+    const menu = menus.find((m) => m.id === mid);
+    return sum + (menu?.duration_minutes ?? 0);
+  }, 0);
+  const totalPrice = selectedMenuIds.reduce((sum, mid) => {
+    const menu = menus.find((m) => m.id === mid);
+    return sum + (menu?.price ?? 0);
+  }, 0);
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -180,22 +314,96 @@ export default function EditRecordPage() {
           />
         </div>
 
+        {/* 施術メニュー（複数選択） */}
         <div>
           <label className="block text-sm font-medium mb-1.5">
-            施術メニュー
+            施術メニュー（複数選択可）
           </label>
-          <select
-            value={form.menu_id}
-            onChange={(e) => updateField("menu_id", e.target.value)}
-            className={inputClass}
-          >
-            <option value="">選択してください</option>
-            {menus.map((menu) => (
-              <option key={menu.id} value={menu.id} disabled={!menu.is_active && menu.id !== form.menu_id}>
-                {menu.name}{!menu.is_active ? "（非アクティブ）" : ""}
-              </option>
-            ))}
-          </select>
+          {menus.length > 0 ? (
+            <div className="bg-background border border-border rounded-xl p-3 max-h-64 overflow-y-auto space-y-1">
+              {menus.map((m) => {
+                const isSelected = selectedMenuIds.includes(m.id);
+                const payment = menuPayments.find((mp) => mp.menuId === m.id);
+                return (
+                  <div key={m.id} className="space-y-2">
+                    <label
+                      className={`flex items-center gap-3 px-2 py-2.5 rounded-lg transition-colors cursor-pointer ${
+                        isSelected ? "bg-accent/5" : "hover:bg-surface"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleMenu(m.id)}
+                        className="w-4 h-4 rounded border-border text-accent focus:ring-accent/50"
+                      />
+                      <span className="text-sm flex-1">
+                        {m.name}{!m.is_active ? "（非アクティブ）" : ""}
+                      </span>
+                      <span className="text-xs text-text-light whitespace-nowrap">
+                        {m.duration_minutes ? `${m.duration_minutes}分` : ""}
+                        {m.duration_minutes && m.price ? " / " : ""}
+                        {m.price ? `${m.price.toLocaleString()}円` : ""}
+                      </span>
+                    </label>
+
+                    {isSelected && hasTickets && (
+                      <div className="ml-9 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-text-light shrink-0">支払い:</span>
+                          <select
+                            value={payment?.paymentType ?? "cash"}
+                            onChange={(e) => {
+                              const pt = e.target.value as MenuPaymentInfo["paymentType"];
+                              updateMenuPayment(m.id, pt, pt === "ticket" && courseTickets.length === 1 ? courseTickets[0].id : null);
+                            }}
+                            className="text-xs rounded-lg border border-border bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent/50"
+                          >
+                            <option value="cash">現金</option>
+                            <option value="credit">クレジット</option>
+                            <option value="ticket">回数券</option>
+                            <option value="service">サービス（無料）</option>
+                          </select>
+                        </div>
+
+                        {payment?.paymentType === "ticket" && courseTickets.length > 1 && (
+                          <select
+                            value={payment.ticketId ?? ""}
+                            onChange={(e) => updateMenuTicket(m.id, e.target.value)}
+                            className="text-xs rounded-lg border border-border bg-background px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-accent/50"
+                          >
+                            <option value="">チケットを選択...</option>
+                            {courseTickets.map((t) => (
+                              <option key={t.id} value={t.id}>
+                                {t.ticket_name}（残{t.total_sessions - t.used_sessions}回）
+                              </option>
+                            ))}
+                          </select>
+                        )}
+
+                        {payment?.paymentType === "ticket" && courseTickets.length === 1 && (
+                          <p className="text-xs text-accent">
+                            {courseTickets[0].ticket_name}（残{courseTickets[0].total_sessions - courseTickets[0].used_sessions}回）
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-background border border-border rounded-xl p-3 text-sm text-text-light text-center">
+              メニューが登録されていません
+            </div>
+          )}
+          {selectedMenuIds.length > 0 && (
+            <p className="text-xs text-text-light mt-1.5">
+              選択中: {selectedMenuIds.length}件
+              {totalDuration > 0 && ` / 合計 ${totalDuration}分`}
+              {totalPrice > 0 && ` / ${totalPrice.toLocaleString()}円`}
+            </p>
+          )}
         </div>
 
         <div>
