@@ -562,9 +562,9 @@ function NewRecordForm() {
                 if (!menu) return null;
                 return (
                   <div key={menuId} className="space-y-1.5">
+                    <div className="text-sm font-medium truncate">{menu.name}</div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm flex-1 truncate">{menu.name}</span>
-                      <div className="relative">
+                      <div className="flex items-center gap-1">
                         <input
                           type="number"
                           value={payment?.priceOverride ?? menu.price ?? ""}
@@ -576,11 +576,11 @@ function NewRecordForm() {
                               updateMenuPrice(menuId, parseInt(val, 10) || 0);
                             }
                           }}
-                          className={`w-20 text-xs text-right rounded-lg border bg-surface px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent/50 ${
+                          className={`w-24 text-sm text-right rounded-lg border bg-surface px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent/50 ${
                             payment?.priceOverride != null ? "border-accent text-accent font-medium" : "border-border"
                           }`}
                         />
-                        <span className="text-xs text-text-light ml-0.5">円</span>
+                        <span className="text-xs text-text-light">円</span>
                       </div>
                       <select
                         value={payment?.paymentType ?? "cash"}
@@ -588,7 +588,7 @@ function NewRecordForm() {
                           const pt = e.target.value as MenuPaymentInfo["paymentType"];
                           updateMenuPayment(menuId, pt, pt === "ticket" && courseTickets.length === 1 ? courseTickets[0].id : null);
                         }}
-                        className="text-xs rounded-lg border border-border bg-surface px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent/50"
+                        className="text-xs rounded-lg border border-border bg-surface px-2 py-1.5 flex-1 focus:outline-none focus:ring-1 focus:ring-accent/50"
                       >
                         <option value="cash">現金</option>
                         <option value="credit">クレジット</option>
