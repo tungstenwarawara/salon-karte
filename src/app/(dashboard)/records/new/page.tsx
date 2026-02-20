@@ -479,75 +479,26 @@ function NewRecordForm() {
             <div className="bg-background border border-border rounded-xl p-3 max-h-64 overflow-y-auto space-y-1">
               {menus.map((m) => {
                 const isSelected = selectedMenuIds.includes(m.id);
-                const payment = menuPayments.find((mp) => mp.menuId === m.id);
                 return (
-                  <div key={m.id} className="space-y-2">
-                    <label
-                      className={`flex items-center gap-3 px-2 py-2.5 rounded-lg transition-colors cursor-pointer ${
-                        isSelected ? "bg-accent/5" : "hover:bg-surface"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleMenu(m.id)}
-                        className="w-4 h-4 rounded border-border text-accent focus:ring-accent/50"
-                      />
-                      <span className="text-sm flex-1">{m.name}</span>
-                      <span className="text-xs text-text-light whitespace-nowrap">
-                        {m.duration_minutes ? `${m.duration_minutes}分` : ""}
-                        {m.duration_minutes && m.price ? " / " : ""}
-                        {m.price ? `${m.price.toLocaleString()}円` : ""}
-                      </span>
-                    </label>
-
-                    {/* 支払方法: メニュー選択中は常に表示 */}
-                    {isSelected && (
-                      <div className="ml-9 space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-text-light shrink-0">支払い:</span>
-                          <select
-                            value={payment?.paymentType ?? "cash"}
-                            onChange={(e) => {
-                              const pt = e.target.value as MenuPaymentInfo["paymentType"];
-                              updateMenuPayment(m.id, pt, pt === "ticket" && courseTickets.length === 1 ? courseTickets[0].id : null);
-                            }}
-                            className="text-xs rounded-lg border border-border bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent/50"
-                          >
-                            <option value="cash">現金</option>
-                            <option value="credit">クレジット</option>
-                            {hasTickets && <option value="ticket">回数券</option>}
-                            <option value="service">サービス（無料）</option>
-                          </select>
-                        </div>
-
-                        {/* 回数券選択: 複数チケットの場合のみ表示（1つなら自動選択済み） */}
-                        {payment?.paymentType === "ticket" && courseTickets.length > 1 && (
-                          <div className="ml-0">
-                            <select
-                              value={payment.ticketId ?? ""}
-                              onChange={(e) => updateMenuTicket(m.id, e.target.value)}
-                              className="text-xs rounded-lg border border-border bg-background px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-accent/50"
-                            >
-                              <option value="">チケットを選択...</option>
-                              {courseTickets.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                  {t.ticket_name}（残{t.total_sessions - t.used_sessions}回）
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-
-                        {/* 回数券が1つの場合: 自動選択の表示 */}
-                        {payment?.paymentType === "ticket" && courseTickets.length === 1 && (
-                          <p className="text-xs text-accent ml-0">
-                            {courseTickets[0].ticket_name}（残{courseTickets[0].total_sessions - courseTickets[0].used_sessions}回）
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <label
+                    key={m.id}
+                    className={`flex items-center gap-3 px-2 py-2.5 rounded-lg transition-colors cursor-pointer ${
+                      isSelected ? "bg-accent/5" : "hover:bg-surface"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleMenu(m.id)}
+                      className="w-4 h-4 rounded border-border text-accent focus:ring-accent/50"
+                    />
+                    <span className="text-sm flex-1">{m.name}</span>
+                    <span className="text-xs text-text-light whitespace-nowrap">
+                      {m.duration_minutes ? `${m.duration_minutes}分` : ""}
+                      {m.duration_minutes && m.price ? " / " : ""}
+                      {m.price ? `${m.price.toLocaleString()}円` : ""}
+                    </span>
+                  </label>
                 );
               })}
             </div>
@@ -557,20 +508,92 @@ function NewRecordForm() {
             </div>
           )}
           {selectedMenuIds.length > 0 && (
-            <div className="text-xs text-text-light mt-1.5 space-y-0.5">
-              <p>
-                選択中: {selectedMenuIds.length}件
-                {totalDuration > 0 && ` / 合計 ${totalDuration}分`}
-                {totalPrice > 0 && ` / ${totalPrice.toLocaleString()}円`}
-              </p>
-              {cashTotal !== totalPrice && (
-                <p className="text-accent font-medium">
-                  当日お支払い: {cashTotal.toLocaleString()}円
-                </p>
-              )}
-            </div>
+            <p className="text-xs text-text-light mt-1.5">
+              選択中: {selectedMenuIds.length}件
+              {totalDuration > 0 && ` / 合計 ${totalDuration}分`}
+              {totalPrice > 0 && ` / ${totalPrice.toLocaleString()}円`}
+            </p>
           )}
         </div>
+
+        {/* 支払方法（メニュー選択時のみ表示） */}
+        {selectedMenuIds.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium mb-1.5">支払方法</label>
+            {/* 一括設定ボタン */}
+            <div className="flex gap-1.5 mb-2">
+              <button
+                type="button"
+                onClick={() => setMenuPayments(selectedMenuIds.map((mid) => ({ menuId: mid, paymentType: "cash", ticketId: null })))}
+                className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-accent/5 hover:border-accent hover:text-accent transition-colors"
+              >
+                全て現金
+              </button>
+              <button
+                type="button"
+                onClick={() => setMenuPayments(selectedMenuIds.map((mid) => ({ menuId: mid, paymentType: "credit", ticketId: null })))}
+                className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-accent/5 hover:border-accent hover:text-accent transition-colors"
+              >
+                全てクレジット
+              </button>
+            </div>
+            <div className="bg-background border border-border rounded-xl p-3 space-y-2.5">
+              {selectedMenuIds.map((menuId) => {
+                const menu = menus.find((m) => m.id === menuId);
+                const payment = menuPayments.find((mp) => mp.menuId === menuId);
+                if (!menu) return null;
+                return (
+                  <div key={menuId} className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm flex-1 truncate">{menu.name}</span>
+                      <select
+                        value={payment?.paymentType ?? "cash"}
+                        onChange={(e) => {
+                          const pt = e.target.value as MenuPaymentInfo["paymentType"];
+                          updateMenuPayment(menuId, pt, pt === "ticket" && courseTickets.length === 1 ? courseTickets[0].id : null);
+                        }}
+                        className="text-xs rounded-lg border border-border bg-surface px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent/50"
+                      >
+                        <option value="cash">現金</option>
+                        <option value="credit">クレジット</option>
+                        {hasTickets && <option value="ticket">回数券</option>}
+                        <option value="service">サービス（無料）</option>
+                      </select>
+                    </div>
+
+                    {/* 回数券選択: 複数チケットの場合のみ表示 */}
+                    {payment?.paymentType === "ticket" && courseTickets.length > 1 && (
+                      <select
+                        value={payment.ticketId ?? ""}
+                        onChange={(e) => updateMenuTicket(menuId, e.target.value)}
+                        className="text-xs rounded-lg border border-border bg-surface px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-accent/50 ml-0"
+                      >
+                        <option value="">チケットを選択...</option>
+                        {courseTickets.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.ticket_name}（残{t.total_sessions - t.used_sessions}回）
+                          </option>
+                        ))}
+                      </select>
+                    )}
+
+                    {/* 回数券が1つの場合: 自動選択の表示 */}
+                    {payment?.paymentType === "ticket" && courseTickets.length === 1 && (
+                      <p className="text-xs text-accent">
+                        {courseTickets[0].ticket_name}（残{courseTickets[0].total_sessions - courseTickets[0].used_sessions}回）
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {cashTotal !== totalPrice && (
+              <p className="text-xs text-accent font-medium mt-1.5">
+                当日お支払い: {cashTotal.toLocaleString()}円
+              </p>
+            )}
+          </div>
+        )}
 
         {/* 施術部位 */}
         <div>
