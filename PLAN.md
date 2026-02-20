@@ -1,6 +1,6 @@
 # サロンカルテ — エコシステム計画書（統合版）
 
-> 更新日: 2026-02-19（v4 — PLAN.md + V3計画書を統合。Phase 5完了を反映）
+> 更新日: 2026-02-20（v5 — Phase 5.5追加改善を反映。不定休設定・42ページ・16マイグレーション・7 RPC）
 
 ---
 
@@ -11,7 +11,7 @@
 3. [料金プラン設計](#料金プラン設計)
 4. [差別化ポイント](#差別化ポイント)
 5. [実装済み機能一覧](#実装済み機能一覧)
-6. [画面構成（30ページ）](#画面構成30ページ)
+6. [画面構成（42ページ）](#画面構成42ページ)
 7. [アーキテクチャ設計 — 3プロダクト体制](#アーキテクチャ設計--3プロダクト体制)
 8. [データベース設計](#データベース設計)
 9. [在庫管理 詳細設計（✅ 実装済み）](#在庫管理-詳細設計-実装済み)
@@ -79,7 +79,7 @@
 | 電子カルテ（枚数無制限） | LiME無料は5枚/人制限 |
 | ビフォーアフター写真（5GB） | エステ特化の差別化ポイント |
 | 顧客管理（人数無制限） | Bionly FREEはスタッフ1名制限 |
-| 予約管理（営業日設定・空き時間表示） | KaruteKunと同等 |
+| 予約管理（営業日設定・不定休設定・空き時間表示） | KaruteKunと同等 |
 | 施術メニュー管理 | 複数メニュー選択対応 |
 | 物販購入履歴 | **競合の大半が未対応** |
 | 回数券・コース管理 | **エステの売上の柱。ほぼ全競合が未対応** |
@@ -186,31 +186,34 @@
 | 確定申告 | レポート（売上原価・棚卸明細・月別売上/仕入）+ CSV出力3形式 | ✅ |
 | メニュー管理 | CRUD・カテゴリ・所要時間・料金 | ✅ |
 | 営業時間 | 曜日別の営業/休業・開閉店時間管理 | ✅ |
+| 不定休設定 | カレンダーUIで臨時休業日を設定・予約時に警告表示 | ✅ |
 | UI/UX | FAB・ボトムナビ5項目・パンくず・オンボーディング・経営タブ | ✅ |
+| | AutoResizeTextarea（全フォームの自動伸縮テキストエリア） | ✅ |
+| | 使い方ガイドページ（機能紹介・初期設定手順） | ✅ |
 | その他 | 離脱アラート・スケルトン・キャッシュ最適化・セキュリティヘッダー | ✅ |
 
 ---
 
-## 画面構成（30ページ）
+## 画面構成（42ページ）
 
 ```
-── 認証 ──
+── 認証（5ページ） ──
 /login                  → ログイン画面
 /signup                 → アカウント登録画面
 /reset-password         → パスワードリセット申請画面
 /update-password        → 新パスワード設定画面
 /setup                  → サロン初期設定
 
-── 公開ページ ──
+── 公開ページ（3ページ） ──
 /                       → ランディングページ
 /privacy                → プライバシーポリシー
 /terms                  → 利用規約
 
-── ダッシュボード ──
+── ダッシュボード（2ページ） ──
 /dashboard              → ダッシュボード（予約一覧/離脱アラート/在庫アラート/誕生日/売上サマリー/最近のカルテ/オンボーディング）
-/guide                  → 使い方ガイド
+/guide                  → 使い方ガイド（機能紹介・初期設定手順）
 
-── 顧客管理 ──
+── 顧客管理（6ページ） ──
 /customers              → 顧客一覧（検索・来店情報付き）
 /customers/new          → 顧客新規登録
 /customers/[id]         → 顧客詳細（基本情報/施術履歴/購入履歴/回数券/来店分析）
@@ -218,18 +221,19 @@
 /customers/[id]/purchases/new → 物販記録登録（商品選択/自由入力デュアルモード）
 /customers/[id]/tickets/new   → 回数券登録
 
-── 施術記録 ──
+── 施術記録（3ページ） ──
 /records/new            → 施術記録の新規作成（顧客選択UI付き）
 /records/[id]           → 施術記録詳細（写真含む）
 /records/[id]/edit      → 施術記録編集
 
-── 予約管理 ──
-/appointments           → 予約一覧（月別/週別/日別カレンダー）
-/appointments/new       → 予約の新規登録（メニュー複数選択対応）
-/appointments/[id]/edit → 予約編集
+── 予約管理（3ページ） ──
+/appointments           → 予約一覧（月別/週別/日別カレンダー + 不定休表示）
+/appointments/new       → 予約の新規登録（メニュー複数選択・不定休警告対応）
+/appointments/[id]/edit → 予約編集（不定休警告対応）
 
-── 経営（売上+在庫） ──
+── 経営（売上+在庫）（8ページ） ──
 /sales                  → 売上レポート（年間/月別推移グラフ、日別ドリルダウン、カテゴリフィルタ）
+/sales/[year]/[month]   → 月別売上詳細（日別売上一覧）
 /sales/inventory        → 在庫ダッシュボード（サマリー/在庫一覧/クイックアクション）
 /sales/inventory/products  → 商品マスタCRUD
 /sales/inventory/receive   → 仕入記録（入庫）
@@ -237,10 +241,11 @@
 /sales/inventory/stocktake → 棚卸し
 /sales/inventory/tax-report → 確定申告レポート（COGS計算/CSV出力）
 
-── 設定 ──
+── 設定（4ページ） ──
 /settings               → サロン設定
 /settings/menus         → 施術メニュー管理
 /settings/business-hours → 営業時間設定
+/settings/holidays      → 不定休設定（カレンダーUI）
 ```
 
 ---
@@ -284,7 +289,7 @@
 
 ## データベース設計
 
-### テーブル構成（11テーブル + 12マイグレーション）
+### テーブル構成（11テーブル + 16マイグレーション）
 
 ```sql
 -- サロン情報
@@ -294,6 +299,8 @@ CREATE TABLE salons (
   name TEXT NOT NULL,
   phone TEXT,
   address TEXT,
+  business_hours JSONB DEFAULT '[]'::jsonb,    -- 曜日別営業時間
+  salon_holidays JSONB DEFAULT '[]'::jsonb,    -- 不定休（臨時休業日の配列 "YYYY-MM-DD"）
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -458,15 +465,17 @@ CREATE TABLE inventory_logs (
 );
 ```
 
-### RPC関数（5つ）
+### RPC関数（7つ）
 
 | 関数名 | 用途 |
 |--------|------|
 | `get_monthly_sales_summary(p_salon_id, p_year)` | 月別売上集計（施術/物販/回数券） |
 | `get_lapsed_customers(p_salon_id, p_days_threshold)` | 離脱顧客の検出 |
+| `use_course_ticket_session(p_ticket_id)` | 回数券消化（アトミック） |
 | `get_inventory_summary(p_salon_id)` | 全商品の在庫サマリー |
 | `record_product_sale(...)` | 物販登録+自動出庫のアトミック処理 |
 | `get_tax_report(p_salon_id, p_year)` | 確定申告用の年間集計データ |
+| `update_updated_at()` | トリガー用タイムスタンプ自動更新 |
 
 ### RLS方針
 
@@ -598,6 +607,13 @@ CREATE TABLE inventory_logs (
 - [x] 物販デュアルモード・自動出庫・在庫アラート
 - [x] 確定申告レポート・CSV出力3形式
 
+### Phase 5.5: 追加改善・UX向上 ✅ 完了
+- [x] AutoResizeTextarea — 全フォームのtextareaを自動伸縮に置換（10ファイル）
+- [x] 使い方ガイドページ更新 — 最新機能の反映・初期設定手順の充実
+- [x] 不定休設定 — カレンダーUIで臨時休業日を設定（salon_holidays JSONBカラム追加）
+- [x] 予約ページ不定休統合 — 予約一覧/新規/編集で臨時休業日を表示・警告
+- [x] business-hours.ts拡張 — 全関数にholidaysパラメータ追加（後方互換）
+
 ### Phase 6: 売上・回数券の会計修正 ← 次
 
 **課題**: 施術売上と回数券売上が二重計上されている
@@ -688,8 +704,10 @@ MEO対策: Google ビジネスプロフィール連携, 構造化データ, Maps
 ```
 実績 + 想定タイムライン:
   〜2月中旬:     Phase 1〜5（カルテ基盤+在庫+確定申告）  ✅ 完了
-  3月前半〜中:   Phase 6（テスターサロンHP）
-  3月後半〜:     Phase 7（サロンカルテLP+商用化）
+  2月下旬:       Phase 5.5（不定休設定・UX改善）          ✅ 完了
+  3月前半:       Phase 6（売上・回数券の会計修正）
+  3月前半〜中:   Phase 7（テスターサロンHP）
+  3月後半〜:     Phase 8（サロンカルテLP+商用化）
   以降:          カルテ追加機能 / salon-site / salon-ec
 ```
 
@@ -704,7 +722,7 @@ MEO対策: Google ビジネスプロフィール連携, 構造化データ, Maps
 | フロントエンド | Next.js 15 (App Router) + TypeScript + Tailwind CSS 4 |
 | バックエンド | Supabase (PostgreSQL + Auth + Storage + Realtime) |
 | ホスティング | Vercel |
-| DB | 12マイグレーション、11テーブル、5 RPC関数 |
+| DB | 16マイグレーション、11テーブル、7 RPC関数 |
 
 ### salon-site 追加技術（将来）
 
@@ -740,7 +758,7 @@ Stripe Checkout / Stripe Webhooks / Supabase Edge Functions
 - ラベルの汎用化 → ✅ Phase 1.5で対応済み
 - 物販管理・予約メニュー複数選択 → ✅ Phase 1.5で対応済み
 - 商品在庫管理・確定申告 → ✅ Phase 5で対応済み
-- 営業日設定 → ✅ Phase 2で対応済み
+- 営業日設定 → ✅ Phase 2で対応済み（+ Phase 5.5で不定休設定追加）
 - スタッフ管理・空き枠表示 → 将来Phaseで対応予定
 - 月額2,980円は「とても魅力的」との評価
 
@@ -755,14 +773,14 @@ salon-karte/
 │   │   ├── (auth)/login, signup, setup, reset-password, update-password
 │   │   ├── (dashboard)/
 │   │   │   ├── dashboard/page.tsx           # Server Component, 10クエリ並列
-│   │   │   ├── guide/page.tsx
+│   │   │   ├── guide/page.tsx               # 使い方ガイド
 │   │   │   ├── customers/                   # 一覧/新規/[id]/edit/purchases/tickets
 │   │   │   ├── records/                     # new/[id]/edit
-│   │   │   ├── appointments/                # 一覧/new/[id]/edit
+│   │   │   ├── appointments/                # 一覧/new/[id]/edit（不定休警告対応）
 │   │   │   ├── sales/
 │   │   │   │   ├── page.tsx                 # 売上レポート
 │   │   │   │   └── inventory/               # 在庫ダッシュボード/products/receive/consume/stocktake/tax-report
-│   │   │   └── settings/                    # menus/business-hours
+│   │   │   └── settings/                    # menus/business-hours/holidays
 │   │   ├── auth/callback/route.ts
 │   │   ├── page.tsx                         # ランディングページ
 │   │   ├── privacy/page.tsx
@@ -773,10 +791,10 @@ salon-karte/
 │   │   ├── customers/                       # course-ticket-section
 │   │   ├── dashboard/                       # lapsed-customers-section
 │   │   ├── inventory/                       # management-tabs
-│   │   └── ui/                              # collapsible-section, error-alert, toast
-│   ├── lib/supabase/, format.ts, middleware.ts
+│   │   └── ui/                              # auto-resize-textarea, collapsible-section, error-alert, toast
+│   ├── lib/supabase/, business-hours.ts, format.ts, middleware.ts
 │   └── types/database.ts
-├── supabase/migrations/                     # 00001〜00012
+├── supabase/migrations/                     # 00001〜00016
 ├── PLAN.md                                  # ← このファイル（唯一の計画書）
 └── README.md
 ```
