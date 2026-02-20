@@ -198,10 +198,11 @@ export default function ImportCustomersPage() {
     <div className="space-y-4">
       <PageHeader
         title="顧客データ取り込み"
-        backLabel="設定"
-        backHref="/settings"
+        backLabel="データ取り込み"
+        backHref="/settings/import"
         breadcrumbs={[
           { label: "設定", href: "/settings" },
+          { label: "データ取り込み", href: "/settings/import" },
           { label: "顧客データ取り込み" },
         ]}
       />
@@ -448,10 +449,10 @@ export default function ImportCustomersPage() {
             </div>
           )}
 
-          <div className="flex gap-3 pt-2">
+          <div className="space-y-2 pt-2">
             <Link
               href="/customers"
-              className="flex-1 bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors min-h-[48px] text-center"
+              className="block w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors min-h-[48px] text-center"
             >
               顧客一覧を見る
             </Link>
@@ -467,10 +468,16 @@ export default function ImportCustomersPage() {
                 // 既存顧客リストを更新
                 loadSalonData();
               }}
-              className="flex-1 bg-background border border-border text-text font-medium rounded-xl py-3 transition-colors min-h-[48px]"
+              className="block w-full bg-background border border-border text-text font-medium rounded-xl py-3 transition-colors min-h-[48px]"
             >
               続けて取り込む
             </button>
+            <Link
+              href="/settings/import"
+              className="block w-full text-sm text-accent text-center py-2 hover:underline"
+            >
+              データ取り込みに戻る
+            </Link>
           </div>
         </div>
       )}
