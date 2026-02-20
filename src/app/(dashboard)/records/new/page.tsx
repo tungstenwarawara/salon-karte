@@ -501,8 +501,8 @@ function NewRecordForm() {
                       </span>
                     </label>
 
-                    {/* 段階的開示: 選択中 + 回数券ありの場合のみ支払方法を表示 */}
-                    {isSelected && hasTickets && (
+                    {/* 支払方法: メニュー選択中は常に表示 */}
+                    {isSelected && (
                       <div className="ml-9 space-y-1.5">
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-text-light shrink-0">支払い:</span>
@@ -516,7 +516,7 @@ function NewRecordForm() {
                           >
                             <option value="cash">現金</option>
                             <option value="credit">クレジット</option>
-                            <option value="ticket">回数券</option>
+                            {hasTickets && <option value="ticket">回数券</option>}
                             <option value="service">サービス（無料）</option>
                           </select>
                         </div>
@@ -563,7 +563,7 @@ function NewRecordForm() {
                 {totalDuration > 0 && ` / 合計 ${totalDuration}分`}
                 {totalPrice > 0 && ` / ${totalPrice.toLocaleString()}円`}
               </p>
-              {hasTickets && cashTotal !== totalPrice && (
+              {cashTotal !== totalPrice && (
                 <p className="text-accent font-medium">
                   当日お支払い: {cashTotal.toLocaleString()}円
                 </p>
