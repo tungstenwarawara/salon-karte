@@ -175,6 +175,22 @@ export default function SettingsPage() {
         </div>
       </Link>
 
+      {/* Import customers link */}
+      <Link
+        href="/settings/import-customers"
+        className="block bg-surface border border-border rounded-2xl p-5 hover:border-accent transition-colors"
+      >
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="font-bold">顧客データ取り込み</h3>
+            <p className="text-sm text-text-light mt-1">
+              CSVファイルから顧客を一括登録
+            </p>
+          </div>
+          <span className="text-text-light">→</span>
+        </div>
+      </Link>
+
       {/* Guide link */}
       <Link
         href="/guide"
