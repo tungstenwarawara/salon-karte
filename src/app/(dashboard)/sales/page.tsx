@@ -9,6 +9,8 @@ type MonthlySales = {
   treatment_sales: number;
   product_sales: number;
   ticket_sales: number;
+  ticket_consumption: number;
+  service_amount: number;
 };
 
 type DailySales = {
@@ -91,14 +93,13 @@ export default function SalesPage() {
     const lastDay = new Date(year, month, 0).getDate();
     const endDate = `${year}-${monthStr}-${String(lastDay).padStart(2, "0")}`;
 
-    const [aptsRes, purchasesRes, ticketsRes] = await Promise.all([
+    const [recordsRes, purchasesRes, ticketsRes] = await Promise.all([
       supabase
-        .from("appointments")
-        .select("appointment_date, appointment_menus(price_snapshot)")
+        .from("treatment_records")
+        .select("treatment_date, treatment_record_menus(price_snapshot, payment_type)")
         .eq("salon_id", salonId)
-        .gte("appointment_date", startDate)
-        .lte("appointment_date", endDate)
-        .eq("status", "completed"),
+        .gte("treatment_date", startDate)
+        .lte("treatment_date", endDate),
       supabase
         .from("purchases")
         .select("purchase_date, total_price")
@@ -119,10 +120,13 @@ export default function SalesPage() {
       dailyMap[d] = { day: d, treatment: 0, product: 0, ticket: 0 };
     }
 
-    for (const apt of aptsRes.data ?? []) {
-      const day = parseInt(apt.appointment_date.split("-")[2], 10);
-      const menus = (apt.appointment_menus ?? []) as { price_snapshot: number | null }[];
-      const total = menus.reduce((s, m) => s + (m.price_snapshot ?? 0), 0);
+    for (const rec of recordsRes.data ?? []) {
+      const day = parseInt(rec.treatment_date.split("-")[2], 10);
+      const menus = (rec.treatment_record_menus ?? []) as { price_snapshot: number | null; payment_type: string }[];
+      // cash/credit のみ施術売上に計上
+      const total = menus
+        .filter((m) => m.payment_type === "cash" || m.payment_type === "credit")
+        .reduce((s, m) => s + (m.price_snapshot ?? 0), 0);
       if (dailyMap[day]) dailyMap[day].treatment += total;
     }
 

@@ -773,6 +773,8 @@ export type Database = {
           treatment_sales: number;
           product_sales: number;
           ticket_sales: number;
+          ticket_consumption: number;
+          service_amount: number;
         }[];
       };
       use_course_ticket_session: {

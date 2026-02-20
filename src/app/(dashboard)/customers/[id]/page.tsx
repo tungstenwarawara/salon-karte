@@ -52,7 +52,7 @@ export default async function CustomerDetailPage({
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-  const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult, appointmentMenusResult] = await Promise.all([
+  const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult] = await Promise.all([
     supabase
       .from("treatment_records")
       .select("*, treatment_record_menus(*)")
@@ -80,17 +80,12 @@ export default async function CustomerDetailPage({
       .eq("customer_id", id)
       .order("created_at", { ascending: false })
       .returns<CourseTicket[]>(),
-    supabase
-      .from("appointments")
-      .select("appointment_menus(price_snapshot)")
-      .eq("customer_id", id),
   ]);
 
   const records = recordsResult.data;
   const nextAppointment = appointmentResult.data;
   const purchases = purchasesResult.data;
   const courseTickets = courseTicketsResult.data;
-  const appointmentMenusData = appointmentMenusResult.data;
 
   // 来店分析
   const visitCount = records?.length ?? 0;
@@ -112,9 +107,12 @@ export default async function CustomerDetailPage({
 
   const purchaseTotal = purchases?.reduce((sum, p) => sum + p.total_price, 0) ?? 0;
 
-  const treatmentTotal = appointmentMenusData?.reduce((sum, apt) => {
-    const menus = (apt.appointment_menus ?? []) as { price_snapshot: number | null }[];
-    return sum + menus.reduce((mSum, m) => mSum + (m.price_snapshot ?? 0), 0);
+  // 施術合計: treatment_record_menus から cash/credit のみ集計（実収入）
+  const treatmentTotal = records?.reduce((sum, rec) => {
+    const menus = (rec as RecordWithMenus).treatment_record_menus ?? [];
+    return sum + menus
+      .filter((m) => m.payment_type === "cash" || m.payment_type === "credit")
+      .reduce((mSum, m) => mSum + (m.price_snapshot ?? 0), 0);
   }, 0) ?? 0;
 
   // 回数券合計

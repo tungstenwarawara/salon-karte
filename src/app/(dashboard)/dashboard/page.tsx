@@ -47,7 +47,7 @@ export default async function DashboardPage() {
     customerCountRes,
     menuCountRes,
     lapsedCustomersRes,
-    monthlyAptsRes,
+    monthlyRecordsRes,
     monthlyPurchasesRes,
     monthlyTicketsRes,
     birthdayRes,
@@ -81,14 +81,13 @@ export default async function DashboardPage() {
         p_days_threshold: 60,
       })
       .returns<LapsedCustomer[]>(),
-    // 今月の売上（施術）
+    // 今月の売上（施術 — treatment_record_menus からcash/creditのみ集計）
     supabase
-      .from("appointments")
-      .select("appointment_menus(price_snapshot)")
+      .from("treatment_records")
+      .select("treatment_record_menus(price_snapshot, payment_type)")
       .eq("salon_id", salon.id)
-      .gte("appointment_date", monthStart)
-      .lt("appointment_date", monthEnd)
-      .eq("status", "completed"),
+      .gte("treatment_date", monthStart)
+      .lt("treatment_date", monthEnd),
     // 今月の売上（物販）
     supabase
       .from("purchases")
@@ -151,9 +150,11 @@ export default async function DashboardPage() {
     }
   }
 
-  const monthlyTreatmentSales = monthlyAptsRes.data?.reduce((sum, apt) => {
-    const menus = (apt.appointment_menus ?? []) as { price_snapshot: number | null }[];
-    return sum + menus.reduce((mSum, m) => mSum + (m.price_snapshot ?? 0), 0);
+  const monthlyTreatmentSales = monthlyRecordsRes.data?.reduce((sum, rec) => {
+    const menus = (rec.treatment_record_menus ?? []) as { price_snapshot: number | null; payment_type: string }[];
+    return sum + menus
+      .filter((m) => m.payment_type === "cash" || m.payment_type === "credit")
+      .reduce((mSum, m) => mSum + (m.price_snapshot ?? 0), 0);
   }, 0) ?? 0;
 
   const monthlyProductSales = monthlyPurchasesRes.data?.reduce((sum, p) => sum + (p as { total_price: number }).total_price, 0) ?? 0;

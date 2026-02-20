@@ -24,6 +24,8 @@ type MonthlySales = {
   treatment_sales: number;
   product_sales: number;
   ticket_sales: number;
+  ticket_consumption: number;
+  service_amount: number;
 };
 
 function formatYen(amount: number): string {
