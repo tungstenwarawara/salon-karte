@@ -91,6 +91,7 @@ export default function EditAppointmentPage() {
         .from("appointments")
         .select("*, customers(last_name, first_name)")
         .eq("id", appointmentId)
+        .eq("salon_id", salon.id)
         .single<Appointment & { customers: { last_name: string; first_name: string } | null }>(),
       supabase
         .from("treatment_menus")
@@ -257,7 +258,8 @@ export default function EditAppointmentPage() {
         source,
         memo: memo || null,
       })
-      .eq("id", appointmentId);
+      .eq("id", appointmentId)
+      .eq("salon_id", salonId);
 
     if (updateError) {
       console.error("Appointment update error:", updateError);
@@ -347,7 +349,7 @@ export default function EditAppointmentPage() {
             value={appointmentDate}
             onChange={(e) => setAppointmentDate(e.target.value)}
             required
-            className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
           />
         </div>
 
@@ -464,7 +466,7 @@ export default function EditAppointmentPage() {
                 setStartHour(e.target.value);
                 updateEndTimeFromMenus(selectedMenuIds, e.target.value, startMinute);
               }}
-              className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             >
               {Array.from({ length: 24 }, (_, i) => (
                 <option key={i} value={String(i)}>{String(i).padStart(2, "0")}</option>
@@ -477,7 +479,7 @@ export default function EditAppointmentPage() {
                 setStartMinute(e.target.value);
                 updateEndTimeFromMenus(selectedMenuIds, startHour, e.target.value);
               }}
-              className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             >
               {["00", "15", "30", "45"].map((m) => (
                 <option key={m} value={m}>{m}</option>
@@ -503,7 +505,7 @@ export default function EditAppointmentPage() {
                 setEndHour(e.target.value);
                 setIsEndTimeManual(true);
               }}
-              className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             >
               {Array.from({ length: 24 }, (_, i) => (
                 <option key={i} value={String(i)}>{String(i).padStart(2, "0")}</option>
@@ -516,7 +518,7 @@ export default function EditAppointmentPage() {
                 setEndMinute(e.target.value);
                 setIsEndTimeManual(true);
               }}
-              className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             >
               {["00", "15", "30", "45"].map((m) => (
                 <option key={m} value={m}>{m}</option>
@@ -611,7 +613,7 @@ export default function EditAppointmentPage() {
             id="source"
             value={source}
             onChange={(e) => setSource(e.target.value)}
-            className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
           >
             {SOURCE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -632,7 +634,7 @@ export default function EditAppointmentPage() {
             onChange={(e) => setMemo(e.target.value)}
             minRows={2}
             placeholder="施術の要望や注意点など"
-            className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
           />
         </div>
 

@@ -79,7 +79,26 @@ export default function ConsumePage() {
 
     const supabase = createClient();
     const quantity = parseInt(form.quantity) || 1;
+    if (quantity <= 0) {
+      setError("数量は1以上を入力してください");
+      setLoading(false);
+      return;
+    }
     const isReturn = form.log_type === "return_in";
+
+    // 消費・廃棄の場合は在庫不足チェック
+    if (!isReturn) {
+      const { data: summary } = await supabase
+        .rpc("get_inventory_summary", { p_salon_id: salonId })
+        .returns<{ product_id: string; current_stock: number }[]>();
+      const productStock = summary?.find((s) => s.product_id === form.product_id);
+      const currentStock = productStock?.current_stock ?? 0;
+      if (quantity > currentStock) {
+        setError(`在庫が不足しています（現在庫: ${currentStock}個）`);
+        setLoading(false);
+        return;
+      }
+    }
 
     const { error: insertError } = await supabase.from("inventory_logs").insert({
       salon_id: salonId,

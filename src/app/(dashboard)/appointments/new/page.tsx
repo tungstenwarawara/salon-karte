@@ -378,7 +378,7 @@ function NewAppointmentForm() {
             value={appointmentDate}
             onChange={(e) => setAppointmentDate(e.target.value)}
             required
-            className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
           />
         </div>
 
@@ -493,7 +493,7 @@ function NewAppointmentForm() {
                 setStartHour(e.target.value);
                 updateEndTimeFromMenus(selectedMenuIds, e.target.value, startMinute);
               }}
-              className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             >
               {Array.from({ length: 24 }, (_, i) => (
                 <option key={i} value={String(i)}>{String(i).padStart(2, "0")}</option>
@@ -506,7 +506,7 @@ function NewAppointmentForm() {
                 setStartMinute(e.target.value);
                 updateEndTimeFromMenus(selectedMenuIds, startHour, e.target.value);
               }}
-              className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             >
               {["00", "15", "30", "45"].map((m) => (
                 <option key={m} value={m}>{m}</option>
@@ -532,7 +532,7 @@ function NewAppointmentForm() {
                 setEndHour(e.target.value);
                 setIsEndTimeManual(true);
               }}
-              className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             >
               {Array.from({ length: 24 }, (_, i) => (
                 <option key={i} value={String(i)}>{String(i).padStart(2, "0")}</option>
@@ -545,7 +545,7 @@ function NewAppointmentForm() {
                 setEndMinute(e.target.value);
                 setIsEndTimeManual(true);
               }}
-              className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             >
               {["00", "15", "30", "45"].map((m) => (
                 <option key={m} value={m}>{m}</option>
@@ -642,7 +642,7 @@ function NewAppointmentForm() {
               id="source"
               value={source}
               onChange={(e) => setSource(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             >
               {SOURCE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -663,7 +663,7 @@ function NewAppointmentForm() {
               onChange={(e) => setMemo(e.target.value)}
               minRows={2}
               placeholder="施術の要望や注意点など"
-              className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             />
           </div>
         </CollapsibleSection>
