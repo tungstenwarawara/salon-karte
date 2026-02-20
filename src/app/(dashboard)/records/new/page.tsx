@@ -14,6 +14,7 @@ import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
 type CourseTicket = Database["public"]["Tables"]["course_tickets"]["Row"];
+type Product = Database["public"]["Tables"]["products"]["Row"];
 type CustomerOption = { id: string; last_name: string; first_name: string; last_name_kana: string | null; first_name_kana: string | null };
 type AppointmentMenu = Database["public"]["Tables"]["appointment_menus"]["Row"];
 
@@ -23,6 +24,24 @@ type MenuPaymentInfo = {
   paymentType: "cash" | "credit" | "ticket" | "service";
   ticketId: string | null;
   priceOverride: number | null; // null = メニュー設定金額を使用
+};
+
+// カルテ内の回数券販売（保存前の仮データ）
+type PendingTicket = {
+  ticket_name: string;
+  total_sessions: number;
+  price: number | null;
+  memo: string;
+};
+
+// カルテ内の物販記録（保存前の仮データ）
+type PendingPurchase = {
+  mode: "product" | "free";
+  product_id: string | null;
+  item_name: string;
+  quantity: number;
+  unit_price: number;
+  memo: string;
 };
 
 export default function NewRecordPage() {
@@ -56,6 +75,11 @@ function NewRecordForm() {
   // 回数券（段階的開示: 顧客選択後に取得）
   const [courseTickets, setCourseTickets] = useState<CourseTicket[]>([]);
   const [hasTickets, setHasTickets] = useState(false);
+
+  // Phase 6-2: カルテ内の物販・回数券販売
+  const [products, setProducts] = useState<Product[]>([]);
+  const [pendingTickets, setPendingTickets] = useState<PendingTicket[]>([]);
+  const [pendingPurchases, setPendingPurchases] = useState<PendingPurchase[]>([]);
 
   // Derived: the active customer ID (from URL or user selection)
   const customerId = presetCustomerId ?? selectedCustomerId;
@@ -92,7 +116,7 @@ function NewRecordForm() {
       if (!salon) return;
       setSalonId(salon.id);
 
-      // P7: salon取得後、menus + customers/customerName を並列取得
+      // P7: salon取得後、menus + customers/customerName + products を並列取得
       const menusQuery = supabase
         .from("treatment_menus")
         .select("*")
@@ -100,6 +124,14 @@ function NewRecordForm() {
         .eq("is_active", true)
         .order("name")
         .returns<Menu[]>();
+
+      const productsQuery = supabase
+        .from("products")
+        .select("*")
+        .eq("salon_id", salon.id)
+        .eq("is_active", true)
+        .order("name")
+        .returns<Product[]>();
 
       if (!presetCustomerId) {
         const customerQuery = supabase
@@ -109,9 +141,10 @@ function NewRecordForm() {
           .order("last_name_kana", { ascending: true })
           .returns<CustomerOption[]>();
 
-        const [menuRes, customerRes] = await Promise.all([menusQuery, customerQuery]);
+        const [menuRes, customerRes, productsRes] = await Promise.all([menusQuery, customerQuery, productsQuery]);
         setMenus(menuRes.data ?? []);
         setCustomers(customerRes.data ?? []);
+        setProducts(productsRes.data ?? []);
       } else {
         const customerNameQuery = supabase
           .from("customers")
@@ -119,8 +152,9 @@ function NewRecordForm() {
           .eq("id", presetCustomerId)
           .single<{ last_name: string; first_name: string }>();
 
-        const [menuRes, customerRes] = await Promise.all([menusQuery, customerNameQuery]);
+        const [menuRes, customerRes, productsRes] = await Promise.all([menusQuery, customerNameQuery, productsQuery]);
         setMenus(menuRes.data ?? []);
+        setProducts(productsRes.data ?? []);
         if (customerRes.data) {
           setCustomerName(`${customerRes.data.last_name} ${customerRes.data.first_name}`);
         }
@@ -316,6 +350,62 @@ function NewRecordForm() {
         });
         if (ticketError) {
           console.error("Ticket consumption error:", ticketError);
+        }
+      }
+    }
+
+    // Phase 6-2: 回数券販売の保存
+    if (pendingTickets.length > 0) {
+      const ticketRows = pendingTickets.map((t) => ({
+        salon_id: salonId,
+        customer_id: customerId,
+        ticket_name: t.ticket_name,
+        total_sessions: t.total_sessions,
+        purchase_date: form.treatment_date,
+        price: t.price,
+        memo: t.memo || null,
+        treatment_record_id: record.id,
+      }));
+      const { error: ticketInsertError } = await supabase
+        .from("course_tickets")
+        .insert(ticketRows);
+      if (ticketInsertError) {
+        console.error("Ticket insert error:", ticketInsertError);
+      }
+    }
+
+    // Phase 6-2: 物販の保存
+    for (const purchase of pendingPurchases) {
+      if (purchase.mode === "product" && purchase.product_id) {
+        // 商品モード: RPC で在庫連動
+        const { error: rpcError } = await supabase.rpc("record_product_sale", {
+          p_salon_id: salonId,
+          p_customer_id: customerId,
+          p_product_id: purchase.product_id,
+          p_quantity: purchase.quantity,
+          p_sell_price: purchase.unit_price,
+          p_purchase_date: form.treatment_date,
+          p_memo: purchase.memo || null,
+          p_treatment_record_id: record.id,
+        });
+        if (rpcError) {
+          console.error("Product sale RPC error:", rpcError);
+        }
+      } else {
+        // 自由入力モード
+        const { error: purchaseError } = await supabase.from("purchases").insert({
+          salon_id: salonId,
+          customer_id: customerId,
+          purchase_date: form.treatment_date,
+          item_name: purchase.item_name,
+          quantity: purchase.quantity,
+          unit_price: purchase.unit_price,
+          total_price: purchase.quantity * purchase.unit_price,
+          memo: purchase.memo || null,
+          treatment_record_id: record.id,
+        });
+        if (purchaseError) {
+          console.error("Purchase insert error:", purchaseError);
         }
       }
     }
@@ -726,6 +816,68 @@ function NewRecordForm() {
           </div>
         </CollapsibleSection>
 
+        {/* Phase 6-2: 回数券販売セクション */}
+        <CollapsibleSection label={`回数券を販売（任意）${pendingTickets.length > 0 ? ` — ${pendingTickets.length}件` : ""}`}>
+          {/* 追加済みリスト */}
+          {pendingTickets.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {pendingTickets.map((t, i) => (
+                <div key={i} className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{t.ticket_name}</p>
+                    <p className="text-xs text-text-light">
+                      {t.total_sessions}回{t.price ? ` / ${t.price.toLocaleString()}円` : ""}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPendingTickets((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  >
+                    削除
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* 入力フォーム */}
+          <TicketInlineForm onAdd={(t) => setPendingTickets((prev) => [...prev, t])} />
+        </CollapsibleSection>
+
+        {/* Phase 6-2: 物販記録セクション */}
+        <CollapsibleSection label={`物販記録（任意）${pendingPurchases.length > 0 ? ` — ${pendingPurchases.length}件` : ""}`}>
+          {/* 追加済みリスト */}
+          {pendingPurchases.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {pendingPurchases.map((p, i) => (
+                <div key={i} className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{p.item_name}</p>
+                    <p className="text-xs text-text-light">
+                      {p.quantity}個 × {p.unit_price.toLocaleString()}円 = {(p.quantity * p.unit_price).toLocaleString()}円
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPendingPurchases((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  >
+                    削除
+                  </button>
+                </div>
+              ))}
+              <div className="flex items-center justify-between bg-accent/5 rounded-xl px-3 py-2">
+                <span className="text-xs text-text-light">物販合計</span>
+                <span className="text-sm font-bold text-accent">
+                  {pendingPurchases.reduce((s, p) => s + p.quantity * p.unit_price, 0).toLocaleString()}円
+                </span>
+              </div>
+            </div>
+          )}
+          {/* 入力フォーム */}
+          <PurchaseInlineForm products={products} onAdd={(p) => setPendingPurchases((prev) => [...prev, p])} />
+        </CollapsibleSection>
+
         {/* Photo upload */}
         <PhotoUpload photos={photos} onChange={setPhotos} />
 
@@ -746,6 +898,225 @@ function NewRecordForm() {
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+// 回数券販売のインライン入力フォーム
+function TicketInlineForm({ onAdd }: { onAdd: (t: PendingTicket) => void }) {
+  const [name, setName] = useState("");
+  const [sessions, setSessions] = useState("2");
+  const [price, setPrice] = useState("");
+  const [memo, setMemo] = useState("");
+
+  const inputClass =
+    "w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors";
+
+  const handleAdd = () => {
+    if (!name.trim()) return;
+    onAdd({
+      ticket_name: name.trim(),
+      total_sessions: Math.max(1, parseInt(sessions, 10) || 1),
+      price: price ? parseInt(price, 10) || null : null,
+      memo,
+    });
+    setName("");
+    setSessions("2");
+    setPrice("");
+    setMemo("");
+  };
+
+  return (
+    <div className="space-y-3">
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="チケット名（例: バストメイク2回券）"
+        className={inputClass}
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs text-text-light mb-1">回数</label>
+          <input
+            type="number"
+            min={1}
+            value={sessions}
+            onChange={(e) => setSessions(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-text-light mb-1">金額（円）</label>
+          <input
+            type="number"
+            min={0}
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder="0"
+            className={inputClass}
+          />
+        </div>
+      </div>
+      <input
+        type="text"
+        value={memo}
+        onChange={(e) => setMemo(e.target.value)}
+        placeholder="メモ（任意）"
+        className={inputClass}
+      />
+      <button
+        type="button"
+        onClick={handleAdd}
+        disabled={!name.trim()}
+        className="w-full bg-accent/10 text-accent text-sm font-medium rounded-xl py-2.5 hover:bg-accent/20 transition-colors disabled:opacity-50 min-h-[44px]"
+      >
+        + 回数券を追加
+      </button>
+    </div>
+  );
+}
+
+// 物販記録のインライン入力フォーム
+function PurchaseInlineForm({ products, onAdd }: { products: Product[]; onAdd: (p: PendingPurchase) => void }) {
+  const [mode, setMode] = useState<"product" | "free">(products.length > 0 ? "product" : "free");
+  const [productId, setProductId] = useState("");
+  const [itemName, setItemName] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [unitPrice, setUnitPrice] = useState("");
+  const [memo, setMemo] = useState("");
+
+  const inputClass =
+    "w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors";
+
+  const handleProductChange = (pid: string) => {
+    const product = products.find((p) => p.id === pid);
+    setProductId(pid);
+    if (product) {
+      setItemName(product.name);
+      setUnitPrice(product.base_sell_price.toString());
+    }
+  };
+
+  const handleAdd = () => {
+    if (mode === "product" && !productId) return;
+    if (mode === "free" && !itemName.trim()) return;
+    const q = Math.max(1, parseInt(quantity, 10) || 1);
+    const up = Math.max(0, parseInt(unitPrice, 10) || 0);
+    onAdd({
+      mode,
+      product_id: mode === "product" ? productId : null,
+      item_name: mode === "product" ? (products.find((p) => p.id === productId)?.name ?? "") : itemName.trim(),
+      quantity: q,
+      unit_price: up,
+      memo,
+    });
+    setProductId("");
+    setItemName("");
+    setQuantity("1");
+    setUnitPrice("");
+    setMemo("");
+  };
+
+  const canAdd = mode === "product" ? !!productId : !!itemName.trim();
+
+  return (
+    <div className="space-y-3">
+      {/* モード切替 */}
+      {products.length > 0 && (
+        <div className="flex gap-1 bg-background rounded-xl p-0.5">
+          <button
+            type="button"
+            onClick={() => setMode("product")}
+            className={`flex-1 text-center text-xs font-medium py-2 rounded-lg transition-colors min-h-[36px] ${
+              mode === "product" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"
+            }`}
+          >
+            商品から選ぶ
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("free")}
+            className={`flex-1 text-center text-xs font-medium py-2 rounded-lg transition-colors min-h-[36px] ${
+              mode === "free" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"
+            }`}
+          >
+            自由入力
+          </button>
+        </div>
+      )}
+
+      {mode === "product" ? (
+        <select
+          value={productId}
+          onChange={(e) => handleProductChange(e.target.value)}
+          className={inputClass}
+        >
+          <option value="">商品を選択</option>
+          {products.map((product) => (
+            <option key={product.id} value={product.id}>
+              {product.name}{product.category ? ` (${product.category})` : ""} - ¥{product.base_sell_price.toLocaleString()}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type="text"
+          value={itemName}
+          onChange={(e) => setItemName(e.target.value)}
+          placeholder="商品名"
+          className={inputClass}
+        />
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs text-text-light mb-1">数量</label>
+          <input
+            type="number"
+            min={1}
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-text-light mb-1">単価（円）</label>
+          <input
+            type="number"
+            min={0}
+            value={unitPrice}
+            onChange={(e) => setUnitPrice(e.target.value)}
+            placeholder="0"
+            className={inputClass}
+          />
+        </div>
+      </div>
+
+      {unitPrice && quantity && (
+        <div className="flex items-center justify-between bg-background rounded-xl px-3 py-2">
+          <span className="text-xs text-text-light">小計</span>
+          <span className="text-sm font-medium">
+            {(Math.max(1, parseInt(quantity, 10) || 1) * Math.max(0, parseInt(unitPrice, 10) || 0)).toLocaleString()}円
+          </span>
+        </div>
+      )}
+
+      <input
+        type="text"
+        value={memo}
+        onChange={(e) => setMemo(e.target.value)}
+        placeholder="メモ（任意）"
+        className={inputClass}
+      />
+      <button
+        type="button"
+        onClick={handleAdd}
+        disabled={!canAdd}
+        className="w-full bg-accent/10 text-accent text-sm font-medium rounded-xl py-2.5 hover:bg-accent/20 transition-colors disabled:opacity-50 min-h-[44px]"
+      >
+        + 物販を追加
+      </button>
     </div>
   );
 }

@@ -8,6 +8,8 @@ import type { Database } from "@/types/database";
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
 type TreatmentPhoto = Database["public"]["Tables"]["treatment_photos"]["Row"];
 type TreatmentRecordMenu = Database["public"]["Tables"]["treatment_record_menus"]["Row"];
+type Purchase = Database["public"]["Tables"]["purchases"]["Row"];
+type CourseTicket = Database["public"]["Tables"]["course_tickets"]["Row"];
 
 type RecordWithCustomer = TreatmentRecord & {
   customers: { id: string; last_name: string; first_name: string } | null;
@@ -29,8 +31,8 @@ export default async function RecordDetailPage({
   const { user, supabase } = await getAuthAndSalon();
   if (!user) redirect("/login");
 
-  // P9: record, photos, record_menus を並列取得
-  const [recordRes, photosRes, recordMenusRes] = await Promise.all([
+  // P9: record, photos, record_menus, purchases, tickets を並列取得
+  const [recordRes, photosRes, recordMenusRes, purchasesRes, ticketsRes] = await Promise.all([
     supabase
       .from("treatment_records")
       .select("*, customers(id, last_name, first_name)")
@@ -48,6 +50,18 @@ export default async function RecordDetailPage({
       .eq("treatment_record_id", id)
       .order("sort_order")
       .returns<TreatmentRecordMenu[]>(),
+    supabase
+      .from("purchases")
+      .select("*")
+      .eq("treatment_record_id", id)
+      .order("created_at")
+      .returns<Purchase[]>(),
+    supabase
+      .from("course_tickets")
+      .select("*")
+      .eq("treatment_record_id", id)
+      .order("created_at")
+      .returns<CourseTicket[]>(),
   ]);
 
   const record = recordRes.data;
@@ -56,6 +70,8 @@ export default async function RecordDetailPage({
   const customer = record.customers;
   const photos = photosRes.data;
   const recordMenus = recordMenusRes.data ?? [];
+  const linkedPurchases = purchasesRes.data ?? [];
+  const linkedTickets = ticketsRes.data ?? [];
 
   // メニュー名の表示用: 中間テーブルがあればそちらを優先、なければ旧menu_name_snapshot
   const menuDisplay = recordMenus.length > 0
@@ -146,6 +162,50 @@ export default async function RecordDetailPage({
         <DetailRow label="注意事項" value={record.caution_notes} />
         <DetailRow label="次回への申し送り" value={record.next_visit_memo} />
       </div>
+
+      {/* Phase 6-2: 紐づく回数券購入 */}
+      {linkedTickets.length > 0 && (
+        <div className="bg-surface border border-border rounded-2xl p-5 space-y-2">
+          <h3 className="text-sm font-bold mb-2">回数券販売</h3>
+          {linkedTickets.map((ticket) => (
+            <div key={ticket.id} className="flex items-center justify-between py-1.5">
+              <div className="flex-1">
+                <span className="text-sm">{ticket.ticket_name}</span>
+                <span className="text-xs text-text-light ml-2">{ticket.total_sessions}回</span>
+              </div>
+              {ticket.price != null && (
+                <span className="text-sm font-medium">{ticket.price.toLocaleString()}円</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Phase 6-2: 紐づく物販記録 */}
+      {linkedPurchases.length > 0 && (
+        <div className="bg-surface border border-border rounded-2xl p-5 space-y-2">
+          <h3 className="text-sm font-bold mb-2">物販記録</h3>
+          {linkedPurchases.map((purchase) => (
+            <div key={purchase.id} className="flex items-center justify-between py-1.5">
+              <div className="flex-1">
+                <span className="text-sm">{purchase.item_name}</span>
+                <span className="text-xs text-text-light ml-2">
+                  {purchase.quantity}個 × {purchase.unit_price.toLocaleString()}円
+                </span>
+              </div>
+              <span className="text-sm font-medium">{purchase.total_price.toLocaleString()}円</span>
+            </div>
+          ))}
+          {linkedPurchases.length > 1 && (
+            <div className="flex items-center justify-between pt-2 border-t border-border">
+              <span className="text-xs text-text-light">合計</span>
+              <span className="text-sm font-bold text-accent">
+                {linkedPurchases.reduce((s, p) => s + p.total_price, 0).toLocaleString()}円
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Photos - Before/After comparison */}
       {photos && photos.length > 0 && (

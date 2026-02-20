@@ -430,6 +430,7 @@ export type Database = {
           product_id: string | null;
           cost_price: number | null;
           sell_price: number | null;
+          treatment_record_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -446,6 +447,7 @@ export type Database = {
           product_id?: string | null;
           cost_price?: number | null;
           sell_price?: number | null;
+          treatment_record_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -462,6 +464,7 @@ export type Database = {
           product_id?: string | null;
           cost_price?: number | null;
           sell_price?: number | null;
+          treatment_record_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -485,6 +488,13 @@ export type Database = {
             columns: ["product_id"];
             isOneToOne: false;
             referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchases_treatment_record_id_fkey";
+            columns: ["treatment_record_id"];
+            isOneToOne: false;
+            referencedRelation: "treatment_records";
             referencedColumns: ["id"];
           },
         ];
@@ -677,6 +687,7 @@ export type Database = {
           price: number | null;
           memo: string | null;
           status: string;
+          treatment_record_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -692,6 +703,7 @@ export type Database = {
           price?: number | null;
           memo?: string | null;
           status?: string;
+          treatment_record_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -707,6 +719,7 @@ export type Database = {
           price?: number | null;
           memo?: string | null;
           status?: string;
+          treatment_record_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -723,6 +736,13 @@ export type Database = {
             columns: ["customer_id"];
             isOneToOne: false;
             referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "course_tickets_treatment_record_id_fkey";
+            columns: ["treatment_record_id"];
+            isOneToOne: false;
+            referencedRelation: "treatment_records";
             referencedColumns: ["id"];
           },
         ];
@@ -789,6 +809,7 @@ export type Database = {
           p_sell_price: number;
           p_purchase_date?: string;
           p_memo?: string | null;
+          p_treatment_record_id?: string | null;
         };
         Returns: {
           purchase_id: string;
