@@ -26,6 +26,7 @@ export function CourseTicketSection({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState(0);
   const [adjustError, setAdjustError] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleUseSession = async (ticketId: string) => {
     const ticket = tickets.find((t) => t.id === ticketId);
@@ -95,6 +96,33 @@ export function CourseTicketSection({
     }
 
     setProcessingId(null);
+  };
+
+  const handleDelete = async (ticketId: string) => {
+    const ticket = tickets.find((t) => t.id === ticketId);
+    if (!ticket) return;
+
+    const usedWarning = ticket.used_sessions > 0
+      ? `\n\nこの回数券は${ticket.used_sessions}回消化済みです。削除すると施術記録の支払方法が「回数券なし」に変わります。`
+      : "";
+    const priceWarning = ticket.price && ticket.price > 0
+      ? `\n売上から${ticket.price.toLocaleString()}円が差し引かれます。`
+      : "";
+
+    if (!confirm(`「${ticket.ticket_name}」を削除しますか？この操作は取り消せません。${usedWarning}${priceWarning}`)) return;
+
+    setDeletingId(ticketId);
+    const supabase = createClient();
+
+    const { error } = await supabase.from("course_tickets").delete().eq("id", ticketId);
+    if (error) {
+      setAdjustError("削除に失敗しました");
+      setDeletingId(null);
+      return;
+    }
+
+    setTickets((prev) => prev.filter((t) => t.id !== ticketId));
+    setDeletingId(null);
   };
 
   // 回数調整可能: active または completed のチケットのみ
@@ -171,6 +199,13 @@ export function CourseTicketSection({
                           回数調整
                         </button>
                       )}
+                      <button
+                        onClick={() => handleDelete(ticket.id)}
+                        disabled={processingId !== null || deletingId !== null}
+                        className="text-xs text-error px-2 py-1.5 rounded-lg hover:bg-error/5 transition-colors min-h-[44px] disabled:opacity-50"
+                      >
+                        {deletingId === ticket.id ? "削除中..." : "削除"}
+                      </button>
                     </div>
                   )}
                 </div>
