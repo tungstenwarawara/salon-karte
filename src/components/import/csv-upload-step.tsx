@@ -40,8 +40,9 @@ export function CsvUploadStep({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.name.endsWith(".csv")) {
-      alert("CSVファイルを選択してください");
+    const name = file.name.toLowerCase();
+    if (!name.endsWith(".csv")) {
+      alert("CSVファイル（.csv）を選択してください。\nExcelファイル（.xlsx）の場合は、Excelで開いて「CSV（コンマ区切り）」形式で保存し直してください。");
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
@@ -83,10 +84,11 @@ export function CsvUploadStep({
           <p className="text-sm font-medium">タップしてCSVファイルを選択</p>
           <p className="text-xs text-text-light mt-1">最大1MB</p>
         </button>
+        {/* iPadのSafariはCSVを text/plain と認識しファイルピッカーで非表示にするため、accept を広めに設定。拡張子チェックはJS側で実施 */}
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv,text/csv,text/comma-separated-values,application/csv,application/vnd.ms-excel"
+          accept=".csv,.txt,.xls,.xlsx,text/*,application/csv,application/vnd.ms-excel"
           onChange={handleFileChange}
           className="hidden"
         />
