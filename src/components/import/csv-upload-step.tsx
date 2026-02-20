@@ -86,7 +86,7 @@ export function CsvUploadStep({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv"
+          accept=".csv,text/csv,text/comma-separated-values,application/csv,application/vnd.ms-excel"
           onChange={handleFileChange}
           className="hidden"
         />
