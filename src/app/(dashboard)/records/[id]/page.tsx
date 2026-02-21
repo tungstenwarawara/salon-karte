@@ -42,7 +42,7 @@ export default async function RecordDetailPage({
       .single<RecordWithCustomer>(),
     supabase
       .from("treatment_photos")
-      .select("id, treatment_record_id, storage_path, photo_type, description")
+      .select("id, treatment_record_id, storage_path, photo_type, memo")
       .eq("treatment_record_id", id)
       .order("photo_type")
       .returns<TreatmentPhoto[]>(),

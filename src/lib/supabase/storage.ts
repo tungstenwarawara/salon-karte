@@ -45,48 +45,53 @@ async function validateFileType(file: File): Promise<boolean> {
   }
 }
 
-// EXIF情報を除去してプライバシーを保護（位置情報・デバイス情報の漏洩防止）
-async function stripExif(file: File): Promise<File> {
-  // JPEG のみ EXIF 除去を行う（PNG/WebPにはEXIFは通常含まれない）
-  if (file.type !== "image/jpeg") {
-    return file;
-  }
+// 画像圧縮: リサイズ + JPEG変換 + EXIF除去（プライバシー保護 + ストレージ節約）
+const MAX_DIMENSION = 1200; // 最大幅/高さ（アスペクト比維持）
+const JPEG_QUALITY = 0.85; // JPEG品質（85%: 画質十分で容量大幅削減）
 
+async function compressImage(file: File): Promise<File> {
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
 
     img.onload = () => {
-      // Canvas に描画して EXIF を除去した新しい画像を生成
+      // リサイズ計算（アスペクト比維持で最大1200px）
+      let { naturalWidth: w, naturalHeight: h } = img;
+      if (w > MAX_DIMENSION || h > MAX_DIMENSION) {
+        const ratio = Math.min(MAX_DIMENSION / w, MAX_DIMENSION / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+
       const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
+      canvas.width = w;
+      canvas.height = h;
 
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         URL.revokeObjectURL(url);
-        resolve(file); // Canvas取得に失敗した場合は元ファイルを返す
+        resolve(file);
         return;
       }
 
-      ctx.drawImage(img, 0, 0);
+      ctx.drawImage(img, 0, 0, w, h);
       URL.revokeObjectURL(url);
 
+      // 全画像をJPEGに変換（サロン写真に透過不要。EXIF も自動除去される）
       canvas.toBlob(
         (blob) => {
           if (blob) {
-            // EXIF除去済みの新しいFileオブジェクトを生成
-            const cleanFile = new File([blob], file.name, {
+            const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
               type: "image/jpeg",
               lastModified: Date.now(),
             });
-            resolve(cleanFile);
+            resolve(compressedFile);
           } else {
             resolve(file);
           }
         },
         "image/jpeg",
-        0.92 // 高画質を維持
+        JPEG_QUALITY
       );
     };
 
@@ -128,8 +133,8 @@ async function uploadSinglePhoto(
     return `対応していないファイル形式です。JPEG, PNG, WebP, HEIC形式の画像をお使いください。`;
   }
 
-  // セキュリティ処理: EXIF情報を除去（位置情報・デバイス情報の漏洩防止）
-  const cleanFile = await stripExif(photo.file);
+  // 画像圧縮: リサイズ + JPEG変換 + EXIF除去
+  const cleanFile = await compressImage(photo.file);
 
   const ext = MIME_TO_EXT[cleanFile.type] || "jpg";
   // index を付けてファイル名の衝突を防止（並列アップロード時にDate.now()が同一になるため）
@@ -198,6 +203,27 @@ export async function getPhotoUrl(storagePath: string): Promise<string | null> {
     .createSignedUrl(storagePath, 3600); // 1時間有効
 
   return data?.signedUrl ?? null;
+}
+
+/** 複数写真のSigned URLを一括取得（N+1問題の解消） */
+export async function getPhotoUrls(storagePaths: string[]): Promise<Map<string, string>> {
+  const urlMap = new Map<string, string>();
+  if (storagePaths.length === 0) return urlMap;
+
+  const supabase = createClient();
+  const { data } = await supabase.storage
+    .from("treatment-photos")
+    .createSignedUrls(storagePaths, 3600);
+
+  if (data) {
+    for (const item of data) {
+      if (item.signedUrl && item.path) {
+        urlMap.set(item.path, item.signedUrl);
+      }
+    }
+  }
+
+  return urlMap;
 }
 
 export async function deletePhoto(photoId: string, storagePath: string) {
