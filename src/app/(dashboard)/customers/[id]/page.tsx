@@ -45,14 +45,16 @@ export default async function CustomerDetailPage({
   const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult] = await Promise.all([
     supabase
       .from("treatment_records")
-      .select("id, treatment_date, total_price, menu_name_snapshot, skin_condition, customer_id, treatment_record_menus(id, menu_name_snapshot, price_snapshot, payment_type, ticket_id)")
+      .select("id, treatment_date, menu_name_snapshot, skin_condition_before, customer_id, treatment_record_menus(id, menu_name_snapshot, price_snapshot, payment_type, ticket_id)")
       .eq("customer_id", id)
+      .eq("salon_id", salon.id)
       .order("treatment_date", { ascending: false })
       .returns<RecordWithMenus[]>(),
     supabase
       .from("appointments")
       .select("id, appointment_date, start_time, menu_name_snapshot, status")
       .eq("customer_id", id)
+      .eq("salon_id", salon.id)
       .eq("status", "scheduled")
       .gte("appointment_date", today)
       .order("appointment_date", { ascending: true })
@@ -62,12 +64,14 @@ export default async function CustomerDetailPage({
       .from("purchases")
       .select("id, item_name, purchase_date, unit_price, quantity, total_price, memo")
       .eq("customer_id", id)
+      .eq("salon_id", salon.id)
       .order("purchase_date", { ascending: false })
       .returns<Purchase[]>(),
     supabase
       .from("course_tickets")
-      .select("id, menu_name, total_sessions, used_sessions, price, status, expiry_date, created_at, memo, customer_id")
+      .select("id, ticket_name, total_sessions, used_sessions, price, status, expiry_date, created_at, memo, customer_id")
       .eq("customer_id", id)
+      .eq("salon_id", salon.id)
       .order("created_at", { ascending: false })
       .returns<CourseTicket[]>(),
   ]);
