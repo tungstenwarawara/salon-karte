@@ -35,10 +35,8 @@ export default async function DashboardPage() {
 
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const monthEnd = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-01`;
   const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
 
   type LapsedCustomer = {
     id: string;
@@ -47,19 +45,29 @@ export default async function DashboardPage() {
     last_visit_date: string;
     days_since: number;
   };
+  type InventoryAlertItem = {
+    product_id: string;
+    product_name: string;
+    current_stock: number;
+    reorder_point: number;
+  };
+  type MonthlySalesRow = {
+    month: number;
+    treatment_sales: number;
+    product_sales: number;
+    ticket_sales: number;
+  };
 
-  // 全クエリを並列実行（レスポンス大幅改善）
+  // 全クエリを並列実行（11→8クエリに削減、在庫RPCも並列化）
   const [
     todayAppointmentsRes,
     customerCountRes,
     menuCountRes,
     lapsedCustomersRes,
-    monthlyRecordsRes,
-    monthlyPurchasesRes,
-    monthlyTicketsRes,
+    monthlySalesRes,
     birthdayRes,
     recentRecordsRes,
-    productCountRes,
+    inventoryRes,
   ] = await Promise.all([
     supabase
       .from("appointments")
@@ -79,29 +87,12 @@ export default async function DashboardPage() {
       .eq("salon_id", salon.id)
       .eq("is_active", true),
     supabase
-      .rpc("get_lapsed_customers", {
-        p_salon_id: salon.id,
-        p_days_threshold: 60,
-      })
+      .rpc("get_lapsed_customers", { p_salon_id: salon.id, p_days_threshold: 60 })
       .returns<LapsedCustomer[]>(),
+    // 月間売上: 3クエリ（treatment_records+purchases+course_tickets）→ 1 RPCに統合
     supabase
-      .from("treatment_records")
-      .select("treatment_record_menus(price_snapshot, payment_type)")
-      .eq("salon_id", salon.id)
-      .gte("treatment_date", monthStart)
-      .lt("treatment_date", monthEnd),
-    supabase
-      .from("purchases")
-      .select("total_price")
-      .eq("salon_id", salon.id)
-      .gte("purchase_date", monthStart)
-      .lt("purchase_date", monthEnd),
-    supabase
-      .from("course_tickets")
-      .select("price")
-      .eq("salon_id", salon.id)
-      .gte("purchase_date", monthStart)
-      .lt("purchase_date", monthEnd),
+      .rpc("get_monthly_sales_summary", { p_salon_id: salon.id, p_year: currentYear })
+      .returns<MonthlySalesRow[]>(),
     supabase
       .from("customers")
       .select("id, last_name, first_name, birth_date")
@@ -114,11 +105,10 @@ export default async function DashboardPage() {
       .order("treatment_date", { ascending: false })
       .limit(3)
       .returns<(TreatmentRecord & { customers: { last_name: string; first_name: string } | null })[]>(),
+    // 在庫アラート: Promise.allに統合（直列→並列に改善）
     supabase
-      .from("products")
-      .select("*", { count: "exact", head: true })
-      .eq("salon_id", salon.id)
-      .eq("is_active", true),
+      .rpc("get_inventory_summary", { p_salon_id: salon.id })
+      .returns<InventoryAlertItem[]>(),
   ]);
 
   const todayAppointments = todayAppointmentsRes.data;
@@ -126,36 +116,17 @@ export default async function DashboardPage() {
   const menuCount = menuCountRes.count;
   const lapsedCustomers = lapsedCustomersRes.data as LapsedCustomer[] | null;
   const recentRecords = recentRecordsRes.data;
-  const productCount = productCountRes.count ?? 0;
 
-  // 在庫アラート: 商品がある場合のみクエリ（パフォーマンス保護）
-  type InventoryAlertItem = {
-    product_id: string;
-    product_name: string;
-    current_stock: number;
-    reorder_point: number;
-  };
-  let lowStockItems: InventoryAlertItem[] = [];
-  if (productCount > 0) {
-    const { data: inventoryData } = await supabase.rpc("get_inventory_summary", {
-      p_salon_id: salon.id,
-    });
-    if (inventoryData) {
-      lowStockItems = (inventoryData as InventoryAlertItem[]).filter(
-        (item) => item.current_stock <= item.reorder_point
-      );
-    }
-  }
+  // 在庫アラート: 在庫が発注点以下の商品を抽出
+  const lowStockItems = (inventoryRes.data ?? []).filter(
+    (item) => item.current_stock <= item.reorder_point
+  );
 
-  // 売上集計
-  const monthlyTreatmentSales = monthlyRecordsRes.data?.reduce((sum, rec) => {
-    const menus = (rec.treatment_record_menus ?? []) as { price_snapshot: number | null; payment_type: string }[];
-    return sum + menus
-      .filter((m) => m.payment_type === "cash" || m.payment_type === "credit")
-      .reduce((mSum, m) => mSum + (m.price_snapshot ?? 0), 0);
-  }, 0) ?? 0;
-  const monthlyProductSales = monthlyPurchasesRes.data?.reduce((sum, p) => sum + (p as { total_price: number }).total_price, 0) ?? 0;
-  const monthlyTicketSales = monthlyTicketsRes.data?.reduce((sum, t) => sum + ((t as { price: number | null }).price ?? 0), 0) ?? 0;
+  // 月間売上: RPCの今月分だけ抽出（3クエリ+JS集計 → 1 RPC結果のフィルタに簡素化）
+  const monthData = (monthlySalesRes.data ?? []).find((m) => m.month === currentMonth);
+  const monthlyTreatmentSales = monthData?.treatment_sales ?? 0;
+  const monthlyProductSales = monthData?.product_sales ?? 0;
+  const monthlyTicketSales = monthData?.ticket_sales ?? 0;
 
   // 誕生日（DBで月フィルタ済み → 日ソートのみ）
   const birthdayCustomers = (birthdayRes.data ?? [])
