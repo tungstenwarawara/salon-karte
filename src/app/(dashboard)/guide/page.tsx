@@ -87,6 +87,7 @@ export default function GuidePage() {
           <StepCard number={3} title="お客様を登録する" description="既存のお客様の情報を登録しましょう。名前（カナ）、電話番号、アレルギー、施術目標などを入力できます。" link="/customers/new" linkLabel="顧客を登録する" />
           <StepCard number={4} title="予約を入れてみる" description="お客様の予約を登録してみましょう。ホットペッパー、電話、LINEなど予約元も記録できます。メニューを複数選択すると、合計時間から終了時間が自動計算されます。" link="/appointments/new" linkLabel="予約を登録する" />
           <StepCard number={5} title="（物販がある方）商品を登録する" description="店頭で化粧品やグッズを販売している場合は、商品マスタに登録しておくと、物販の際に在庫が自動で管理されます。仕入価・売価・発注点を設定できます。" link="/sales/inventory/products" linkLabel="商品を登録する" />
+          <StepCard number={6} title="（物販がある方）繰越在庫を設定する" description="すでに手元に在庫がある場合は、棚卸し画面で現在の在庫数を入力してください。サロンのオープンからの全履歴を入力する必要はありません。入力した数量がそのまま初期在庫として記録されます。" link="/sales/inventory/stocktake" linkLabel="棚卸しで在庫を設定する" />
         </div>
       </Section>
 

@@ -141,6 +141,14 @@ export default function StocktakePage() {
         ]}
       />
 
+      {/* 初回案内ヒント */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+        <p className="text-sm text-blue-800">
+          <strong>初めての方へ：</strong>
+          繰越在庫の設定にもこの画面が使えます。各商品の「実在庫」に手元の在庫数を入力して確定するだけで、初期在庫として登録されます。サロンオープンからの全履歴の入力は不要です。
+        </p>
+      </div>
+
       {error && <ErrorAlert message={error} />}
 
       {success && (
