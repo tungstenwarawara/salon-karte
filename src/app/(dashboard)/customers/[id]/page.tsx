@@ -8,6 +8,9 @@ import { CustomerBasicInfo } from "@/components/customers/customer-basic-info";
 import { PurchaseHistory } from "@/components/customers/purchase-history";
 import { TreatmentHistory } from "@/components/customers/treatment-history";
 import { CourseTicketSection } from "@/components/customers/course-ticket-section";
+import { CounselingSection } from "@/components/customers/counseling-section";
+
+type CounselingSheet = Database["public"]["Tables"]["counseling_sheets"]["Row"];
 
 type Customer = Database["public"]["Tables"]["customers"]["Row"];
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
@@ -42,7 +45,7 @@ export default async function CustomerDetailPage({
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-  const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult] = await Promise.all([
+  const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult, counselingResult] = await Promise.all([
     supabase
       .from("treatment_records")
       .select("id, treatment_date, menu_name_snapshot, skin_condition_before, customer_id, treatment_record_menus(id, menu_name_snapshot, price_snapshot, payment_type, ticket_id)")
@@ -74,12 +77,20 @@ export default async function CustomerDetailPage({
       .eq("salon_id", salon.id)
       .order("created_at", { ascending: false })
       .returns<CourseTicket[]>(),
+    supabase
+      .from("counseling_sheets")
+      .select("id, salon_id, customer_id, token, status, responses, submitted_at, expires_at, created_at, updated_at")
+      .eq("customer_id", id)
+      .eq("salon_id", salon.id)
+      .order("created_at", { ascending: false })
+      .returns<CounselingSheet[]>(),
   ]);
 
   const records = recordsResult.data ?? [];
   const nextAppointment = appointmentResult.data;
   const purchases = purchasesResult.data ?? [];
   const courseTickets = courseTicketsResult.data ?? [];
+  const counselingSheets = counselingResult.data ?? [];
 
   // 来店分析
   const visitCount = records.length;
@@ -160,6 +171,8 @@ export default async function CustomerDetailPage({
       />
 
       <CustomerBasicInfo customer={customer} customerId={id} />
+
+      <CounselingSection customerId={id} sheets={counselingSheets} />
 
       <CourseTicketSection customerId={id} initialTickets={courseTickets} />
 

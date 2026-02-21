@@ -747,6 +747,60 @@ export type Database = {
           },
         ];
       };
+      counseling_sheets: {
+        Row: {
+          id: string;
+          salon_id: string;
+          customer_id: string;
+          token: string;
+          status: "pending" | "submitted";
+          responses: Record<string, unknown> | null;
+          submitted_at: string | null;
+          expires_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          salon_id: string;
+          customer_id: string;
+          token?: string;
+          status?: "pending" | "submitted";
+          responses?: Record<string, unknown> | null;
+          submitted_at?: string | null;
+          expires_at: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          salon_id?: string;
+          customer_id?: string;
+          token?: string;
+          status?: "pending" | "submitted";
+          responses?: Record<string, unknown> | null;
+          submitted_at?: string | null;
+          expires_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "counseling_sheets_salon_id_fkey";
+            columns: ["salon_id"];
+            isOneToOne: false;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "counseling_sheets_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
