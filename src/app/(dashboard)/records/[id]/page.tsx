@@ -116,12 +116,22 @@ export default async function RecordDetailPage({
             )}
           </p>
         </div>
-        <Link
-          href={`/records/${id}/edit`}
-          className="text-sm text-accent hover:underline"
-        >
-          編集
-        </Link>
+        <div className="flex items-center gap-3">
+          <a
+            href={`/records/${id}/print`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-accent hover:underline"
+          >
+            PDF
+          </a>
+          <Link
+            href={`/records/${id}/edit`}
+            className="text-sm text-accent hover:underline"
+          >
+            編集
+          </Link>
+        </div>
       </div>
 
       {/* Customer link */}
