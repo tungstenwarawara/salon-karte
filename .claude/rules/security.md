@@ -29,7 +29,7 @@
 - 数値: `parseInt`/`parseFloat` → `isNaN` チェック
 - 日付: 不正な日付はフォーム側でブロック
 - 文字列: Supabase SDKのパラメータ化クエリ（SQL injection防止）
-- ファイルアップロード: MIME type チェック + 5MB制限
+- ファイルアップロード: MIME type チェック + マジックナンバー検証 + 20MB制限
 
 ## 環境変数
 - シークレットをハードコードしない

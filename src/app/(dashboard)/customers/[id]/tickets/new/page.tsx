@@ -7,6 +7,9 @@ import { PageHeader } from "@/components/layout/page-header";
 import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
+import type { Database } from "@/types/database";
+
+type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
 
 export default function NewTicketPage() {
   const router = useRouter();
@@ -15,6 +18,9 @@ export default function NewTicketPage() {
 
   const [salonId, setSalonId] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [menus, setMenus] = useState<Menu[]>([]);
+  const [mode, setMode] = useState<"menu" | "free">("menu");
+  const [selectedMenuId, setSelectedMenuId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -23,7 +29,7 @@ export default function NewTicketPage() {
     const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     return {
       ticket_name: "",
-      total_sessions: "5",
+      total_sessions: "2",
       purchase_date: today,
       expiry_date: "",
       price: "",
@@ -47,20 +53,67 @@ export default function NewTicketPage() {
       if (!salon) return;
       setSalonId(salon.id);
 
-      const { data: customer } = await supabase
-        .from("customers")
-        .select("last_name, first_name")
-        .eq("id", customerId)
-        .single<{ last_name: string; first_name: string }>();
-      if (customer) {
-        setCustomerName(`${customer.last_name} ${customer.first_name}`);
+      // 顧客名とメニュー一覧を並列取得
+      const [customerRes, menuRes] = await Promise.all([
+        supabase
+          .from("customers")
+          .select("last_name, first_name")
+          .eq("id", customerId)
+          .single<{ last_name: string; first_name: string }>(),
+        supabase
+          .from("treatment_menus")
+          .select("id, name, category, duration_minutes, price, is_active")
+          .eq("salon_id", salon.id)
+          .eq("is_active", true)
+          .order("name")
+          .returns<Menu[]>(),
+      ]);
+
+      if (customerRes.data) {
+        setCustomerName(`${customerRes.data.last_name} ${customerRes.data.first_name}`);
+      }
+      const fetchedMenus = menuRes.data ?? [];
+      setMenus(fetchedMenus);
+      // メニューがない場合は自由入力モードに
+      if (fetchedMenus.length === 0) {
+        setMode("free");
       }
     };
     load();
   }, [customerId]);
 
+  // メニュー選択時にチケット名と参考金額を自動入力
+  const handleMenuChange = (menuId: string) => {
+    const menu = menus.find((m) => m.id === menuId);
+    setSelectedMenuId(menuId);
+    if (menu) {
+      const currentSessions = Math.max(1, parseInt(form.total_sessions, 10) || 2);
+      setForm((prev) => ({
+        ...prev,
+        ticket_name: menu.name,
+        price: menu.price ? (menu.price * currentSessions).toString() : prev.price,
+      }));
+    }
+  };
+
+  // 回数変更時にメニュー選択モードなら参考金額を再計算
+  const handleSessionsChange = (value: string) => {
+    setForm((prev) => ({ ...prev, total_sessions: value }));
+    if (mode === "menu" && selectedMenuId) {
+      const menu = menus.find((m) => m.id === selectedMenuId);
+      if (menu?.price) {
+        const newSessions = Math.max(1, parseInt(value, 10) || 1);
+        setForm((prev) => ({ ...prev, total_sessions: value, price: (menu.price! * newSessions).toString() }));
+      }
+    }
+  };
+
   const totalSessionsNum = Math.max(1, parseInt(form.total_sessions, 10) || 0);
   const priceNum = Math.max(0, parseInt(form.price, 10) || 0);
+
+  // 定価参考表示用
+  const selectedMenu = menus.find((m) => m.id === selectedMenuId);
+  const referencePrice = selectedMenu?.price ? selectedMenu.price * totalSessionsNum : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +181,51 @@ export default function NewTicketPage() {
       >
         {error && <ErrorAlert message={error} />}
 
+        {/* モード切替（メニューがある場合のみ表示） */}
+        {menus.length > 0 && (
+          <div className="flex gap-1 bg-background rounded-xl p-0.5">
+            <button
+              type="button"
+              onClick={() => setMode("menu")}
+              className={`flex-1 text-center text-sm font-medium py-2 rounded-lg transition-colors min-h-[44px] ${
+                mode === "menu" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"
+              }`}
+            >
+              メニューから作成
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("free")}
+              className={`flex-1 text-center text-sm font-medium py-2 rounded-lg transition-colors min-h-[44px] ${
+                mode === "free" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"
+              }`}
+            >
+              自由入力
+            </button>
+          </div>
+        )}
+
+        {/* メニュー選択（メニューモード時） */}
+        {mode === "menu" && menus.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium mb-1.5">メニュー</label>
+            <select
+              value={selectedMenuId}
+              onChange={(e) => handleMenuChange(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">メニューを選択</option>
+              {menus.map((menu) => (
+                <option key={menu.id} value={menu.id}>
+                  {menu.name}
+                  {menu.category ? ` (${menu.category})` : ""}
+                  {menu.price ? ` - ¥${menu.price.toLocaleString()}` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium mb-1.5">
             チケット名 <span className="text-error">*</span>
@@ -138,7 +236,7 @@ export default function NewTicketPage() {
             onChange={(e) =>
               setForm((prev) => ({ ...prev, ticket_name: e.target.value }))
             }
-            placeholder="例: フェイシャル5回コース"
+            placeholder={mode === "menu" ? "メニューを選択すると自動入力されます" : "例: フェイシャル5回コース"}
             required
             className={inputClass}
           />
@@ -153,12 +251,7 @@ export default function NewTicketPage() {
               type="number"
               min={1}
               value={form.total_sessions}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  total_sessions: e.target.value,
-                }))
-              }
+              onChange={(e) => handleSessionsChange(e.target.value)}
               className={inputClass}
             />
           </div>
@@ -181,6 +274,16 @@ export default function NewTicketPage() {
             />
           </div>
         </div>
+
+        {/* 定価参考表示（メニュー選択時のみ） */}
+        {mode === "menu" && referencePrice != null && (
+          <div className="flex items-center justify-between bg-background rounded-xl px-3 py-2">
+            <span className="text-xs text-text-light">定価参考</span>
+            <span className="text-xs text-text-light">
+              ¥{(selectedMenu?.price ?? 0).toLocaleString()} × {totalSessionsNum}回 = ¥{referencePrice.toLocaleString()}
+            </span>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <div>
