@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef } from "react";
+import { isSupportedFile } from "@/lib/excel-parse";
 
-const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB（Excel は CSV より大きい）
 
 export function CsvUploadStep({
   title,
@@ -40,13 +41,12 @@ export function CsvUploadStep({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const name = file.name.toLowerCase();
-    if (!name.endsWith(".csv")) {
-      alert("CSVファイル（.csv）を選択してください。\nExcelファイル（.xlsx）の場合は、Excelで開いて「CSV（コンマ区切り）」形式で保存し直してください。");
+    if (!isSupportedFile(file)) {
+      alert("CSV (.csv) または Excel (.xlsx / .xls) ファイルを選択してください。");
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      alert("ファイルサイズが1MBを超えています");
+      alert("ファイルサイズが5MBを超えています");
       return;
     }
     onFileSelected(file);
@@ -70,9 +70,9 @@ export function CsvUploadStep({
 
       {/* ファイル選択 */}
       <div className="bg-surface border border-border rounded-2xl p-4 space-y-3">
-        <h3 className="font-bold text-sm">2. CSVファイルを選択</h3>
+        <h3 className="font-bold text-sm">2. ファイルを選択</h3>
         <p className="text-xs text-text-light">
-          テンプレートにデータを入力し、CSV形式で保存してからアップロードしてください。
+          テンプレートにデータを入力してアップロードしてください。CSV・Excelどちらも対応しています。
         </p>
         <button
           onClick={() => fileInputRef.current?.click()}
@@ -81,14 +81,14 @@ export function CsvUploadStep({
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 mx-auto text-text-light mb-2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
           </svg>
-          <p className="text-sm font-medium">タップしてCSVファイルを選択</p>
-          <p className="text-xs text-text-light mt-1">最大1MB</p>
+          <p className="text-sm font-medium">タップしてファイルを選択</p>
+          <p className="text-xs text-text-light mt-1">CSV・Excel対応（最大5MB）</p>
         </button>
-        {/* iPadのSafariはCSVを text/plain と認識しファイルピッカーで非表示にするため、accept を広めに設定。拡張子チェックはJS側で実施 */}
+        {/* iPadのSafariはCSVを text/plain と認識するため accept を広めに設定 */}
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv,.txt,.xls,.xlsx,text/*,application/csv,application/vnd.ms-excel"
+          accept=".csv,.txt,.xls,.xlsx,text/*,application/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           onChange={handleFileChange}
           className="hidden"
         />

@@ -9,6 +9,7 @@ import { CsvPreviewTable, type ColumnDef } from "@/components/import/csv-preview
 import { CsvImportingStep } from "@/components/import/csv-importing-step";
 import { CsvResultStep } from "@/components/import/csv-result-step";
 import { parseCSV } from "@/lib/csv-parse";
+import { fileToCSVBuffer } from "@/lib/excel-parse";
 import {
   validateRecordRows,
   type RecordRowValidation,
@@ -71,7 +72,7 @@ export default function ImportRecordsPage() {
   const handleFileSelected = async (file: File) => {
     setError("");
     try {
-      const buffer = await file.arrayBuffer();
+      const buffer = await fileToCSVBuffer(file);
       const { headers, rows: csvRows, encoding: enc } = parseCSV(buffer);
       setEncoding(enc);
       if (csvRows.length === 0) {
@@ -82,7 +83,7 @@ export default function ImportRecordsPage() {
       setRows(validated);
       setStep("preview");
     } catch {
-      setError("CSVの解析に失敗しました");
+      setError("ファイルの解析に失敗しました。CSV または Excel ファイルを選択してください。");
     }
   };
 
@@ -205,7 +206,7 @@ export default function ImportRecordsPage() {
       {step === "upload" && (
         <CsvUploadStep
           title="施術履歴取り込み"
-          templateDescription="テンプレートをダウンロードし、施術履歴を入力してCSV保存してください。「日付」と「お客様名」が必須です。お客様名は顧客マスタに登録済みの名前と一致させてください。"
+          templateDescription="テンプレートをダウンロードし、施術履歴を入力してください。Excelファイルもそのままアップロードできます。「日付」と「お客様名」が必須です。お客様名は顧客マスタに登録済みの名前と一致させてください。"
           templateFilename="施術履歴インポートテンプレート.csv"
           templateHeader={TEMPLATE_HEADER}
           templateSample={TEMPLATE_SAMPLE}
