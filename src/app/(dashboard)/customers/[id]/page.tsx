@@ -1,8 +1,12 @@
-import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { formatDateShort } from "@/lib/format";
+import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import type { Database } from "@/types/database";
+import { VisitAnalytics } from "@/components/customers/visit-analytics";
+import { SalesSummary } from "@/components/customers/sales-summary";
+import { CustomerBasicInfo } from "@/components/customers/customer-basic-info";
+import { PurchaseHistory } from "@/components/customers/purchase-history";
+import { TreatmentHistory } from "@/components/customers/treatment-history";
 import { CourseTicketSection } from "@/components/customers/course-ticket-section";
 
 type Customer = Database["public"]["Tables"]["customers"]["Row"];
@@ -16,39 +20,25 @@ type RecordWithMenus = TreatmentRecord & {
   treatment_record_menus: TreatmentRecordMenu[];
 };
 
-function calculateAge(birthDate: string): number {
-  const today = new Date();
-  const birth = new Date(birthDate);
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--;
-  }
-  return age;
-}
-
 export default async function CustomerDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, salon, supabase } = await getAuthAndSalon();
   if (!user) redirect("/login");
+  if (!salon) redirect("/setup");
 
   const { data: customer } = await supabase
     .from("customers")
     .select("id, salon_id, last_name, first_name, last_name_kana, first_name_kana, phone, email, birth_date, address, marital_status, has_children, dm_allowed, height_cm, weight_kg, allergies, treatment_goal, notes")
     .eq("id", id)
+    .eq("salon_id", salon.id)
     .single<Customer>();
 
   if (!customer) notFound();
 
-  // 全クエリを並列実行（ウォーターフォール解消）
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
@@ -82,21 +72,20 @@ export default async function CustomerDetailPage({
       .returns<CourseTicket[]>(),
   ]);
 
-  const records = recordsResult.data;
+  const records = recordsResult.data ?? [];
   const nextAppointment = appointmentResult.data;
-  const purchases = purchasesResult.data;
-  const courseTickets = courseTicketsResult.data;
+  const purchases = purchasesResult.data ?? [];
+  const courseTickets = courseTicketsResult.data ?? [];
 
   // 来店分析
-  const visitCount = records?.length ?? 0;
-  const lastVisitDate = records?.[0]?.treatment_date ?? null;
+  const visitCount = records.length;
+  const lastVisitDate = records[0]?.treatment_date ?? null;
   const daysSinceLastVisit = lastVisitDate
     ? Math.floor((Date.now() - new Date(lastVisitDate).getTime()) / (1000 * 60 * 60 * 24))
     : null;
 
-  // 来店間隔の計算
   let avgInterval: number | null = null;
-  if (records && records.length >= 2) {
+  if (records.length >= 2) {
     const dates = records.map((r) => new Date(r.treatment_date).getTime()).sort((a, b) => a - b);
     let totalDays = 0;
     for (let i = 1; i < dates.length; i++) {
@@ -105,28 +94,21 @@ export default async function CustomerDetailPage({
     avgInterval = Math.round(totalDays / (dates.length - 1));
   }
 
-  const purchaseTotal = purchases?.reduce((sum, p) => sum + p.total_price, 0) ?? 0;
+  const purchaseTotal = purchases.reduce((sum, p) => sum + p.total_price, 0);
 
-  // 施術合計: treatment_record_menus から cash/credit のみ集計（実収入）
-  const treatmentTotal = records?.reduce((sum, rec) => {
-    const menus = (rec as RecordWithMenus).treatment_record_menus ?? [];
+  // 施術合計: cash/credit のみ集計
+  const treatmentTotal = records.reduce((sum, rec) => {
+    const menus = rec.treatment_record_menus ?? [];
     return sum + menus
       .filter((m) => m.payment_type === "cash" || m.payment_type === "credit")
       .reduce((mSum, m) => mSum + (m.price_snapshot ?? 0), 0);
-  }, 0) ?? 0;
+  }, 0);
 
-  // 回数券合計
-  const courseTicketTotal = courseTickets?.reduce((sum, t) => sum + (t.price ?? 0), 0) ?? 0;
-
-  // 総合計
-  const grandTotal = treatmentTotal + purchaseTotal + courseTicketTotal;
-
-  // 年齢計算
-  const age = customer.birth_date ? calculateAge(customer.birth_date) : null;
+  const courseTicketTotal = courseTickets.reduce((sum, t) => sum + (t.price ?? 0), 0);
 
   return (
     <div className="space-y-6">
-      {/* Back link */}
+      {/* 戻るリンク */}
       <Link
         href="/customers"
         className="flex items-center gap-1 text-sm text-accent hover:underline"
@@ -137,7 +119,7 @@ export default async function CustomerDetailPage({
         顧客一覧
       </Link>
 
-      {/* Header */}
+      {/* ヘッダー */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold">
@@ -149,309 +131,32 @@ export default async function CustomerDetailPage({
             </p>
           )}
         </div>
-        <Link
-          href={`/customers/${id}/edit`}
-          className="text-sm text-accent hover:underline"
-        >
+        <Link href={`/customers/${id}/edit`} className="text-sm text-accent hover:underline">
           編集
         </Link>
       </div>
 
-      {/* Visit analytics */}
-      <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
-        <h3 className="font-bold text-sm text-text-light">来店分析</h3>
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <div>
-            <p className="text-2xl font-bold text-accent">{visitCount}</p>
-            <p className="text-xs text-text-light">来店回数</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold">
-              {daysSinceLastVisit !== null ? daysSinceLastVisit : "-"}
-            </p>
-            <p className="text-xs text-text-light">
-              {daysSinceLastVisit !== null ? "日前に来店" : "未来店"}
-            </p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold">
-              {avgInterval !== null ? `${avgInterval}` : "-"}
-            </p>
-            <p className="text-xs text-text-light">
-              {avgInterval !== null ? "日（平均間隔）" : "平均間隔"}
-            </p>
-          </div>
-        </div>
-        {daysSinceLastVisit !== null && daysSinceLastVisit >= 60 && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-700">
-            {daysSinceLastVisit >= 90
-              ? "90日以上ご来店がありません。フォローの連絡をおすすめします。"
-              : "60日以上ご来店がありません。"}
-          </div>
-        )}
-        {nextAppointment && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
-            次回予約: {formatDateShort(nextAppointment.appointment_date)}{" "}
-            {(nextAppointment.start_time as string).slice(0, 5)}
-            {nextAppointment.menu_name_snapshot && ` / ${nextAppointment.menu_name_snapshot}`}
-          </div>
-        )}
-        {!nextAppointment && visitCount > 0 && (
-          <Link
-            href={`/appointments/new?customer=${id}`}
-            className="block text-center text-sm text-accent hover:underline"
-          >
-            次回予約を登録する
-          </Link>
-        )}
-      </div>
-
-      {/* Sales summary */}
-      {grandTotal > 0 && (
-        <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
-          <h3 className="font-bold text-sm text-text-light">売上サマリー</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-text-light">施術合計</span>
-              <span>{treatmentTotal.toLocaleString()}円</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-text-light">物販合計</span>
-              <span>{purchaseTotal.toLocaleString()}円</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-text-light">回数券合計</span>
-              <span>{courseTicketTotal.toLocaleString()}円</span>
-            </div>
-            <div className="border-t border-border pt-2 flex justify-between text-sm font-bold">
-              <span>総合計</span>
-              <span className="text-accent">{grandTotal.toLocaleString()}円</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Basic info */}
-      <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
-        <h3 className="font-bold text-sm text-text-light">基本情報</h3>
-        {customer.phone ? (
-          <div className="flex">
-            <span className="text-sm text-text-light w-24 shrink-0">電話番号</span>
-            <a href={`tel:${customer.phone}`} className="text-sm text-accent hover:underline">
-              {customer.phone}
-            </a>
-          </div>
-        ) : (
-          <InfoRowEmpty label="電話番号" editHref={`/customers/${id}/edit`} />
-        )}
-        {customer.email ? (
-          <div className="flex">
-            <span className="text-sm text-text-light w-24 shrink-0">メール</span>
-            <a href={`mailto:${customer.email}`} className="text-sm text-accent hover:underline break-all">
-              {customer.email}
-            </a>
-          </div>
-        ) : (
-          <InfoRowEmpty label="メール" editHref={`/customers/${id}/edit`} />
-        )}
-        {customer.birth_date ? (
-          <InfoRow
-            label="生年月日"
-            value={
-              age !== null
-                ? `${customer.birth_date}（${age}歳）`
-                : customer.birth_date
-            }
-          />
-        ) : (
-          <InfoRowEmpty label="生年月日" editHref={`/customers/${id}/edit`} />
-        )}
-        <InfoRow label="住所" value={customer.address} />
-        <InfoRow label="婚姻状況" value={customer.marital_status} />
-        <InfoRow
-          label="お子様"
-          value={
-            customer.has_children === null
-              ? null
-              : customer.has_children
-                ? "あり"
-                : "なし"
-          }
-        />
-        <InfoRow
-          label="DM送付"
-          value={
-            customer.dm_allowed === null
-              ? null
-              : customer.dm_allowed
-                ? "可"
-                : "不可"
-          }
-        />
-      </div>
-
-      {/* Treatment related info */}
-      <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
-        <h3 className="font-bold text-sm text-text-light">施術関連情報</h3>
-        <InfoRow
-          label="身長"
-          value={customer.height_cm !== null ? `${customer.height_cm} cm` : null}
-        />
-        <InfoRow
-          label="体重"
-          value={customer.weight_kg !== null ? `${customer.weight_kg} kg` : null}
-        />
-        <InfoRow label="アレルギー" value={customer.allergies} />
-        <InfoRow label="最終目標" value={customer.treatment_goal} />
-        <InfoRow label="メモ" value={customer.notes} />
-      </div>
-
-      {/* Course tickets */}
-      <CourseTicketSection
+      <VisitAnalytics
         customerId={id}
-        initialTickets={courseTickets ?? []}
+        visitCount={visitCount}
+        daysSinceLastVisit={daysSinceLastVisit}
+        avgInterval={avgInterval}
+        nextAppointment={nextAppointment}
       />
 
-      {/* Purchase history */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold">
-            物販購入履歴
-            {purchaseTotal > 0 && (
-              <span className="text-sm font-normal text-text-light ml-2">
-                合計 {purchaseTotal.toLocaleString()}円
-              </span>
-            )}
-          </h3>
-          <Link
-            href={`/customers/${id}/purchases/new`}
-            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px] flex items-center"
-          >
-            + 購入記録
-          </Link>
-        </div>
+      <SalesSummary
+        treatmentTotal={treatmentTotal}
+        purchaseTotal={purchaseTotal}
+        courseTicketTotal={courseTicketTotal}
+      />
 
-        {purchases && purchases.length > 0 ? (
-          <div className="space-y-2">
-            {purchases.map((purchase) => (
-              <div
-                key={purchase.id}
-                className="bg-surface border border-border rounded-xl p-3"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-sm">
-                    {purchase.item_name}
-                  </span>
-                  <span className="text-sm text-text-light">
-                    {formatDateShort(purchase.purchase_date)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center mt-1">
-                  <span className="text-xs text-text-light">
-                    {purchase.unit_price.toLocaleString()}円 x{" "}
-                    {purchase.quantity}
-                  </span>
-                  <span className="text-sm font-medium">
-                    {purchase.total_price.toLocaleString()}円
-                  </span>
-                </div>
-                {purchase.memo && (
-                  <p className="text-xs text-text-light mt-1">
-                    {purchase.memo}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-surface border border-border rounded-xl p-6 text-center">
-            <p className="text-text-light text-sm">購入記録はまだありません</p>
-            <Link
-              href={`/customers/${id}/purchases/new`}
-              className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
-            >
-              最初の購入を記録する →
-            </Link>
-          </div>
-        )}
-      </div>
+      <CustomerBasicInfo customer={customer} customerId={id} />
 
-      {/* Treatment records */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold">施術履歴</h3>
-          <Link
-            href={`/records/new?customer=${id}`}
-            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px] flex items-center"
-          >
-            + カルテ作成
-          </Link>
-        </div>
+      <CourseTicketSection customerId={id} initialTickets={courseTickets} />
 
-        {records && records.length > 0 ? (
-          <div className="space-y-2">
-            {records.map((record) => {
-              // treatment_record_menus があればそちらを優先、なければ旧 menu_name_snapshot
-              const recordMenus = (record as RecordWithMenus).treatment_record_menus ?? [];
-              const menuDisplay = recordMenus.length > 0
-                ? recordMenus.map((rm) => rm.menu_name_snapshot).join("、")
-                : record.menu_name_snapshot ?? "施術記録";
-              return (
-                <Link
-                  key={record.id}
-                  href={`/records/${record.id}`}
-                  className="block bg-surface border border-border rounded-xl p-3 hover:border-accent transition-colors"
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-sm truncate mr-2">
-                      {menuDisplay}
-                    </span>
-                    <span className="text-sm text-text-light shrink-0">
-                      {formatDateShort(record.treatment_date)}
-                    </span>
-                  </div>
-                  {record.next_visit_memo && (
-                    <p className="text-sm text-text-light mt-1 truncate">
-                      次回: {record.next_visit_memo}
-                    </p>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="bg-surface border border-border rounded-xl p-6 text-center">
-            <p className="text-text-light text-sm">施術記録はまだありません</p>
-            <Link
-              href={`/records/new?customer=${id}`}
-              className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
-            >
-              最初のカルテを作成する →
-            </Link>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+      <PurchaseHistory customerId={id} purchases={purchases} purchaseTotal={purchaseTotal} />
 
-function InfoRow({ label, value }: { label: string; value: string | null }) {
-  if (!value) return null;
-  return (
-    <div className="flex">
-      <span className="text-sm text-text-light w-24 shrink-0">{label}</span>
-      <span className="text-sm">{value}</span>
-    </div>
-  );
-}
-
-function InfoRowEmpty({ label, editHref }: { label: string; editHref: string }) {
-  return (
-    <div className="flex">
-      <span className="text-sm text-text-light w-24 shrink-0">{label}</span>
-      <Link href={editHref} className="text-sm text-gray-400 hover:text-accent transition-colors">
-        未登録 →
-      </Link>
+      <TreatmentHistory customerId={id} records={records} />
     </div>
   );
 }

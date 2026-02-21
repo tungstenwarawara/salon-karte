@@ -20,6 +20,7 @@ const MARITAL_STATUSES = [
 export default function EditCustomerPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const [salonId, setSalonId] = useState("");
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -45,10 +46,24 @@ export default function EditCustomerPage() {
   useEffect(() => {
     const load = async () => {
       const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: salon } = await supabase
+        .from("salons")
+        .select("id")
+        .eq("owner_id", user.id)
+        .single<{ id: string }>();
+      if (!salon) return;
+      setSalonId(salon.id);
+
       const { data } = await supabase
         .from("customers")
         .select("id, last_name, first_name, last_name_kana, first_name_kana, birth_date, phone, email, address, marital_status, has_children, dm_allowed, height_cm, weight_kg, allergies, treatment_goal, notes")
         .eq("id", id)
+        .eq("salon_id", salon.id)
         .single<Customer>();
       if (data) {
         setForm({
@@ -104,7 +119,8 @@ export default function EditCustomerPage() {
         treatment_goal: form.treatment_goal || null,
         notes: form.notes || null,
       })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("salon_id", salonId);
 
     if (error) {
       setError("更新に失敗しました");
@@ -143,7 +159,7 @@ export default function EditCustomerPage() {
       }
     }
 
-    const { error } = await supabase.from("customers").delete().eq("id", id);
+    const { error } = await supabase.from("customers").delete().eq("id", id).eq("salon_id", salonId);
 
     if (error) {
       setError("削除に失敗しました");

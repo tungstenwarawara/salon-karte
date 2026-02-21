@@ -28,8 +28,9 @@ export default async function RecordDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { user, supabase } = await getAuthAndSalon();
+  const { user, salon, supabase } = await getAuthAndSalon();
   if (!user) redirect("/login");
+  if (!salon) redirect("/setup");
 
   // P9: record, photos, record_menus, purchases, tickets を並列取得
   const [recordRes, photosRes, recordMenusRes, purchasesRes, ticketsRes] = await Promise.all([
@@ -37,6 +38,7 @@ export default async function RecordDetailPage({
       .from("treatment_records")
       .select("id, treatment_date, menu_name_snapshot, treatment_area, products_used, skin_condition_before, notes_after, conversation_notes, caution_notes, next_visit_memo, customer_id, customers(id, last_name, first_name)")
       .eq("id", id)
+      .eq("salon_id", salon.id)
       .single<RecordWithCustomer>(),
     supabase
       .from("treatment_photos")

@@ -89,7 +89,8 @@ export default function ProductsPage() {
       const { error } = await supabase
         .from("products")
         .update(payload)
-        .eq("id", editingId);
+        .eq("id", editingId)
+        .eq("salon_id", salonId);
       if (error) {
         setError("商品の更新に失敗しました");
         setLoading(false);
@@ -131,7 +132,8 @@ export default function ProductsPage() {
     const { error } = await supabase
       .from("products")
       .update({ is_active: !currentActive })
-      .eq("id", productId);
+      .eq("id", productId)
+      .eq("salon_id", salonId);
     if (error) {
       setError("ステータスの変更に失敗しました");
       return;
@@ -143,7 +145,7 @@ export default function ProductsPage() {
     if (!confirm("この商品を削除しますか？在庫ログも削除されます。")) return;
     setError("");
     const supabase = createClient();
-    const { error } = await supabase.from("products").delete().eq("id", productId);
+    const { error } = await supabase.from("products").delete().eq("id", productId).eq("salon_id", salonId);
     if (error) {
       setError("商品の削除に失敗しました。在庫ログがある場合は非表示にしてください。");
       return;
