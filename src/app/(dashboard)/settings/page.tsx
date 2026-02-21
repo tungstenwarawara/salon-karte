@@ -191,6 +191,22 @@ export default function SettingsPage() {
         </div>
       </Link>
 
+      {/* Export link */}
+      <Link
+        href="/settings/export"
+        className="block bg-surface border border-border rounded-2xl p-5 hover:border-accent transition-colors"
+      >
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="font-bold">データエクスポート</h3>
+            <p className="text-sm text-text-light mt-1">
+              顧客・施術・物販・予約・回数券をCSVでダウンロード
+            </p>
+          </div>
+          <span className="text-text-light">→</span>
+        </div>
+      </Link>
+
       {/* Guide link */}
       <Link
         href="/guide"
