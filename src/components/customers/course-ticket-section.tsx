@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { setFlashToast } from "@/components/ui/toast";
 import type { Database } from "@/types/database";
 import { CourseTicketCard } from "./course-ticket-card";
 
@@ -21,6 +22,7 @@ export function CourseTicketSection({
   const [editValue, setEditValue] = useState(0);
   const [adjustError, setAdjustError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleUseSession = async (ticketId: string) => {
     const ticket = tickets.find((t) => t.id === ticketId);
@@ -34,11 +36,13 @@ export function CourseTicketSection({
     }) as { data: { used_sessions: number; status: string } | null; error: typeof Error | null };
 
     if (!error && data) {
+      const remaining = (ticket.total_sessions) - data.used_sessions;
       setTickets((prev) =>
         prev.map((t) =>
           t.id === ticketId ? { ...t, used_sessions: data.used_sessions, status: data.status } : t
         )
       );
+      setFlashToast(`1回消化しました（残り${remaining}回）`);
     }
     setProcessingId(null);
   };
@@ -78,18 +82,7 @@ export function CourseTicketSection({
   };
 
   const handleDelete = async (ticketId: string) => {
-    const ticket = tickets.find((t) => t.id === ticketId);
-    if (!ticket) return;
-
-    const usedWarning = ticket.used_sessions > 0
-      ? `\n\nこの回数券は${ticket.used_sessions}回消化済みです。削除すると施術記録の支払方法が「回数券なし」に変わります。`
-      : "";
-    const priceWarning = ticket.price && ticket.price > 0
-      ? `\n売上から${ticket.price.toLocaleString()}円が差し引かれます。`
-      : "";
-
-    if (!confirm(`「${ticket.ticket_name}」を削除しますか？この操作は取り消せません。${usedWarning}${priceWarning}`)) return;
-
+    setConfirmDeleteId(null);
     setDeletingId(ticketId);
     const supabase = createClient();
     const { error } = await supabase.from("course_tickets").delete().eq("id", ticketId);
@@ -128,12 +121,15 @@ export function CourseTicketSection({
               editingId={editingId}
               editValue={editValue}
               adjustError={adjustError}
+              confirmDeleteId={confirmDeleteId}
               onUseSession={handleUseSession}
               onStartEdit={(id, used) => { setEditingId(id); setEditValue(used); setAdjustError(""); }}
               onCancelEdit={() => { setEditingId(null); setAdjustError(""); }}
               onAdjust={handleAdjust}
               onEditValueChange={(v) => { setEditValue(v); setAdjustError(""); }}
-              onDelete={handleDelete}
+              onRequestDelete={(id) => setConfirmDeleteId(id)}
+              onConfirmDelete={handleDelete}
+              onCancelDelete={() => setConfirmDeleteId(null)}
             />
           ))}
         </div>

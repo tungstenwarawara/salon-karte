@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
 import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { MenuSelector } from "@/components/records/menu-selector";
 import { PaymentSection } from "@/components/records/payment-section";
 import { CourseTicketInfo } from "@/components/records/course-ticket-info";
@@ -149,6 +150,12 @@ export default function EditRecordPage() {
       return { menuId: mid, paymentType, ticketId: null, priceOverride: existing?.priceOverride ?? null };
     }));
   };
+  const setAllService = () => {
+    setMenuPayments((prev) => selectedMenuIds.map((mid) => {
+      const existing = prev.find((mp) => mp.menuId === mid);
+      return { menuId: mid, paymentType: "service" as const, ticketId: null, priceOverride: existing?.priceOverride ?? null };
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -215,8 +222,9 @@ export default function EditRecordPage() {
         <PaymentSection
           menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments}
           courseTickets={courseTickets} hasTickets={hasTickets}
-          onSetAllPaymentType={setAllPaymentType} onUpdatePayment={updateMenuPayment}
-          onUpdatePrice={updateMenuPrice} onUpdateTicket={updateMenuTicket}
+          onSetAllPaymentType={setAllPaymentType} onSetAllService={setAllService}
+          onUpdatePayment={updateMenuPayment} onUpdatePrice={updateMenuPrice}
+          onUpdateTicket={updateMenuTicket}
         />
 
         <div>
@@ -238,7 +246,11 @@ export default function EditRecordPage() {
         </div>
       </form>
 
-      <TreatmentDeleteSection deleting={deleting} onDelete={handleDelete} />
+      <div className="mt-4">
+        <CollapsibleSection label="この記録を削除する">
+          <TreatmentDeleteSection deleting={deleting} onDelete={handleDelete} />
+        </CollapsibleSection>
+      </div>
     </div>
   );
 }

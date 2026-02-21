@@ -56,8 +56,9 @@ export function AppointmentCard({ appointment: apt, onStatusChange, onDelete }: 
       <div className="flex flex-wrap gap-2 pt-1">
         {apt.status === "scheduled" && (
           <>
-            <button onClick={() => onStatusChange(apt.id, "completed")} className="text-xs bg-green-50 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors min-h-[32px]">来店済みにする</button>
-            <button onClick={() => onStatusChange(apt.id, "cancelled")} className="text-xs bg-gray-50 text-gray-500 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors min-h-[32px]">キャンセル</button>
+            <Link href={`/records/new?customer=${apt.customer_id}&appointment=${apt.id}`} className="text-xs bg-accent text-white px-3 py-1.5 rounded-lg hover:bg-accent-light transition-colors min-h-[32px] flex items-center font-medium">カルテを作成</Link>
+            <button onClick={() => onStatusChange(apt.id, "completed")} className="text-xs text-text-light px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors min-h-[32px]">来店済みのみ</button>
+            <button onClick={() => onStatusChange(apt.id, "cancelled")} className="text-xs text-gray-400 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors min-h-[32px]">キャンセル</button>
           </>
         )}
         {apt.status === "completed" && !apt.treatment_record_id && (

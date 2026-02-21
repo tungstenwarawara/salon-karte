@@ -39,11 +39,12 @@ export function MonthlySales({
         </div>
         <div>
           <p className="text-base font-bold">{ticketSales.toLocaleString()}<span className="text-xs font-normal text-text-light">円</span></p>
-          <p className="text-[10px] text-text-light">回数券</p>
+          <p className="text-[10px] text-text-light">回数券<span className="text-[9px]">※</span></p>
         </div>
       </div>
       <div className="border-t border-border pt-2 text-center">
         <p className="text-xl font-bold text-accent">{total.toLocaleString()}円</p>
+        {ticketSales > 0 && <p className="text-[10px] text-text-light mt-1">※回数券は販売時の受取額</p>}
       </div>
     </div>
   );

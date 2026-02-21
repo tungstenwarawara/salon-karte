@@ -128,6 +128,12 @@ export async function deleteTreatmentRecord(recordId: string, salonId: string): 
   // 回数券販売の削除
   await supabase.from("course_tickets").delete().eq("treatment_record_id", recordId);
 
+  // 紐づく予約の参照をクリーンアップ
+  await supabase.from("appointments")
+    .update({ treatment_record_id: null, status: "scheduled" })
+    .eq("treatment_record_id", recordId)
+    .eq("salon_id", salonId);
+
   // カルテ本体の削除
   const { error } = await supabase.from("treatment_records").delete().eq("id", recordId).eq("salon_id", salonId);
   if (error) return { success: false, error: "削除に失敗しました" };

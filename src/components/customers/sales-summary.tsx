@@ -10,7 +10,7 @@ export function SalesSummary({ treatmentTotal, purchaseTotal, courseTicketTotal 
 
   return (
     <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
-      <h3 className="font-bold text-sm text-text-light">売上サマリー</h3>
+      <h3 className="font-bold text-sm text-text-light">売上サマリー（累計）</h3>
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-text-light">施術合計</span>

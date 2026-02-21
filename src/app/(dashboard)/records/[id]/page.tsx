@@ -32,8 +32,8 @@ export default async function RecordDetailPage({
   if (!user) redirect("/login");
   if (!salon) redirect("/setup");
 
-  // P9: record, photos, record_menus, purchases, tickets を並列取得
-  const [recordRes, photosRes, recordMenusRes, purchasesRes, ticketsRes] = await Promise.all([
+  // record, photos, record_menus, purchases, tickets, linked appointment を並列取得
+  const [recordRes, photosRes, recordMenusRes, purchasesRes, ticketsRes, appointmentRes] = await Promise.all([
     supabase
       .from("treatment_records")
       .select("id, treatment_date, menu_name_snapshot, treatment_area, products_used, skin_condition_before, notes_after, conversation_notes, caution_notes, next_visit_memo, customer_id, customers(id, last_name, first_name)")
@@ -64,6 +64,13 @@ export default async function RecordDetailPage({
       .eq("treatment_record_id", id)
       .order("created_at")
       .returns<CourseTicket[]>(),
+    supabase
+      .from("appointments")
+      .select("id, appointment_date, start_time")
+      .eq("treatment_record_id", id)
+      .eq("salon_id", salon.id)
+      .limit(1)
+      .returns<{ id: string; appointment_date: string; start_time: string }[]>(),
   ]);
 
   const record = recordRes.data;
@@ -74,6 +81,7 @@ export default async function RecordDetailPage({
   const recordMenus = recordMenusRes.data ?? [];
   const linkedPurchases = purchasesRes.data ?? [];
   const linkedTickets = ticketsRes.data ?? [];
+  const linkedAppointment = appointmentRes.data?.[0] ?? null;
 
   // メニュー名の表示用: 中間テーブルがあればそちらを優先、なければ旧menu_name_snapshot
   const menuDisplay = recordMenus.length > 0
@@ -101,6 +109,11 @@ export default async function RecordDetailPage({
           <h2 className="text-xl font-bold">{menuDisplay}</h2>
           <p className="text-sm text-text-light mt-1">
             {formatDateJa(record.treatment_date)}
+            {linkedAppointment && (
+              <span className="ml-2 text-xs text-blue-600">
+                予約 {linkedAppointment.start_time.slice(0, 5)}〜
+              </span>
+            )}
           </p>
         </div>
         <Link

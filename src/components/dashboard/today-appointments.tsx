@@ -24,37 +24,47 @@ export function TodayAppointments({
           {appointments.map((apt) => {
             const customer = apt.customers;
             const isCompleted = apt.status === "completed";
+            const hasRecord = !!apt.treatment_record_id;
             return (
-              <Link
+              <div
                 key={apt.id}
-                href={`/customers/${apt.customer_id}`}
-                className={`block bg-surface border rounded-xl p-3 hover:border-accent transition-colors ${
+                className={`bg-surface border rounded-xl p-3 ${
                   isCompleted ? "border-green-200 bg-green-50/50" : "border-border"
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-accent tabular-nums">
-                      {(apt.start_time as string).slice(0, 5)}
-                    </span>
-                    <span className="font-medium text-sm">
-                      {customer
-                        ? `${customer.last_name} ${customer.first_name}`
-                        : "不明"}
-                    </span>
+                <Link href={`/customers/${apt.customer_id}`} className="block hover:opacity-80 transition-opacity">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-accent tabular-nums">
+                        {(apt.start_time as string).slice(0, 5)}
+                      </span>
+                      <span className="font-medium text-sm">
+                        {customer
+                          ? `${customer.last_name} ${customer.first_name}`
+                          : "不明"}
+                      </span>
+                    </div>
+                    {isCompleted && (
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                        来店済
+                      </span>
+                    )}
                   </div>
-                  {isCompleted && (
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                      来店済
-                    </span>
+                  {apt.menu_name_snapshot && (
+                    <p className="text-xs text-text-light mt-1 ml-[3.5rem]">
+                      {apt.menu_name_snapshot}
+                    </p>
                   )}
-                </div>
-                {apt.menu_name_snapshot && (
-                  <p className="text-xs text-text-light mt-1 ml-[3.5rem]">
-                    {apt.menu_name_snapshot}
-                  </p>
+                </Link>
+                {!hasRecord && apt.status !== "cancelled" && (
+                  <div className="mt-2 ml-[3.5rem]">
+                    <Link href={`/records/new?customer=${apt.customer_id}&appointment=${apt.id}`}
+                      className="text-xs text-accent hover:underline font-medium">
+                      カルテを作成 →
+                    </Link>
+                  </div>
                 )}
-              </Link>
+              </div>
             );
           })}
         </div>

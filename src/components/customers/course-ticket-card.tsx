@@ -18,18 +18,21 @@ type Props = {
   editingId: string | null;
   editValue: number;
   adjustError: string;
+  confirmDeleteId: string | null;
   onUseSession: (ticketId: string) => void;
   onStartEdit: (ticketId: string, currentUsed: number) => void;
   onCancelEdit: () => void;
   onAdjust: (ticketId: string) => void;
   onEditValueChange: (value: number) => void;
-  onDelete: (ticketId: string) => void;
+  onRequestDelete: (ticketId: string) => void;
+  onConfirmDelete: (ticketId: string) => void;
+  onCancelDelete: () => void;
 };
 
 /** 個別回数券カード */
 export function CourseTicketCard({
-  ticket, processingId, deletingId, editingId, editValue, adjustError,
-  onUseSession, onStartEdit, onCancelEdit, onAdjust, onEditValueChange, onDelete,
+  ticket, processingId, deletingId, editingId, editValue, adjustError, confirmDeleteId,
+  onUseSession, onStartEdit, onCancelEdit, onAdjust, onEditValueChange, onRequestDelete, onConfirmDelete, onCancelDelete,
 }: Props) {
   const remaining = ticket.total_sessions - ticket.used_sessions;
   const statusInfo = STATUS_LABELS[ticket.status] ?? STATUS_LABELS.active;
@@ -71,7 +74,7 @@ export function CourseTicketCard({
               </button>
             )}
             <button
-              onClick={() => onDelete(ticket.id)}
+              onClick={() => onRequestDelete(ticket.id)}
               disabled={processingId !== null || deletingId !== null}
               className="text-xs text-error px-2 py-1.5 rounded-lg hover:bg-error/5 transition-colors min-h-[44px] disabled:opacity-50"
             >
@@ -130,6 +133,22 @@ export function CourseTicketCard({
         )}
       </div>
       {ticket.memo && <p className="text-xs text-text-light">{ticket.memo}</p>}
+
+      {/* 削除確認パネル */}
+      {confirmDeleteId === ticket.id && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
+          <p className="text-sm font-medium text-red-800">この回数券を削除しますか？</p>
+          <ul className="text-xs text-red-700 space-y-0.5">
+            <li>この操作は取り消せません</li>
+            {ticket.used_sessions > 0 && <li>{ticket.used_sessions}回消化済み — 施術記録の支払方法が変更されます</li>}
+            {ticket.price !== null && ticket.price > 0 && <li>売上から{ticket.price.toLocaleString()}円が差し引かれます</li>}
+          </ul>
+          <div className="flex gap-2">
+            <button onClick={onCancelDelete} className="flex-1 text-xs px-3 py-2 rounded-lg border border-border hover:bg-surface transition-colors min-h-[44px]">キャンセル</button>
+            <button onClick={() => onConfirmDelete(ticket.id)} className="flex-1 text-xs bg-error text-white px-3 py-2 rounded-lg hover:opacity-90 transition-colors min-h-[44px] font-medium">削除する</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

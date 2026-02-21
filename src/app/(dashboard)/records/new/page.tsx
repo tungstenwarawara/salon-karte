@@ -18,8 +18,15 @@ import { PurchaseInlineForm } from "@/components/records/purchase-inline-form";
 import { TreatmentDetailFields } from "@/components/records/treatment-detail-fields";
 import { submitTreatmentRecord } from "@/components/records/treatment-form-submit";
 import { INPUT_CLASS } from "@/components/records/types";
+import { AppointmentLinkBanner } from "@/components/records/appointment-link-banner";
 import type { Menu, CourseTicket, Product, CustomerOption, MenuPaymentInfo, PendingTicket, PendingPurchase } from "@/components/records/types";
 import type { Database } from "@/types/database";
+
+type DetectedAppointment = {
+  id: string;
+  start_time: string;
+  menu_name_snapshot: string | null;
+};
 
 type AppointmentMenu = Database["public"]["Tables"]["appointment_menus"]["Row"];
 
@@ -35,7 +42,7 @@ function NewRecordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const presetCustomerId = searchParams.get("customer");
-  const appointmentId = searchParams.get("appointment");
+  const appointmentParam = searchParams.get("appointment");
 
   const [menus, setMenus] = useState<Menu[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
@@ -53,8 +60,11 @@ function NewRecordForm() {
   const [products, setProducts] = useState<Product[]>([]);
   const [pendingTickets, setPendingTickets] = useState<PendingTicket[]>([]);
   const [pendingPurchases, setPendingPurchases] = useState<PendingPurchase[]>([]);
+  const [linkedAppointmentId, setLinkedAppointmentId] = useState<string | null>(appointmentParam);
+  const [detectedAppointment, setDetectedAppointment] = useState<DetectedAppointment | null>(null);
 
   const customerId = presetCustomerId ?? selectedCustomerId;
+  const appointmentId = linkedAppointmentId;
 
   const [form, setForm] = useState(() => {
     const d = new Date();
@@ -86,8 +96,8 @@ function NewRecordForm() {
         if (customerRes.data) setCustomerName(`${customerRes.data.last_name} ${customerRes.data.first_name}`);
       }
 
-      if (appointmentId) {
-        const { data: appointmentMenus } = await supabase.from("appointment_menus").select("id, menu_id, sort_order").eq("appointment_id", appointmentId).order("sort_order").returns<AppointmentMenu[]>();
+      if (appointmentParam) {
+        const { data: appointmentMenus } = await supabase.from("appointment_menus").select("id, menu_id, sort_order").eq("appointment_id", appointmentParam).order("sort_order").returns<AppointmentMenu[]>();
         if (appointmentMenus && appointmentMenus.length > 0) {
           const ids = appointmentMenus.map((am) => am.menu_id).filter(Boolean) as string[];
           setSelectedMenuIds(ids);
@@ -96,7 +106,44 @@ function NewRecordForm() {
       }
     };
     load();
-  }, [presetCustomerId, appointmentId]);
+  }, [presetCustomerId, appointmentParam]);
+
+  // 顧客選択後に当日予約を自動検知（URLパラメータなしの場合のみ）
+  useEffect(() => {
+    if (!customerId || !salonId || appointmentParam) { setDetectedAppointment(null); return; }
+    const detectAppointment = async () => {
+      const supabase = createClient();
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const { data } = await supabase
+        .from("appointments")
+        .select("id, start_time, menu_name_snapshot")
+        .eq("salon_id", salonId)
+        .eq("customer_id", customerId)
+        .eq("appointment_date", today)
+        .eq("status", "scheduled")
+        .is("treatment_record_id", null)
+        .order("start_time", { ascending: true })
+        .limit(1)
+        .returns<DetectedAppointment[]>();
+      setDetectedAppointment(data && data.length > 0 ? data[0] : null);
+    };
+    detectAppointment();
+  }, [customerId, salonId, appointmentParam]);
+
+  const handleLinkAppointment = async () => {
+    if (!detectedAppointment) return;
+    setLinkedAppointmentId(detectedAppointment.id);
+    setDetectedAppointment(null);
+    // 予約メニューをプリフィル
+    const supabase = createClient();
+    const { data: appointmentMenus } = await supabase.from("appointment_menus").select("id, menu_id, sort_order").eq("appointment_id", detectedAppointment.id).order("sort_order").returns<AppointmentMenu[]>();
+    if (appointmentMenus && appointmentMenus.length > 0) {
+      const ids = appointmentMenus.map((am) => am.menu_id).filter(Boolean) as string[];
+      setSelectedMenuIds(ids);
+      setMenuPayments(ids.map((menuId) => ({ menuId, paymentType: "cash", ticketId: null, priceOverride: null })));
+    }
+  };
 
   // 顧客選択後に回数券を取得
   useEffect(() => {
@@ -138,6 +185,12 @@ function NewRecordForm() {
       return { menuId: mid, paymentType, ticketId: null, priceOverride: existing?.priceOverride ?? null };
     }));
   };
+  const setAllService = () => {
+    setMenuPayments((prev) => selectedMenuIds.map((mid) => {
+      const existing = prev.find((mp) => mp.menuId === mid);
+      return { menuId: mid, paymentType: "service" as const, ticketId: null, priceOverride: existing?.priceOverride ?? null };
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,6 +222,10 @@ function NewRecordForm() {
         </div>
       )}
 
+      {detectedAppointment && (
+        <AppointmentLinkBanner appointment={detectedAppointment} onLink={handleLinkAppointment} onDismiss={() => setDetectedAppointment(null)} />
+      )}
+
       {customerId && <CourseTicketInfo courseTickets={courseTickets} />}
 
       <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
@@ -180,7 +237,7 @@ function NewRecordForm() {
         </div>
 
         <MenuSelector menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments} onToggle={toggleMenu} />
-        <PaymentSection menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments} courseTickets={courseTickets} hasTickets={hasTickets} onSetAllPaymentType={setAllPaymentType} onUpdatePayment={updateMenuPayment} onUpdatePrice={updateMenuPrice} onUpdateTicket={updateMenuTicket} showCashTotal />
+        <PaymentSection menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments} courseTickets={courseTickets} hasTickets={hasTickets} onSetAllPaymentType={setAllPaymentType} onSetAllService={setAllService} onUpdatePayment={updateMenuPayment} onUpdatePrice={updateMenuPrice} onUpdateTicket={updateMenuTicket} showCashTotal />
 
         <div>
           <label className="block text-sm font-medium mb-1.5">施術部位</label>

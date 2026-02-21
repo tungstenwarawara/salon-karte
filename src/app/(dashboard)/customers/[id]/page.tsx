@@ -135,9 +135,14 @@ export default async function CustomerDetailPage({
             </p>
           )}
         </div>
-        <Link href={`/customers/${id}/edit`} className="text-sm text-accent hover:underline">
-          編集
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href={`/records/new?customer=${id}`} className="text-sm bg-accent text-white px-3 py-1.5 rounded-lg hover:bg-accent-light transition-colors min-h-[32px] flex items-center font-medium">
+            カルテ作成
+          </Link>
+          <Link href={`/customers/${id}/edit`} className="text-sm text-accent hover:underline">
+            編集
+          </Link>
+        </div>
       </div>
 
       <VisitAnalytics

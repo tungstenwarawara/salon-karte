@@ -9,6 +9,7 @@ type Props = {
   courseTickets: CourseTicket[];
   hasTickets: boolean;
   onSetAllPaymentType: (paymentType: "cash" | "credit") => void;
+  onSetAllService: () => void;
   onUpdatePayment: (menuId: string, paymentType: MenuPaymentInfo["paymentType"], ticketId?: string | null) => void;
   onUpdatePrice: (menuId: string, price: number | null) => void;
   onUpdateTicket: (menuId: string, ticketId: string) => void;
@@ -22,6 +23,7 @@ export function PaymentSection({
   courseTickets,
   hasTickets,
   onSetAllPaymentType,
+  onSetAllService,
   onUpdatePayment,
   onUpdatePrice,
   onUpdateTicket,
@@ -63,6 +65,13 @@ export function PaymentSection({
         >
           全てクレジット
         </button>
+        <button
+          type="button"
+          onClick={onSetAllService}
+          className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-gray-100 text-text-light transition-colors"
+        >
+          全てサービス
+        </button>
       </div>
       <div className="bg-background border border-border rounded-xl p-3 space-y-2.5">
         {selectedMenuIds.map((menuId) => {
@@ -91,6 +100,9 @@ export function PaymentSection({
                   />
                   <span className="text-xs text-text-light">円</span>
                 </div>
+                {payment?.priceOverride != null && (
+                  <span className="text-[10px] text-accent">変更済</span>
+                )}
                 <select
                   value={payment?.paymentType ?? "cash"}
                   onChange={(e) => {
