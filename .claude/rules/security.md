@@ -41,8 +41,20 @@
 - 環境変数がハードコードされていない
 - 全Supabaseクエリにsalon_idフィルタが存在
 
-## マージ前クエリ整合性チェック
+## マージ前クエリ整合性チェック（最重要 — 2回再発済み）
+
+> **警告**: このチェックは2026-02-21に同日2回バグを出した最重要項目。ビルド・型チェック・実行時エラーのいずれでも検出不可能。
+
 - `.select()` で指定したカラム名がDBスキーマ（`supabase/migrations/`）と一致するか照合
   - ビルドでは検出不可（Supabase SDKのselectは文字列型のため型チェックが効かない）
-  - 特にテーブル間でカラム名が似ている場合に注意（例: `description` vs `memo`, `name` vs `item_name`）
+  - Supabaseは存在しないカラムをselectしてもエラーを返さず**空配列を返す** → 実行時も気づけない
+  - 特にテーブル間でカラム名が似ている場合に注意:
+    - `total_price`: purchasesにはあるがtreatment_recordsにはない
+    - `skin_condition` vs `skin_condition_before`
+    - `description` vs `memo`
+    - `name` vs `item_name` vs `ticket_name` vs `menu_name_snapshot`
 - `.insert()` / `.update()` のカラム名も同様に照合
+- **コミット前に必ず以下のスクリプトを実行**:
+  ```bash
+  bash scripts/check-select-columns.sh
+  ```
