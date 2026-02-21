@@ -42,7 +42,7 @@ export default async function CustomerDetailPage({
 
   const { data: customer } = await supabase
     .from("customers")
-    .select("*")
+    .select("id, salon_id, last_name, first_name, last_name_kana, first_name_kana, phone, email, birth_date, address, marital_status, has_children, dm_allowed, height_cm, weight_kg, allergies, treatment_goal, notes")
     .eq("id", id)
     .single<Customer>();
 
@@ -55,13 +55,13 @@ export default async function CustomerDetailPage({
   const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult] = await Promise.all([
     supabase
       .from("treatment_records")
-      .select("*, treatment_record_menus(*)")
+      .select("id, treatment_date, total_price, menu_name_snapshot, skin_condition, customer_id, treatment_record_menus(id, menu_name_snapshot, price_snapshot, payment_type, ticket_id)")
       .eq("customer_id", id)
       .order("treatment_date", { ascending: false })
       .returns<RecordWithMenus[]>(),
     supabase
       .from("appointments")
-      .select("*")
+      .select("id, appointment_date, start_time, menu_name_snapshot, status")
       .eq("customer_id", id)
       .eq("status", "scheduled")
       .gte("appointment_date", today)
@@ -70,13 +70,13 @@ export default async function CustomerDetailPage({
       .maybeSingle<Appointment>(),
     supabase
       .from("purchases")
-      .select("*")
+      .select("id, item_name, purchase_date, unit_price, quantity, total_price, memo")
       .eq("customer_id", id)
       .order("purchase_date", { ascending: false })
       .returns<Purchase[]>(),
     supabase
       .from("course_tickets")
-      .select("*")
+      .select("id, menu_name, total_sessions, used_sessions, price, status, expiry_date, created_at, memo, customer_id")
       .eq("customer_id", id)
       .order("created_at", { ascending: false })
       .returns<CourseTicket[]>(),
@@ -325,7 +325,7 @@ export default async function CustomerDetailPage({
           </h3>
           <Link
             href={`/customers/${id}/purchases/new`}
-            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[40px] flex items-center"
+            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px] flex items-center"
           >
             + 購入記録
           </Link>
@@ -382,7 +382,7 @@ export default async function CustomerDetailPage({
           <h3 className="font-bold">施術履歴</h3>
           <Link
             href={`/records/new?customer=${id}`}
-            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[40px] flex items-center"
+            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px] flex items-center"
           >
             + カルテ作成
           </Link>

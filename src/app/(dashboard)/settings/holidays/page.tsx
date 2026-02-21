@@ -327,7 +327,7 @@ export default function HolidaysPage() {
                   }
                 }}
                 className={`
-                  relative aspect-square flex flex-col items-center justify-center rounded-lg text-sm transition-colors min-h-[40px]
+                  relative aspect-square flex flex-col items-center justify-center rounded-lg text-sm transition-colors min-h-[48px]
                   ${!cd.isCurrentMonth ? "opacity-30" : ""}
                   ${cd.isPast && cd.isCurrentMonth && !cd.isIrregularHoliday ? "opacity-40" : ""}
                   ${

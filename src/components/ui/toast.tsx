@@ -66,3 +66,29 @@ export function useToast() {
 
   return { toast, showToast, hideToast };
 }
+
+/**
+ * sessionStorageベースのフラッシュToast
+ * router.push()前にsetFlashToast()を呼び、遷移先で自動表示
+ */
+const FLASH_TOAST_KEY = "flash_toast";
+
+export function setFlashToast(message: string, type: ToastType = "success") {
+  sessionStorage.setItem(FLASH_TOAST_KEY, JSON.stringify({ message, type }));
+}
+
+export function FlashToast() {
+  const [flash, setFlash] = useState<{ message: string; type: ToastType } | null>(null);
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem(FLASH_TOAST_KEY);
+    if (stored) {
+      sessionStorage.removeItem(FLASH_TOAST_KEY);
+      setFlash(JSON.parse(stored));
+    }
+  }, []);
+
+  if (!flash) return null;
+
+  return <Toast message={flash.message} type={flash.type} onClose={() => setFlash(null)} />;
+}

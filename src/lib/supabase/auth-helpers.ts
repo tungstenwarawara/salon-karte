@@ -24,7 +24,7 @@ export const getAuthAndSalon = cache(async () => {
 
   const { data: salon } = await supabase
     .from("salons")
-    .select("*")
+    .select("id, name, phone, address, business_hours, salon_holidays")
     .eq("owner_id", user.id)
     .single<Salon>();
 

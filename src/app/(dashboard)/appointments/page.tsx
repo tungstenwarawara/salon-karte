@@ -263,7 +263,7 @@ export default function AppointmentsPage() {
         <h2 className="text-xl font-bold">予約管理</h2>
         <Link
           href="/appointments/new"
-          className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[40px] flex items-center"
+          className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px] flex items-center"
         >
           + 予約登録
         </Link>
@@ -275,7 +275,7 @@ export default function AppointmentsPage() {
       <div className="flex gap-2">
         <button
           onClick={() => setViewMode("day")}
-          className={`text-sm px-4 py-2 rounded-xl transition-colors min-h-[40px] ${
+          className={`text-sm px-4 py-2 rounded-xl transition-colors min-h-[48px] ${
             viewMode === "day"
               ? "bg-accent text-white"
               : "bg-surface border border-border text-text-light hover:text-text"
@@ -288,7 +288,7 @@ export default function AppointmentsPage() {
             setViewMode("month");
             setSelectedDay(null);
           }}
-          className={`text-sm px-4 py-2 rounded-xl transition-colors min-h-[40px] ${
+          className={`text-sm px-4 py-2 rounded-xl transition-colors min-h-[48px] ${
             viewMode === "month"
               ? "bg-accent text-white"
               : "bg-surface border border-border text-text-light hover:text-text"
@@ -298,7 +298,7 @@ export default function AppointmentsPage() {
         </button>
         <button
           onClick={goToToday}
-          className={`text-sm px-4 py-2 rounded-xl transition-colors min-h-[40px] ml-auto ${
+          className={`text-sm px-4 py-2 rounded-xl transition-colors min-h-[48px] ml-auto ${
             isSelectedToday
               ? "bg-accent/10 text-accent border border-accent/30"
               : "bg-surface border border-border text-text-light hover:text-text"

@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
+import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
@@ -264,6 +265,7 @@ function NewAppointmentForm() {
       }
     }
 
+    setFlashToast("予約を登録しました");
     router.push("/appointments");
   };
 

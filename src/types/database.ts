@@ -621,7 +621,7 @@ export type Database = {
           menu_name_snapshot: string;
           price_snapshot: number | null;
           duration_minutes_snapshot: number | null;
-          payment_type: string;
+          payment_type: "cash" | "credit" | "ticket" | "service";
           ticket_id: string | null;
           sort_order: number;
           created_at: string;
@@ -633,7 +633,7 @@ export type Database = {
           menu_name_snapshot: string;
           price_snapshot?: number | null;
           duration_minutes_snapshot?: number | null;
-          payment_type?: string;
+          payment_type?: "cash" | "credit" | "ticket" | "service";
           ticket_id?: string | null;
           sort_order?: number;
           created_at?: string;
@@ -645,7 +645,7 @@ export type Database = {
           menu_name_snapshot?: string;
           price_snapshot?: number | null;
           duration_minutes_snapshot?: number | null;
-          payment_type?: string;
+          payment_type?: "cash" | "credit" | "ticket" | "service";
           ticket_id?: string | null;
           sort_order?: number;
           created_at?: string;

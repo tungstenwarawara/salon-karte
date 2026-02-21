@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
+import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import type { Database } from "@/types/database";
@@ -46,7 +47,7 @@ export default function EditCustomerPage() {
       const supabase = createClient();
       const { data } = await supabase
         .from("customers")
-        .select("*")
+        .select("id, last_name, first_name, last_name_kana, first_name_kana, birth_date, phone, email, address, marital_status, has_children, dm_allowed, height_cm, weight_kg, allergies, treatment_goal, notes")
         .eq("id", id)
         .single<Customer>();
       if (data) {
@@ -111,6 +112,7 @@ export default function EditCustomerPage() {
       return;
     }
 
+    setFlashToast("顧客情報を更新しました");
     router.push(`/customers/${id}`);
   };
 
@@ -149,6 +151,7 @@ export default function EditCustomerPage() {
       return;
     }
 
+    setFlashToast("顧客を削除しました");
     router.push("/customers");
   };
 
@@ -399,7 +402,7 @@ export default function EditCustomerPage() {
         <button
           onClick={handleDelete}
           disabled={deleting}
-          className="bg-error/10 text-error text-sm font-medium rounded-xl px-4 py-2 hover:bg-error/20 transition-colors disabled:opacity-50 min-h-[40px]"
+          className="bg-error/10 text-error text-sm font-medium rounded-xl px-4 py-2 hover:bg-error/20 transition-colors disabled:opacity-50 min-h-[48px]"
         >
           {deleting ? "削除中..." : "この顧客を削除"}
         </button>

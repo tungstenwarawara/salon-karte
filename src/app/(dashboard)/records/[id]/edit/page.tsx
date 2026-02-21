@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
+import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import type { Database } from "@/types/database";
@@ -78,30 +79,30 @@ export default function EditRecordPage() {
       const [menuRes, recordRes, recordMenusRes, purchasesRes, linkedTicketsRes] = await Promise.all([
         supabase
           .from("treatment_menus")
-          .select("*")
+          .select("id, name, category, duration_minutes, price, is_active")
           .eq("salon_id", salon.id)
           .order("name")
           .returns<Menu[]>(),
         supabase
           .from("treatment_records")
-          .select("*")
+          .select("id, customer_id, treatment_date, menu_id, treatment_area, products_used, skin_condition_before, notes_after, next_visit_memo, conversation_notes, caution_notes")
           .eq("id", id)
           .single<TreatmentRecord>(),
         supabase
           .from("treatment_record_menus")
-          .select("*")
+          .select("id, menu_id, menu_name_snapshot, price_snapshot, duration_minutes_snapshot, payment_type, ticket_id, sort_order")
           .eq("treatment_record_id", id)
           .order("sort_order")
           .returns<TreatmentRecordMenu[]>(),
         supabase
           .from("purchases")
-          .select("*")
+          .select("id, item_name, quantity, unit_price, total_price, memo, product_id")
           .eq("treatment_record_id", id)
           .order("created_at")
           .returns<Purchase[]>(),
         supabase
           .from("course_tickets")
-          .select("*")
+          .select("id, ticket_name, total_sessions, used_sessions, price, status, memo")
           .eq("treatment_record_id", id)
           .order("created_at")
           .returns<CourseTicket[]>(),
@@ -169,7 +170,7 @@ export default function EditRecordPage() {
           setHasTickets(true);
           const { data: tickets } = await supabase
             .from("course_tickets")
-            .select("*")
+            .select("id, ticket_name, total_sessions, used_sessions, price, status, memo, expiry_date")
             .eq("customer_id", record.customer_id)
             .eq("salon_id", salon.id)
             .eq("status", "active")
@@ -332,6 +333,7 @@ export default function EditRecordPage() {
       if (useError) console.error("Ticket consumption error:", useError);
     }
 
+    setFlashToast("施術記録を更新しました");
     router.push(`/records/${id}`);
   };
 
@@ -815,7 +817,7 @@ export default function EditRecordPage() {
         <button
           onClick={handleDelete}
           disabled={deleting}
-          className="bg-error/10 text-error text-sm font-medium rounded-xl px-4 py-2 hover:bg-error/20 transition-colors disabled:opacity-50 min-h-[40px]"
+          className="bg-error/10 text-error text-sm font-medium rounded-xl px-4 py-2 hover:bg-error/20 transition-colors disabled:opacity-50 min-h-[48px]"
         >
           {deleting ? "削除中..." : "この記録を削除"}
         </button>

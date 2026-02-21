@@ -31,7 +31,7 @@ export default function SettingsPage() {
 
       const { data } = await supabase
         .from("salons")
-        .select("*")
+        .select("id, name, phone, address")
         .eq("owner_id", user.id)
         .single<Salon>();
 

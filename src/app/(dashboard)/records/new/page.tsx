@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { uploadPhotos } from "@/lib/supabase/storage";
 import { PhotoUpload, type PhotoEntry } from "@/components/records/photo-upload";
 import { PageHeader } from "@/components/layout/page-header";
+import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
@@ -119,7 +120,7 @@ function NewRecordForm() {
       // P7: salon取得後、menus + customers/customerName + products を並列取得
       const menusQuery = supabase
         .from("treatment_menus")
-        .select("*")
+        .select("id, name, category, duration_minutes, price, is_active")
         .eq("salon_id", salon.id)
         .eq("is_active", true)
         .order("name")
@@ -127,7 +128,7 @@ function NewRecordForm() {
 
       const productsQuery = supabase
         .from("products")
-        .select("*")
+        .select("id, name, category, base_sell_price, base_cost_price")
         .eq("salon_id", salon.id)
         .eq("is_active", true)
         .order("name")
@@ -164,7 +165,7 @@ function NewRecordForm() {
       if (appointmentId) {
         const { data: appointmentMenus } = await supabase
           .from("appointment_menus")
-          .select("*")
+          .select("id, menu_id, sort_order")
           .eq("appointment_id", appointmentId)
           .order("sort_order")
           .returns<AppointmentMenu[]>();
@@ -209,7 +210,7 @@ function NewRecordForm() {
         // 有効なチケットがある場合のみ詳細取得
         const { data } = await supabase
           .from("course_tickets")
-          .select("*")
+          .select("id, ticket_name, total_sessions, used_sessions, price, status, memo, expiry_date")
           .eq("customer_id", customerId)
           .eq("salon_id", salonId)
           .eq("status", "active")
@@ -433,6 +434,7 @@ function NewRecordForm() {
     }
 
     clearDraft();
+    setFlashToast("施術記録を保存しました");
     router.push(`/customers/${customerId}`);
   };
 

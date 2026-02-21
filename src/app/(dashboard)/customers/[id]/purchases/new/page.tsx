@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
+import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import type { Database } from "@/types/database";
@@ -62,7 +63,7 @@ export default function NewPurchasePage() {
           .single<{ last_name: string; first_name: string }>(),
         supabase
           .from("products")
-          .select("*")
+          .select("id, name, category, base_sell_price")
           .eq("salon_id", salon.id)
           .eq("is_active", true)
           .order("name")
@@ -163,6 +164,7 @@ export default function NewPurchasePage() {
     }
 
     setLoading(false);
+    setFlashToast("物販を記録しました");
     router.push(`/customers/${customerId}`);
   };
 
