@@ -866,6 +866,33 @@ export type Database = {
           }[];
         };
       };
+      get_customer_ltv_summary: {
+        Args: {
+          p_salon_id: string;
+        };
+        Returns: {
+          customer_id: string;
+          last_name: string;
+          first_name: string;
+          visit_count: number;
+          treatment_revenue: number;
+          purchase_revenue: number;
+          ticket_revenue: number;
+          first_visit_date: string | null;
+          last_visit_date: string | null;
+        }[];
+      };
+      get_monthly_new_vs_returning: {
+        Args: {
+          p_salon_id: string;
+          p_year: number;
+        };
+        Returns: {
+          month: number;
+          new_customers: number;
+          returning_customers: number;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

@@ -46,6 +46,12 @@ export function MonthlySales({
         <p className="text-xl font-bold text-accent">{total.toLocaleString()}円</p>
         {ticketSales > 0 && <p className="text-[10px] text-text-light mt-1">※回数券は販売時の受取額</p>}
       </div>
+      <Link
+        href="/sales/analytics"
+        className="block border-t border-border pt-2 text-center text-xs text-accent hover:underline"
+      >
+        顧客・メニュー分析を見る →
+      </Link>
     </div>
   );
 }

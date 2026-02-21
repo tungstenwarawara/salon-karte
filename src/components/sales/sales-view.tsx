@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 import { ManagementTabs } from "@/components/inventory/management-tabs";
 import { SalesBarChart } from "@/components/sales/sales-bar-chart";
 import { SalesDrilldown } from "@/components/sales/sales-drilldown";
@@ -147,6 +148,18 @@ export function SalesView({ salonId, initialData, initialYear }: Props) {
             </div>
             {yearTotal.ticket > 0 && <p className="text-[10px] text-text-light">※回数券は販売時の受取額</p>}
           </div>
+
+          {/* 分析ページへのリンク */}
+          <Link
+            href="/sales/analytics"
+            className="block bg-surface border border-border rounded-xl px-4 py-3 hover:border-accent transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">顧客・メニュー分析を見る</span>
+              <span className="text-text-light text-sm">→</span>
+            </div>
+            <p className="text-xs text-text-light mt-0.5">LTV・リピート率・人気メニューなど</p>
+          </Link>
 
           {/* カテゴリフィルタ */}
           <div className="flex gap-1.5">
