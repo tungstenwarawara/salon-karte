@@ -144,7 +144,8 @@ export default function EditCustomerPage() {
     const { data: records } = await supabase
       .from("treatment_records")
       .select("id")
-      .eq("customer_id", id);
+      .eq("customer_id", id)
+      .eq("salon_id", salonId);
 
     if (records && records.length > 0) {
       const recordIds = records.map((r) => r.id);

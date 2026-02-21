@@ -14,8 +14,10 @@ type LapsedCustomer = {
 
 export function LapsedCustomersSection({
   initialCustomers,
+  salonId,
 }: {
   initialCustomers: LapsedCustomer[];
+  salonId: string;
 }) {
   const [customers, setCustomers] = useState(initialCustomers);
   const [graduatingId, setGraduatingId] = useState<string | null>(null);
@@ -26,7 +28,8 @@ export function LapsedCustomersSection({
     const { error } = await supabase
       .from("customers")
       .update({ graduated_at: new Date().toISOString() })
-      .eq("id", customer.id);
+      .eq("id", customer.id)
+      .eq("salon_id", salonId);
 
     if (!error) {
       setCustomers((prev) => prev.filter((c) => c.id !== customer.id));

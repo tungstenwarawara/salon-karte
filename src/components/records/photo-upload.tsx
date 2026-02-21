@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { MAX_FILE_SIZE, ALLOWED_MIME_TYPES } from "@/lib/supabase/storage";
+import { PhotoCard } from "./photo-card";
 
 type PhotoEntry = {
   file: File;
@@ -47,16 +48,12 @@ export function PhotoUpload({
     }
 
     const preview = URL.createObjectURL(file);
-
     onChange([
       ...photos,
       { file, preview, type: addingTypeRef.current, memo: "" },
     ]);
 
-    // Reset input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleAdd = (type: "before" | "after") => {
@@ -66,15 +63,12 @@ export function PhotoUpload({
   };
 
   const handleRemove = (index: number) => {
-    // Revoke blob URL to prevent memory leak
     URL.revokeObjectURL(photos[index].preview);
-    const updated = photos.filter((_, i) => i !== index);
-    onChange(updated);
+    onChange(photos.filter((_, i) => i !== index));
   };
 
   const handleMemoChange = (index: number, memo: string) => {
-    const updated = photos.map((p, i) => (i === index ? { ...p, memo } : p));
-    onChange(updated);
+    onChange(photos.map((p, i) => (i === index ? { ...p, memo } : p)));
   };
 
   const beforePhotos = photos.filter((p) => p.type === "before");
@@ -89,7 +83,6 @@ export function PhotoUpload({
         </span>
       </div>
 
-      {/* バリデーションエラー表示 */}
       {validationError && (
         <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700">
           {validationError}
@@ -105,120 +98,72 @@ export function PhotoUpload({
         className="hidden"
       />
 
-      {/* Before photos */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-text-light">施術前</span>
-          <button
-            type="button"
-            onClick={() => handleAdd("before")}
-            className="text-sm text-accent hover:underline"
-          >
-            + 写真を追加
-          </button>
-        </div>
-        {beforePhotos.length > 0 ? (
-          <div className="grid grid-cols-2 gap-2">
-            {beforePhotos.map((photo) => {
-              const index = photos.indexOf(photo);
-              return (
-                <PhotoCard
-                  key={index}
-                  photo={photo}
-                  onRemove={() => handleRemove(index)}
-                  onMemoChange={(memo) => handleMemoChange(index, memo)}
-                />
-              );
-            })}
-          </div>
-        ) : (
-          <div className="border-2 border-dashed border-border rounded-xl p-4 text-center">
-            <button
-              type="button"
-              onClick={() => handleAdd("before")}
-              className="text-text-light text-sm"
-            >
-              タップして施術前の写真を追加
-            </button>
-          </div>
-        )}
-      </div>
+      {/* 施術前 */}
+      <PhotoSection
+        label="施術前"
+        photos={beforePhotos}
+        allPhotos={photos}
+        onAdd={() => handleAdd("before")}
+        onRemove={handleRemove}
+        onMemoChange={handleMemoChange}
+        emptyLabel="タップして施術前の写真を追加"
+      />
 
-      {/* After photos */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-text-light">施術後</span>
-          <button
-            type="button"
-            onClick={() => handleAdd("after")}
-            className="text-sm text-accent hover:underline"
-          >
-            + 写真を追加
-          </button>
-        </div>
-        {afterPhotos.length > 0 ? (
-          <div className="grid grid-cols-2 gap-2">
-            {afterPhotos.map((photo) => {
-              const index = photos.indexOf(photo);
-              return (
-                <PhotoCard
-                  key={index}
-                  photo={photo}
-                  onRemove={() => handleRemove(index)}
-                  onMemoChange={(memo) => handleMemoChange(index, memo)}
-                />
-              );
-            })}
-          </div>
-        ) : (
-          <div className="border-2 border-dashed border-border rounded-xl p-4 text-center">
-            <button
-              type="button"
-              onClick={() => handleAdd("after")}
-              className="text-text-light text-sm"
-            >
-              タップして施術後の写真を追加
-            </button>
-          </div>
-        )}
-      </div>
+      {/* 施術後 */}
+      <PhotoSection
+        label="施術後"
+        photos={afterPhotos}
+        allPhotos={photos}
+        onAdd={() => handleAdd("after")}
+        onRemove={handleRemove}
+        onMemoChange={handleMemoChange}
+        emptyLabel="タップして施術後の写真を追加"
+      />
     </div>
   );
 }
 
-function PhotoCard({
-  photo,
-  onRemove,
-  onMemoChange,
+/** Before/After 写真セクション */
+function PhotoSection({
+  label, photos, allPhotos, onAdd, onRemove, onMemoChange, emptyLabel,
 }: {
-  photo: PhotoEntry;
-  onRemove: () => void;
-  onMemoChange: (memo: string) => void;
+  label: string;
+  photos: PhotoEntry[];
+  allPhotos: PhotoEntry[];
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+  onMemoChange: (index: number, memo: string) => void;
+  emptyLabel: string;
 }) {
   return (
-    <div className="relative bg-background border border-border rounded-xl overflow-hidden">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={photo.preview}
-        alt={photo.type === "before" ? "施術前" : "施術後"}
-        className="w-full aspect-square object-cover"
-      />
-      <button
-        type="button"
-        onClick={onRemove}
-        className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
-      >
-        ×
-      </button>
-      <div className="p-2">
-        <input
-          type="text"
-          value={photo.memo}
-          onChange={(e) => onMemoChange(e.target.value)}
-          placeholder="メモ（任意）"
-          className="w-full text-xs bg-transparent border-none focus:outline-none placeholder:text-text-light/50"
-        />
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm text-text-light">{label}</span>
+        <button type="button" onClick={onAdd} className="text-sm text-accent hover:underline">
+          + 写真を追加
+        </button>
       </div>
+      {photos.length > 0 ? (
+        <div className="grid grid-cols-2 gap-2">
+          {photos.map((photo) => {
+            const index = allPhotos.indexOf(photo);
+            return (
+              <PhotoCard
+                key={index}
+                photo={photo}
+                onRemove={() => onRemove(index)}
+                onMemoChange={(memo) => onMemoChange(index, memo)}
+              />
+            );
+          })}
+        </div>
+      ) : (
+        <div className="border-2 border-dashed border-border rounded-xl p-4 text-center">
+          <button type="button" onClick={onAdd} className="text-text-light text-sm">
+            {emptyLabel}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

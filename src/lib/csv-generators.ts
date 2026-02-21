@@ -17,7 +17,7 @@ export type CsvMonthlySales = {
 };
 
 /** 汎用CSV */
-export function generateGenericCsv(report: CsvTaxReport, monthlySales: CsvMonthlySales[], year: number): string {
+function generateGenericCsv(report: CsvTaxReport, monthlySales: CsvMonthlySales[], year: number): string {
   const lines: string[] = [];
   lines.push(`${year}年 確定申告レポート`, "");
 
@@ -51,7 +51,7 @@ export function generateGenericCsv(report: CsvTaxReport, monthlySales: CsvMonthl
 }
 
 /** freee取り込み形式 */
-export function generateFreeeCsv(report: CsvTaxReport, monthlySales: CsvMonthlySales[], year: number): string {
+function generateFreeeCsv(report: CsvTaxReport, monthlySales: CsvMonthlySales[], year: number): string {
   const lines: string[] = ["取引日,勘定科目,税区分,金額,摘要"];
 
   for (const m of monthlySales) {
@@ -70,7 +70,7 @@ export function generateFreeeCsv(report: CsvTaxReport, monthlySales: CsvMonthlyS
 }
 
 /** 弥生形式 */
-export function generateYayoiCsv(report: CsvTaxReport, monthlySales: CsvMonthlySales[], year: number): string {
+function generateYayoiCsv(report: CsvTaxReport, monthlySales: CsvMonthlySales[], year: number): string {
   const lines: string[] = ["仕訳日付,借方勘定科目,借方金額,貸方勘定科目,貸方金額,摘要"];
 
   for (const m of monthlySales) {

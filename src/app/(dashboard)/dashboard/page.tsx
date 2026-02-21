@@ -217,7 +217,7 @@ export default async function DashboardPage() {
       />
 
       {lapsedCustomers && lapsedCustomers.length > 0 && (
-        <LapsedCustomersSection initialCustomers={lapsedCustomers} />
+        <LapsedCustomersSection initialCustomers={lapsedCustomers} salonId={salon.id} />
       )}
 
       <RecentRecords records={recentRecords} />
