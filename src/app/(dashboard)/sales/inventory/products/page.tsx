@@ -6,9 +6,13 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
+import { ProductCard } from "@/components/inventory/product-card";
 import type { Database } from "@/types/database";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
+
+const INITIAL_FORM = { name: "", category: "", base_sell_price: "", base_cost_price: "", reorder_point: "3", memo: "" };
+const INPUT_CLASS = "w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -18,14 +22,7 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { toast, showToast, hideToast } = useToast();
-  const [form, setForm] = useState({
-    name: "",
-    category: "",
-    base_sell_price: "",
-    base_cost_price: "",
-    reorder_point: "3",
-    memo: "",
-  });
+  const [form, setForm] = useState(INITIAL_FORM);
 
   useEffect(() => {
     loadProducts();
@@ -58,14 +55,7 @@ export default function ProductsPage() {
   };
 
   const resetForm = () => {
-    setForm({
-      name: "",
-      category: "",
-      base_sell_price: "",
-      base_cost_price: "",
-      reorder_point: "3",
-      memo: "",
-    });
+    setForm(INITIAL_FORM);
     setShowForm(false);
     setEditingId(null);
   };
@@ -153,9 +143,6 @@ export default function ProductsPage() {
     loadProducts();
   };
 
-  const inputClass =
-    "w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors";
-
   return (
     <div className="space-y-4">
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
@@ -181,78 +168,51 @@ export default function ProductsPage() {
 
       {error && <ErrorAlert message={error} />}
 
-      {/* Form */}
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
-          <h3 className="font-bold">
-            {editingId ? "商品を編集" : "商品を追加"}
-          </h3>
-
+          <h3 className="font-bold">{editingId ? "商品を編集" : "商品を追加"}</h3>
           <div>
-            <label className="block text-sm font-medium mb-1.5">
-              商品名 <span className="text-error">*</span>
-            </label>
+            <label className="block text-sm font-medium mb-1.5">商品名 <span className="text-error">*</span></label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
               placeholder="例: モイスチャー美容液"
-              className={inputClass}
+              className={INPUT_CLASS}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">
-              カテゴリ
-            </label>
+            <label className="block text-sm font-medium mb-1.5">カテゴリ</label>
             <input
               type="text"
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
               placeholder="例: スキンケア、ヘアケア"
-              className={inputClass}
+              className={INPUT_CLASS}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1.5">
-                売価（円）
-              </label>
-              <input
-                type="number"
-                value={form.base_sell_price}
-                onChange={(e) => setForm({ ...form, base_sell_price: e.target.value })}
-                placeholder="5000"
-                className={inputClass}
-              />
+              <label className="block text-sm font-medium mb-1.5">売価（円）</label>
+              <input type="number" value={form.base_sell_price} onChange={(e) => setForm({ ...form, base_sell_price: e.target.value })} placeholder="5000" className={INPUT_CLASS} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">
-                仕入価（円）
-              </label>
-              <input
-                type="number"
-                value={form.base_cost_price}
-                onChange={(e) => setForm({ ...form, base_cost_price: e.target.value })}
-                placeholder="2500"
-                className={inputClass}
-              />
+              <label className="block text-sm font-medium mb-1.5">仕入価（円）</label>
+              <input type="number" value={form.base_cost_price} onChange={(e) => setForm({ ...form, base_cost_price: e.target.value })} placeholder="2500" className={INPUT_CLASS} />
             </div>
           </div>
-
           <div>
-            <label className="block text-sm font-medium mb-1.5">
-              発注点（残りこの数以下で通知）
-            </label>
+            <label className="block text-sm font-medium mb-1.5">発注点（残りこの数以下で通知）</label>
             <input
               type="number"
               value={form.reorder_point}
               onChange={(e) => setForm({ ...form, reorder_point: e.target.value })}
               placeholder="3"
               min="0"
-              className={inputClass}
+              className={INPUT_CLASS}
             />
           </div>
 
@@ -263,7 +223,7 @@ export default function ProductsPage() {
               onChange={(e) => setForm({ ...form, memo: e.target.value })}
               placeholder="仕入先など自由メモ"
               minRows={2}
-              className={inputClass}
+              className={INPUT_CLASS}
             />
           </div>
 
@@ -286,55 +246,17 @@ export default function ProductsPage() {
         </form>
       )}
 
-      {/* Product list */}
+      {/* 商品一覧 */}
       {products.length > 0 ? (
         <div className="space-y-2">
           {products.map((product) => (
-            <div
+            <ProductCard
               key={product.id}
-              className={`bg-surface border rounded-xl p-4 ${product.is_active ? "border-border" : "border-border opacity-60"}`}
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium">{product.name}</p>
-                    {!product.is_active && (
-                      <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full shrink-0">非表示</span>
-                    )}
-                  </div>
-                  <div className="flex gap-3 mt-1 text-sm text-text-light flex-wrap">
-                    {product.category && <span>{product.category}</span>}
-                    <span>売価 ¥{product.base_sell_price.toLocaleString()}</span>
-                    <span>仕入 ¥{product.base_cost_price.toLocaleString()}</span>
-                    <span>発注点 {product.reorder_point}個</span>
-                  </div>
-                  {product.memo && (
-                    <p className="text-xs text-text-light mt-1">{product.memo}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 shrink-0 ml-3">
-                  <button
-                    onClick={() => handleToggleActive(product.id, product.is_active)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${product.is_active ? "bg-accent" : "bg-gray-200"}`}
-                    aria-label={product.is_active ? "非表示にする" : "表示にする"}
-                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${product.is_active ? "translate-x-6" : "translate-x-1"}`} />
-                  </button>
-                  <button
-                    onClick={() => startEdit(product)}
-                    className="text-sm text-accent hover:underline"
-                  >
-                    編集
-                  </button>
-                  <button
-                    onClick={() => handleDelete(product.id)}
-                    className="text-sm text-error hover:underline"
-                  >
-                    削除
-                  </button>
-                </div>
-              </div>
-            </div>
+              product={product}
+              onEdit={startEdit}
+              onToggleActive={handleToggleActive}
+              onDelete={handleDelete}
+            />
           ))}
         </div>
       ) : (

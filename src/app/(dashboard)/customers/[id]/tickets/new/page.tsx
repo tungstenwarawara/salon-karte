@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
 import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
-import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
+import { TicketFormFields } from "@/components/customers/ticket-form-fields";
 import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
@@ -103,7 +103,11 @@ export default function NewTicketPage() {
       const menu = menus.find((m) => m.id === selectedMenuId);
       if (menu?.price) {
         const newSessions = Math.max(1, parseInt(value, 10) || 1);
-        setForm((prev) => ({ ...prev, total_sessions: value, price: (menu.price! * newSessions).toString() }));
+        setForm((prev) => ({
+          ...prev,
+          total_sessions: value,
+          price: (menu.price! * newSessions).toString(),
+        }));
       }
     }
   };
@@ -113,7 +117,9 @@ export default function NewTicketPage() {
 
   // 定価参考表示用
   const selectedMenu = menus.find((m) => m.id === selectedMenuId);
-  const referencePrice = selectedMenu?.price ? selectedMenu.price * totalSessionsNum : null;
+  const referencePrice = selectedMenu?.price
+    ? selectedMenu.price * totalSessionsNum
+    : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,157 +187,20 @@ export default function NewTicketPage() {
       >
         {error && <ErrorAlert message={error} />}
 
-        {/* モード切替（メニューがある場合のみ表示） */}
-        {menus.length > 0 && (
-          <div className="flex gap-1 bg-background rounded-xl p-0.5">
-            <button
-              type="button"
-              onClick={() => setMode("menu")}
-              className={`flex-1 text-center text-sm font-medium py-2 rounded-lg transition-colors min-h-[44px] ${
-                mode === "menu" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"
-              }`}
-            >
-              メニューから作成
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("free")}
-              className={`flex-1 text-center text-sm font-medium py-2 rounded-lg transition-colors min-h-[44px] ${
-                mode === "free" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"
-              }`}
-            >
-              自由入力
-            </button>
-          </div>
-        )}
-
-        {/* メニュー選択（メニューモード時） */}
-        {mode === "menu" && menus.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium mb-1.5">メニュー</label>
-            <select
-              value={selectedMenuId}
-              onChange={(e) => handleMenuChange(e.target.value)}
-              className={inputClass}
-            >
-              <option value="">メニューを選択</option>
-              {menus.map((menu) => (
-                <option key={menu.id} value={menu.id}>
-                  {menu.name}
-                  {menu.category ? ` (${menu.category})` : ""}
-                  {menu.price ? ` - ¥${menu.price.toLocaleString()}` : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            チケット名 <span className="text-error">*</span>
-          </label>
-          <input
-            type="text"
-            value={form.ticket_name}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, ticket_name: e.target.value }))
-            }
-            placeholder={mode === "menu" ? "メニューを選択すると自動入力されます" : "例: フェイシャル5回コース"}
-            required
-            className={inputClass}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">
-              回数 <span className="text-error">*</span>
-            </label>
-            <input
-              type="number"
-              min={1}
-              value={form.total_sessions}
-              onChange={(e) => handleSessionsChange(e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">
-              金額（円）
-            </label>
-            <input
-              type="number"
-              min={0}
-              value={form.price}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  price: e.target.value,
-                }))
-              }
-              placeholder="0"
-              className={inputClass}
-            />
-          </div>
-        </div>
-
-        {/* 定価参考表示（メニュー選択時のみ） */}
-        {mode === "menu" && referencePrice != null && (
-          <div className="flex items-center justify-between bg-background rounded-xl px-3 py-2">
-            <span className="text-xs text-text-light">定価参考</span>
-            <span className="text-xs text-text-light">
-              ¥{(selectedMenu?.price ?? 0).toLocaleString()} × {totalSessionsNum}回 = ¥{referencePrice.toLocaleString()}
-            </span>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">購入日</label>
-            <input
-              type="date"
-              value={form.purchase_date}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  purchase_date: e.target.value,
-                }))
-              }
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">
-              有効期限（任意）
-            </label>
-            <input
-              type="date"
-              value={form.expiry_date}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  expiry_date: e.target.value,
-                }))
-              }
-              className={inputClass}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            メモ（任意）
-          </label>
-          <AutoResizeTextarea
-            value={form.memo}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, memo: e.target.value }))
-            }
-            placeholder="備考があれば記入"
-            minRows={2}
-            className={inputClass}
-          />
-        </div>
+        <TicketFormFields
+          form={form}
+          menus={menus}
+          mode={mode}
+          selectedMenuId={selectedMenuId}
+          totalSessionsNum={totalSessionsNum}
+          referencePrice={referencePrice}
+          selectedMenu={selectedMenu}
+          onFormChange={setForm}
+          onMenuChange={handleMenuChange}
+          onSessionsChange={handleSessionsChange}
+          onModeChange={setMode}
+          inputClass={inputClass}
+        />
 
         <div className="flex gap-3 pt-2">
           <button
