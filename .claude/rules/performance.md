@@ -27,8 +27,10 @@ supabase.rpc("get_monthly_sales_summary", ...)         // 集計はDBで
 - `loading.tsx`: 即座にスケルトン表示
 
 ## 画像
+- アップロード前に自動圧縮（最大1200px + JPEG 85%品質、元ファイル20MB上限）
 - Supabase Storage の signed URL（1時間有効）
-- アップロード: 5MB上限
+- 複数写真は `getPhotoUrls()` で一括取得（`createSignedUrls` 複数形API）。個別 `getPhotoUrl()` のループ禁止
+- 表示時は `loading="lazy"` 必須
 
 ## フォーム下書き
 - `useFormDraft` hook で localStorage に自動保存

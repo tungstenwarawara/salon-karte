@@ -40,3 +40,9 @@
 - RLSが全テーブルで有効
 - 環境変数がハードコードされていない
 - 全Supabaseクエリにsalon_idフィルタが存在
+
+## マージ前クエリ整合性チェック
+- `.select()` で指定したカラム名がDBスキーマ（`supabase/migrations/`）と一致するか照合
+  - ビルドでは検出不可（Supabase SDKのselectは文字列型のため型チェックが効かない）
+  - 特にテーブル間でカラム名が似ている場合に注意（例: `description` vs `memo`, `name` vs `item_name`）
+- `.insert()` / `.update()` のカラム名も同様に照合
