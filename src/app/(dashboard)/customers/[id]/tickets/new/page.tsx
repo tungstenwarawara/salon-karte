@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
+import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 
@@ -98,6 +99,7 @@ export default function NewTicketPage() {
       return;
     }
 
+    setFlashToast("回数券を登録しました");
     router.push(`/customers/${customerId}`);
   };
 

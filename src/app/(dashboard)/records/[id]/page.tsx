@@ -36,31 +36,31 @@ export default async function RecordDetailPage({
   const [recordRes, photosRes, recordMenusRes, purchasesRes, ticketsRes] = await Promise.all([
     supabase
       .from("treatment_records")
-      .select("*, customers(id, last_name, first_name)")
+      .select("id, treatment_date, menu_name_snapshot, treatment_area, products_used, skin_condition_before, notes_after, conversation_notes, caution_notes, next_visit_memo, customer_id, customers(id, last_name, first_name)")
       .eq("id", id)
       .eq("salon_id", salon.id)
       .single<RecordWithCustomer>(),
     supabase
       .from("treatment_photos")
-      .select("*")
+      .select("id, treatment_record_id, storage_path, photo_type, description")
       .eq("treatment_record_id", id)
       .order("photo_type")
       .returns<TreatmentPhoto[]>(),
     supabase
       .from("treatment_record_menus")
-      .select("*")
+      .select("id, menu_name_snapshot, duration_minutes_snapshot, price_snapshot, payment_type")
       .eq("treatment_record_id", id)
       .order("sort_order")
       .returns<TreatmentRecordMenu[]>(),
     supabase
       .from("purchases")
-      .select("*")
+      .select("id, item_name, quantity, unit_price, total_price")
       .eq("treatment_record_id", id)
       .order("created_at")
       .returns<Purchase[]>(),
     supabase
       .from("course_tickets")
-      .select("*")
+      .select("id, ticket_name, total_sessions, price")
       .eq("treatment_record_id", id)
       .order("created_at")
       .returns<CourseTicket[]>(),

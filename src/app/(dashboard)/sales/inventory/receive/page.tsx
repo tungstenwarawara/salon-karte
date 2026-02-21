@@ -50,7 +50,7 @@ export default function ReceivePage() {
 
     const { data } = await supabase
       .from("products")
-      .select("*")
+      .select("id, name, category")
       .eq("salon_id", salon.id)
       .eq("is_active", true)
       .order("name")

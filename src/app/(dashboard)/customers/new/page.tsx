@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
+import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
@@ -99,6 +100,7 @@ export default function NewCustomerPage() {
     }
 
     clearDraft();
+    setFlashToast("顧客を登録しました");
     router.push(`/customers/${newCustomer.id}`);
     router.refresh();
   };

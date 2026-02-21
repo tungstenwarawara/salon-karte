@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { uploadPhotos } from "@/lib/supabase/storage";
 import { PhotoUpload, type PhotoEntry } from "@/components/records/photo-upload";
 import { PageHeader } from "@/components/layout/page-header";
+import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
@@ -87,8 +88,21 @@ function NewRecordForm() {
       if (!salon) return;
       setSalonId(salon.id);
 
-      const menusQuery = supabase.from("treatment_menus").select("*").eq("salon_id", salon.id).eq("is_active", true).order("name").returns<Menu[]>();
-      const productsQuery = supabase.from("products").select("*").eq("salon_id", salon.id).eq("is_active", true).order("name").returns<Product[]>();
+      const menusQuery = supabase
+        .from("treatment_menus")
+        .select("id, name, category, duration_minutes, price, is_active")
+        .eq("salon_id", salon.id)
+        .eq("is_active", true)
+        .order("name")
+        .returns<Menu[]>();
+
+      const productsQuery = supabase
+        .from("products")
+        .select("id, name, category, base_sell_price, base_cost_price")
+        .eq("salon_id", salon.id)
+        .eq("is_active", true)
+        .order("name")
+        .returns<Product[]>();
 
       if (!presetCustomerId) {
         const customerQuery = supabase
@@ -111,7 +125,12 @@ function NewRecordForm() {
       // 予約から遷移: appointment_menus を取得してプリセット
       if (appointmentId) {
         const { data: appointmentMenus } = await supabase
-          .from("appointment_menus").select("*").eq("appointment_id", appointmentId).order("sort_order").returns<AppointmentMenu[]>();
+          .from("appointment_menus")
+          .select("id, menu_id, sort_order")
+          .eq("appointment_id", appointmentId)
+          .order("sort_order")
+          .returns<AppointmentMenu[]>();
+
         if (appointmentMenus && appointmentMenus.length > 0) {
           const ids = appointmentMenus.map((am) => am.menu_id).filter(Boolean) as string[];
           setSelectedMenuIds(ids);
@@ -131,9 +150,14 @@ function NewRecordForm() {
         .eq("customer_id", customerId).eq("salon_id", salonId).eq("status", "active");
       if (count && count > 0) {
         setHasTickets(true);
-        const { data } = await supabase.from("course_tickets").select("*")
-          .eq("customer_id", customerId).eq("salon_id", salonId).eq("status", "active")
-          .order("purchase_date", { ascending: false }).returns<CourseTicket[]>();
+        const { data } = await supabase
+          .from("course_tickets")
+          .select("id, ticket_name, total_sessions, used_sessions, price, status, memo, expiry_date")
+          .eq("customer_id", customerId)
+          .eq("salon_id", salonId)
+          .eq("status", "active")
+          .order("purchase_date", { ascending: false })
+          .returns<CourseTicket[]>();
         setCourseTickets(data ?? []);
       } else { setHasTickets(false); setCourseTickets([]); }
     };
@@ -274,6 +298,7 @@ function NewRecordForm() {
     if (warnings.length > 0) { setError(`施術記録は保存されましたが、以下の問題があります: ${warnings.join("、")}`); setLoading(false); return; }
 
     clearDraft();
+    setFlashToast("施術記録を保存しました");
     router.push(`/customers/${customerId}`);
   };
 

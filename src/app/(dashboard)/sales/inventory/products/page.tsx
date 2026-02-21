@@ -49,7 +49,7 @@ export default function ProductsPage() {
 
     const { data } = await supabase
       .from("products")
-      .select("*")
+      .select("id, name, category, base_sell_price, base_cost_price, reorder_point, memo, is_active, created_at")
       .eq("salon_id", salon.id)
       .order("created_at", { ascending: true })
       .returns<Product[]>();
@@ -172,7 +172,7 @@ export default function ProductsPage() {
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
-            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[40px]"
+            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px]"
           >
             + 追加
           </button>

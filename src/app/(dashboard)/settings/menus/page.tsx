@@ -48,7 +48,7 @@ export default function MenusPage() {
 
     const { data } = await supabase
       .from("treatment_menus")
-      .select("*")
+      .select("id, name, category, duration_minutes, price, is_active, created_at")
       .eq("salon_id", salon.id)
       .order("created_at", { ascending: true })
       .returns<Menu[]>();
@@ -81,7 +81,8 @@ export default function MenusPage() {
       const { error } = await supabase
         .from("treatment_menus")
         .update(payload)
-        .eq("id", editingId);
+        .eq("id", editingId)
+        .eq("salon_id", salonId);
       if (error) {
         setError("メニューの更新に失敗しました");
         setLoading(false);
@@ -121,7 +122,8 @@ export default function MenusPage() {
     const { error } = await supabase
       .from("treatment_menus")
       .update({ is_active: !currentActive })
-      .eq("id", menuId);
+      .eq("id", menuId)
+      .eq("salon_id", salonId);
     if (error) {
       setError("ステータスの変更に失敗しました");
       return;
@@ -133,7 +135,7 @@ export default function MenusPage() {
     if (!confirm("このメニューを削除しますか？")) return;
     setError("");
     const supabase = createClient();
-    const { error } = await supabase.from("treatment_menus").delete().eq("id", menuId);
+    const { error } = await supabase.from("treatment_menus").delete().eq("id", menuId).eq("salon_id", salonId);
     if (error) {
       setError("メニューの削除に失敗しました");
       return;
@@ -156,7 +158,7 @@ export default function MenusPage() {
         {!showForm && (
           <button
             onClick={() => setShowForm(true)}
-            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[40px]"
+            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px]"
           >
             + 追加
           </button>
