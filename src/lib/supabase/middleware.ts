@@ -8,7 +8,7 @@ const authPaths = ["/login", "/signup"];
 export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // P2: 保護ルート・認証ページ以外は getUser() をスキップしてパフォーマンス改善
+  // 保護ルート・認証ページ以外はセッション更新をスキップ
   const isProtectedRoute = protectedPaths.some((path) => pathname.startsWith(path));
   const isAuthRoute = authPaths.some((path) => pathname === path);
 
@@ -43,18 +43,22 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // パフォーマンス改善: getUser() → getSession() に変更
+  // getUser() は毎回 Supabase Auth API に問い合わせるため 100-200ms かかる
+  // getSession() はローカルの JWT cookie から読み取るため高速（<5ms）
+  // セキュリティ上の認証検証は各ページの getAuthAndSalon() で getUser() が行うため安全
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (isProtectedRoute && !user) {
+  if (isProtectedRoute && !session) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // Redirect logged-in users away from auth pages (but allow update-password)
-  if (isAuthRoute && user) {
+  // ログイン済みユーザーを認証ページからリダイレクト
+  if (isAuthRoute && session) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
