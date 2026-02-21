@@ -9,6 +9,7 @@ import { CsvPreviewTable, type ColumnDef } from "@/components/import/csv-preview
 import { CsvImportingStep } from "@/components/import/csv-importing-step";
 import { CsvResultStep } from "@/components/import/csv-result-step";
 import { parseCSV } from "@/lib/csv-parse";
+import { fileToCSVBuffer } from "@/lib/excel-parse";
 import { validateProductRows, type ProductRowValidation } from "@/lib/csv-import-products";
 
 type Step = "upload" | "preview" | "importing" | "result";
@@ -56,7 +57,7 @@ export default function ImportProductsPage() {
   const handleFileSelected = async (file: File) => {
     setError("");
     try {
-      const buffer = await file.arrayBuffer();
+      const buffer = await fileToCSVBuffer(file);
       const { headers, rows: csvRows, encoding: enc } = parseCSV(buffer);
       setEncoding(enc);
       if (csvRows.length === 0) {
@@ -67,7 +68,7 @@ export default function ImportProductsPage() {
       setRows(validated);
       setStep("preview");
     } catch {
-      setError("CSVの解析に失敗しました");
+      setError("ファイルの解析に失敗しました。CSV または Excel ファイルを選択してください。");
     }
   };
 
@@ -155,7 +156,7 @@ export default function ImportProductsPage() {
       {step === "upload" && (
         <CsvUploadStep
           title="商品データ取り込み"
-          templateDescription="テンプレートをダウンロードし、Excelで商品データを入力してCSV保存してください。「商品名」のみ必須です。"
+          templateDescription="テンプレートをダウンロードし、商品データを入力してください。Excelファイルもそのままアップロードできます。「商品名」のみ必須です。"
           templateFilename="商品インポートテンプレート.csv"
           templateHeader={TEMPLATE_HEADER}
           templateSample={TEMPLATE_SAMPLE}

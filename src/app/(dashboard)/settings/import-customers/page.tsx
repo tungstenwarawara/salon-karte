@@ -9,6 +9,7 @@ import { CsvPreviewTable, type ColumnDef } from "@/components/import/csv-preview
 import { CsvImportingStep } from "@/components/import/csv-importing-step";
 import { CsvResultStep } from "@/components/import/csv-result-step";
 import { parseCSV, validateRows, type RowValidation } from "@/lib/csv-parse";
+import { fileToCSVBuffer } from "@/lib/excel-parse";
 
 type Step = "upload" | "preview" | "importing" | "result";
 
@@ -57,12 +58,12 @@ export default function ImportCustomersPage() {
   const handleFileSelected = async (file: File) => {
     setError("");
     try {
-      const buffer = await file.arrayBuffer();
+      const buffer = await fileToCSVBuffer(file);
       const { headers, rows: csvRows, encoding: enc } = parseCSV(buffer);
       setEncoding(enc);
 
       if (headers.length === 0 || csvRows.length === 0) {
-        setError("CSVにデータがありません（ヘッダーのみ、または空ファイル）");
+        setError("データがありません（ヘッダーのみ、または空ファイル）");
         return;
       }
 
@@ -77,7 +78,7 @@ export default function ImportCustomersPage() {
       setRows(validated.filter((r) => r.status !== "skip"));
       setStep("preview");
     } catch {
-      setError("CSVの解析に失敗しました");
+      setError("ファイルの解析に失敗しました。CSV または Excel ファイルを選択してください。");
     }
   };
 
@@ -167,7 +168,7 @@ export default function ImportCustomersPage() {
       {step === "upload" && (
         <CsvUploadStep
           title="顧客データ取り込み"
-          templateDescription="テンプレートをダウンロードし、Excelの顧客データを貼り付けてCSV保存してください。氏名は姓と名をスペースで区切って入力してください。"
+          templateDescription="テンプレートをダウンロードし、顧客データを入力してください。Excelファイルもそのままアップロードできます。氏名は姓と名をスペースで区切って入力してください。"
           templateFilename="顧客インポートテンプレート.csv"
           templateHeader={TEMPLATE_HEADER}
           templateSample={TEMPLATE_SAMPLE}
