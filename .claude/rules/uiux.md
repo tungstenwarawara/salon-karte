@@ -35,21 +35,25 @@ ITリテラシーが高くない個人サロンオーナー（1人運営）。�
 - Tailwind CSS 4 カスタムカラー: `bg-accent`, `text-text-light`, `border-border`, `bg-surface`, `bg-background`
 - 日本語: ラベル・プレースホルダー・エラーメッセージ・コードコメント全て日本語
 
-## 品質ギャップ（2026-02-21 実測 — 全ページ分割完了）
+## 品質ギャップ確認（実測コマンド方式）
 
-### ページ（基準: 300行以下）— 残存違反なし ✅
+静的な行数表は陳腐化するため記載しない。以下のコマンドで毎セッション実測すること。
 
-### 改善済み（全ページ300行以下）
-| ファイル | 行数 | 備考 |
-|---------|-----:|------|
-| `records/new/page.tsx` | 241 | treatment-detail-fields, treatment-form-submit を抽出 |
-| `records/[id]/edit/page.tsx` | 244 | treatment-linked-items, treatment-delete-section, treatment-edit-submit を抽出 |
-| `dashboard/page.tsx` | 228 | セクションコンポーネント化完了 |
-| `appointments/page.tsx` | 214 | appointment-card, appointments-calendar, appointments-day-panel を抽出 |
-| `appointments/new/page.tsx` | 205 | appointment-datetime-section, appointment-form-submit を抽出 |
-| `appointments/[id]/edit/page.tsx` | 188 | appointment-edit-submit を抽出、datetime-section を共用 |
-| `sales/page.tsx` | 165 | sales-bar-chart, sales-drilldown, sales-monthly-list, sales-types を抽出 |
-| `customers/[id]/page.tsx` | 162 | セクションコンポーネント化完了 |
-| `guide/page.tsx` | 154 | guide-pricing-section, guide-future-features, guide-faq-section を抽出 |
-| `settings/holidays/page.tsx` | 129 | holiday-calendar-grid, calendar-utils を抽出 |
-| `tax-report/page.tsx` | 92 | tax-report-sections, csv-generators を抽出 |
+### ページ行数チェック（基準: 300行以下）
+```bash
+wc -l src/app/\(dashboard\)/*/page.tsx src/app/\(dashboard\)/*/*/page.tsx src/app/\(dashboard\)/*/*/*/page.tsx src/app/\(dashboard\)/*/*/*/*/page.tsx 2>/dev/null | sort -rn | head -20
+```
+
+### コンポーネント行数チェック（基準: 200行以下）
+```bash
+wc -l src/components/**/*.tsx 2>/dev/null | sort -rn | head -20
+```
+
+### 違反ファイルのみ抽出
+```bash
+# ページ: 300行超え
+wc -l src/app/\(dashboard\)/*/page.tsx src/app/\(dashboard\)/*/*/page.tsx src/app/\(dashboard\)/*/*/*/page.tsx src/app/\(dashboard\)/*/*/*/*/page.tsx 2>/dev/null | awk '$1 > 300 && !/total/' | sort -rn
+
+# コンポーネント: 200行超え
+wc -l src/components/**/*.tsx 2>/dev/null | awk '$1 > 200 && !/total/' | sort -rn
+```
