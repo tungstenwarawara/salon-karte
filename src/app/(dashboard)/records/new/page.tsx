@@ -398,7 +398,7 @@ function NewRecordForm() {
               ))}
             </div>
           )}
-          <TicketInlineForm onAdd={(t) => setPendingTickets((prev) => [...prev, t])} />
+          <TicketInlineForm menus={menus} onAdd={(t) => setPendingTickets((prev) => [...prev, t])} />
         </CollapsibleSection>
 
         <CollapsibleSection label={`物販記録（任意）${pendingPurchases.length > 0 ? ` — ${pendingPurchases.length}件` : ""}`}>
