@@ -6,10 +6,13 @@ import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
 import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
-import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import { MenuSelector } from "@/components/records/menu-selector";
 import { PaymentSection } from "@/components/records/payment-section";
 import { CourseTicketInfo } from "@/components/records/course-ticket-info";
+import { TreatmentDetailFields } from "@/components/records/treatment-detail-fields";
+import { TreatmentLinkedItems } from "@/components/records/treatment-linked-items";
+import { TreatmentDeleteSection } from "@/components/records/treatment-delete-section";
+import { updateTreatmentRecord, deleteTreatmentRecord } from "@/components/records/treatment-edit-submit";
 import { INPUT_CLASS } from "@/components/records/types";
 import type { Menu, CourseTicket, MenuPaymentInfo } from "@/components/records/types";
 import type { Database } from "@/types/database";
@@ -57,36 +60,11 @@ export default function EditRecordPage() {
       setSalonId(salon.id);
 
       const [menuRes, recordRes, recordMenusRes, purchasesRes, linkedTicketsRes] = await Promise.all([
-        supabase
-          .from("treatment_menus")
-          .select("id, name, category, duration_minutes, price, is_active")
-          .eq("salon_id", salon.id)
-          .order("name")
-          .returns<Menu[]>(),
-        supabase
-          .from("treatment_records")
-          .select("id, customer_id, treatment_date, menu_id, treatment_area, products_used, skin_condition_before, notes_after, next_visit_memo, conversation_notes, caution_notes")
-          .eq("id", id)
-          .eq("salon_id", salon.id)
-          .single<TreatmentRecord>(),
-        supabase
-          .from("treatment_record_menus")
-          .select("id, menu_id, menu_name_snapshot, price_snapshot, duration_minutes_snapshot, payment_type, ticket_id, sort_order")
-          .eq("treatment_record_id", id)
-          .order("sort_order")
-          .returns<TreatmentRecordMenu[]>(),
-        supabase
-          .from("purchases")
-          .select("id, item_name, quantity, unit_price, total_price, memo, product_id")
-          .eq("treatment_record_id", id)
-          .order("created_at")
-          .returns<Purchase[]>(),
-        supabase
-          .from("course_tickets")
-          .select("id, ticket_name, total_sessions, used_sessions, price, status, memo")
-          .eq("treatment_record_id", id)
-          .order("created_at")
-          .returns<CourseTicket[]>(),
+        supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", salon.id).order("name").returns<Menu[]>(),
+        supabase.from("treatment_records").select("id, customer_id, treatment_date, menu_id, treatment_area, products_used, skin_condition_before, notes_after, next_visit_memo, conversation_notes, caution_notes").eq("id", id).eq("salon_id", salon.id).single<TreatmentRecord>(),
+        supabase.from("treatment_record_menus").select("id, menu_id, menu_name_snapshot, price_snapshot, duration_minutes_snapshot, payment_type, ticket_id, sort_order").eq("treatment_record_id", id).order("sort_order").returns<TreatmentRecordMenu[]>(),
+        supabase.from("purchases").select("id, item_name, quantity, unit_price, total_price, memo, product_id").eq("treatment_record_id", id).order("created_at").returns<Purchase[]>(),
+        supabase.from("course_tickets").select("id, ticket_name, total_sessions, used_sessions, price, status, memo").eq("treatment_record_id", id).order("created_at").returns<CourseTicket[]>(),
       ]);
 
       setMenus(menuRes.data ?? []);
@@ -131,14 +109,10 @@ export default function EditRecordPage() {
           .eq("customer_id", record.customer_id).eq("salon_id", salon.id).eq("status", "active");
         if (count && count > 0) {
           setHasTickets(true);
-          const { data: tickets } = await supabase
-            .from("course_tickets")
+          const { data: tickets } = await supabase.from("course_tickets")
             .select("id, ticket_name, total_sessions, used_sessions, price, status, memo, expiry_date")
-            .eq("customer_id", record.customer_id)
-            .eq("salon_id", salon.id)
-            .eq("status", "active")
-            .order("purchase_date", { ascending: false })
-            .returns<CourseTicket[]>();
+            .eq("customer_id", record.customer_id).eq("salon_id", salon.id).eq("status", "active")
+            .order("purchase_date", { ascending: false }).returns<CourseTicket[]>();
           setCourseTickets(tickets ?? []);
         }
       }
@@ -163,15 +137,12 @@ export default function EditRecordPage() {
       mp.menuId === menuId ? { ...mp, paymentType, ticketId: paymentType === "ticket" ? ticketId : null } : mp
     ));
   };
-
   const updateMenuPrice = (menuId: string, price: number | null) => {
     setMenuPayments((prev) => prev.map((mp) => mp.menuId === menuId ? { ...mp, priceOverride: price } : mp));
   };
-
   const updateMenuTicket = (menuId: string, ticketId: string) => {
     setMenuPayments((prev) => prev.map((mp) => mp.menuId === menuId ? { ...mp, ticketId } : mp));
   };
-
   const setAllPaymentType = (paymentType: "cash" | "credit") => {
     setMenuPayments((prev) => selectedMenuIds.map((mid) => {
       const existing = prev.find((mp) => mp.menuId === mid);
@@ -182,64 +153,10 @@ export default function EditRecordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(""); setLoading(true);
-    const supabase = createClient();
-
-    const firstMenuId = selectedMenuIds[0] || null;
-    const menuNameSnapshot = selectedMenuIds.length > 0
-      ? selectedMenuIds.map((mid) => menus.find((m) => m.id === mid)?.name).filter(Boolean).join("、") : null;
-
-    const { error: updateError } = await supabase.from("treatment_records").update({
-      treatment_date: form.treatment_date, menu_id: firstMenuId, menu_name_snapshot: menuNameSnapshot,
-      treatment_area: form.treatment_area || null, products_used: form.products_used || null,
-      skin_condition_before: form.skin_condition_before || null, notes_after: form.notes_after || null,
-      next_visit_memo: form.next_visit_memo || null, conversation_notes: form.conversation_notes || null,
-      caution_notes: form.caution_notes || null,
-    }).eq("id", id).eq("salon_id", salonId);
-
-    if (updateError) { setError("更新に失敗しました"); setLoading(false); return; }
-
-    await supabase.from("treatment_record_menus").delete().eq("treatment_record_id", id);
-
-    if (selectedMenuIds.length > 0) {
-      const junctionRows = selectedMenuIds.map((menuId, index) => {
-        const menu = menus.find((m) => m.id === menuId);
-        const payment = menuPayments.find((mp) => mp.menuId === menuId);
-        return {
-          treatment_record_id: id, menu_id: menuId, menu_name_snapshot: menu?.name ?? "",
-          price_snapshot: payment?.priceOverride ?? menu?.price ?? null,
-          duration_minutes_snapshot: menu?.duration_minutes ?? null,
-          payment_type: payment?.paymentType ?? "cash", ticket_id: payment?.ticketId ?? null, sort_order: index,
-        };
-      });
-      const { error: junctionError } = await supabase.from("treatment_record_menus").insert(junctionRows);
-      if (junctionError) console.error("Junction re-insert error:", junctionError);
-    }
-
-    // 回数券消化のdiff処理
-    const newTicketPayments = new Map<string, string>();
-    menuPayments.forEach((mp) => { if (mp.paymentType === "ticket" && mp.ticketId) newTicketPayments.set(mp.menuId, mp.ticketId); });
-
-    const oldTicketCounts = new Map<string, number>();
-    originalTicketPayments.forEach((ticketId) => { oldTicketCounts.set(ticketId, (oldTicketCounts.get(ticketId) ?? 0) + 1); });
-    const newTicketCounts = new Map<string, number>();
-    newTicketPayments.forEach((ticketId) => { newTicketCounts.set(ticketId, (newTicketCounts.get(ticketId) ?? 0) + 1); });
-
-    const allTicketIds = new Set([...oldTicketCounts.keys(), ...newTicketCounts.keys()]);
-    for (const ticketId of allTicketIds) {
-      const diff = (newTicketCounts.get(ticketId) ?? 0) - (oldTicketCounts.get(ticketId) ?? 0);
-      if (diff > 0) {
-        for (let i = 0; i < diff; i++) {
-          const { error: useError } = await supabase.rpc("use_course_ticket_session", { p_ticket_id: ticketId });
-          if (useError) console.error("Ticket consumption error:", useError);
-        }
-      } else if (diff < 0) {
-        for (let i = 0; i < Math.abs(diff); i++) {
-          const { error: undoError } = await supabase.rpc("undo_course_ticket_session", { p_ticket_id: ticketId });
-          if (undoError) console.error("Ticket undo error:", undoError);
-        }
-      }
-    }
-
+    const result = await updateTreatmentRecord({
+      recordId: id, salonId, form, menus, selectedMenuIds, menuPayments, originalTicketPayments,
+    });
+    if (!result.success) { setError(result.error); setLoading(false); return; }
     setFlashToast("施術記録を更新しました");
     router.push(`/records/${id}`);
   };
@@ -247,39 +164,8 @@ export default function EditRecordPage() {
   const handleDelete = async () => {
     if (!confirm("この施術記録を削除しますか？")) return;
     setDeleting(true);
-    const supabase = createClient();
-
-    const { data: photos } = await supabase.from("treatment_photos").select("storage_path").eq("treatment_record_id", id);
-    if (photos && photos.length > 0) await supabase.storage.from("treatment-photos").remove(photos.map((p) => p.storage_path));
-
-    const { data: recordMenusToUndo } = await supabase.from("treatment_record_menus").select("ticket_id")
-      .eq("treatment_record_id", id).eq("payment_type", "ticket").not("ticket_id", "is", null);
-    if (recordMenusToUndo) {
-      for (const rm of recordMenusToUndo) {
-        if (rm.ticket_id) {
-          const { error: undoErr } = await supabase.rpc("undo_course_ticket_session", { p_ticket_id: rm.ticket_id });
-          if (undoErr) console.error("Ticket undo on delete error:", undoErr);
-        }
-      }
-    }
-
-    const { data: linkedPurchasesToReverse } = await supabase.from("purchases").select("id, product_id").eq("treatment_record_id", id);
-    if (linkedPurchasesToReverse) {
-      for (const purchase of linkedPurchasesToReverse) {
-        if (purchase.product_id) {
-          const { error: reverseErr } = await supabase.rpc("reverse_product_sale", { p_purchase_id: purchase.id });
-          if (reverseErr) console.error("Purchase reverse on delete error:", reverseErr);
-        } else {
-          await supabase.from("purchases").delete().eq("id", purchase.id);
-        }
-      }
-    }
-
-    await supabase.from("course_tickets").delete().eq("treatment_record_id", id);
-
-    const { error } = await supabase.from("treatment_records").delete().eq("id", id).eq("salon_id", salonId);
-    if (error) { setError("削除に失敗しました"); setDeleting(false); return; }
-
+    const result = await deleteTreatmentRecord(id, salonId);
+    if (!result.success) { setError(result.error ?? "削除に失敗しました"); setDeleting(false); return; }
     router.push(customerId ? `/customers/${customerId}` : "/dashboard");
   };
 
@@ -338,86 +224,13 @@ export default function EditRecordPage() {
           <input type="text" value={form.treatment_area} onChange={(e) => updateField("treatment_area", e.target.value)} className={INPUT_CLASS} />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1.5">使用した化粧品・機器</label>
-          <AutoResizeTextarea value={form.products_used} onChange={(e) => updateField("products_used", e.target.value)} minRows={2} className={INPUT_CLASS} />
-        </div>
+        <TreatmentDetailFields form={form} onUpdate={updateField} />
 
-        <div>
-          <label className="block text-sm font-medium mb-1.5">施術前の状態</label>
-          <AutoResizeTextarea value={form.skin_condition_before} onChange={(e) => updateField("skin_condition_before", e.target.value)} minRows={2} className={INPUT_CLASS} />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1.5">施術後の経過メモ</label>
-          <AutoResizeTextarea value={form.notes_after} onChange={(e) => updateField("notes_after", e.target.value)} minRows={2} className={INPUT_CLASS} />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1.5">話した内容（会話メモ）</label>
-          <AutoResizeTextarea value={form.conversation_notes} onChange={(e) => updateField("conversation_notes", e.target.value)} minRows={3} className={INPUT_CLASS} />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1.5">注意事項</label>
-          <AutoResizeTextarea value={form.caution_notes} onChange={(e) => updateField("caution_notes", e.target.value)} minRows={2} className={INPUT_CLASS} />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1.5">次回への申し送り</label>
-          <AutoResizeTextarea value={form.next_visit_memo} onChange={(e) => updateField("next_visit_memo", e.target.value)} minRows={2} className={INPUT_CLASS} />
-        </div>
-
-        {/* 紐づく回数券販売 */}
-        {linkedTickets.length > 0 && (
-          <div className="border-t border-border pt-3">
-            <h3 className="text-sm font-bold mb-2">回数券販売</h3>
-            <div className="space-y-2">
-              {linkedTickets.map((ticket) => (
-                <div key={ticket.id} className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{ticket.ticket_name}</p>
-                    <p className="text-xs text-text-light">{ticket.total_sessions}回{ticket.price != null ? ` / ${ticket.price.toLocaleString()}円` : ""}</p>
-                  </div>
-                  <button type="button" onClick={() => handleDeleteLinkedTicket(ticket.id)} disabled={deletingTicketId === ticket.id}
-                    className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50">
-                    {deletingTicketId === ticket.id ? "削除中..." : "削除"}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 紐づく物販記録 */}
-        {linkedPurchases.length > 0 && (
-          <div className="border-t border-border pt-3">
-            <h3 className="text-sm font-bold mb-2">物販記録</h3>
-            <div className="space-y-2">
-              {linkedPurchases.map((purchase) => (
-                <div key={purchase.id} className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{purchase.item_name}</p>
-                    <p className="text-xs text-text-light">
-                      {purchase.quantity}個 × {purchase.unit_price.toLocaleString()}円 = {purchase.total_price.toLocaleString()}円
-                      {purchase.product_id && " (在庫連動)"}
-                    </p>
-                  </div>
-                  <button type="button" onClick={() => handleDeletePurchase(purchase.id)} disabled={deletingPurchaseId === purchase.id}
-                    className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50">
-                    {deletingPurchaseId === purchase.id ? "削除中..." : "削除"}
-                  </button>
-                </div>
-              ))}
-              {linkedPurchases.length > 1 && (
-                <div className="flex items-center justify-between bg-accent/5 rounded-xl px-3 py-2">
-                  <span className="text-xs text-text-light">合計</span>
-                  <span className="text-sm font-bold text-accent">{linkedPurchases.reduce((s, p) => s + p.total_price, 0).toLocaleString()}円</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <TreatmentLinkedItems
+          linkedTickets={linkedTickets} linkedPurchases={linkedPurchases}
+          deletingTicketId={deletingTicketId} deletingPurchaseId={deletingPurchaseId}
+          onDeleteTicket={handleDeleteLinkedTicket} onDeletePurchase={handleDeletePurchase}
+        />
 
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={() => router.back()} className="flex-1 bg-background border border-border text-text font-medium rounded-xl py-3 transition-colors min-h-[48px]">キャンセル</button>
@@ -425,14 +238,7 @@ export default function EditRecordPage() {
         </div>
       </form>
 
-      <div className="bg-surface border border-error/20 rounded-2xl p-5">
-        <h3 className="font-bold text-sm text-error mb-2">危険な操作</h3>
-        <p className="text-sm text-text-light mb-3">この施術記録を削除します。この操作は取り消せません。</p>
-        <button onClick={handleDelete} disabled={deleting}
-          className="bg-error/10 text-error text-sm font-medium rounded-xl px-4 py-2 hover:bg-error/20 transition-colors disabled:opacity-50 min-h-[48px]">
-          {deleting ? "削除中..." : "この記録を削除"}
-        </button>
-      </div>
+      <TreatmentDeleteSection deleting={deleting} onDelete={handleDelete} />
     </div>
   );
 }
