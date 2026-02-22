@@ -91,6 +91,7 @@ export function PhotoManageSection({ recordId, salonId }: { recordId: string; sa
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-medium">施術写真</h3>
+      <p className="text-xs text-text-light">写真の追加・削除は自動で保存されます</p>
       {error && <p className="text-error text-sm">{error}</p>}
 
       <input
