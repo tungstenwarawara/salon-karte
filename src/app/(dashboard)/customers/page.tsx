@@ -8,7 +8,7 @@ export default async function CustomersPage() {
   if (!user) redirect("/login");
   if (!salon) redirect("/setup");
 
-  // 顧客データと来店情報を並列取得（Server Component なので初回HTMLに含まれる）
+  // 顧客データと来店統計を並列取得（Server Component なので初回HTMLに含まれる）
   const [customersResult, visitResult] = await Promise.all([
     supabase
       .from("customers")
@@ -16,30 +16,15 @@ export default async function CustomersPage() {
       .eq("salon_id", salon.id)
       .order("last_name_kana", { ascending: true }),
     supabase
-      .from("treatment_records")
-      .select("customer_id, treatment_date")
-      .eq("salon_id", salon.id),
+      .rpc("get_customer_visit_summary", { p_salon_id: salon.id })
+      .returns<{ customer_id: string; visit_count: number; last_visit_date: string | null }[]>(),
   ]);
 
   const customerData = customersResult.data ?? [];
   const visitData = visitResult.data ?? [];
 
-  // 来店統計を集計
-  const visitMap = new Map<string, { count: number; lastDate: string | null }>();
-  for (const record of visitData) {
-    const existing = visitMap.get(record.customer_id);
-    if (existing) {
-      existing.count++;
-      if (!existing.lastDate || record.treatment_date > existing.lastDate) {
-        existing.lastDate = record.treatment_date;
-      }
-    } else {
-      visitMap.set(record.customer_id, {
-        count: 1,
-        lastDate: record.treatment_date,
-      });
-    }
-  }
+  // RPC結果をMapに変換
+  const visitMap = new Map(visitData.map((v) => [v.customer_id, v]));
 
   const customers = customerData.map((c) => {
     const visit = visitMap.get(c.id);
@@ -50,8 +35,8 @@ export default async function CustomersPage() {
       last_name_kana: c.last_name_kana,
       first_name_kana: c.first_name_kana,
       phone: c.phone,
-      visit_count: visit?.count ?? 0,
-      last_visit_date: visit?.lastDate ?? null,
+      visit_count: visit?.visit_count ?? 0,
+      last_visit_date: visit?.last_visit_date ?? null,
     };
   });
 

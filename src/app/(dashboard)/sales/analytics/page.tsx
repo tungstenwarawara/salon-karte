@@ -21,12 +21,6 @@ type RepeatRow = {
   returning_customers: number;
 };
 
-type MenuAgg = {
-  menu_name_snapshot: string;
-  count: number;
-  revenue: number;
-};
-
 export default async function AnalyticsPage() {
   const { user, salon, supabase } = await getAuthAndSalon();
   if (!user) redirect("/login");
@@ -41,28 +35,12 @@ export default async function AnalyticsPage() {
     supabase
       .rpc("get_monthly_new_vs_returning", { p_salon_id: salon.id, p_year: currentYear })
       .returns<RepeatRow[]>(),
-    // 人気メニュー: treatment_record_menus を集計
     supabase
-      .from("treatment_record_menus")
-      .select("menu_name_snapshot, price_snapshot, payment_type, treatment_records!inner(salon_id)")
-      .eq("treatment_records.salon_id", salon.id)
-      .returns<{ menu_name_snapshot: string; price_snapshot: number | null; payment_type: string }[]>(),
+      .rpc("get_menu_ranking", { p_salon_id: salon.id, p_limit: 10 })
+      .returns<MenuRanking[]>(),
   ]);
 
-  // メニュー集計をJS側で実行（GROUP BYの代わり）
-  const menuMap = new Map<string, { count: number; revenue: number }>();
-  for (const m of menusRes.data ?? []) {
-    const existing = menuMap.get(m.menu_name_snapshot) ?? { count: 0, revenue: 0 };
-    existing.count += 1;
-    if (m.payment_type === "cash" || m.payment_type === "credit") {
-      existing.revenue += m.price_snapshot ?? 0;
-    }
-    menuMap.set(m.menu_name_snapshot, existing);
-  }
-  const menus: MenuRanking[] = Array.from(menuMap.entries())
-    .map(([menu_name, data]) => ({ menu_name, count: data.count, revenue: data.revenue }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
+  const menus: MenuRanking[] = (menusRes.data as MenuRanking[]) ?? [];
 
   return (
     <AnalyticsView

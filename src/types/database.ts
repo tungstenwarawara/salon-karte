@@ -1115,6 +1115,27 @@ export type Database = {
           returning_customers: number;
         }[];
       };
+      get_menu_ranking: {
+        Args: {
+          p_salon_id: string;
+          p_limit?: number;
+        };
+        Returns: {
+          menu_name: string;
+          count: number;
+          revenue: number;
+        }[];
+      };
+      get_customer_visit_summary: {
+        Args: {
+          p_salon_id: string;
+        };
+        Returns: {
+          customer_id: string;
+          visit_count: number;
+          last_visit_date: string | null;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
