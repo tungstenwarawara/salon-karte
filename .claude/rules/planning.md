@@ -33,15 +33,4 @@
 3. **静的な進捗表を更新しない**: ルールファイルに行数や進捗率を書くと陳腐化する。実測コマンドで毎回確認する方式にする
 
 ## 教訓ログ
-- 2026-02-19: 本番DBにマイグレーション未適用のままデプロイ → マージ前に適用確認必須
-- 2026-02-19: Supabase dashboardから直接適用しローカルファイル不在 → 全マイグレーションはローカルファイルで管理
-- 2026-02-19: RPC関数にSET search_path未設定 → 必ず `SECURITY INVOKER` + `SET search_path = public`
-- 2026-02-20: records/new が1145行に膨張 → ファイルサイズ制限（ページ300行、コンポーネント200行）
-- 2026-02-20: 不要な決済方法を計画に含めかけた → 実業務フローを確認してから計画
-- 2026-02-21: CLAUDE.mdに古い行数を記載し続けた → 静的行数記載を廃止し実測コマンド方式に移行
-- 2026-02-21: ソースレビューで `.select("..., description")` のカラム名誤りを見逃した（正しくは `memo`）→ レビュー時にselectカラム名をDBスキーマ（マイグレーションファイル）と照合必須。ビルドでは検出不可（文字列型のため）
-- 2026-02-21: 計画ファイルが完了後も残り、次セッションが完了済みタスクを再実行しようとした → 計画完了時にファイル削除を必須化
-- 2026-02-21: 顧客詳細ページの `.select("total_price, skin_condition")` が存在しないカラム名だった（正: purchasesの`total_price`を誤ってtreatment_recordsに指定、`skin_condition`→`skin_condition_before`）。同日の教訓（descriptionカラム誤り）と同じ問題が再発。Supabase SDKは存在しないカラムでもエラーを返さず空配列を返すため、3段階チェック（型・ビルド・実行時）全てをすり抜けた。→ コミット前にselect照合スクリプトを必ず実行する運用に変更
-- 2026-02-21: 顧客詳細ページの全クエリ（treatment_records, appointments, purchases, course_tickets）に `.eq("salon_id", salon.id)` が欠落していた → salon_idフィルタの有無はルールに明記済みだったが守られなかった。コミット前チェックで自動検出する仕組みが必要
-- 2026-02-22: RPC関数にパラメータを追加する際 `CREATE OR REPLACE` を使ったが、PostgreSQLではパラメータ数が異なると上書きではなくオーバーロード（別関数の追加）になる。PostgRESTが300 (Multiple Choices)を返しRPC呼び出しが全て失敗。ソースレビュー・ビルド・型チェックでは検出不可（DB側の問題）→ パラメータ変更時は必ず旧シグネチャを `DROP FUNCTION` してから `CREATE OR REPLACE`。エラーメッセージは `error.message` を含めて表示する
-- 2026-02-22: 物販登録のエラーハンドリングで `setError("登録に失敗しました")` と固定メッセージのみ表示し、実際のエラー内容（rpcError.message）を握りつぶしていた → 全エラーハンドリングで `error.message` をユーザーに表示する。console.errorにも出力する
+過去の障害・教訓は `.claude/rules/lessons-learned.md` に分離。新規追加もそちらへ。

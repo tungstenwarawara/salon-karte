@@ -1,3 +1,9 @@
+---
+globs:
+  - "src/app/**/*.tsx"
+  - "src/components/**/*.tsx"
+---
+
 # UI/UX 品質ルール
 
 ## ターゲットユーザー

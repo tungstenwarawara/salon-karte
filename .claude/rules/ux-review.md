@@ -1,3 +1,9 @@
+---
+globs:
+  - "src/app/**/*.tsx"
+  - "src/components/**/*.tsx"
+---
+
 # UXレビュー チェックリスト
 
 ## 対象ユーザー

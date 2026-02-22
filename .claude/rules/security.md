@@ -1,3 +1,10 @@
+---
+globs:
+  - "src/**/*.ts"
+  - "src/**/*.tsx"
+  - "supabase/migrations/**/*.sql"
+---
+
 # セキュリティルール
 
 ## マルチテナント分離（最重要）
