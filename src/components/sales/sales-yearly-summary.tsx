@@ -38,7 +38,7 @@ export function SalesYearlySummary({ yearTotal, grandTotal, deferredRevenue }: P
               {yearTotal.service > 0 && `サービス ${formatYen(yearTotal.service)}`}
             </p>
           )}
-          {deferredRevenue > 0 && <p>前受金（未消化残高）：{formatYen(deferredRevenue)}</p>}
+          {deferredRevenue > 0 && <p>回数券 未使用分：{formatYen(deferredRevenue)}</p>}
         </div>
       )}
     </div>
