@@ -248,7 +248,7 @@ export default function EditRecordPage() {
       </form>
 
       <div className="bg-surface border border-border rounded-2xl p-5">
-        <PhotoManageSection recordId={id} />
+        <PhotoManageSection recordId={id} salonId={salonId} />
       </div>
 
       <div className="mt-4">
