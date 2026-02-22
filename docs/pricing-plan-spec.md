@@ -1,8 +1,8 @@
 # 料金プラン・機能制限 技術設計書（v2）
 
 > 更新日: 2026-02-22
-> ステータス: 設計のみ（実装は商用化フェーズ）。Phase 6完了に伴い機能ステータスを更新
-> 変更履歴: v1 → v2 全面改訂（プラン構造・料金・コスト分析）→ v2.1 機能実装状況を反映
+> ステータス: 設計のみ（実装は商用化フェーズ）
+> 変更履歴: v1 → v2 全面改訂 → v2.1 機能実装状況反映 → v3 リバーストライアル廃止・制限再設計
 
 ---
 
@@ -190,18 +190,28 @@ Supabase Free → Pro へのアップグレードが必要になるタイミン�
 | 機能 | おためし（0円） | スタンダード（2,980円） | テスター |
 |------|--------------|---------------------|---------|
 | **顧客管理** | 10件まで | **無制限** | 無制限 |
-| **施術カルテ** | 無制限 | 無制限 | 無制限 |
-| **予約管理** | 月10件まで | **無制限** | 無制限 |
-| **写真保存** | なし | **5GB** | 5GB |
+| **施術カルテ** | 1顧客あたり5件まで | **無制限** | 無制限 |
+| **予約管理** | 月20件まで | **無制限** | 無制限 |
+| **写真保存** | なし | **5GB**（+500円で20GB） | 5GB |
+| **カルテPDF出力** | — | **○** | ○ |
 | **物販・回数券** | ○ | ○ | ○ |
 | **売上レポート** | 当月のみ | **全期間** | 全期間 |
 | **在庫管理** | ○ | ○ | ○ |
 | **確定申告レポート** | ○ | ○ | ○ |
 | **CSVエクスポート** | ○ | ○ | ○ |
+| **CSVインポート** | プラン制限内の件数まで | **無制限** | 無制限 |
 | **離脱アラート** | ○ | ○ | ○ |
 | **LINE連携** | — | **○** | ○ |
 | **カウンセリングシート** | — | **○** | ○ |
 | **詳細分析レポート** | — | **○** | ○ |
+
+> **v3 変更点**:
+> - 施術カルテ: 無制限 → 1顧客あたり5件まで（「カルテだけ使う」パターンへの転換圧力）
+> - 予約: 月10件 → 月20件に緩和（月10件は厳しすぎ。週1営業でも超える）
+> - カルテPDF出力: 実装済みのためスタンダード機能に追加
+> - CSVインポート: プラン制限を適用（サイクル攻撃防止）
+> - 写真容量オプション: +500円/月で5GB→20GB（唯一のオプション。「量」の課金）
+> - テスター: DB内部のみ。ガイド等のユーザー向け表示には含めない
 
 ### 3.4 この設計の根拠
 
@@ -225,8 +235,9 @@ Supabase Free → Pro へのアップグレードが必要になるタイミン�
 
 - 「機能が使えない」→ 不満
 - 「もっと使いたい」→ 購買動機
-- 顧客10件・予約月10件 → 実業務で使い始めると自然に上限に当たる
+- 顧客10件・カルテ5件/顧客・予約月20件 → 実業務で使い始めると自然に上限に当たる
 - LiMEの「カルテ1人5枚まで」と同じ原理
+- カルテ制限は「ホットペッパーで予約、カルテだけ使う」パターンへの対策（予約制限が効かない）
 
 #### なぜ2,980円で全部入りにするのか
 
@@ -300,18 +311,16 @@ Supabase Free → Pro へのアップグレードが必要になるタイミン�
 ALTER TABLE salons ADD COLUMN plan_type TEXT NOT NULL DEFAULT 'tester'
   CHECK (plan_type IN ('tester', 'free', 'standard'));
 
-ALTER TABLE salons ADD COLUMN plan_started_at TIMESTAMPTZ DEFAULT now();
+-- v3: plan_started_at は不要（リバーストライアル廃止のため）
 ```
 
 - デフォルト値 `'tester'` → 既存サロンは全機能開放のまま
-- `plan_started_at` → 利用開始日の記録
 
 ### database.ts 型追加（商用化時）
 
 ```typescript
 // salons.Row に追加
 plan_type: 'tester' | 'free' | 'standard';
-plan_started_at: string;
 ```
 
 ---
@@ -324,10 +333,12 @@ plan_started_at: string;
 export type PlanType = 'tester' | 'free' | 'standard';
 
 export type PlanLimits = {
-  maxCustomers: number;         // Infinity = 無制限
-  maxAppointmentsPerMonth: number; // Infinity = 無制限
+  maxCustomers: number;              // Infinity = 無制限
+  maxRecordsPerCustomer: number;     // Infinity = 無制限
+  maxAppointmentsPerMonth: number;   // Infinity = 無制限
   photosEnabled: boolean;
-  salesReportFullHistory: boolean; // false = 当月のみ
+  pdfEnabled: boolean;
+  salesReportFullHistory: boolean;    // false = 当月のみ
   lineEnabled: boolean;
   counselingSheetEnabled: boolean;
   advancedAnalyticsEnabled: boolean;
@@ -337,8 +348,10 @@ export type PlanLimits = {
 const PLAN_DEFINITIONS: Record<PlanType, PlanLimits> = {
   tester: {
     maxCustomers: Infinity,
+    maxRecordsPerCustomer: Infinity,
     maxAppointmentsPerMonth: Infinity,
     photosEnabled: true,
+    pdfEnabled: true,
     salesReportFullHistory: true,
     lineEnabled: true,
     counselingSheetEnabled: true,
@@ -347,8 +360,10 @@ const PLAN_DEFINITIONS: Record<PlanType, PlanLimits> = {
   },
   free: {
     maxCustomers: 10,
-    maxAppointmentsPerMonth: 10,
+    maxRecordsPerCustomer: 5,
+    maxAppointmentsPerMonth: 20,
     photosEnabled: false,
+    pdfEnabled: false,
     salesReportFullHistory: false,
     lineEnabled: false,
     counselingSheetEnabled: false,
@@ -357,26 +372,25 @@ const PLAN_DEFINITIONS: Record<PlanType, PlanLimits> = {
   },
   standard: {
     maxCustomers: Infinity,
+    maxRecordsPerCustomer: Infinity,
     maxAppointmentsPerMonth: Infinity,
     photosEnabled: true,
+    pdfEnabled: true,
     salesReportFullHistory: true,
     lineEnabled: true,
     counselingSheetEnabled: true,
     advancedAnalyticsEnabled: true,
-    maxPhotoStorageMB: 5120,
+    maxPhotoStorageMB: 5120,  // +500円/月で20480に拡張
   },
 };
 ```
 
-> **変更点（v1→v2）**:
-> - `inventoryEnabled` / `taxReportEnabled` 削除 → 全プラン無料化
-> - `maxAppointmentsPerMonth` 追加 → 予約の量制限
-> - `salesReportFullHistory` 追加 → レポート期間制限
-> - `lineEnabled` / `counselingSheetEnabled` / `advancedAnalyticsEnabled` 追加
->
-> **v2.1 補足（2026-02-22）**:
-> LINE連携・カウンセリングシート・売上分析は全て実装済み。
-> 商用化フェーズでプラン制限を有効にするだけで機能ゲートが動作する。
+> **変更点（v2→v3）**:
+> - `maxRecordsPerCustomer` 追加 → カルテの量制限（1顧客あたり5件）
+> - `maxAppointmentsPerMonth` を10→20に緩和
+> - `pdfEnabled` 追加 → カルテPDF出力（実装済み）
+> - LINE連携・カウンセリングシート・売上分析・カルテPDFは全て実装済み
+> - 商用化フェーズでプラン制限を有効にするだけで機能ゲートが動作する
 
 ### 7.2 Client hook / FeatureGate（v1と同様）
 
@@ -386,46 +400,54 @@ v1のコードをそのまま使用。PlanType の定義だけ変更。
 
 ```typescript
 // auth-helpers.ts（商用化時に変更）
-.select("id, name, phone, address, business_hours, salon_holidays, plan_type, plan_started_at")
+.select("id, name, phone, address, business_hours, salon_holidays, plan_type")
 ```
 
 ---
 
-## 8. リバーストライアル戦略
+## 8. ~~リバーストライアル戦略~~ → フリーミアム方式に変更（v3）
 
-### 概要
+### v2からの変更理由
 
-最も転換率が高い「リバーストライアル」方式を採用:
+リバーストライアル（30日間全機能開放→縮退）を**廃止**し、純粋なフリーミアムに変更。
+
+#### 廃止理由
+
+1. **量のみ開放のリバーストライアルは効果が薄い**
+   - v2.1でLINE・カウンセリング・詳細分析を「おためしでは最初から使えない」に決定
+   - 残るのは量制限（顧客・予約・カルテ件数）の解除だけ
+   - 最初の30日間で上限に達するユーザーは少ない → 体験価値が薄い
+
+2. **サイクル攻撃のリスク**
+   - 新規登録→30日間無制限→CSVエクスポート→別アカウントで再登録→インポートの繰り返しで永久無料
+   - 写真・LINE連携は失われるがCSVデータは持ち出し可能
+   - リバーストライアルがなければサイクルする動機がゼロ
+
+3. **LINE連携の設定が無駄になる問題**
+   - 30日間にLINE接続→縮退で停止 → お客様へのリマインドが突然止まる → 実害
+   - → おためしではLINE連携を使えないことに決定 → リバーストライアルの「全機能体験」が成立しない
+
+4. **実装の簡素化**
+   - trial期間判定・縮退ロジック・plan_started_atカラムが不要
+   - 「30日後に何が変わるの？」の説明が不要
+   - シンプルに「無料で使い始めて、足りなくなったら月額2,980円」
+
+### 現在の方式: フリーミアム
 
 ```
-新規登録 → 30日間スタンダード全機能開放
-         → 31日目に「おためし」に自動縮退
-         → 顧客11件目を登録しようとした時にアップグレード案内
+新規登録 → おためしプラン（制限付き・永久無料）
+        → 上限に達した時にアップグレード案内
+        → スタンダードプラン（2,980円/月・全機能無制限）
 ```
-
-### なぜリバーストライアルか
-
-| 方式 | 転換率 | 理由 |
-|------|--------|------|
-| フリーミアム（機能制限） | 2〜5% | 価値を体験する前に壁に当たる |
-| 無料トライアル（期間制限） | 10〜15% | 期間中に使い込まないまま終わる |
-| **リバーストライアル** | **15〜25%** | 全機能を体験→価値を理解→縮退が嫌で課金 |
-
-### 実装
 
 ```typescript
-// リバーストライアル判定
+// プラン判定（シンプル）
 function getEffectivePlan(salon: Salon): PlanType {
-  if (salon.plan_type === 'tester') return 'tester';
-  if (salon.plan_type === 'standard') return 'standard';
-
-  // free プランでも登録30日以内はスタンダード扱い
-  const daysSinceStart = differenceInDays(new Date(), new Date(salon.plan_started_at));
-  if (daysSinceStart <= 30) return 'standard';
-
-  return 'free';
+  return salon.plan_type; // tester | free | standard をそのまま返す
 }
 ```
+
+> **plan_started_at カラムは不要** → リバーストライアル判定がないため削除可能
 
 ---
 
@@ -444,12 +466,11 @@ function getEffectivePlan(salon: Salon): PlanType {
 ### フロー
 
 ```
-1. 新規登録 → plan_type = 'free', plan_started_at = now()
-2. 30日間はスタンダード扱い（リバーストライアル）
-3. 31日目以降、顧客11件目登録時にアップグレード案内
-4. ユーザーが「スタンダードにする」→ Stripe Checkout
-5. 決済完了 → Webhook で plan_type = 'standard' に更新
-6. 解約/失敗 → plan_type = 'free' に戻す
+1. 新規登録 → plan_type = 'free'
+2. おためしプランの上限に達した時にアップグレード案内
+3. ユーザーが「スタンダードにする」→ Stripe Checkout
+4. 決済完了 → Webhook で plan_type = 'standard' に更新
+5. 解約/失敗 → plan_type = 'free' に戻す
 ```
 
 ### 必要なテーブル（商用化フェーズで追加）
@@ -471,9 +492,10 @@ CREATE TABLE subscriptions (
 ## 11. テスター全機能開放の仕組み
 
 - `plan_type = 'tester'` がデフォルト値（既存サロンはそのまま）
-- tester は全機能無制限（リバーストライアルの30日制限も適用されない）
+- tester は全機能無制限
 - テスター期間終了時に plan_type を 'free' or 'standard' に更新
-- テスター特典: 正式リリース後6ヶ月間スタンダード無料
+- **ガイド等のユーザー向け表示にはテスターを含めない**（おためし/スタンダードの2択のみ表示）
+- テスターへの優遇は個別連絡で対応
 
 ---
 
@@ -486,7 +508,7 @@ CREATE TABLE subscriptions (
 | LINE連携（リマインド） | KaruteKun +5,500円 | **✅ 実装済み** | 競合が高額課金 → 込みで圧倒的優位 |
 | カウンセリングシート | coming-soon標準搭載 | **✅ 実装済み** | エステ特化の差別化 |
 | 詳細分析（LTV・リピート率） | Bionly有料に搭載 | **✅ 実装済み** | データ蓄積後に価値 |
-| カルテPDF出力 | 一部競合に搭載 | 未実装 | 税理士提出用で需要 |
+| カルテPDF出力 | 一部競合に搭載 | **✅ 実装済み** | 税理士提出用で需要 |
 
 ### LINE連携のコスト影響
 
@@ -640,16 +662,17 @@ CREATE TABLE subscriptions (
 
 ---
 
-## 16. まとめ: v1 → v2 の変更サマリー
+## 16. まとめ: v1 → v2 → v3 の変更サマリー
 
-| 項目 | v1 | v2 | 理由 |
-|------|-----|-----|------|
-| プラン数 | 4（tester/trial/basic/pro） | 3（tester/free/standard） | シンプル化 |
-| プラン名 | basic/pro | おためし/スタンダード | 序列の明確化 |
-| 確定申告 | +500円オプション | **全プラン無料** | 差別化の武器を開放 |
-| 在庫管理 | +500円オプション | **全プラン無料** | 密結合機能を分離しない |
-| CSV出力 | +300円オプション | **全プラン無料** | データ人質感の排除 |
-| オプション数 | 7個 | **0個** | 選択疲れの排除 |
-| 追加収益 | 機能別+500円〜 | **別プロダクト方式** | 独立した価値単位で課金 |
-| 損益分析 | 概算のみ | **従量課金込みの詳細版** | 写真Storageのコスト予測 |
-| トライアル | 期間制限 | **リバーストライアル** | 転換率15〜25%（最高） |
+| 項目 | v1 | v2 | v3 | 理由 |
+|------|-----|-----|-----|------|
+| プラン数 | 4（tester/trial/basic/pro） | 3（tester/free/standard） | 3（同左） | シンプル化 |
+| プラン名 | basic/pro | おためし/スタンダード | 同左 | 序列の明確化 |
+| 確定申告 | +500円オプション | **全プラン無料** | 同左 | 差別化の武器を開放 |
+| オプション数 | 7個 | **0個** | **1個**（写真容量+500円） | 量の課金のみ許容 |
+| トライアル | 期間制限 | リバーストライアル | **フリーミアム（廃止）** | サイクル攻撃防止・実装簡素化 |
+| カルテ制限 | なし | なし | **5件/顧客** | カルテだけユーザーへの転換圧力 |
+| 予約制限 | なし | 月10件 | **月20件** | 月10件は厳しすぎ |
+| カルテPDF | 未実装 | 未実装 | **実装済み** | スタンダード機能 |
+| テスターの表示 | ガイドに記載 | ガイドに記載 | **ガイドから削除** | 内部管理のみ |
+| 写真エクスポート | なし | 撤退時対応 | **今後対応予定** | データポータビリティ |
