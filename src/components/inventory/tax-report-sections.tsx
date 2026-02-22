@@ -22,6 +22,12 @@ export function TaxReportSections({ report, monthlySales, year }: Props) {
 
   return (
     <>
+      {/* 注意書き */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+        <p className="text-xs text-amber-800 font-medium">このレポートは売上・仕入の参考資料です</p>
+        <p className="text-[10px] text-amber-700 mt-0.5">確定申告には税理士や会計ソフトでの確認をお勧めします。金額は本アプリへの入力値に基づくため、実際の入出金とは異なる場合があります。</p>
+      </div>
+
       {/* 売上原価計算 */}
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
         <h3 className="font-bold text-sm">売上原価の計算</h3>
@@ -126,7 +132,7 @@ export function TaxReportSections({ report, monthlySales, year }: Props) {
       {/* CSV出力 */}
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
         <h3 className="font-bold text-sm">CSV出力</h3>
-        <p className="text-xs text-text-light">確定申告用のデータをCSV形式でダウンロードできます</p>
+        <p className="text-xs text-text-light">売上・仕入の内訳データをCSV形式でダウンロードできます。税理士への共有や会計ソフトへの取り込みにご活用ください。</p>
         <div className="space-y-2">
           <button onClick={() => downloadCsv("generic", report, monthlySales, year)}
             className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors min-h-[48px] text-sm">
