@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
+import { PageHeader } from "@/components/layout/page-header";
 import { formatDateJa } from "@/lib/format";
 import type { Database } from "@/types/database";
 
@@ -73,14 +74,13 @@ export default async function AppointmentDetailPage({
 
   return (
     <div className="space-y-4">
-      {/* ヘッダー */}
-      <div className="flex items-center justify-between">
-        <div>
-          <Link href="/appointments" className="text-sm text-accent hover:underline">
-            ← 予約管理
-          </Link>
-          <h2 className="text-xl font-bold mt-1">予約詳細</h2>
-        </div>
+      <PageHeader
+        title="予約詳細"
+        breadcrumbs={[
+          { label: "予約管理", href: "/appointments" },
+          { label: "予約詳細" },
+        ]}
+      >
         {appointment.status === "scheduled" && (
           <Link
             href={`/appointments/${id}/edit`}
@@ -89,7 +89,7 @@ export default async function AppointmentDetailPage({
             編集
           </Link>
         )}
-      </div>
+      </PageHeader>
 
       {/* ステータス + 日時 */}
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">

@@ -55,7 +55,7 @@ export function PurchaseInlineForm({ products, onAdd }: Props) {
           <button
             type="button"
             onClick={() => setMode("product")}
-            className={`flex-1 text-center text-xs font-medium py-2 rounded-lg transition-colors min-h-[36px] ${
+            className={`flex-1 text-center text-xs font-medium py-2 rounded-lg transition-colors min-h-[44px] ${
               mode === "product" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"
             }`}
           >
@@ -64,7 +64,7 @@ export function PurchaseInlineForm({ products, onAdd }: Props) {
           <button
             type="button"
             onClick={() => setMode("free")}
-            className={`flex-1 text-center text-xs font-medium py-2 rounded-lg transition-colors min-h-[36px] ${
+            className={`flex-1 text-center text-xs font-medium py-2 rounded-lg transition-colors min-h-[44px] ${
               mode === "free" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"
             }`}
           >

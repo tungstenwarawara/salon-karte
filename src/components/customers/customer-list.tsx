@@ -117,7 +117,7 @@ export function CustomerList({ customers }: Props) {
           <button
             key={key}
             onClick={() => setSortBy(key)}
-            className={`text-xs px-3 py-1.5 rounded-lg transition-colors min-h-[32px] ${
+            className={`text-xs px-3 py-1.5 rounded-lg transition-colors min-h-[44px] ${
               sortBy === key
                 ? "bg-accent text-white"
                 : "bg-surface border border-border text-text-light"

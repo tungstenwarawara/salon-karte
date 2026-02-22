@@ -134,8 +134,14 @@ export function CourseTicketSection({
           ))}
         </div>
       ) : (
-        <div className="bg-surface border border-border rounded-xl p-6 text-center text-text-light">
-          コースチケットはまだありません
+        <div className="bg-surface border border-border rounded-xl p-6 text-center">
+          <p className="text-text-light text-sm">コースチケットはまだありません</p>
+          <Link
+            href={`/customers/${customerId}/tickets/new`}
+            className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
+          >
+            最初の回数券を登録する →
+          </Link>
         </div>
       )}
     </div>

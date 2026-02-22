@@ -54,7 +54,7 @@ export function StepHealth({ data, onChange }: Props) {
               key={c}
               type="button"
               onClick={() => toggleCondition(c)}
-              className={`px-3 py-1.5 rounded-full text-sm border transition-colors min-h-[36px] ${
+              className={`px-3 py-1.5 rounded-full text-sm border transition-colors min-h-[44px] ${
                 data.conditions.includes(c)
                   ? "bg-accent text-white border-accent"
                   : "bg-surface border-border text-text-light"

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
+import { PageHeader } from "@/components/layout/page-header";
 import type { Database } from "@/types/database";
 import { VisitAnalytics } from "@/components/customers/visit-analytics";
 import { SalesSummary } from "@/components/customers/sales-summary";
@@ -131,37 +132,28 @@ export default async function CustomerDetailPage({
 
   return (
     <div className="space-y-6">
-      {/* 戻るリンク */}
-      <Link
-        href="/customers"
-        className="flex items-center gap-1 text-sm text-accent hover:underline"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-        </svg>
-        顧客一覧
-      </Link>
-
-      {/* ヘッダー */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold">
-            {customer.last_name} {customer.first_name}
-          </h2>
-          {(customer.last_name_kana || customer.first_name_kana) && (
-            <p className="text-sm text-text-light">
-              {customer.last_name_kana} {customer.first_name_kana}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href={`/records/new?customer=${id}`} className="text-sm bg-accent text-white px-3 py-1.5 rounded-lg hover:bg-accent-light transition-colors min-h-[32px] flex items-center font-medium">
-            カルテ作成
-          </Link>
-          <Link href={`/customers/${id}/edit`} className="text-sm text-accent hover:underline">
-            編集
-          </Link>
-        </div>
+      <div>
+        <PageHeader
+          title={`${customer.last_name} ${customer.first_name}`}
+          breadcrumbs={[
+            { label: "顧客一覧", href: "/customers" },
+            { label: `${customer.last_name} ${customer.first_name}` },
+          ]}
+        >
+          <div className="flex items-center gap-3">
+            <Link href={`/records/new?customer=${id}`} className="text-sm bg-accent text-white px-3 py-1.5 rounded-lg hover:bg-accent-light transition-colors min-h-[44px] flex items-center font-medium">
+              カルテ作成
+            </Link>
+            <Link href={`/customers/${id}/edit`} className="text-sm text-accent hover:underline min-h-[44px] flex items-center">
+              編集
+            </Link>
+          </div>
+        </PageHeader>
+        {(customer.last_name_kana || customer.first_name_kana) && (
+          <p className="text-sm text-text-light -mt-2">
+            {customer.last_name_kana} {customer.first_name_kana}
+          </p>
+        )}
       </div>
 
       <VisitAnalytics

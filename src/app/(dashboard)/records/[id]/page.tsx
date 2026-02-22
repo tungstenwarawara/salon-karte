@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
+import { PageHeader } from "@/components/layout/page-header";
 import { formatDateJa } from "@/lib/format";
 import { BeforeAfterComparison } from "@/components/records/before-after";
 import type { Database } from "@/types/database";
@@ -90,48 +91,43 @@ export default async function RecordDetailPage({
 
   return (
     <div className="space-y-6">
-      {/* Back link */}
-      {customer && (
-        <Link
-          href={`/customers/${customer.id}`}
-          className="flex items-center gap-1 text-sm text-accent hover:underline"
+      <div>
+        <PageHeader
+          title={menuDisplay}
+          breadcrumbs={
+            customer
+              ? [
+                  { label: `${customer.last_name} ${customer.first_name}`, href: `/customers/${customer.id}` },
+                  { label: "カルテ詳細" },
+                ]
+              : [{ label: "カルテ詳細" }]
+          }
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-          </svg>
-          {customer.last_name} {customer.first_name}
-        </Link>
-      )}
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold">{menuDisplay}</h2>
-          <p className="text-sm text-text-light mt-1">
-            {formatDateJa(record.treatment_date)}
-            {linkedAppointment && (
-              <span className="ml-2 text-xs text-blue-600">
-                予約 {linkedAppointment.start_time.slice(0, 5)}〜
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <a
-            href={`/records/${id}/print`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-accent hover:underline"
-          >
-            PDF
-          </a>
-          <Link
-            href={`/records/${id}/edit`}
-            className="text-sm text-accent hover:underline"
-          >
-            編集
-          </Link>
-        </div>
+          <div className="flex items-center gap-3">
+            <a
+              href={`/records/${id}/print`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-accent hover:underline min-h-[44px] flex items-center"
+            >
+              PDF
+            </a>
+            <Link
+              href={`/records/${id}/edit`}
+              className="text-sm text-accent hover:underline min-h-[44px] flex items-center"
+            >
+              編集
+            </Link>
+          </div>
+        </PageHeader>
+        <p className="text-sm text-text-light -mt-2">
+          {formatDateJa(record.treatment_date)}
+          {linkedAppointment && (
+            <span className="ml-2 text-xs text-blue-600">
+              予約 {linkedAppointment.start_time.slice(0, 5)}〜
+            </span>
+          )}
+        </p>
       </div>
 
       {/* Customer link */}

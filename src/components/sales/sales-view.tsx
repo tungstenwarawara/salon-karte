@@ -165,7 +165,7 @@ export function SalesView({ salonId, initialData, initialYear, initialDeferredRe
           <div className="flex gap-1.5">
             {CATEGORY_OPTIONS.map(({ key, label }) => (
               <button key={key} onClick={() => setCategoryFilter(key)}
-                className={`text-xs px-3 py-1.5 rounded-full transition-colors min-h-[32px] ${categoryFilter === key ? "bg-accent text-white" : "bg-surface border border-border text-text-light"}`}>
+                className={`text-xs px-3 py-1.5 rounded-full transition-colors min-h-[44px] ${categoryFilter === key ? "bg-accent text-white" : "bg-surface border border-border text-text-light"}`}>
                 {label}
               </button>
             ))}
