@@ -9,6 +9,7 @@ import { PurchaseHistory } from "@/components/customers/purchase-history";
 import { TreatmentHistory } from "@/components/customers/treatment-history";
 import { CourseTicketSection } from "@/components/customers/course-ticket-section";
 import { CounselingSection } from "@/components/customers/counseling-section";
+import { CustomerLineSection } from "@/components/customers/customer-line-section";
 
 type CounselingSheet = Database["public"]["Tables"]["counseling_sheets"]["Row"];
 
@@ -45,7 +46,7 @@ export default async function CustomerDetailPage({
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-  const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult, counselingResult] = await Promise.all([
+  const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult, counselingResult, lineLinkResult] = await Promise.all([
     supabase
       .from("treatment_records")
       .select("id, treatment_date, menu_name_snapshot, skin_condition_before, customer_id, treatment_record_menus(id, menu_name_snapshot, price_snapshot, payment_type, ticket_id)")
@@ -84,6 +85,12 @@ export default async function CustomerDetailPage({
       .eq("salon_id", salon.id)
       .order("created_at", { ascending: false })
       .returns<CounselingSheet[]>(),
+    supabase
+      .from("customer_line_links")
+      .select("id, display_name, is_following, linked_at")
+      .eq("customer_id", id)
+      .eq("salon_id", salon.id)
+      .maybeSingle(),
   ]);
 
   const records = recordsResult.data ?? [];
@@ -91,6 +98,7 @@ export default async function CustomerDetailPage({
   const purchases = purchasesResult.data ?? [];
   const courseTickets = courseTicketsResult.data ?? [];
   const counselingSheets = counselingResult.data ?? [];
+  const lineLink = lineLinkResult.data;
 
   // 来店分析
   const visitCount = records.length;
@@ -169,6 +177,8 @@ export default async function CustomerDetailPage({
         purchaseTotal={purchaseTotal}
         courseTicketTotal={courseTicketTotal}
       />
+
+      <CustomerLineSection lineLink={lineLink} />
 
       <CustomerBasicInfo customer={customer} customerId={id} />
 

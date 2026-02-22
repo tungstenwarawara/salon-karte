@@ -801,6 +801,168 @@ export type Database = {
           },
         ];
       };
+      salon_line_configs: {
+        Row: {
+          id: string;
+          salon_id: string;
+          channel_id: string;
+          channel_secret_encrypted: string;
+          channel_access_token_encrypted: string;
+          webhook_secret: string;
+          is_active: boolean;
+          reminder_enabled: boolean;
+          confirmation_enabled: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          salon_id: string;
+          channel_id: string;
+          channel_secret_encrypted: string;
+          channel_access_token_encrypted: string;
+          webhook_secret?: string;
+          is_active?: boolean;
+          reminder_enabled?: boolean;
+          confirmation_enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          salon_id?: string;
+          channel_id?: string;
+          channel_secret_encrypted?: string;
+          channel_access_token_encrypted?: string;
+          webhook_secret?: string;
+          is_active?: boolean;
+          reminder_enabled?: boolean;
+          confirmation_enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "salon_line_configs_salon_id_fkey";
+            columns: ["salon_id"];
+            isOneToOne: true;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      customer_line_links: {
+        Row: {
+          id: string;
+          salon_id: string;
+          customer_id: string | null;
+          line_user_id: string;
+          display_name: string | null;
+          picture_url: string | null;
+          is_following: boolean;
+          linked_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          salon_id: string;
+          customer_id?: string | null;
+          line_user_id: string;
+          display_name?: string | null;
+          picture_url?: string | null;
+          is_following?: boolean;
+          linked_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          salon_id?: string;
+          customer_id?: string | null;
+          line_user_id?: string;
+          display_name?: string | null;
+          picture_url?: string | null;
+          is_following?: boolean;
+          linked_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "customer_line_links_salon_id_fkey";
+            columns: ["salon_id"];
+            isOneToOne: false;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "customer_line_links_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      line_message_logs: {
+        Row: {
+          id: string;
+          salon_id: string;
+          customer_line_link_id: string | null;
+          message_type: "reminder" | "confirmation" | "test";
+          status: "pending" | "sent" | "failed";
+          error_message: string | null;
+          related_appointment_id: string | null;
+          sent_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          salon_id: string;
+          customer_line_link_id?: string | null;
+          message_type: "reminder" | "confirmation" | "test";
+          status?: "pending" | "sent" | "failed";
+          error_message?: string | null;
+          related_appointment_id?: string | null;
+          sent_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          salon_id?: string;
+          customer_line_link_id?: string | null;
+          message_type?: "reminder" | "confirmation" | "test";
+          status?: "pending" | "sent" | "failed";
+          error_message?: string | null;
+          related_appointment_id?: string | null;
+          sent_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "line_message_logs_salon_id_fkey";
+            columns: ["salon_id"];
+            isOneToOne: false;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "line_message_logs_customer_line_link_id_fkey";
+            columns: ["customer_line_link_id"];
+            isOneToOne: false;
+            referencedRelation: "customer_line_links";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "line_message_logs_related_appointment_id_fkey";
+            columns: ["related_appointment_id"];
+            isOneToOne: false;
+            referencedRelation: "appointments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {

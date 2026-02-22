@@ -175,6 +175,22 @@ export default function SettingsPage() {
         </div>
       </Link>
 
+      {/* LINE link */}
+      <Link
+        href="/settings/line"
+        className="block bg-surface border border-border rounded-2xl p-5 hover:border-accent transition-colors"
+      >
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="font-bold">LINE連携</h3>
+            <p className="text-sm text-text-light mt-1">
+              LINE公式アカウントと連携して予約通知を自動送信
+            </p>
+          </div>
+          <span className="text-text-light">→</span>
+        </div>
+      </Link>
+
       {/* Import hub link */}
       <Link
         href="/settings/import"

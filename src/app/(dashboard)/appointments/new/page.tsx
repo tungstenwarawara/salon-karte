@@ -54,6 +54,7 @@ function NewAppointmentForm() {
   const [isEndTimeManual, setIsEndTimeManual] = useState(false);
   const [source, setSource] = useState("direct");
   const [memo, setMemo] = useState("");
+  const [sendLineNotification, setSendLineNotification] = useState(true);
 
   useEffect(() => { loadData(); }, []);
 
@@ -118,6 +119,16 @@ function NewAppointmentForm() {
       appointmentDate, startHour, startMinute, endHour, endMinute, source, memo,
     });
     if (!result.success) { setError(result.error); setSaving(false); return; }
+
+    // LINE通知（fire-and-forget: 失敗しても予約自体は成功扱い）
+    if (sendLineNotification) {
+      fetch("/api/line/notify-appointment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointment_id: result.appointmentId }),
+      }).catch(() => {});
+    }
+
     setFlashToast("予約を登録しました");
     router.push("/appointments");
   };
@@ -193,6 +204,16 @@ function NewAppointmentForm() {
             <label htmlFor="memo" className="block text-sm font-medium mb-1.5">メモ</label>
             <AutoResizeTextarea id="memo" value={memo} onChange={(e) => setMemo(e.target.value)} minRows={2} placeholder="施術の要望や注意点など" className={INPUT_CLASS} />
           </div>
+          <label className="flex items-center gap-3 min-h-[44px] cursor-pointer">
+            <input
+              type="checkbox"
+              checked={sendLineNotification}
+              onChange={(e) => setSendLineNotification(e.target.checked)}
+              className="w-5 h-5 rounded border-border text-accent focus:ring-accent/50"
+            />
+            <span className="text-sm">LINE通知を送信する</span>
+          </label>
+          <p className="text-xs text-text-light -mt-2 ml-8">LINE連携済みの顧客に予約確認メッセージを送信します</p>
         </CollapsibleSection>
 
         <button type="submit" disabled={saving}
