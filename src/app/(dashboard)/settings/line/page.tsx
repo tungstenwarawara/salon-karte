@@ -60,14 +60,7 @@ export default function LineSettingsPage() {
         <>
           <LineStatus config={config} onUpdate={setConfig} onDisconnect={() => setConfig(null)} />
 
-          {/* LINE友だち管理 */}
-          <div className="space-y-3">
-            <h3 className="font-bold">LINE友だち管理</h3>
-            <p className="text-sm text-text-light">
-              LINE公式アカウントの友だちと顧客を紐付けると、予約通知がLINEで届くようになります
-            </p>
-            <LineLinkManager />
-          </div>
+          <LineLinkManager />
         </>
       ) : (
         <LineSetupGuide onConnected={setConfig} />

@@ -26,6 +26,33 @@ export async function getLineProfile(
   return res.json();
 }
 
+// フォロワーID一覧取得（ページネーション対応）
+export async function getFollowerIds(
+  accessToken: string
+): Promise<string[]> {
+  const allIds: string[] = [];
+  let start: string | undefined;
+
+  while (true) {
+    const url = start
+      ? `${LINE_API_BASE}/followers/ids?start=${start}&limit=300`
+      : `${LINE_API_BASE}/followers/ids?limit=300`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`フォロワーID取得失敗: ${res.status} ${body}`);
+    }
+    const data = await res.json() as { userIds: string[]; next?: string };
+    allIds.push(...data.userIds);
+    if (!data.next) break;
+    start = data.next;
+  }
+
+  return allIds;
+}
+
 // LINEプッシュメッセージ送信
 export async function sendPushMessage(
   accessToken: string,

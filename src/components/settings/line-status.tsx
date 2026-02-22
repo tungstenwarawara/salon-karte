@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { Toast, useToast } from "@/components/ui/toast";
+import { ToggleRow } from "@/components/ui/toggle-row";
 
 type LineConfig = {
   id: string;
@@ -91,9 +92,20 @@ export function LineStatus({ config, onUpdate, onDisconnect }: Props) {
         {/* Webhook URL */}
         <div>
           <label className="block text-sm font-medium mb-1.5">Webhook URL</label>
-          <p className="text-xs text-text-light mb-2">
-            LINE Developers Console の「Messaging API設定」→「Webhook URL」に設定してください
-          </p>
+          <div className="text-xs text-text-light mb-2 space-y-1">
+            <p>
+              <a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline font-medium">
+                LINE Developers Console
+              </a>
+              で以下を設定してください：
+            </p>
+            <ol className="list-decimal list-inside space-y-0.5 ml-1">
+              <li>「Messaging API設定」タブを開く</li>
+              <li>「Webhook URL」に下のURLを貼り付けて「更新」</li>
+              <li>「検証」ボタンを押して「成功」と表示されることを確認</li>
+              <li>「Webhookの利用」をONにする</li>
+            </ol>
+          </div>
           <div className="flex gap-2">
             <input
               type="text"
@@ -169,42 +181,5 @@ export function LineStatus({ config, onUpdate, onDisconnect }: Props) {
         )}
       </div>
     </>
-  );
-}
-
-function ToggleRow({
-  label,
-  description,
-  checked,
-  disabled,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  disabled: boolean;
-  onChange: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="min-w-0">
-        <p className={`text-sm font-medium ${disabled ? "text-text-light" : ""}`}>{label}</p>
-        <p className="text-xs text-text-light">{description}</p>
-      </div>
-      <button
-        type="button"
-        onClick={onChange}
-        disabled={disabled}
-        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
-          checked ? "bg-accent" : "bg-border"
-        }`}
-      >
-        <span
-          className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-            checked ? "translate-x-6" : "translate-x-1"
-          }`}
-        />
-      </button>
-    </div>
   );
 }

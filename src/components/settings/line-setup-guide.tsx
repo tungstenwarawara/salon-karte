@@ -54,31 +54,64 @@ export function LineSetupGuide({ onConnected }: Props) {
   const inputClass =
     "w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors font-mono text-sm";
 
+  const linkClass = "text-accent hover:underline font-medium";
+
   return (
     <>
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
 
       {/* 手順ガイド */}
-      <div className="bg-accent/5 border border-accent/20 rounded-2xl p-4 space-y-3">
-        <p className="text-sm font-medium">LINE公式アカウントを連携する手順</p>
-        <ol className="text-sm text-text-light space-y-2 list-decimal list-inside">
-          <li>
-            <a
-              href="https://developers.line.biz/console/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-accent hover:underline"
-            >
+      <div className="bg-accent/5 border border-accent/20 rounded-2xl p-4 space-y-4">
+        <p className="font-bold text-sm">LINE公式アカウントを連携する手順</p>
+
+        {/* ステップ1 */}
+        <div className="space-y-1">
+          <p className="text-sm font-medium">① LINE公式アカウントを作成</p>
+          <p className="text-xs text-text-light leading-relaxed">
+            まだLINE公式アカウントをお持ちでない場合は、
+            <a href="https://manager.line.biz/" target="_blank" rel="noopener noreferrer" className={linkClass}>
+              LINE Official Account Manager
+            </a>
+            から無料で作成できます。
+          </p>
+          <p className="text-xs text-text-light">※ 無料プラン（月200通まで）で十分です。既にお持ちの場合は次へ進んでください。</p>
+        </div>
+
+        {/* ステップ2 */}
+        <div className="space-y-1">
+          <p className="text-sm font-medium">② Messaging APIを有効にする</p>
+          <p className="text-xs text-text-light leading-relaxed">
+            <a href="https://manager.line.biz/" target="_blank" rel="noopener noreferrer" className={linkClass}>
+              LINE Official Account Manager
+            </a>
+            にログインし、右上の「設定」→ 左メニューの「Messaging API」→「Messaging APIを利用する」ボタンを押してください。
+          </p>
+          <p className="text-xs text-text-light">
+            ※ プロバイダー名の入力を求められます。サロン名などを入力してください（後から変更できません）。
+          </p>
+        </div>
+
+        {/* ステップ3 */}
+        <div className="space-y-1">
+          <p className="text-sm font-medium">③ 認証情報をコピーして下のフォームに貼り付け</p>
+          <p className="text-xs text-text-light leading-relaxed">
+            <a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer" className={linkClass}>
               LINE Developers Console
             </a>
-            にログイン
-          </li>
-          <li>「プロバイダー」を作成（未作成の場合）</li>
-          <li>「Messaging API」チャネルを作成</li>
-          <li>「チャネル基本設定」からチャネルID・チャネルシークレットをコピー</li>
-          <li>「Messaging API設定」からチャネルアクセストークンを発行してコピー</li>
-          <li>下のフォームに貼り付けて保存</li>
-        </ol>
+            を開き、②で作成されたチャネルを選択してください。
+          </p>
+          <div className="bg-white/50 rounded-lg p-3 space-y-1.5 mt-1.5">
+            <p className="text-xs text-text-light">
+              <span className="font-medium text-text">チャネルID</span>：「チャネル基本設定」タブに表示されています
+            </p>
+            <p className="text-xs text-text-light">
+              <span className="font-medium text-text">チャネルシークレット</span>：「チャネル基本設定」タブの下部にあります
+            </p>
+            <p className="text-xs text-text-light">
+              <span className="font-medium text-text">チャネルアクセストークン</span>：「Messaging API設定」タブ →「チャネルアクセストークン（長期）」の「発行」ボタンを押してコピー
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* 入力フォーム */}
