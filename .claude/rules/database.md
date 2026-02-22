@@ -39,9 +39,29 @@ globs:
 | update_updated_at | トリガー用タイムスタンプ更新 |
 
 ## マイグレーション管理
-- `supabase/migrations/` に00001〜00021のファイル
+- `supabase/migrations/` にファイルで管理
 - Supabase dashboardからの直接適用禁止（必ずローカルファイルを作成）
 - ファイル命名: `00XXX_descriptive_snake_case.sql`
+
+## RPC関数の変更ルール（厳守 — 2026-02-22 障害発生）
+PostgreSQLの `CREATE OR REPLACE FUNCTION` は**パラメータ数やパラメータ型が異なると上書きではなくオーバーロード（別関数の追加）になる**。
+PostgRESTは同名の複数関数を見つけると HTTP 300 (Multiple Choices) を返し、全RPC呼び出しが失敗する。
+
+**パラメータを追加・削除・型変更する場合:**
+```sql
+-- 必ず旧シグネチャを先にDROP
+DROP FUNCTION IF EXISTS function_name(旧パラメータ型リスト);
+-- その後に新シグネチャで作成
+CREATE OR REPLACE FUNCTION function_name(新パラメータ) ...
+```
+
+**マイグレーション適用後の確認:**
+```sql
+SELECT p.proname, p.pronargs
+FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid
+WHERE n.nspname = 'public' AND p.proname = '関数名';
+-- → 結果が1行であることを確認（2行以上ならオーバーロード発生）
+```
 
 ## DB変更チェックリスト
 - マイグレーションファイルをローカルに作成

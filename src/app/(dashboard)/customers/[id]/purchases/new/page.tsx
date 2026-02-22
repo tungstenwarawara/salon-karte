@@ -133,7 +133,8 @@ export default function NewPurchasePage() {
       });
 
       if (rpcError) {
-        setError("登録に失敗しました");
+        console.error("record_product_sale error:", rpcError);
+        setError(`登録に失敗しました: ${rpcError.message}`);
         setLoading(false);
         return;
       }
@@ -157,7 +158,8 @@ export default function NewPurchasePage() {
       });
 
       if (insertError) {
-        setError("登録に失敗しました");
+        console.error("purchase insert error:", insertError);
+        setError(`登録に失敗しました: ${insertError.message}`);
         setLoading(false);
         return;
       }
