@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { formatDateShort } from "@/lib/format";
 import type { Database } from "@/types/database";
@@ -14,7 +17,14 @@ type Props = {
   records: RecordWithMenus[];
 };
 
+const INITIAL_SHOW = 5;
+
 export function TreatmentHistory({ customerId, records }: Props) {
+  const [showAll, setShowAll] = useState(false);
+
+  const displayRecords = showAll ? records : records.slice(0, INITIAL_SHOW);
+  const hasMore = records.length > INITIAL_SHOW;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -29,7 +39,7 @@ export function TreatmentHistory({ customerId, records }: Props) {
 
       {records.length > 0 ? (
         <div className="space-y-2">
-          {records.map((record) => {
+          {displayRecords.map((record) => {
             const recordMenus = record.treatment_record_menus ?? [];
             const menuDisplay = recordMenus.length > 0
               ? recordMenus.map((rm) => rm.menu_name_snapshot).join("、")
@@ -50,6 +60,14 @@ export function TreatmentHistory({ customerId, records }: Props) {
               </Link>
             );
           })}
+          {hasMore && (
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="w-full text-center text-sm text-accent py-2 min-h-[44px]"
+            >
+              {showAll ? "閉じる" : `もっと見る（残り${records.length - INITIAL_SHOW}件）`}
+            </button>
+          )}
         </div>
       ) : (
         <div className="bg-surface border border-border rounded-xl p-6 text-center">

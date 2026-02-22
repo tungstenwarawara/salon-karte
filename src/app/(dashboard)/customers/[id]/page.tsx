@@ -65,7 +65,7 @@ export default async function CustomerDetailPage({
       .maybeSingle<Appointment>(),
     supabase
       .from("purchases")
-      .select("id, item_name, purchase_date, unit_price, quantity, total_price, memo")
+      .select("id, item_name, purchase_date, unit_price, quantity, total_price, memo, product_id")
       .eq("customer_id", id)
       .eq("salon_id", salon.id)
       .order("purchase_date", { ascending: false })
@@ -176,7 +176,7 @@ export default async function CustomerDetailPage({
 
       <CourseTicketSection customerId={id} initialTickets={courseTickets} />
 
-      <PurchaseHistory customerId={id} purchases={purchases} purchaseTotal={purchaseTotal} />
+      <PurchaseHistory customerId={id} purchases={purchases} purchaseTotal={purchaseTotal} salonId={salon.id} />
 
       <TreatmentHistory customerId={id} records={records} />
     </div>

@@ -20,10 +20,13 @@ export function CounselingSection({ customerId, sheets }: Props) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [showQr, setShowQr] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showAllSubmitted, setShowAllSubmitted] = useState(false);
 
   // 最新のsubmitted + pendingを取得
   const submitted = sheets.filter((s) => s.status === "submitted");
   const pending = sheets.filter((s) => s.status === "pending" && new Date(s.expires_at) > new Date());
+  const displaySubmitted = showAllSubmitted ? submitted : submitted.slice(0, 1);
+  const hasMoreSubmitted = submitted.length > 1;
 
   const handleCreate = async () => {
     setCreating(true);
@@ -71,7 +74,7 @@ export function CounselingSection({ customerId, sheets }: Props) {
       <h3 className="font-bold text-sm">カウンセリングシート</h3>
 
       {/* 回答済み一覧 */}
-      {submitted.map((s) => (
+      {displaySubmitted.map((s) => (
         <div key={s.id} className="border border-border rounded-lg p-3 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs text-text-light">
@@ -87,6 +90,14 @@ export function CounselingSection({ customerId, sheets }: Props) {
           {expandedId === s.id && <ResponseViewer responses={s.responses as CounselingResponses | null} />}
         </div>
       ))}
+      {hasMoreSubmitted && (
+        <button
+          onClick={() => setShowAllSubmitted(!showAllSubmitted)}
+          className="w-full text-center text-sm text-accent py-2 min-h-[44px]"
+        >
+          {showAllSubmitted ? "閉じる" : `過去の回答を見る（${submitted.length - 1}件）`}
+        </button>
+      )}
 
       {/* 発行済み（未回答） */}
       {pending.map((s) => (
