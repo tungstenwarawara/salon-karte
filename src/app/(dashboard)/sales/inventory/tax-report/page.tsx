@@ -45,8 +45,6 @@ export default function TaxReportPage() {
     <div className="space-y-4">
       <PageHeader
         title="確定申告レポート"
-        backLabel="在庫管理"
-        backHref="/sales/inventory"
         breadcrumbs={[
           { label: "経営", href: "/sales" },
           { label: "在庫管理", href: "/sales/inventory" },

@@ -113,8 +113,6 @@ export default function NewCustomerPage() {
     <div className="space-y-4">
       <PageHeader
         title="顧客を追加"
-        backLabel="顧客一覧"
-        backHref="/customers"
         breadcrumbs={[
           { label: "顧客一覧", href: "/customers" },
           { label: "新規登録" },
@@ -162,7 +160,7 @@ export default function NewCustomerPage() {
             disabled={loading}
             className="flex-1 bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]"
           >
-            {loading ? "登録中..." : "登録する"}
+            {loading ? "保存中..." : "保存する"}
           </button>
         </div>
       </form>

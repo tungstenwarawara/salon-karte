@@ -132,8 +132,6 @@ export default function StocktakePage() {
     <div className="space-y-4">
       <PageHeader
         title="棚卸し"
-        backLabel="在庫管理"
-        backHref="/sales/inventory"
         breadcrumbs={[
           { label: "経営", href: "/sales" },
           { label: "在庫管理", href: "/sales/inventory" },

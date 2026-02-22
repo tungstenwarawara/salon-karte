@@ -81,7 +81,7 @@ export function CustomerList({ customers }: Props) {
           href="/customers/new"
           className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px] flex items-center"
         >
-          + 追加
+          + 顧客を登録
         </Link>
       </div>
 

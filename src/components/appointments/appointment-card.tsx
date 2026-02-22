@@ -39,9 +39,12 @@ export function AppointmentCard({ appointment: apt, onStatusChange, onDelete }: 
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
           {apt.source && apt.source !== "direct" && <span className="text-xs text-text-light">{SOURCE_LABELS[apt.source] ?? apt.source}</span>}
         </div>
-        {apt.status === "scheduled" && (
-          <Link href={`/appointments/${apt.id}/edit`} className="text-xs text-text-light hover:text-accent transition-colors">編集</Link>
-        )}
+        <div className="flex items-center gap-3">
+          <Link href={`/appointments/${apt.id}`} className="text-xs text-text-light hover:text-accent transition-colors">詳細</Link>
+          {apt.status === "scheduled" && (
+            <Link href={`/appointments/${apt.id}/edit`} className="text-xs text-text-light hover:text-accent transition-colors">編集</Link>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

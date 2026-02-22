@@ -93,7 +93,7 @@ export default function HolidaysPage() {
   return (
     <div className="space-y-4">
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
-      <PageHeader title="不定休設定" backLabel="設定" backHref="/settings"
+      <PageHeader title="不定休設定"
         breadcrumbs={[{ label: "設定", href: "/settings" }, { label: "不定休設定" }]} />
 
       <p className="text-sm text-text-light">

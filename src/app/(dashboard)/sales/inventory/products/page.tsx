@@ -148,8 +148,6 @@ export default function ProductsPage() {
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
       <PageHeader
         title="商品マスタ"
-        backLabel="在庫管理"
-        backHref="/sales/inventory"
         breadcrumbs={[
           { label: "経営", href: "/sales" },
           { label: "在庫管理", href: "/sales/inventory" },

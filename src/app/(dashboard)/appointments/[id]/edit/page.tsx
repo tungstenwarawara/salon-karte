@@ -142,7 +142,7 @@ export default function EditAppointmentPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="予約を編集" backLabel="予約一覧" backHref="/appointments"
+      <PageHeader title="予約を編集"
         breadcrumbs={[{ label: "予約管理", href: "/appointments" }, { label: "編集" }]} />
 
       {customerName && <p className="text-text-light">顧客: <span className="font-medium text-text">{customerName}</span></p>}
@@ -180,7 +180,7 @@ export default function EditAppointmentPage() {
 
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={() => router.back()} className="flex-1 bg-background border border-border text-text font-medium rounded-xl py-3 transition-colors min-h-[48px]">キャンセル</button>
-          <button type="submit" disabled={saving} className="flex-1 bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]">{saving ? "更新中..." : "更新する"}</button>
+          <button type="submit" disabled={saving} className="flex-1 bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]">{saving ? "保存中..." : "保存する"}</button>
         </div>
       </form>
     </div>

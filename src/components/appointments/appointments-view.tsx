@@ -92,7 +92,7 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">予約管理</h2>
-        <Link href="/appointments/new" className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px] flex items-center">+ 予約登録</Link>
+        <Link href="/appointments/new" className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px] flex items-center">+ 予約を登録</Link>
       </div>
 
       {error && <ErrorAlert message={error} />}

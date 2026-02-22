@@ -154,8 +154,6 @@ export default function ImportCustomersPage() {
     <div className="space-y-4">
       <PageHeader
         title="顧客データ取り込み"
-        backLabel="データ取り込み"
-        backHref="/settings/import"
         breadcrumbs={[
           { label: "設定", href: "/settings" },
           { label: "データ取り込み", href: "/settings/import" },

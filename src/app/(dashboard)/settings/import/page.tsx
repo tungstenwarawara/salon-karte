@@ -51,7 +51,6 @@ export default function ImportHubPage() {
     <div className="space-y-5">
       <PageHeader
         title="データ取り込み"
-        backHref="/settings"
         breadcrumbs={[
           { label: "設定", href: "/settings" },
           { label: "データ取り込み" },

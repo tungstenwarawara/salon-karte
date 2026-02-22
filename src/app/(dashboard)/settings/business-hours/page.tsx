@@ -115,8 +115,6 @@ export default function BusinessHoursPage() {
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
       <PageHeader
         title="営業時間設定"
-        backLabel="設定"
-        backHref="/settings"
         breadcrumbs={[
           { label: "設定", href: "/settings" },
           { label: "営業時間設定" },

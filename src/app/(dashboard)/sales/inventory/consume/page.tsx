@@ -137,8 +137,6 @@ export default function ConsumePage() {
     <div className="space-y-4">
       <PageHeader
         title="消費・廃棄記録"
-        backLabel="在庫管理"
-        backHref="/sales/inventory"
         breadcrumbs={[
           { label: "経営", href: "/sales" },
           { label: "在庫管理", href: "/sales/inventory" },

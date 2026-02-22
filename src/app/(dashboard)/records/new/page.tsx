@@ -210,7 +210,7 @@ function NewRecordForm() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="施術記録を作成" backLabel="戻る" breadcrumbs={[...(customerName ? [{ label: customerName, href: customerId ? `/customers/${customerId}` : undefined }] : []), { label: "カルテ作成" }]} />
+      <PageHeader title="施術記録を作成" breadcrumbs={[...(customerName ? [{ label: customerName, href: customerId ? `/customers/${customerId}` : undefined }] : []), { label: "カルテ作成" }]} />
 
       {presetCustomerId && customerName && <p className="text-text-light">顧客: <span className="font-medium text-text">{customerName}</span></p>}
       {!presetCustomerId && <CustomerSelector customers={customers} selectedCustomerId={selectedCustomerId} customerName={customerName} onSelect={(id, name) => { setSelectedCustomerId(id); setCustomerName(name); }} />}

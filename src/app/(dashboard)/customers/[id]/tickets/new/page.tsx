@@ -169,7 +169,6 @@ export default function NewTicketPage() {
     <div className="space-y-4">
       <PageHeader
         title="コースチケットを登録"
-        backLabel="戻る"
         breadcrumbs={[
           ...(customerName ? [{ label: customerName, href: `/customers/${customerId}` }] : []),
           { label: "回数券登録" },

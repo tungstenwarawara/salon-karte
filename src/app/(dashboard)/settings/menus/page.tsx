@@ -149,8 +149,6 @@ export default function MenusPage() {
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
       <PageHeader
         title="施術メニュー"
-        backLabel="設定"
-        backHref="/settings"
         breadcrumbs={[
           { label: "設定", href: "/settings" },
           { label: "施術メニュー" },

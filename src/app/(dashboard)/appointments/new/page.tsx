@@ -136,7 +136,7 @@ function NewAppointmentForm() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="予約を登録" backLabel="予約一覧" backHref="/appointments"
+      <PageHeader title="予約を登録"
         breadcrumbs={[{ label: "予約管理", href: "/appointments" }, { label: "新規登録" }]} />
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -197,7 +197,7 @@ function NewAppointmentForm() {
 
         <button type="submit" disabled={saving}
           className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]">
-          {saving ? "登録中..." : "予約を登録"}
+          {saving ? "保存中..." : "保存する"}
         </button>
       </form>
     </div>
