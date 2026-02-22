@@ -51,8 +51,16 @@ export function RepeatChart({ data, year, currentYear, currentMonth }: Props) {
                 <span className="text-[9px] text-text-light mb-0.5">{total}</span>
               )}
               <div className="w-full flex flex-col" style={{ height: barHeight }}>
-                <div className="bg-accent rounded-t" style={{ height: retH, minHeight: retH > 0 ? 2 : 0 }} />
-                <div className="bg-blue-400 rounded-b" style={{ height: newH, minHeight: newH > 0 ? 2 : 0 }} />
+                <div className="bg-accent rounded-t relative flex items-center justify-center" style={{ height: retH, minHeight: retH > 0 ? 2 : 0 }}>
+                  {m.returning_customers > 0 && retH >= 16 && (
+                    <span className="text-[9px] text-white font-medium">{m.returning_customers}</span>
+                  )}
+                </div>
+                <div className="bg-blue-400 rounded-b relative flex items-center justify-center" style={{ height: newH, minHeight: newH > 0 ? 2 : 0 }}>
+                  {m.new_customers > 0 && newH >= 16 && (
+                    <span className="text-[9px] text-white font-medium">{m.new_customers}</span>
+                  )}
+                </div>
               </div>
             </div>
           );
