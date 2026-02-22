@@ -23,9 +23,9 @@ export default function ImportHubPage() {
       if (!salon) return;
 
       const [custRes, prodRes, recRes] = await Promise.all([
-        supabase.from("customers").select("*", { count: "exact", head: true }).eq("salon_id", salon.id),
-        supabase.from("products").select("*", { count: "exact", head: true }).eq("salon_id", salon.id),
-        supabase.from("treatment_records").select("*", { count: "exact", head: true }).eq("salon_id", salon.id),
+        supabase.from("customers").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
+        supabase.from("treatment_records").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
       ]);
 
       setCounts({

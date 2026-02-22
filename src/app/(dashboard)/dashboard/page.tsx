@@ -79,11 +79,11 @@ export default async function DashboardPage() {
       .returns<(Appointment & { customers: { last_name: string; first_name: string } | null })[]>(),
     supabase
       .from("customers")
-      .select("*", { count: "exact", head: true })
+      .select("id", { count: "exact", head: true })
       .eq("salon_id", salon.id),
     supabase
       .from("treatment_menus")
-      .select("*", { count: "exact", head: true })
+      .select("id", { count: "exact", head: true })
       .eq("salon_id", salon.id)
       .eq("is_active", true),
     supabase

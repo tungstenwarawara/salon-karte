@@ -252,7 +252,7 @@ export default function ConsumePage() {
             disabled={loading}
             className="flex-1 bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]"
           >
-            {loading ? "記録中..." : "記録する"}
+            {loading ? "保存中..." : "保存する"}
           </button>
         </div>
       </form>

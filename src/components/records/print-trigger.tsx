@@ -8,7 +8,7 @@ export function PrintTrigger({ backHref }: { backHref: string }) {
       </a>
       <button
         onClick={() => window.print()}
-        className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors min-h-[40px] font-medium"
+        className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors min-h-[44px] font-medium"
       >
         印刷 / PDF保存
       </button>

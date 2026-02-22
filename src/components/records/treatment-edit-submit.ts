@@ -44,7 +44,7 @@ export async function updateTreatmentRecord(params: UpdateParams): Promise<Updat
     caution_notes: form.caution_notes || null,
   }).eq("id", recordId).eq("salon_id", salonId);
 
-  if (updateError) return { success: false, error: "更新に失敗しました" };
+  if (updateError) return { success: false, error: `更新に失敗しました: ${updateError.message}` };
 
   // 2. メニュー中間テーブルを差し替え
   await supabase.from("treatment_record_menus").delete().eq("treatment_record_id", recordId);
@@ -136,7 +136,7 @@ export async function deleteTreatmentRecord(recordId: string, salonId: string): 
 
   // カルテ本体の削除
   const { error } = await supabase.from("treatment_records").delete().eq("id", recordId).eq("salon_id", salonId);
-  if (error) return { success: false, error: "削除に失敗しました" };
+  if (error) return { success: false, error: `削除に失敗しました: ${error.message}` };
 
   return { success: true };
 }

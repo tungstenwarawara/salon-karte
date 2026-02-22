@@ -90,7 +90,7 @@ function NewRecordForm() {
         const [menuRes, customerRes, productsRes] = await Promise.all([menusQuery, customerQuery, productsQuery]);
         setMenus(menuRes.data ?? []); setCustomers(customerRes.data ?? []); setProducts(productsRes.data ?? []);
       } else {
-        const customerNameQuery = supabase.from("customers").select("last_name, first_name").eq("id", presetCustomerId).single<{ last_name: string; first_name: string }>();
+        const customerNameQuery = supabase.from("customers").select("last_name, first_name").eq("id", presetCustomerId).eq("salon_id", salon.id).single<{ last_name: string; first_name: string }>();
         const [menuRes, customerRes, productsRes] = await Promise.all([menusQuery, customerNameQuery, productsQuery]);
         setMenus(menuRes.data ?? []); setProducts(productsRes.data ?? []);
         if (customerRes.data) setCustomerName(`${customerRes.data.last_name} ${customerRes.data.first_name}`);

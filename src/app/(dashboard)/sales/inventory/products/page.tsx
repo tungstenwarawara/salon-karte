@@ -159,7 +159,7 @@ export default function ProductsPage() {
             onClick={() => setShowForm(true)}
             className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px]"
           >
-            + 追加
+            + 商品を登録
           </button>
         )}
       </PageHeader>
@@ -265,7 +265,7 @@ export default function ProductsPage() {
               onClick={() => setShowForm(true)}
               className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
             >
-              最初の商品を追加する →
+              最初の商品を登録する →
             </button>
           </div>
         )

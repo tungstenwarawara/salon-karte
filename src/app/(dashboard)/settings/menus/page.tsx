@@ -159,7 +159,7 @@ export default function MenusPage() {
             onClick={() => setShowForm(true)}
             className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px]"
           >
-            + 追加
+            + メニューを登録
           </button>
         )}
       </PageHeader>
@@ -274,7 +274,7 @@ export default function MenusPage() {
               onClick={() => setShowForm(true)}
               className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
             >
-              最初のメニューを追加する →
+              最初のメニューを登録する →
             </button>
           </div>
         )

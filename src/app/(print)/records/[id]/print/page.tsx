@@ -65,12 +65,14 @@ export default async function KartePrintPage({
       .from("purchases")
       .select("id, item_name, quantity, unit_price, total_price")
       .eq("treatment_record_id", id)
+      .eq("salon_id", salon.id)
       .order("created_at")
       .returns<Purchase[]>(),
     supabase
       .from("course_tickets")
       .select("id, ticket_name, total_sessions, price")
       .eq("treatment_record_id", id)
+      .eq("salon_id", salon.id)
       .order("created_at")
       .returns<Ticket[]>(),
   ]);

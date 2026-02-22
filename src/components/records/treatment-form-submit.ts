@@ -53,7 +53,7 @@ export async function submitTreatmentRecord(params: SubmitParams): Promise<Submi
     })
     .select("id").single<{ id: string }>();
 
-  if (insertError || !record) return { success: false, error: "登録に失敗しました" };
+  if (insertError || !record) return { success: false, error: `登録に失敗しました: ${insertError?.message ?? "不明なエラー"}` };
 
   const warnings: string[] = [];
 

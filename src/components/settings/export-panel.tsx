@@ -65,7 +65,7 @@ export function ExportPanel({ counts }: { counts: Counts }) {
               <button
                 onClick={() => handleExport(item)}
                 disabled={isLoading || count === 0}
-                className="text-sm bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent-light transition-colors disabled:opacity-50 min-h-[40px] font-medium"
+                className="text-sm bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent-light transition-colors disabled:opacity-50 min-h-[44px] font-medium"
               >
                 {isLoading ? "ダウンロード中..." : "ダウンロード"}
               </button>

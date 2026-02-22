@@ -43,7 +43,7 @@ export default function InventoryPage() {
     // 商品数を先にチェック（コスト最小）
     const { count } = await supabase
       .from("products")
-      .select("*", { count: "exact", head: true })
+      .select("id", { count: "exact", head: true })
       .eq("salon_id", salon.id);
 
     if (!count || count === 0) {

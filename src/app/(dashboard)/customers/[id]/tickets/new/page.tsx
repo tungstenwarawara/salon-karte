@@ -59,6 +59,7 @@ export default function NewTicketPage() {
           .from("customers")
           .select("last_name, first_name")
           .eq("id", customerId)
+          .eq("salon_id", salon.id)
           .single<{ last_name: string; first_name: string }>(),
         supabase
           .from("treatment_menus")
@@ -153,7 +154,7 @@ export default function NewTicketPage() {
       });
 
     if (insertError) {
-      setError("登録に失敗しました");
+      setError(`登録に失敗しました: ${insertError.message}`);
       setLoading(false);
       return;
     }

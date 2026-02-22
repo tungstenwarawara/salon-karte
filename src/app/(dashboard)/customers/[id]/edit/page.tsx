@@ -122,7 +122,7 @@ export default function EditCustomerPage() {
       .eq("salon_id", salonId);
 
     if (error) {
-      setError("更新に失敗しました");
+      setError(`更新に失敗しました: ${error.message}`);
       setLoading(false);
       return;
     }
@@ -162,7 +162,7 @@ export default function EditCustomerPage() {
     const { error } = await supabase.from("customers").delete().eq("id", id).eq("salon_id", salonId);
 
     if (error) {
-      setError("削除に失敗しました");
+      setError(`削除に失敗しました: ${error.message}`);
       setDeleting(false);
       return;
     }
