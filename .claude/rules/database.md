@@ -6,7 +6,7 @@ globs:
 
 # データベース・マイグレーションルール
 
-## スキーマ概要（12テーブル）
+## スキーマ概要（16テーブル）
 
 | テーブル | 用途 |
 |---------|------|
@@ -22,8 +22,12 @@ globs:
 | course_tickets | 回数券（treatment_record_id付き） |
 | products | 商品マスタ（在庫管理） |
 | inventory_logs | 入出庫ログ |
+| counseling_sheets | カウンセリングシート（テンプレート + 回答 JSONB） |
+| salon_line_configs | LINE連携設定（暗号化トークン・Webhook秘密鍵） |
+| customer_line_links | 顧客-LINE友だち紐付け |
+| line_message_logs | LINE送信ログ |
 
-## RPC関数（10関数）
+## RPC関数（13関数）
 
 | 関数 | 用途 |
 |------|------|
@@ -36,6 +40,9 @@ globs:
 | record_product_sale | 物販+出庫のアトミック処理 |
 | reverse_product_sale | 物販取消+在庫戻し |
 | get_tax_report | 確定申告レポート |
+| get_deferred_revenue | 前受金（未消化分合計） |
+| get_customer_ltv_summary | 顧客LTVサマリー |
+| get_monthly_new_vs_returning | 新規/リピーター月別推移 |
 | update_updated_at | トリガー用タイムスタンプ更新 |
 
 ## マイグレーション管理
