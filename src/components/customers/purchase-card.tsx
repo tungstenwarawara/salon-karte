@@ -62,19 +62,19 @@ export function PurchaseCard({
                 {purchase.purchase_date} ・ {purchase.unit_price.toLocaleString()}円 × {purchase.quantity}個
               </p>
             </div>
-            <p className="text-sm font-bold shrink-0">{purchase.total_price.toLocaleString()}円</p>
+            <div className="shrink-0 flex items-center gap-2">
+              <p className="text-sm font-bold">{purchase.total_price.toLocaleString()}円</p>
+              <button onClick={handleStartEdit} disabled={processingId !== null}
+                className="text-xs text-accent hover:underline disabled:opacity-50 min-w-[44px] min-h-[44px] flex items-center justify-center">
+                編集
+              </button>
+              <button onClick={() => onRequestDelete(purchase.id)} disabled={processingId !== null}
+                className="text-xs text-error hover:underline disabled:opacity-50 min-w-[44px] min-h-[44px] flex items-center justify-center">
+                {processingId === purchase.id ? "..." : "削除"}
+              </button>
+            </div>
           </div>
           {purchase.memo && <p className="text-xs text-text-light">{purchase.memo}</p>}
-          <div className="flex items-center justify-end gap-1.5">
-            <button onClick={handleStartEdit} disabled={processingId !== null}
-              className="text-xs text-accent px-2 py-1.5 rounded-lg hover:bg-accent/5 transition-colors min-h-[44px] disabled:opacity-50">
-              編集
-            </button>
-            <button onClick={() => onRequestDelete(purchase.id)} disabled={processingId !== null}
-              className="text-xs text-error px-2 py-1.5 rounded-lg hover:bg-error/5 transition-colors min-h-[44px] disabled:opacity-50">
-              {processingId === purchase.id ? "削除中..." : "削除"}
-            </button>
-          </div>
         </>
       )}
 
