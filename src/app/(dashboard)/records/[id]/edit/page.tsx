@@ -13,6 +13,7 @@ import { CourseTicketInfo } from "@/components/records/course-ticket-info";
 import { TreatmentDetailFields } from "@/components/records/treatment-detail-fields";
 import { TreatmentLinkedItems } from "@/components/records/treatment-linked-items";
 import { TreatmentDeleteSection } from "@/components/records/treatment-delete-section";
+import { PhotoManageSection } from "@/components/records/photo-manage-section";
 import { updateTreatmentRecord, deleteTreatmentRecord } from "@/components/records/treatment-edit-submit";
 import { INPUT_CLASS } from "@/components/records/types";
 import type { Menu, CourseTicket, MenuPaymentInfo } from "@/components/records/types";
@@ -245,6 +246,10 @@ export default function EditRecordPage() {
           <button type="submit" disabled={loading} className="flex-1 bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]">{loading ? "保存中..." : "保存する"}</button>
         </div>
       </form>
+
+      <div className="bg-surface border border-border rounded-2xl p-5">
+        <PhotoManageSection recordId={id} />
+      </div>
 
       <div className="mt-4">
         <CollapsibleSection label="この記録を削除する">

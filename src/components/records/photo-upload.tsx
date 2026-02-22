@@ -93,7 +93,6 @@ export function PhotoUpload({
         ref={fileInputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-        capture="environment"
         onChange={handleFileSelect}
         className="hidden"
       />
