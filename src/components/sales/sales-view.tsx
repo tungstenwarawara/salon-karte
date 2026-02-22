@@ -7,17 +7,19 @@ import { ManagementTabs } from "@/components/inventory/management-tabs";
 import { SalesBarChart } from "@/components/sales/sales-bar-chart";
 import { SalesDrilldown } from "@/components/sales/sales-drilldown";
 import { SalesMonthlyList } from "@/components/sales/sales-monthly-list";
-import { formatYen, getFilteredTotal, CATEGORY_OPTIONS } from "@/components/sales/sales-types";
+import { SalesYearlySummary } from "@/components/sales/sales-yearly-summary";
+import { getFilteredTotal, CATEGORY_OPTIONS } from "@/components/sales/sales-types";
 import type { MonthlySales, DailySales, CategoryFilter } from "@/components/sales/sales-types";
 
 type Props = {
   salonId: string;
   initialData: MonthlySales[];
   initialYear: number;
+  initialDeferredRevenue: number;
 };
 
 /** 売上レポートのClient Component（初期データはServerから注入） */
-export function SalesView({ salonId, initialData, initialYear }: Props) {
+export function SalesView({ salonId, initialData, initialYear, initialDeferredRevenue }: Props) {
   const [data, setData] = useState(initialData);
   const [loading, setLoading] = useState(false);
   const [year, setYear] = useState(initialYear);
@@ -25,14 +27,19 @@ export function SalesView({ salonId, initialData, initialYear }: Props) {
   const [drillMonth, setDrillMonth] = useState<number | null>(null);
   const [drillData, setDrillData] = useState<DailySales[]>([]);
   const [drillLoading, setDrillLoading] = useState(false);
+  const [deferredRevenue, setDeferredRevenue] = useState(initialDeferredRevenue);
   // 初期データを使ったかどうか（初回は Server データを使う）
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const loadSales = useCallback(async (targetYear: number) => {
     setLoading(true);
     const supabase = createClient();
-    const { data: salesData } = await supabase.rpc("get_monthly_sales_summary", { p_salon_id: salonId, p_year: targetYear });
+    const [{ data: salesData }, { data: deferred }] = await Promise.all([
+      supabase.rpc("get_monthly_sales_summary", { p_salon_id: salonId, p_year: targetYear }),
+      supabase.rpc("get_deferred_revenue", { p_salon_id: salonId }),
+    ]);
     setData((salesData as MonthlySales[]) ?? []);
+    setDeferredRevenue((deferred as number) ?? 0);
     setLoading(false);
   }, [salonId]);
 
@@ -60,13 +67,17 @@ export function SalesView({ salonId, initialData, initialYear }: Props) {
     ]);
 
     const dailyMap: Record<number, DailySales> = {};
-    for (let d = 1; d <= lastDay; d++) dailyMap[d] = { day: d, treatment: 0, product: 0, ticket: 0 };
+    for (let d = 1; d <= lastDay; d++) dailyMap[d] = { day: d, treatment: 0, product: 0, ticket: 0, cash: 0, credit: 0 };
 
     for (const rec of recordsRes.data ?? []) {
       const day = parseInt(rec.treatment_date.split("-")[2], 10);
       const menus = (rec.treatment_record_menus ?? []) as { price_snapshot: number | null; payment_type: string }[];
-      const total = menus.filter((m) => m.payment_type === "cash" || m.payment_type === "credit").reduce((s, m) => s + (m.price_snapshot ?? 0), 0);
-      if (dailyMap[day]) dailyMap[day].treatment += total;
+      if (!dailyMap[day]) continue;
+      for (const m of menus) {
+        const amt = m.price_snapshot ?? 0;
+        if (m.payment_type === "cash") { dailyMap[day].cash += amt; dailyMap[day].treatment += amt; }
+        else if (m.payment_type === "credit") { dailyMap[day].credit += amt; dailyMap[day].treatment += amt; }
+      }
     }
     for (const p of purchasesRes.data ?? []) {
       const day = parseInt((p.purchase_date as string).split("-")[2], 10);
@@ -89,7 +100,8 @@ export function SalesView({ salonId, initialData, initialYear }: Props) {
 
   const yearTotal = visibleData.reduce((acc, m) => ({
     treatment: acc.treatment + m.treatment_sales, product: acc.product + m.product_sales, ticket: acc.ticket + m.ticket_sales,
-  }), { treatment: 0, product: 0, ticket: 0 });
+    ticketConsumption: acc.ticketConsumption + m.ticket_consumption, service: acc.service + m.service_amount,
+  }), { treatment: 0, product: 0, ticket: 0, ticketConsumption: 0, service: 0 });
   const grandTotal = yearTotal.treatment + yearTotal.product + yearTotal.ticket;
 
   const filteredTotals = visibleData.map((m) => getFilteredTotal(m, categoryFilter));
@@ -135,19 +147,7 @@ export function SalesView({ salonId, initialData, initialYear }: Props) {
         </div>
       ) : (
         <>
-          {/* 年間サマリー */}
-          <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
-            <div className="flex items-baseline justify-between">
-              <span className="text-sm text-text-light">年間合計</span>
-              <span className="text-2xl font-bold">{formatYen(grandTotal)}</span>
-            </div>
-            <div className="flex gap-4 flex-wrap">
-              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-sm bg-accent" /><span className="text-xs text-text-light">施術</span><span className="text-xs font-medium">{formatYen(yearTotal.treatment)}</span></div>
-              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-sm bg-blue-400" /><span className="text-xs text-text-light">物販</span><span className="text-xs font-medium">{formatYen(yearTotal.product)}</span></div>
-              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-sm bg-amber-400" /><span className="text-xs text-text-light">回数券<span className="text-[9px]">※</span></span><span className="text-xs font-medium">{formatYen(yearTotal.ticket)}</span></div>
-            </div>
-            {yearTotal.ticket > 0 && <p className="text-[10px] text-text-light">※回数券は販売時の受取額</p>}
-          </div>
+          <SalesYearlySummary yearTotal={yearTotal} grandTotal={grandTotal} deferredRevenue={deferredRevenue} />
 
           {/* 分析ページへのリンク */}
           <Link

@@ -25,12 +25,23 @@ export function SalesDrilldown({ drillMonth, data, drillData, drillLoading, cate
   const monthTotal = m ? getFilteredTotal(m, categoryFilter) : 0;
   const drillMax = Math.max(...drillData.map((d) => getDrillTotal(d, categoryFilter)), 1);
 
+  const cashTotal = drillData.reduce((s, d) => s + d.cash, 0);
+  const creditTotal = drillData.reduce((s, d) => s + d.credit, 0);
+  const showCashCredit = (categoryFilter === "all" || categoryFilter === "treatment") && (cashTotal > 0 || creditTotal > 0);
+
   return (
     <div className="bg-surface border border-border rounded-2xl p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h3 className="font-bold text-sm">{drillMonth}月 日別内訳</h3>
-          <span className="text-xs text-text-light">{formatYen(monthTotal)}</span>
+        <div>
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-sm">{drillMonth}月 日別内訳</h3>
+            <span className="text-xs text-text-light">{formatYen(monthTotal)}</span>
+          </div>
+          {showCashCredit && (
+            <p className="text-[10px] text-text-light mt-0.5">
+              現金 {formatYen(cashTotal)} / カード {formatYen(creditTotal)}
+            </p>
+          )}
         </div>
         <button onClick={onClose} className="text-xs text-text-light hover:text-text">閉じる</button>
       </div>

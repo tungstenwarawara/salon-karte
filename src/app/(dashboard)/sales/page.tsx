@@ -11,17 +11,18 @@ export default async function SalesPage() {
 
   const currentYear = new Date().getFullYear();
 
-  // 売上サマリーを Server 側で取得（初回表示を高速化）
-  const { data: salesData } = await supabase.rpc("get_monthly_sales_summary", {
-    p_salon_id: salon.id,
-    p_year: currentYear,
-  });
+  // 売上サマリー + 前受金を Server 側で並列取得（初回表示を高速化）
+  const [{ data: salesData }, { data: deferred }] = await Promise.all([
+    supabase.rpc("get_monthly_sales_summary", { p_salon_id: salon.id, p_year: currentYear }),
+    supabase.rpc("get_deferred_revenue", { p_salon_id: salon.id }),
+  ]);
 
   return (
     <SalesView
       salonId={salon.id}
       initialData={(salesData as MonthlySales[]) ?? []}
       initialYear={currentYear}
+      initialDeferredRevenue={(deferred as number) ?? 0}
     />
   );
 }

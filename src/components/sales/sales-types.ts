@@ -12,6 +12,8 @@ export type DailySales = {
   treatment: number;
   product: number;
   ticket: number;
+  cash: number;
+  credit: number;
 };
 
 export type CategoryFilter = "all" | "treatment" | "product" | "ticket";

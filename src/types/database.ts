@@ -831,6 +831,12 @@ export type Database = {
           service_amount: number;
         }[];
       };
+      get_deferred_revenue: {
+        Args: {
+          p_salon_id: string;
+        };
+        Returns: number;
+      };
       use_course_ticket_session: {
         Args: {
           p_ticket_id: string;
