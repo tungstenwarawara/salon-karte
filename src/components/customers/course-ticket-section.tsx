@@ -97,7 +97,7 @@ export function CourseTicketSection({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-3">
         <h3 className="font-bold">コースチケット</h3>
         <Link
           href={`/customers/${customerId}/tickets/new`}

@@ -51,7 +51,7 @@ export function PurchaseCard({
   };
 
   return (
-    <div className="border border-border rounded-xl p-3 space-y-2">
+    <div className="bg-surface border border-border rounded-xl p-3 space-y-2">
       {/* 通常表示 */}
       {!isEditing && (
         <>

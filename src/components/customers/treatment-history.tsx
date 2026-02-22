@@ -31,7 +31,7 @@ export function TreatmentHistory({ customerId, records }: Props) {
         <h3 className="font-bold">施術履歴</h3>
         <Link
           href={`/records/new?customer=${customerId}`}
-          className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[40px] flex items-center"
+          className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[44px] flex items-center"
         >
           + カルテ作成
         </Link>

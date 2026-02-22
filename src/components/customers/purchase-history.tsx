@@ -102,7 +102,7 @@ export function PurchaseHistory({ customerId, purchases: initialPurchases, salon
           )}
         </h3>
         <Link href={`/customers/${customerId}/purchases/new`}
-          className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[40px] flex items-center">
+          className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[44px] flex items-center">
           + 購入記録
         </Link>
       </div>
