@@ -2,10 +2,11 @@
 const DAY_NAMES = ["日", "月", "火", "水", "木", "金", "土"];
 
 function formatDate(dateStr: string): string {
-  const d = new Date(dateStr + "T00:00:00+09:00");
-  const month = d.getMonth() + 1;
-  const day = d.getDate();
-  const dow = DAY_NAMES[d.getDay()];
+  // dateStr は "YYYY-MM-DD"（JST日付）
+  // サーバーがUTCで動作するため、UTC基準で計算して曜日ずれを防止
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day));
+  const dow = DAY_NAMES[d.getUTCDay()];
   return `${month}月${day}日（${dow}）`;
 }
 
