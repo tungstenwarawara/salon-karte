@@ -30,6 +30,14 @@ export async function POST() {
   } catch (err) {
     const message = err instanceof Error ? err.message : "不明なエラー";
     console.error("フォロワーID取得エラー:", message);
+
+    // 無料アカウントではフォロワーID取得APIが利用不可
+    if (message.includes("403")) {
+      return NextResponse.json(
+        { error: "この機能はLINE公式アカウントの「認証済みアカウント」以上で利用できます。LINE Official Account Managerからアカウント認証を申請してください。" },
+        { status: 403 }
+      );
+    }
     return NextResponse.json({ error: `フォロワー取得に失敗しました: ${message}` }, { status: 500 });
   }
 

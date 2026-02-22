@@ -54,7 +54,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
               // 画像: 自サイト + Supabase Storage (署名付きURL) + blob (プレビュー)
-              "img-src 'self' blob: data: https://*.supabase.co https://profile.line-scdn.net https://obs.line-scdn.net",
+              "img-src 'self' blob: data: https://*.supabase.co https://*.line-scdn.net",
               // フォント: 自サイトのみ
               "font-src 'self'",
               // API接続先: 自サイト + Supabase
