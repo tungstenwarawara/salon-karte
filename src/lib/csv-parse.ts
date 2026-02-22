@@ -164,6 +164,14 @@ export function splitName(fullName: string): { last: string; first: string } {
 
 // ---------- 日付パース ----------
 
+/** Excelシリアル値をDateに変換（1900年基準、うるう年バグ考慮） */
+function excelSerialToDate(serial: number): Date | null {
+  if (serial < 1 || serial > 60000) return null;
+  // Excelは1900-01-00を起点、シリアル60=1900-02-29（存在しない日）を含むバグあり
+  const epoch = Date.UTC(1899, 11, 30);
+  return new Date(epoch + serial * 86400000);
+}
+
 /** 生年月日文字列をYYYY-MM-DD形式に変換 */
 export function parseBirthDate(value: string): string | null {
   if (!value || !value.trim()) return null;
@@ -178,6 +186,54 @@ export function parseBirthDate(value: string): string | null {
     const date = new Date(dateStr);
     if (!isNaN(date.getTime()) && date.getFullYear() >= 1900 && date.getFullYear() <= 2030) {
       return dateStr;
+    }
+  }
+
+  // Excelシリアル値（4〜5桁の数字のみ）
+  if (/^\d{4,5}$/.test(v)) {
+    const serial = parseInt(v, 10);
+    const date = excelSerialToDate(serial);
+    if (date) {
+      const y = date.getUTCFullYear();
+      const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+      const d = String(date.getUTCDate()).padStart(2, "0");
+      if (y >= 1900 && y <= 2030) {
+        return `${y}-${m}-${d}`;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * M月D日 形式（年なし）から月日を抽出
+ * 年を含む形式の場合は null を返す（parseBirthDate で処理済み）
+ */
+export function parseDateWithoutYear(value: string): { month: number; day: number } | null {
+  if (!value || !value.trim()) return null;
+  const v = value.trim();
+
+  // 先頭が4桁の年で始まる場合はスキップ（年あり形式）
+  if (/^\d{4}/.test(v)) return null;
+
+  // M月D日 or M月D
+  const jpMatch = v.match(/^(\d{1,2})月(\d{1,2})日?$/);
+  if (jpMatch) {
+    const m = parseInt(jpMatch[1], 10);
+    const d = parseInt(jpMatch[2], 10);
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      return { month: m, day: d };
+    }
+  }
+
+  // M/D（年なしスラッシュ形式）
+  const slashMatch = v.match(/^(\d{1,2})\/(\d{1,2})$/);
+  if (slashMatch) {
+    const m = parseInt(slashMatch[1], 10);
+    const d = parseInt(slashMatch[2], 10);
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      return { month: m, day: d };
     }
   }
 

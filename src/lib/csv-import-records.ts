@@ -1,10 +1,7 @@
 /**
  * 施術履歴CSVインポート — 検証ロジック
  */
-import { splitName, parseBirthDate } from "./csv-parse";
-
-// parseBirthDate は日付パーサーとして汎用的に使える（YYYY/M/D, YYYY-M-D, YYYY年M月D日）
-const parseDate = parseBirthDate;
+import { splitName, parseBirthDate, parseDateWithoutYear } from "./csv-parse";
 
 export type RecordRow = {
   treatment_date: string;       // YYYY-MM-DD
@@ -178,13 +175,21 @@ export function validateRecordRows(
     let isDuplicate = false;
 
     // 日付（必須）
-    const dateRaw = colMap["date"] !== undefined ? (row[colMap["date"]] ?? "").trim() : "";
-    const treatmentDate = dateRaw ? parseDate(dateRaw) : null;
+    const dateColIdx = colMap["date"];
+    const dateRaw = dateColIdx !== undefined ? (row[dateColIdx] ?? "").trim() : "";
+    const treatmentDate = dateRaw ? parseBirthDate(dateRaw) : null;
+
     if (!dateRaw) {
       messages.push("日付が空です");
       status = "error";
     } else if (!treatmentDate) {
-      messages.push("日付の形式が不正です");
+      // 年なし形式（M月D日 / M/D）を検出して具体的なエラーメッセージを出す
+      const noYear = parseDateWithoutYear(dateRaw);
+      if (noYear) {
+        messages.push(`年が含まれていません（例: 2024年${noYear.month}月${noYear.day}日）`);
+      } else {
+        messages.push("日付の形式が不正です（例: 2024/3/15, 2024年3月15日）");
+      }
       status = "error";
     }
 
