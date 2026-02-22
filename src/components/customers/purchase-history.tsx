@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
@@ -26,6 +27,7 @@ type Props = {
 const INITIAL_SHOW = 5;
 
 export function PurchaseHistory({ customerId, purchases: initialPurchases, salonId }: Props) {
+  const router = useRouter();
   const [purchases, setPurchases] = useState(initialPurchases);
   const [showAll, setShowAll] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -58,6 +60,7 @@ export function PurchaseHistory({ customerId, purchases: initialPurchases, salon
     if (ok) {
       setPurchases((prev) => prev.filter((p) => p.id !== id));
       showToast("購入記録を削除しました");
+      router.refresh();
     } else {
       showToast("削除に失敗しました", "error");
     }
@@ -85,6 +88,7 @@ export function PurchaseHistory({ customerId, purchases: initialPurchases, salon
       setPurchases((prev) => prev.map((p) => p.id === id ? { ...p, ...data, total_price, memo: data.memo || null } : p));
       setEditingId(null);
       showToast("購入記録を更新しました");
+      router.refresh();
     } else {
       showToast("更新に失敗しました", "error");
     }
