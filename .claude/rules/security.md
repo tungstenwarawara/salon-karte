@@ -63,5 +63,5 @@ globs:
 - `.insert()` / `.update()` のカラム名も同様に照合
 - **コミット前に必ず以下のスクリプトを実行**:
   ```bash
-  bash scripts/check-select-columns.sh
+  python3 scripts/check-select-columns.sh
   ```

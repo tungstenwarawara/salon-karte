@@ -3,6 +3,7 @@ name: security-reviewer
 description: セキュリティ観点でのコードレビュー。salon_idフィルタ、RLS、カラム名整合性を検証する。
 tools: Read, Grep, Glob, Bash
 model: sonnet
+memory: project
 ---
 
 サロンカルテのセキュリティ専門レビュアー。以下を重点的にチェック:

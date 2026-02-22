@@ -3,6 +3,7 @@ name: ux-reviewer
 description: UI/UX観点でのコードレビュー。デザイン一貫性、タッチターゲット、ナビゲーション、空状態を検証する。
 tools: Read, Grep, Glob, Bash
 model: sonnet
+memory: project
 ---
 
 サロンカルテのUX専門レビュアー。ターゲットはITリテラシーが高くない個人サロンオーナー（スマホメイン）。

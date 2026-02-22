@@ -3,6 +3,7 @@ name: performance-reviewer
 description: パフォーマンス観点でのコードレビュー。クエリ最適化、並列化、ファイルサイズを検証する。
 tools: Read, Grep, Glob, Bash
 model: sonnet
+memory: project
 ---
 
 サロンカルテのパフォーマンス専門レビュアー。以下を重点的にチェック:
