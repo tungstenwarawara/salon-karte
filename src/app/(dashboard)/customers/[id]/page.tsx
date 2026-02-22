@@ -101,6 +101,17 @@ export default async function CustomerDetailPage({
   const counselingSheets = counselingResult.data ?? [];
   const lineLink = lineLinkResult.data;
 
+  // 写真一括ダウンロードボタンの表示判定（head: true でデータ転送ゼロ）
+  const recordIds = records.map((r) => r.id);
+  let hasPhotos = false;
+  if (recordIds.length > 0) {
+    const { count } = await supabase
+      .from("treatment_photos")
+      .select("id", { count: "exact", head: true })
+      .in("treatment_record_id", recordIds);
+    hasPhotos = (count ?? 0) > 0;
+  }
+
   // 来店分析
   const visitCount = records.length;
   const lastVisitDate = records[0]?.treatment_date ?? null;
@@ -180,7 +191,7 @@ export default async function CustomerDetailPage({
 
       <PurchaseHistory customerId={id} purchases={purchases} purchaseTotal={purchaseTotal} salonId={salon.id} />
 
-      <TreatmentHistory customerId={id} records={records} />
+      <TreatmentHistory customerId={id} salonId={salon.id} customerName={`${customer.last_name}${customer.first_name}`} records={records} hasPhotos={hasPhotos} />
     </div>
   );
 }

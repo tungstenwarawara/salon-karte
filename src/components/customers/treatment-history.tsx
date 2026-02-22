@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { formatDateShort } from "@/lib/format";
+import { PhotoDownloadButton } from "@/components/customers/photo-download-button";
 import type { Database } from "@/types/database";
 
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
@@ -14,12 +15,15 @@ type RecordWithMenus = TreatmentRecord & {
 
 type Props = {
   customerId: string;
+  salonId: string;
+  customerName: string;
   records: RecordWithMenus[];
+  hasPhotos: boolean;
 };
 
 const INITIAL_SHOW = 5;
 
-export function TreatmentHistory({ customerId, records }: Props) {
+export function TreatmentHistory({ customerId, salonId, customerName, records, hasPhotos }: Props) {
   const [showAll, setShowAll] = useState(false);
 
   const displayRecords = showAll ? records : records.slice(0, INITIAL_SHOW);
@@ -29,12 +33,20 @@ export function TreatmentHistory({ customerId, records }: Props) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-bold">施術履歴</h3>
-        <Link
-          href={`/records/new?customer=${customerId}`}
-          className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[44px] flex items-center"
-        >
-          + カルテを登録
-        </Link>
+        <div className="flex items-center gap-3">
+          <PhotoDownloadButton
+            customerId={customerId}
+            salonId={salonId}
+            customerName={customerName}
+            hasPhotos={hasPhotos}
+          />
+          <Link
+            href={`/records/new?customer=${customerId}`}
+            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[44px] flex items-center"
+          >
+            + カルテを登録
+          </Link>
+        </div>
       </div>
 
       {records.length > 0 ? (
