@@ -114,6 +114,7 @@ export default function ImportRecordsPage() {
     let success = 0;
     let failed = 0;
     const errors: string[] = [];
+    const entityIds: string[] = [];
     const BATCH = 10;
 
     for (let i = 0; i < toImport.length; i += BATCH) {
@@ -167,6 +168,7 @@ export default function ImportRecordsPage() {
             // ※ 歴史的データなので inventory_logs は作成しない
           }
 
+          entityIds.push(record.id);
           success++;
         } catch (e) {
           failed++;
@@ -175,6 +177,18 @@ export default function ImportRecordsPage() {
       }
 
       setImportProgress(Math.min(i + BATCH, toImport.length));
+    }
+
+    // 取り込み履歴を記録
+    if (entityIds.length > 0) {
+      await supabase.from("import_batches").insert({
+        salon_id: salonId,
+        batch_type: "records",
+        total_count: toImport.length,
+        success_count: success,
+        failed_count: failed,
+        entity_ids: entityIds,
+      });
     }
 
     setResultSuccess(success);

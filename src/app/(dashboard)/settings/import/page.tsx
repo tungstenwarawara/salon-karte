@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/layout/page-header";
 import { ImportStepCard } from "@/components/import/import-step-card";
@@ -111,6 +112,14 @@ export default function ImportHubPage() {
           />
         </div>
       )}
+
+      {/* 取り込み履歴 */}
+      <Link
+        href="/settings/import-history"
+        className="block text-center text-sm text-accent hover:underline py-2 min-h-[44px]"
+      >
+        取り込み履歴を見る
+      </Link>
 
       {/* 注意事項 */}
       <div className="text-xs text-text-light bg-background rounded-xl p-3 space-y-1">

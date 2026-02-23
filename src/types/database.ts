@@ -963,6 +963,50 @@ export type Database = {
           },
         ];
       };
+      import_batches: {
+        Row: {
+          id: string;
+          salon_id: string;
+          batch_type: "customers" | "products" | "records";
+          filename: string | null;
+          total_count: number;
+          success_count: number;
+          failed_count: number;
+          entity_ids: string[];
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          salon_id: string;
+          batch_type: "customers" | "products" | "records";
+          filename?: string | null;
+          total_count?: number;
+          success_count?: number;
+          failed_count?: number;
+          entity_ids?: string[];
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          salon_id?: string;
+          batch_type?: "customers" | "products" | "records";
+          filename?: string | null;
+          total_count?: number;
+          success_count?: number;
+          failed_count?: number;
+          entity_ids?: string[];
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "import_batches_salon_id_fkey";
+            columns: ["salon_id"];
+            isOneToOne: false;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1134,6 +1178,16 @@ export type Database = {
           customer_id: string;
           visit_count: number;
           last_visit_date: string | null;
+        }[];
+      };
+      undo_import_batch: {
+        Args: {
+          p_batch_id: string;
+          p_salon_id: string;
+        };
+        Returns: {
+          deleted_count: number;
+          batch_type: string;
         }[];
       };
     };

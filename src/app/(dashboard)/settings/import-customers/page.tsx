@@ -107,6 +107,7 @@ export default function ImportCustomersPage() {
     let success = 0;
     let failed = 0;
     const errors: string[] = [];
+    const entityIds: string[] = [];
 
     for (let i = 0; i < checkedRows.length; i += BATCH) {
       const batch = checkedRows.slice(i, i + BATCH);
@@ -130,8 +131,21 @@ export default function ImportCustomersPage() {
         errors.push(`行${batch[0].rowIndex + 1}〜${batch[batch.length - 1].rowIndex + 1}: ${insertError.message}`);
       } else {
         success += data?.length ?? 0;
+        if (data) entityIds.push(...data.map((d) => d.id));
       }
       setImportProgress(Math.min(i + BATCH, checkedRows.length));
+    }
+
+    // 取り込み履歴を記録
+    if (entityIds.length > 0) {
+      await supabase.from("import_batches").insert({
+        salon_id: salonId,
+        batch_type: "customers",
+        total_count: checkedRows.length,
+        success_count: success,
+        failed_count: failed,
+        entity_ids: entityIds,
+      });
     }
 
     setResultSuccess(success);

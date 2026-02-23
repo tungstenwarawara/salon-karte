@@ -94,6 +94,7 @@ export default function ImportProductsPage() {
     let success = 0;
     let failed = 0;
     const errors: string[] = [];
+    const entityIds: string[] = [];
     const BATCH = 50;
 
     for (let i = 0; i < toImport.length; i += BATCH) {
@@ -118,8 +119,21 @@ export default function ImportProductsPage() {
       } else {
         success += data?.length ?? 0;
         failed += batch.length - (data?.length ?? 0);
+        if (data) entityIds.push(...data.map((d) => d.id));
       }
       setImportProgress(Math.min(i + BATCH, toImport.length));
+    }
+
+    // 取り込み履歴を記録
+    if (entityIds.length > 0) {
+      await supabase.from("import_batches").insert({
+        salon_id: salonId,
+        batch_type: "products",
+        total_count: toImport.length,
+        success_count: success,
+        failed_count: failed,
+        entity_ids: entityIds,
+      });
     }
 
     setResultSuccess(success);
