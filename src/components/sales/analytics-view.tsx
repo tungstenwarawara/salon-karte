@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { AnalyticsCards } from "@/components/sales/analytics-cards";
 import { TopCustomersList } from "@/components/sales/top-customers-list";
 import type { CustomerLtv } from "@/components/sales/top-customers-list";
-import { TreatmentRanking } from "@/components/sales/treatment-ranking";
+import { TreatmentRanking, RankingCard } from "@/components/sales/treatment-ranking";
 import type { MenuRanking } from "@/components/sales/treatment-ranking";
 import { RepeatChart } from "@/components/sales/repeat-chart";
 
@@ -29,15 +29,22 @@ type RepeatRow = {
   returning_customers: number;
 };
 
+type ProductRanking = {
+  product_name: string;
+  count: number;
+  revenue: number;
+};
+
 type Props = {
   salonId: string;
   initialLtv: LtvRow[];
   initialRepeat: RepeatRow[];
   initialYear: number;
   menus: MenuRanking[];
+  products: ProductRanking[];
 };
 
-export function AnalyticsView({ salonId, initialLtv, initialRepeat, initialYear, menus }: Props) {
+export function AnalyticsView({ salonId, initialLtv, initialRepeat, initialYear, menus, products }: Props) {
   const [repeatData, setRepeatData] = useState(initialRepeat);
   const [year, setYear] = useState(initialYear);
   const [loading, setLoading] = useState(false);
@@ -112,6 +119,13 @@ export function AnalyticsView({ salonId, initialLtv, initialRepeat, initialYear,
       <TopCustomersList customers={topCustomers} />
 
       <TreatmentRanking menus={menus} />
+
+      <RankingCard
+        title="人気商品"
+        items={products.map((p) => ({ name: p.product_name, count: p.count, revenue: p.revenue }))}
+        unit="個"
+        emptyMessage="物販記録を登録するとランキングが表示されます"
+      />
 
       {/* 年ナビゲーション */}
       <div className="flex items-center justify-between bg-surface border border-border rounded-xl px-4 py-3">

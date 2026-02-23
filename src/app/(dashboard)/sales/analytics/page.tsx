@@ -21,6 +21,12 @@ type RepeatRow = {
   returning_customers: number;
 };
 
+type ProductRanking = {
+  product_name: string;
+  count: number;
+  revenue: number;
+};
+
 export default async function AnalyticsPage() {
   const { user, salon, supabase } = await getAuthAndSalon();
   if (!user) redirect("/login");
@@ -28,7 +34,7 @@ export default async function AnalyticsPage() {
 
   const currentYear = new Date().getFullYear();
 
-  const [ltvRes, repeatRes, menusRes] = await Promise.all([
+  const [ltvRes, repeatRes, menusRes, productsRes] = await Promise.all([
     supabase
       .rpc("get_customer_ltv_summary", { p_salon_id: salon.id })
       .returns<LtvRow[]>(),
@@ -38,9 +44,13 @@ export default async function AnalyticsPage() {
     supabase
       .rpc("get_menu_ranking", { p_salon_id: salon.id, p_limit: 10 })
       .returns<MenuRanking[]>(),
+    supabase
+      .rpc("get_product_ranking", { p_salon_id: salon.id, p_limit: 10 })
+      .returns<ProductRanking[]>(),
   ]);
 
   const menus: MenuRanking[] = (menusRes.data as MenuRanking[]) ?? [];
+  const products: ProductRanking[] = (productsRes.data as ProductRanking[]) ?? [];
 
   return (
     <AnalyticsView
@@ -49,6 +59,7 @@ export default async function AnalyticsPage() {
       initialRepeat={(repeatRes.data as RepeatRow[]) ?? []}
       initialYear={currentYear}
       menus={menus}
+      products={products}
     />
   );
 }

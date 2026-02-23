@@ -1178,6 +1178,17 @@ export type Database = {
           revenue: number;
         }[];
       };
+      get_product_ranking: {
+        Args: {
+          p_salon_id: string;
+          p_limit?: number;
+        };
+        Returns: {
+          product_name: string;
+          count: number;
+          revenue: number;
+        }[];
+      };
       get_customer_visit_summary: {
         Args: {
           p_salon_id: string;

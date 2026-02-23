@@ -7,6 +7,7 @@ import { VisitAnalytics } from "@/components/customers/visit-analytics";
 import { CustomerBasicInfo } from "@/components/customers/customer-basic-info";
 import { CustomerLineSection } from "@/components/customers/customer-line-section";
 import { CustomerDetailContent } from "@/components/customers/customer-detail-content";
+import { CustomerInsights } from "@/components/customers/customer-insights";
 
 type CounselingSheet = Database["public"]["Tables"]["counseling_sheets"]["Row"];
 
@@ -127,6 +128,38 @@ export default async function CustomerDetailPage({
 
   const purchaseTotal = purchases.reduce((sum, p) => sum + p.total_price, 0);
 
+  // メニューTop3（施術記録から集計）
+  const menuCounts = new Map<string, number>();
+  for (const r of records) {
+    for (const m of r.treatment_record_menus) {
+      menuCounts.set(m.menu_name_snapshot, (menuCounts.get(m.menu_name_snapshot) ?? 0) + 1);
+    }
+  }
+  const topMenus = [...menuCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([name, count]) => ({ name, count, unit: "回" }));
+
+  // 商品Top3（購入記録から集計）
+  const productCounts = new Map<string, number>();
+  for (const p of purchases) {
+    productCounts.set(p.item_name, (productCounts.get(p.item_name) ?? 0) + p.quantity);
+  }
+  const topProducts = [...productCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([name, count]) => ({ name, count, unit: "個" }));
+
+  // 施術売上合計（cash/credit のみ = 実収入）
+  const treatmentTotal = records.reduce((sum, r) =>
+    sum + r.treatment_record_menus
+      .filter((m) => m.payment_type === "cash" || m.payment_type === "credit")
+      .reduce((s, m) => s + (m.price_snapshot ?? 0), 0)
+  , 0);
+
+  // 回数券売上合計
+  const courseTicketTotal = courseTickets.reduce((sum, t) => sum + (t.price ?? 0), 0);
+
   return (
     <div className="space-y-6">
       <div>
@@ -154,6 +187,14 @@ export default async function CustomerDetailPage({
         daysSinceLastVisit={daysSinceLastVisit}
         avgInterval={avgInterval}
         nextAppointment={nextAppointment}
+      />
+
+      <CustomerInsights
+        topMenus={topMenus}
+        topProducts={topProducts}
+        treatmentTotal={treatmentTotal}
+        purchaseTotal={purchaseTotal}
+        courseTicketTotal={courseTicketTotal}
       />
 
       <CustomerBasicInfo customer={customer} customerId={id} />
