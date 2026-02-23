@@ -33,6 +33,7 @@ export default function ImportCustomersPage() {
 
   const [rows, setRows] = useState<RowValidation[]>([]);
   const [encoding, setEncoding] = useState("");
+  const [excelWarnings, setExcelWarnings] = useState<string[]>([]);
 
   const [resultSuccess, setResultSuccess] = useState(0);
   const [resultFailed, setResultFailed] = useState(0);
@@ -57,8 +58,10 @@ export default function ImportCustomersPage() {
 
   const handleFileSelected = async (file: File) => {
     setError("");
+    setExcelWarnings([]);
     try {
-      const buffer = await fileToCSVBuffer(file);
+      const { buffer, warnings } = await fileToCSVBuffer(file);
+      setExcelWarnings(warnings);
       const { headers, rows: csvRows, encoding: enc } = parseCSV(buffer);
       setEncoding(enc);
 
@@ -77,8 +80,9 @@ export default function ImportCustomersPage() {
 
       setRows(validated.filter((r) => r.status !== "skip"));
       setStep("preview");
-    } catch {
-      setError("ファイルの解析に失敗しました。CSV または Excel ファイルを選択してください。");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "不明なエラー";
+      setError(`ファイルの解析に失敗しました: ${msg}`);
     }
   };
 
@@ -158,6 +162,7 @@ export default function ImportCustomersPage() {
     setStep("upload");
     setRows([]);
     setError("");
+    setExcelWarnings([]);
     setResultSuccess(0);
     setResultFailed(0);
     setResultErrors([]);
@@ -187,6 +192,14 @@ export default function ImportCustomersPage() {
           onFileSelected={handleFileSelected}
           error={error}
         />
+      )}
+
+      {step === "preview" && excelWarnings.length > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          {excelWarnings.map((w, i) => (
+            <p key={i} className="text-sm text-yellow-700">{w}</p>
+          ))}
+        </div>
       )}
 
       {step === "preview" && (
