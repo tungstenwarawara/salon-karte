@@ -50,7 +50,7 @@ export default function ReceivePage() {
 
     const { data } = await supabase
       .from("products")
-      .select("id, name, category")
+      .select("id, name, category, base_cost_price")
       .eq("salon_id", salon.id)
       .eq("is_active", true)
       .order("name")
@@ -66,7 +66,7 @@ export default function ReceivePage() {
       return {
         ...prev,
         product_id: productId,
-        unit_cost_price: product ? product.base_cost_price.toString() : "",
+        unit_cost_price: product?.base_cost_price != null ? product.base_cost_price.toString() : "",
       };
     });
   };
