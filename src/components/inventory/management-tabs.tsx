@@ -12,7 +12,7 @@ export function ManagementTabs() {
   const pathname = usePathname();
 
   return (
-    <div className="flex gap-1.5 bg-background rounded-xl p-1">
+    <div className="flex gap-2">
       {tabs.map((tab) => {
         const isActive = tab.exact
           ? pathname === tab.href
@@ -22,10 +22,10 @@ export function ManagementTabs() {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`flex-1 text-center text-sm font-medium py-2.5 rounded-lg transition-colors min-h-[44px] flex items-center justify-center ${
+            className={`text-sm px-4 py-2 rounded-xl transition-colors min-h-[48px] flex items-center justify-center ${
               isActive
-                ? "bg-accent text-white shadow-sm"
-                : "text-text-light hover:text-text"
+                ? "bg-accent text-white"
+                : "bg-surface border border-border text-text-light hover:text-text"
             }`}
           >
             {tab.label}
