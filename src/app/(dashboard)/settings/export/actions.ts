@@ -28,14 +28,16 @@ export async function exportCustomers(): Promise<string> {
     .eq("salon_id", salon.id)
     .order("last_name_kana");
 
-  const headers = ["姓", "名", "セイ", "メイ", "電話", "メール", "生年月日", "住所", "アレルギー", "メモ", "DM可", "ステータス", "登録日"];
-  const rows = (data ?? []).map((c) => [
-    c.last_name, c.first_name, c.last_name_kana, c.first_name_kana,
-    c.phone, c.email, c.birth_date, c.address, c.allergies, c.notes,
-    c.dm_allowed ? "○" : "×",
-    c.graduated_at ? "卒業" : "有効",
-    c.created_at?.slice(0, 10),
-  ]);
+  const headers = ["氏名", "フリガナ", "電話", "メール", "生年月日", "住所", "アレルギー", "メモ", "DM可", "ステータス", "登録日"];
+  const rows = (data ?? []).map((c) => {
+    const fullName = [c.last_name, c.first_name].filter(Boolean).join(" ");
+    const fullKana = [c.last_name_kana, c.first_name_kana].filter(Boolean).join(" ");
+    return [
+      fullName, fullKana, c.phone, c.email, c.birth_date, c.address,
+      c.allergies, c.notes, c.dm_allowed ? "○" : "×",
+      c.graduated_at ? "卒業" : "有効", c.created_at?.slice(0, 10),
+    ];
+  });
   return generateCsv(headers, rows);
 }
 
@@ -45,6 +47,7 @@ export async function exportRecords(): Promise<string> {
   if (!salon) throw new Error("サロン未設定");
 
   type Row = {
+    id: string;
     treatment_date: string;
     treatment_area: string | null;
     products_used: string | null;
@@ -52,16 +55,17 @@ export async function exportRecords(): Promise<string> {
     notes_after: string | null;
     customers: { last_name: string; first_name: string } | null;
     treatment_record_menus: { menu_name_snapshot: string; price_snapshot: number | null; payment_type: string }[];
+    purchases: { item_name: string; unit_price: number; quantity: number }[];
   };
 
   const { data } = await supabase
     .from("treatment_records")
-    .select("treatment_date, treatment_area, products_used, skin_condition_before, notes_after, customers(last_name, first_name), treatment_record_menus(menu_name_snapshot, price_snapshot, payment_type)")
+    .select("id, treatment_date, treatment_area, products_used, skin_condition_before, notes_after, customers(last_name, first_name), treatment_record_menus(menu_name_snapshot, price_snapshot, payment_type), purchases(item_name, unit_price, quantity)")
     .eq("salon_id", salon.id)
     .order("treatment_date", { ascending: false })
     .returns<Row[]>();
 
-  const headers = ["日付", "顧客名", "メニュー", "金額", "支払方法", "施術部位", "使用化粧品", "施術前の状態", "施術後の経過"];
+  const headers = ["日付", "お客様名", "施術メニュー", "施術料金", "支払方法", "施術部位", "使用化粧品", "施術前の状態", "メモ", "物販商品", "物販金額", "物販数量"];
   const rows = (data ?? []).map((r) => {
     const menus = r.treatment_record_menus ?? [];
     const menuNames = menus.map((m) => m.menu_name_snapshot).join("、");
@@ -70,10 +74,15 @@ export async function exportRecords(): Promise<string> {
       .reduce((sum, m) => sum + (m.price_snapshot ?? 0), 0);
     const paymentTypes = [...new Set(menus.map((m) => PAYMENT_LABELS[m.payment_type] ?? m.payment_type))].join("、");
     const customerName = r.customers ? `${r.customers.last_name} ${r.customers.first_name}` : "";
+    const purchases = r.purchases ?? [];
+    const purchaseNames = purchases.map((p) => p.item_name).join("、");
+    const purchasePrices = purchases.length === 1 ? purchases[0].unit_price : purchases.length > 1 ? purchases.reduce((s, p) => s + p.unit_price, 0) : "";
+    const purchaseQty = purchases.length === 1 ? purchases[0].quantity : purchases.length > 1 ? purchases.reduce((s, p) => s + p.quantity, 0) : "";
     return [
       r.treatment_date, customerName, menuNames, totalPrice || "",
       paymentTypes, r.treatment_area, r.products_used,
       r.skin_condition_before, r.notes_after,
+      purchaseNames, purchasePrices, purchaseQty,
     ];
   });
   return generateCsv(headers, rows);

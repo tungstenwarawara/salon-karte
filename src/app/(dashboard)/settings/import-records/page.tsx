@@ -19,8 +19,8 @@ import {
 
 type Step = "upload" | "preview" | "importing" | "result";
 
-const TEMPLATE_HEADER = "日付,お客様名,施術メニュー,施術料金,物販商品,物販金額,物販数量,メモ";
-const TEMPLATE_SAMPLE = "2024/3/15,山田 花子,カット,5000,,,初回来店";
+const TEMPLATE_HEADER = "日付,お客様名,施術メニュー,施術料金,支払方法,施術部位,使用化粧品,施術前の状態,メモ,物販商品,物販金額,物販数量";
+const TEMPLATE_SAMPLE = "2024/3/15,山田 花子,カット,5000,現金,,,,初回来店,,,";
 
 const columns: ColumnDef[] = [
   { key: "date", label: "日付", render: (r: RecordRowValidation) => r.data.treatment_date },
@@ -134,6 +134,9 @@ export default function ImportRecordsPage() {
               customer_id: row.data.customer_id!,
               treatment_date: row.data.treatment_date,
               menu_name_snapshot: row.data.menu_name || null,
+              treatment_area: row.data.treatment_area,
+              products_used: row.data.products_used,
+              skin_condition_before: row.data.skin_condition_before,
               notes_after: row.data.memo,
             })
             .select("id")
@@ -151,7 +154,7 @@ export default function ImportRecordsPage() {
               treatment_record_id: record.id,
               menu_name_snapshot: row.data.menu_name,
               price_snapshot: row.data.menu_price,
-              payment_type: "cash",
+              payment_type: row.data.payment_type,
               sort_order: 0,
             });
           }

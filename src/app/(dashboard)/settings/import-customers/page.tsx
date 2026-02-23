@@ -13,8 +13,8 @@ import { fileToCSVBuffer } from "@/lib/excel-parse";
 
 type Step = "upload" | "preview" | "importing" | "result";
 
-const TEMPLATE_HEADER = "氏名,フリガナ,生年月日,住所,メール,電話";
-const TEMPLATE_SAMPLE = "山田 花子,ヤマダ ハナコ,1990/5/15,東京都渋谷区1-1-1,hanako@example.com,090-1234-5678";
+const TEMPLATE_HEADER = "氏名,フリガナ,電話,メール,生年月日,住所,アレルギー,メモ,DM可";
+const TEMPLATE_SAMPLE = "山田 花子,ヤマダ ハナコ,090-1234-5678,hanako@example.com,1990/5/15,東京都渋谷区1-1-1,,,○";
 
 const columns: ColumnDef[] = [
   { key: "name", label: "氏名", render: (r: RowValidation) => `${r.data.last_name} ${r.data.first_name}` },
@@ -125,6 +125,9 @@ export default function ImportCustomersPage() {
         phone: r.data.phone,
         email: r.data.email,
         address: r.data.address,
+        allergies: r.data.allergies,
+        notes: r.data.notes,
+        dm_allowed: r.data.dm_allowed,
       }));
 
       const { data, error: insertError } = await supabase

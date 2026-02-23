@@ -22,6 +22,9 @@ export type CustomerRow = {
   phone: string | null;
   email: string | null;
   address: string | null;
+  allergies: string | null;
+  notes: string | null;
+  dm_allowed: boolean;
 };
 
 export type RowValidation = {
@@ -113,6 +116,10 @@ const HEADER_MAP: Record<string, string> = {
   電話: "phone",
   電話番号: "phone",
   TEL: "phone",
+  アレルギー: "allergies",
+  メモ: "notes",
+  備考: "notes",
+  "DM可": "dm_allowed",
 };
 
 type ColumnMap = {
@@ -122,6 +129,9 @@ type ColumnMap = {
   address: number;
   email: number;
   phone: number;
+  allergies: number;
+  notes: number;
+  dm_allowed: number;
 };
 
 /** ヘッダーからカラムマッピングを検出 */
@@ -286,7 +296,7 @@ export function validateRows(
       rowIndex: 0,
       status: "error",
       messages: [`必須列が見つかりません: ${missing.join(", ")}`],
-      data: { last_name: "", first_name: "", last_name_kana: null, first_name_kana: null, birth_date: null, phone: null, email: null, address: null },
+      data: { last_name: "", first_name: "", last_name_kana: null, first_name_kana: null, birth_date: null, phone: null, email: null, address: null, allergies: null, notes: null, dm_allowed: false },
       isDuplicate: false,
       checked: false,
     }];
@@ -308,7 +318,7 @@ export function validateRows(
         rowIndex: i + 1,
         status: "skip" as const,
         messages: [],
-        data: { last_name: "", first_name: "", last_name_kana: null, first_name_kana: null, birth_date: null, phone: null, email: null, address: null },
+        data: { last_name: "", first_name: "", last_name_kana: null, first_name_kana: null, birth_date: null, phone: null, email: null, address: null, allergies: null, notes: null, dm_allowed: false },
         isDuplicate: false,
         checked: false,
       };
@@ -323,7 +333,7 @@ export function validateRows(
         rowIndex: i + 1,
         status: "error" as const,
         messages: ["氏名が空です"],
-        data: { last_name: "", first_name: "", last_name_kana: null, first_name_kana: null, birth_date: null, phone: null, email: null, address: null },
+        data: { last_name: "", first_name: "", last_name_kana: null, first_name_kana: null, birth_date: null, phone: null, email: null, address: null, allergies: null, notes: null, dm_allowed: false },
         isDuplicate: false,
         checked: false,
       };
@@ -362,6 +372,16 @@ export function validateRows(
     // 住所
     const address = getValue(row, "address") || null;
 
+    // アレルギー
+    const allergies = getValue(row, "allergies") || null;
+
+    // メモ
+    const notes = getValue(row, "notes") || null;
+
+    // DM可（○→true、それ以外→false）
+    const dmRaw = getValue(row, "dm_allowed");
+    const dmAllowed = dmRaw === "○";
+
     const data: CustomerRow = {
       last_name: last,
       first_name: first,
@@ -371,6 +391,9 @@ export function validateRows(
       phone,
       email,
       address,
+      allergies,
+      notes,
+      dm_allowed: dmAllowed,
     };
 
     // 重複チェック

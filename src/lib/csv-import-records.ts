@@ -10,6 +10,10 @@ export type RecordRow = {
   customer_match: string | null;// マッチした顧客の表示名
   menu_name: string;            // メニュー名テキスト
   menu_price: number | null;    // 料金
+  payment_type: "cash" | "credit" | "ticket" | "service";
+  treatment_area: string | null;
+  products_used: string | null;
+  skin_condition_before: string | null;
   purchase_item: string | null; // 物販商品名
   purchase_price: number | null;
   purchase_quantity: number;
@@ -41,6 +45,14 @@ export type ExistingProduct = {
   base_cost_price: number;
 };
 
+// 支払方法ラベル → DB値の逆変換マップ
+const PAYMENT_TYPE_REVERSE: Record<string, string> = {
+  "現金": "cash",
+  "クレジット": "credit",
+  "回数券": "ticket",
+  "サービス": "service",
+};
+
 // ヘッダー名マッピング
 const HEADER_MAP: Record<string, string> = {
   "日付": "date",
@@ -57,6 +69,10 @@ const HEADER_MAP: Record<string, string> = {
   "施術料金": "price",
   "料金": "price",
   "金額": "price",
+  "支払方法": "payment_type",
+  "施術部位": "treatment_area",
+  "使用化粧品": "products_used",
+  "施術前の状態": "skin_condition",
   "物販商品": "product",
   "物販": "product",
   "商品": "product",
@@ -219,6 +235,19 @@ export function validateRecordRows(
       if (status !== "error") status = "warning";
     }
 
+    // 支払方法（エクスポートCSVからの再インポート対応）
+    const paymentRaw = colMap["payment_type"] !== undefined ? (row[colMap["payment_type"]] ?? "").trim() : "";
+    const paymentType = (PAYMENT_TYPE_REVERSE[paymentRaw] ?? "cash") as "cash" | "credit" | "ticket" | "service";
+
+    // 施術部位
+    const treatmentArea = colMap["treatment_area"] !== undefined ? (row[colMap["treatment_area"]] ?? "").trim() || null : null;
+
+    // 使用化粧品
+    const productsUsed = colMap["products_used"] !== undefined ? (row[colMap["products_used"]] ?? "").trim() || null : null;
+
+    // 施術前の状態
+    const skinConditionBefore = colMap["skin_condition"] !== undefined ? (row[colMap["skin_condition"]] ?? "").trim() || null : null;
+
     // 物販商品
     const productRaw = colMap["product"] !== undefined ? (row[colMap["product"]] ?? "").trim() : "";
     let purchaseProductId: string | null = null;
@@ -294,6 +323,10 @@ export function validateRecordRows(
         customer_match: resolved.displayName,
         menu_name: menuName,
         menu_price: menuPrice,
+        payment_type: paymentType,
+        treatment_area: treatmentArea,
+        products_used: productsUsed,
+        skin_condition_before: skinConditionBefore,
         purchase_item: productRaw || null,
         purchase_price: purchasePrice,
         purchase_quantity: purchaseQty,
