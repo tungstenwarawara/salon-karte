@@ -62,9 +62,9 @@ export function TreatmentHistory({ customerId, salonId, customerName, records, h
                 href={`/records/${record.id}`}
                 className="block bg-surface border border-border rounded-xl p-3 hover:border-accent transition-colors"
               >
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-sm truncate mr-2">{menuDisplay}</span>
+                <div className="flex items-center gap-3">
                   <span className="text-sm text-text-light shrink-0">{formatDateShort(record.treatment_date)}</span>
+                  <span className="font-medium text-sm truncate">{menuDisplay}</span>
                 </div>
                 {record.next_visit_memo && (
                   <p className="text-sm text-text-light mt-1 truncate">次回: {record.next_visit_memo}</p>
