@@ -1,18 +1,12 @@
 import { redirect } from "next/navigation";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import type { Database } from "@/types/database";
-import { LapsedCustomersSection } from "@/components/dashboard/lapsed-customers-section";
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
 import { SummaryCards } from "@/components/dashboard/summary-cards";
-import { QuickActions } from "@/components/dashboard/quick-actions";
 import { InventoryAlert } from "@/components/dashboard/inventory-alert";
 import { TodayAppointments } from "@/components/dashboard/today-appointments";
 import { BirthdayCustomers } from "@/components/dashboard/birthday-customers";
-import { MonthlySales } from "@/components/dashboard/monthly-sales";
-import { RecentRecords } from "@/components/dashboard/recent-records";
-import { FeatureTip } from "@/components/dashboard/feature-tip";
 
-type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
 
 function getGreeting(): string {
@@ -36,7 +30,6 @@ export default async function DashboardPage() {
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const currentMonth = now.getMonth() + 1;
-  const currentYear = now.getFullYear();
 
   type LapsedCustomer = {
     id: string;
@@ -51,22 +44,13 @@ export default async function DashboardPage() {
     current_stock: number;
     reorder_point: number;
   };
-  type MonthlySalesRow = {
-    month: number;
-    treatment_sales: number;
-    product_sales: number;
-    ticket_sales: number;
-  };
 
-  // 全クエリを並列実行（11→8クエリに削減、在庫RPCも並列化）
   const [
     todayAppointmentsRes,
     customerCountRes,
     menuCountRes,
     lapsedCustomersRes,
-    monthlySalesRes,
     birthdayRes,
-    recentRecordsRes,
     inventoryRes,
   ] = await Promise.all([
     supabase
@@ -89,23 +73,11 @@ export default async function DashboardPage() {
     supabase
       .rpc("get_lapsed_customers", { p_salon_id: salon.id, p_days_threshold: 60 })
       .returns<LapsedCustomer[]>(),
-    // 月間売上: 3クエリ（treatment_records+purchases+course_tickets）→ 1 RPCに統合
-    supabase
-      .rpc("get_monthly_sales_summary", { p_salon_id: salon.id, p_year: currentYear })
-      .returns<MonthlySalesRow[]>(),
     supabase
       .from("customers")
       .select("id, last_name, first_name, birth_date")
       .eq("salon_id", salon.id)
       .like("birth_date", `%-${String(currentMonth).padStart(2, "0")}-%`),
-    supabase
-      .from("treatment_records")
-      .select("id, treatment_date, menu_name_snapshot, customers(last_name, first_name)")
-      .eq("salon_id", salon.id)
-      .order("treatment_date", { ascending: false })
-      .limit(3)
-      .returns<(TreatmentRecord & { customers: { last_name: string; first_name: string } | null })[]>(),
-    // 在庫アラート: Promise.allに統合（直列→並列に改善）
     supabase
       .rpc("get_inventory_summary", { p_salon_id: salon.id })
       .returns<InventoryAlertItem[]>(),
@@ -115,7 +87,6 @@ export default async function DashboardPage() {
   const customerCount = customerCountRes.count;
   const menuCount = menuCountRes.count;
   const lapsedCustomers = lapsedCustomersRes.data as LapsedCustomer[] | null;
-  const recentRecords = recentRecordsRes.data;
 
   // 今日の予約の顧客ごとに前回来店日を取得
   const lastVisitMap: Record<string, string> = {};
@@ -140,12 +111,6 @@ export default async function DashboardPage() {
   const lowStockItems = (inventoryRes.data ?? []).filter(
     (item) => item.current_stock <= item.reorder_point
   );
-
-  // 月間売上: RPCの今月分だけ抽出（3クエリ+JS集計 → 1 RPC結果のフィルタに簡素化）
-  const monthData = (monthlySalesRes.data ?? []).find((m) => m.month === currentMonth);
-  const monthlyTreatmentSales = monthData?.treatment_sales ?? 0;
-  const monthlyProductSales = monthData?.product_sales ?? 0;
-  const monthlyTicketSales = monthData?.ticket_sales ?? 0;
 
   // 誕生日（DBで月フィルタ済み → 日ソートのみ）
   const birthdayCustomers = (birthdayRes.data ?? [])
@@ -190,29 +155,11 @@ export default async function DashboardPage() {
         customerCount={customerCount ?? 0}
       />
 
-      <QuickActions />
-
       <InventoryAlert items={lowStockItems} />
 
       <TodayAppointments appointments={todayAppointments} lastVisitMap={lastVisitMap} />
 
       <BirthdayCustomers customers={birthdayCustomers} currentMonth={currentMonth} />
-
-      <MonthlySales
-        treatmentSales={monthlyTreatmentSales}
-        productSales={monthlyProductSales}
-        ticketSales={monthlyTicketSales}
-        year={now.getFullYear()}
-        month={currentMonth}
-      />
-
-      {lapsedCustomers && lapsedCustomers.length > 0 && (
-        <LapsedCustomersSection initialCustomers={lapsedCustomers} salonId={salon.id} />
-      )}
-
-      <RecentRecords records={recentRecords} />
-
-      <FeatureTip allSetupDone={allSetupDone} lapsedCount={lapsedCount} />
     </div>
   );
 }

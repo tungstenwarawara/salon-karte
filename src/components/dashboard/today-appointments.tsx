@@ -26,63 +26,47 @@ export function TodayAppointments({
           {appointments.map((apt) => {
             const customer = apt.customers;
             const isCompleted = apt.status === "completed";
-            const hasRecord = !!apt.treatment_record_id;
+            const needsKarte = isCompleted && !apt.treatment_record_id;
             return (
-              <div
+              <Link
                 key={apt.id}
-                className={`bg-surface border rounded-xl p-3 ${
+                href={`/appointments/${apt.id}`}
+                className={`block bg-surface border rounded-xl p-3 hover:border-accent transition-colors ${
                   isCompleted ? "border-green-200 bg-green-50/50" : "border-border"
-                }`}
+                } ${needsKarte ? "border-l-4 border-l-orange-400" : ""}`}
               >
-                <Link href={`/customers/${apt.customer_id}`} className="block hover:opacity-80 transition-opacity">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-accent tabular-nums">
-                        {(apt.start_time as string).slice(0, 5)}
-                      </span>
-                      <span className="font-medium text-sm">
-                        {customer
-                          ? `${customer.last_name} ${customer.first_name}`
-                          : "不明"}
-                      </span>
-                    </div>
-                    {isCompleted && (
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                        来店済
-                      </span>
-                    )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-accent tabular-nums">
+                      {(apt.start_time as string).slice(0, 5)}
+                    </span>
+                    <span className="font-medium text-sm">
+                      {customer
+                        ? `${customer.last_name} ${customer.first_name}`
+                        : "不明"}
+                    </span>
                   </div>
-                    {apt.menu_name_snapshot && (
-                    <p className="text-xs text-text-light mt-1 ml-[3.5rem]">
-                      {apt.menu_name_snapshot}
-                    </p>
+                  {isCompleted && (
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                      来店済
+                    </span>
                   )}
-                  {lastVisitMap?.[apt.customer_id] && (() => {
-                    const lastDate = new Date(lastVisitMap[apt.customer_id]);
-                    const daysSince = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-                    return (
-                      <p className="text-[10px] text-text-light mt-0.5 ml-[3.5rem]">
-                        前回来店: {daysSince === 0 ? "本日" : `${daysSince}日前`}
-                      </p>
-                    );
-                  })()}
-                </Link>
-                {apt.status !== "cancelled" && (
-                  <div className="mt-2 ml-[3.5rem]">
-                    {hasRecord ? (
-                      <Link href={`/records/${apt.treatment_record_id}`}
-                        className="text-xs text-text-light hover:text-accent hover:underline font-medium">
-                        カルテを見る →
-                      </Link>
-                    ) : (
-                      <Link href={`/records/new?customer=${apt.customer_id}&appointment=${apt.id}`}
-                        className="text-xs text-accent hover:underline font-medium">
-                        カルテを作成 →
-                      </Link>
-                    )}
-                  </div>
+                </div>
+                {apt.menu_name_snapshot && (
+                  <p className="text-xs text-text-light mt-1 ml-[3.5rem]">
+                    {apt.menu_name_snapshot}
+                  </p>
                 )}
-              </div>
+                {lastVisitMap?.[apt.customer_id] && (() => {
+                  const lastDate = new Date(lastVisitMap[apt.customer_id]);
+                  const daysSince = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+                  return (
+                    <p className="text-[10px] text-text-light mt-0.5 ml-[3.5rem]">
+                      前回来店: {daysSince === 0 ? "本日" : `${daysSince}日前`}
+                    </p>
+                  );
+                })()}
+              </Link>
             );
           })}
         </div>

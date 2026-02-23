@@ -4,7 +4,6 @@ import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { PageHeader } from "@/components/layout/page-header";
 import type { Database } from "@/types/database";
 import { VisitAnalytics } from "@/components/customers/visit-analytics";
-import { SalesSummary } from "@/components/customers/sales-summary";
 import { CustomerBasicInfo } from "@/components/customers/customer-basic-info";
 import { PurchaseHistory } from "@/components/customers/purchase-history";
 import { TreatmentHistory } from "@/components/customers/treatment-history";
@@ -131,16 +130,6 @@ export default async function CustomerDetailPage({
 
   const purchaseTotal = purchases.reduce((sum, p) => sum + p.total_price, 0);
 
-  // 施術合計: cash/credit のみ集計
-  const treatmentTotal = records.reduce((sum, rec) => {
-    const menus = rec.treatment_record_menus ?? [];
-    return sum + menus
-      .filter((m) => m.payment_type === "cash" || m.payment_type === "credit")
-      .reduce((mSum, m) => mSum + (m.price_snapshot ?? 0), 0);
-  }, 0);
-
-  const courseTicketTotal = courseTickets.reduce((sum, t) => sum + (t.price ?? 0), 0);
-
   return (
     <div className="space-y-6">
       <div>
@@ -171,12 +160,6 @@ export default async function CustomerDetailPage({
       />
 
       <TreatmentHistory customerId={id} salonId={salon.id} customerName={`${customer.last_name}${customer.first_name}`} records={records} hasPhotos={hasPhotos} />
-
-      <SalesSummary
-        treatmentTotal={treatmentTotal}
-        purchaseTotal={purchaseTotal}
-        courseTicketTotal={courseTicketTotal}
-      />
 
       <CourseTicketSection customerId={id} initialTickets={courseTickets} />
 

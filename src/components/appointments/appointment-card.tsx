@@ -14,67 +14,45 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   cancelled: { label: "キャンセル", color: "bg-gray-100 text-gray-500" },
 };
 
-const SOURCE_LABELS: Record<string, string> = {
-  direct: "直接", hotpepper: "HP", phone: "電話", line: "LINE", other: "他",
-};
-
 function formatTime(time: string) { return time.slice(0, 5); }
 
-type Props = {
-  appointment: AppointmentWithCustomer;
-  onStatusChange: (id: string, status: string) => void;
-  onDelete: (id: string) => void;
-};
-
-/** 予約一覧の個別カード表示 */
-export function AppointmentCard({ appointment: apt, onStatusChange, onDelete }: Props) {
+/** 予約一覧の個別カード — タップで予約詳細へ遷移 */
+export function AppointmentCard({ appointment: apt }: { appointment: AppointmentWithCustomer }) {
   const statusInfo = STATUS_LABELS[apt.status] ?? STATUS_LABELS.scheduled;
   const customer = apt.customers;
 
+  // 来店済みだがカルテ未作成: オレンジ左ボーダー
+  const needsKarte = apt.status === "completed" && !apt.treatment_record_id;
+  const borderClass = needsKarte
+    ? "border-l-4 border-l-orange-400"
+    : apt.status === "completed" && apt.treatment_record_id
+      ? "border-l-4 border-l-green-400"
+      : "";
+
   return (
-    <div className="bg-surface border border-border rounded-xl p-3 space-y-2">
+    <Link
+      href={`/appointments/${apt.id}`}
+      className={`block bg-surface border border-border rounded-xl p-3 hover:border-accent transition-colors ${borderClass}`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-sm">{formatTime(apt.start_time)}{apt.end_time ? ` - ${formatTime(apt.end_time)}` : ""}</span>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
-          {apt.source && apt.source !== "direct" && <span className="text-xs text-text-light">{SOURCE_LABELS[apt.source] ?? apt.source}</span>}
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href={`/appointments/${apt.id}`} className="text-xs text-text-light hover:text-accent transition-colors">詳細</Link>
-          {apt.status === "scheduled" && (
-            <Link href={`/appointments/${apt.id}/edit`} className="text-xs text-text-light hover:text-accent transition-colors">編集</Link>
-          )}
+          <span className="font-bold text-sm tabular-nums">
+            {formatTime(apt.start_time)}{apt.end_time ? ` - ${formatTime(apt.end_time)}` : ""}
+          </span>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusInfo.color}`}>
+            {statusInfo.label}
+          </span>
         </div>
       </div>
-
-      <div className="flex items-center justify-between">
-        <Link href={`/customers/${apt.customer_id}`} className="font-medium text-sm hover:text-accent transition-colors">
+      <div className="flex items-center justify-between mt-1">
+        <span className="font-medium text-sm">
           {customer ? `${customer.last_name} ${customer.first_name}` : "不明"}
-        </Link>
-        {apt.menu_name_snapshot && <span className="text-xs text-text-light">{apt.menu_name_snapshot}</span>}
-      </div>
-
-      {apt.memo && <p className="text-xs text-text-light">{apt.memo}</p>}
-
-      <div className="flex flex-wrap gap-2 pt-1">
-        {apt.status === "scheduled" && (
-          <>
-            <Link href={`/records/new?customer=${apt.customer_id}&appointment=${apt.id}`} className="text-xs bg-accent text-white px-3 py-1.5 rounded-lg hover:bg-accent-light transition-colors min-h-[44px] flex items-center font-medium">カルテを作成</Link>
-            <button onClick={() => onStatusChange(apt.id, "completed")} className="text-xs text-text-light px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors min-h-[44px]">来店済みのみ</button>
-            <button onClick={() => onStatusChange(apt.id, "cancelled")} className="text-xs text-gray-400 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors min-h-[44px]">キャンセル</button>
-          </>
-        )}
-        {apt.status === "completed" && !apt.treatment_record_id && (
-          <Link href={`/records/new?customer=${apt.customer_id}&appointment=${apt.id}`} className="text-xs bg-accent/10 text-accent px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-colors min-h-[44px] flex items-center">カルテを作成</Link>
-        )}
-        {apt.status === "completed" && apt.treatment_record_id && (
-          <Link href={`/records/${apt.treatment_record_id}`} className="text-xs bg-accent/10 text-accent px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-colors min-h-[44px] flex items-center">カルテを見る</Link>
-        )}
-        {!apt.treatment_record_id && (
-          <button onClick={() => onDelete(apt.id)} className="text-xs text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors min-h-[44px] ml-auto">削除</button>
+        </span>
+        {apt.menu_name_snapshot && (
+          <span className="text-xs text-text-light">{apt.menu_name_snapshot}</span>
         )}
       </div>
-    </div>
+    </Link>
   );
 }
 

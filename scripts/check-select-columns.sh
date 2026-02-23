@@ -140,10 +140,17 @@ def scan_source_files(tables):
             if not known_columns:
                 continue
 
-            # 次の10行からselectを探す
-            context = "\n".join(lines[i : i + 10])
+            # 次の10行からselectを探す（ただし別の.from()が先に出たら中断）
+            context_lines = lines[i : i + 10]
+            context_parts = []
+            for cl in context_lines[1:]:  # .from()の行自体はスキップ
+                if from_pattern.search(cl):
+                    break  # 別のクエリに到達
+                context_parts.append(cl)
+            context = lines[i] + "\n" + "\n".join(context_parts)
+            # .select("cols") と .select("cols", { options }) の両方に対応
             select_match = re.search(
-                r'\.select\(\s*["\']([^"\']+)["\']\s*\)', context
+                r'\.select\(\s*["\']([^"\']+)["\']\s*[\),]', context
             )
             if not select_match:
                 continue

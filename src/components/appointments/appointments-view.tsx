@@ -5,7 +5,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { BusinessHours } from "@/types/database";
 import { getScheduleForDate, isBusinessDay, isIrregularHoliday } from "@/lib/business-hours";
-import { ErrorAlert } from "@/components/ui/error-alert";
 import { AppointmentCard } from "@/components/appointments/appointment-card";
 import type { AppointmentWithCustomer } from "@/components/appointments/appointment-card";
 import { AppointmentsCalendar, toDateStr, DAY_NAMES } from "@/components/appointments/appointments-calendar";
@@ -28,7 +27,6 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
   const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
   const businessHours = initialBusinessHours;
   const salonHolidays = initialSalonHolidays;
-  const [error, setError] = useState("");
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const loadAppointments = useCallback(async (date: Date, mode: "day" | "month") => {
@@ -65,23 +63,6 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
 
   const goToToday = () => { const now = new Date(); setSelectedDate(now); if (viewMode === "month") setSelectedDay(now.getDate()); };
 
-  const handleStatusChange = async (id: string, newStatus: string) => {
-    setError("");
-    const supabase = createClient();
-    const { error: e } = await supabase.from("appointments").update({ status: newStatus }).eq("id", id).eq("salon_id", salonId);
-    if (e) { setError("ステータスの更新に失敗しました"); return; }
-    loadAppointments(selectedDate, viewMode);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("この予約を削除しますか？")) return;
-    setError("");
-    const supabase = createClient();
-    const { error: e } = await supabase.from("appointments").delete().eq("id", id).eq("salon_id", salonId);
-    if (e) { setError("予約の削除に失敗しました"); return; }
-    loadAppointments(selectedDate, viewMode);
-  };
-
   const todayStr = toDateStr(new Date());
   const isSelectedToday = toDateStr(selectedDate) === todayStr;
   const dateLabel = viewMode === "day"
@@ -94,8 +75,6 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
         <h2 className="text-xl font-bold">予約管理</h2>
         <Link href={`/appointments/new${viewMode === "day" ? `?date=${toDateStr(selectedDate)}` : selectedDay !== null ? `?date=${toDateStr(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDay))}` : ""}`} className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px] flex items-center">+ 予約を登録</Link>
       </div>
-
-      {error && <ErrorAlert message={error} />}
 
       {/* ビューモード切替 */}
       <div className="flex gap-2">
@@ -120,7 +99,7 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
         appointments.length > 0 ? (
           <div className="space-y-2">
             {appointments.map((apt) => (
-              <AppointmentCard key={apt.id} appointment={apt} onStatusChange={handleStatusChange} onDelete={handleDelete} />
+              <AppointmentCard key={apt.id} appointment={apt} />
             ))}
           </div>
         ) : (

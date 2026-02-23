@@ -2,35 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
 import { NavIcon } from "./nav-icon";
 
 const navItems = [
   { href: "/dashboard", label: "ホーム", icon: "home" },
   { href: "/appointments", label: "予約", icon: "calendar" },
+  { href: "/records", label: "カルテ", icon: "records" },
   { href: "/customers", label: "顧客", icon: "customers" },
   { href: "/sales", label: "経営", icon: "sales" },
 ];
 
-const fabActions = [
-  { href: "/appointments/new", label: "予約を追加", icon: "fab-calendar" },
-  { href: "/customers/new", label: "顧客を登録", icon: "fab-customer" },
-];
-
 export function DashboardHeader() {
   const pathname = usePathname();
-  const [fabOpen, setFabOpen] = useState(false);
-  const fabRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => { setFabOpen(false); }, [pathname]);
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (fabRef.current && !fabRef.current.contains(e.target as Node)) setFabOpen(false);
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
 
   return (
     <>
@@ -54,54 +37,21 @@ export function DashboardHeader() {
         </div>
       </header>
 
-      {/* FABオーバーレイ */}
-      {fabOpen && (
-        <div className="fixed inset-0 bg-black/30 z-40 transition-opacity" onClick={() => setFabOpen(false)} />
-      )}
-
       {/* ボトムナビゲーション */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border px-2 pb-[env(safe-area-inset-bottom)]">
-        <div className="flex justify-around items-end">
-          {navItems.slice(0, 2).map((item) => {
-            const isActive = item.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.href);
+        <div className="flex justify-around items-center">
+          {navItems.map((item) => {
+            const isActive = item.href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname.startsWith(item.href);
             return (
-              <Link key={item.href} href={item.href}
-                className={`flex flex-col items-center py-2 px-3 min-w-[56px] min-h-[48px] justify-center transition-colors ${isActive ? "text-accent" : "text-text-light"}`}>
-                <NavIcon icon={item.icon} /><span className="text-[10px] mt-0.5">{item.label}</span>
-              </Link>
-            );
-          })}
-
-          {/* FAB */}
-          <div ref={fabRef} className="relative flex flex-col items-center -mt-4">
-            {fabOpen && (
-              <div className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-surface rounded-2xl shadow-lg border border-border py-2 w-48 z-50">
-                {fabActions.map((action) => (
-                  <Link key={action.href} href={action.href}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-background transition-colors text-text"
-                    onClick={() => setFabOpen(false)}>
-                    <span className="text-accent"><NavIcon icon={action.icon} /></span>
-                    <span className="text-sm font-medium">{action.label}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-            <button onClick={() => setFabOpen(!fabOpen)}
-              className={`flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all ${fabOpen ? "bg-text text-white rotate-45" : "bg-accent text-white"}`}
-              aria-label="新規作成">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-7 h-7">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            </button>
-            <span className="text-[10px] text-text-light mt-0.5">新規</span>
-          </div>
-
-          {navItems.slice(2).map((item) => {
-            const isActive = pathname.startsWith(item.href);
-            return (
-              <Link key={item.href} href={item.href}
-                className={`flex flex-col items-center py-2 px-3 min-w-[56px] min-h-[48px] justify-center transition-colors ${isActive ? "text-accent" : "text-text-light"}`}>
-                <NavIcon icon={item.icon} /><span className="text-[10px] mt-0.5">{item.label}</span>
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex flex-col items-center py-2 px-2 min-w-[48px] min-h-[48px] justify-center transition-colors ${isActive ? "text-accent" : "text-text-light"}`}
+              >
+                <NavIcon icon={item.icon} />
+                <span className="text-[10px] mt-0.5">{item.label}</span>
               </Link>
             );
           })}

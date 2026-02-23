@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { PageHeader } from "@/components/layout/page-header";
 import { formatDateJa } from "@/lib/format";
+import { AppointmentActions } from "@/components/appointments/appointment-actions";
 import type { Database } from "@/types/database";
 
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
@@ -19,16 +20,10 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 const SOURCE_LABELS: Record<string, string> = {
-  direct: "直接予約",
-  hotpepper: "ホットペッパー",
-  phone: "電話",
-  line: "LINE",
-  other: "その他",
+  direct: "直接予約", hotpepper: "ホットペッパー", phone: "電話", line: "LINE", other: "その他",
 };
 
-function formatTime(time: string) {
-  return time.slice(0, 5);
-}
+function formatTime(time: string) { return time.slice(0, 5); }
 
 export default async function AppointmentDetailPage({
   params,
@@ -40,7 +35,7 @@ export default async function AppointmentDetailPage({
   if (!user) redirect("/login");
   if (!salon) redirect("/setup");
 
-  // 予約とメニューを並列取得
+  // 予約、メニュー、前回カルテを並列取得
   const [appointmentRes, menusRes] = await Promise.all([
     supabase
       .from("appointments")
@@ -63,12 +58,21 @@ export default async function AppointmentDetailPage({
   const menus = menusRes.data ?? [];
   const statusInfo = STATUS_LABELS[appointment.status] ?? STATUS_LABELS.scheduled;
 
-  // メニュー名の表示
+  // 前回カルテを取得（同一顧客の最新1件）
+  const { data: prevRecords } = await supabase
+    .from("treatment_records")
+    .select("id, treatment_date, menu_name_snapshot, skin_condition_before, next_visit_memo")
+    .eq("customer_id", appointment.customer_id)
+    .eq("salon_id", salon.id)
+    .order("treatment_date", { ascending: false })
+    .limit(1);
+
+  const prevKarte = prevRecords?.[0] ?? null;
+
   const menuDisplay = menus.length > 0
     ? menus.map((m) => m.menu_name_snapshot).join("、")
     : appointment.menu_name_snapshot ?? "";
 
-  // 合計金額・時間
   const totalPrice = menus.reduce((sum, m) => sum + (m.price_snapshot ?? 0), 0);
   const totalDuration = menus.reduce((sum, m) => sum + (m.duration_minutes_snapshot ?? 0), 0);
 
@@ -84,7 +88,7 @@ export default async function AppointmentDetailPage({
         {appointment.status === "scheduled" && (
           <Link
             href={`/appointments/${id}/edit`}
-            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[44px] flex items-center"
+            className="text-sm text-accent hover:underline min-h-[44px] flex items-center"
           >
             編集
           </Link>
@@ -103,12 +107,8 @@ export default async function AppointmentDetailPage({
             </span>
           )}
         </div>
-
         <div>
-          <p className="text-sm font-medium text-text-light mb-1">日時</p>
-          <p className="font-bold text-lg">
-            {formatDateJa(appointment.appointment_date)}
-          </p>
+          <p className="font-bold text-lg">{formatDateJa(appointment.appointment_date)}</p>
           <p className="text-sm mt-0.5">
             {formatTime(appointment.start_time)}
             {appointment.end_time ? ` 〜 ${formatTime(appointment.end_time)}` : ""}
@@ -170,33 +170,38 @@ export default async function AppointmentDetailPage({
         </div>
       )}
 
-      {/* アクション */}
-      <div className="space-y-2 pt-2">
-        {appointment.status === "scheduled" && (
+      {/* 前回のカルテ */}
+      {prevKarte && (
+        <div>
+          <h3 className="text-sm font-bold text-text-light mb-2">前回のカルテ</h3>
           <Link
-            href={`/records/new?customer=${appointment.customer_id}&appointment=${id}`}
-            className="block w-full text-center bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors min-h-[48px]"
+            href={`/records/${prevKarte.id}`}
+            className="block bg-surface border border-border rounded-xl p-3 hover:border-accent transition-colors"
           >
-            カルテを作成
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">{prevKarte.menu_name_snapshot ?? "施術記録"}</span>
+              <span className="text-xs text-text-light">{prevKarte.treatment_date}</span>
+            </div>
+            {prevKarte.skin_condition_before && (
+              <p className="text-xs text-text-light mt-1">肌状態: {prevKarte.skin_condition_before}</p>
+            )}
+            {prevKarte.next_visit_memo && (
+              <p className="text-xs text-accent mt-1">申し送り: {prevKarte.next_visit_memo}</p>
+            )}
+            <p className="text-xs text-accent mt-1 text-right">詳細を見る →</p>
           </Link>
-        )}
-        {appointment.status === "completed" && !appointment.treatment_record_id && (
-          <Link
-            href={`/records/new?customer=${appointment.customer_id}&appointment=${id}`}
-            className="block w-full text-center bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors min-h-[48px]"
-          >
-            カルテを作成
-          </Link>
-        )}
-        {appointment.status === "completed" && appointment.treatment_record_id && (
-          <Link
-            href={`/records/${appointment.treatment_record_id}`}
-            className="block w-full text-center bg-accent/10 text-accent font-medium rounded-xl py-3 transition-colors min-h-[48px] hover:bg-accent/20"
-          >
-            カルテを見る
-          </Link>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* アクションボタン */}
+      <AppointmentActions
+        appointmentId={id}
+        salonId={salon.id}
+        status={appointment.status}
+        customerId={appointment.customer_id}
+        treatmentRecordId={appointment.treatment_record_id}
+        hasKarte={!!appointment.treatment_record_id}
+      />
     </div>
   );
 }
