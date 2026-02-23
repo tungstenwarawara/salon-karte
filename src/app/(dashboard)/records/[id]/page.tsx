@@ -89,136 +89,145 @@ export default async function RecordDetailPage({
     ? recordMenus.map((rm) => rm.menu_name_snapshot).join("、")
     : record.menu_name_snapshot ?? "施術記録";
 
+  // 施術メニュー合計金額
+  const menuTotal = recordMenus.reduce((s, rm) => s + (rm.price_snapshot ?? 0), 0);
+  const menuTotalDuration = recordMenus.reduce((s, rm) => s + (rm.duration_minutes_snapshot ?? 0), 0);
+
   return (
-    <div className="space-y-6">
-      <div>
-        <PageHeader
-          title={menuDisplay}
-          breadcrumbs={
-            customer
-              ? [
-                  { label: `${customer.last_name} ${customer.first_name}`, href: `/customers/${customer.id}` },
-                  { label: "カルテ詳細" },
-                ]
-              : [{ label: "カルテ詳細" }]
-          }
-        >
-          <div className="flex items-center gap-3">
-            <a
-              href={`/records/${id}/print`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-accent hover:underline min-h-[44px] flex items-center"
-            >
-              PDF
-            </a>
-            <Link
-              href={`/records/${id}/edit`}
-              className="text-sm text-accent hover:underline min-h-[44px] flex items-center"
-            >
-              編集
-            </Link>
-          </div>
-        </PageHeader>
-        <p className="text-sm text-text-light -mt-2">
-          {formatDateJa(record.treatment_date)}
+    <div className="space-y-5">
+      <PageHeader
+        title="カルテ詳細"
+        breadcrumbs={
+          customer
+            ? [
+                { label: `${customer.last_name} ${customer.first_name}`, href: `/customers/${customer.id}` },
+                { label: "カルテ詳細" },
+              ]
+            : [{ label: "カルテ詳細" }]
+        }
+      >
+        <div className="flex items-center gap-3">
+          <a
+            href={`/records/${id}/print`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-accent hover:underline min-h-[44px] flex items-center"
+          >
+            PDF
+          </a>
+          <Link
+            href={`/records/${id}/edit`}
+            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[44px] flex items-center"
+          >
+            編集
+          </Link>
+        </div>
+      </PageHeader>
+
+      {/* ヘッダーカード: 日付・顧客・メニュー概要をまとめて表示 */}
+      <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-lg font-bold">{formatDateJa(record.treatment_date)}</p>
           {linkedAppointment && (
-            <span className="ml-2 text-xs text-blue-600">
+            <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg">
               予約 {linkedAppointment.start_time.slice(0, 5)}〜
             </span>
           )}
-        </p>
+        </div>
+        {customer && (
+          <Link
+            href={`/customers/${customer.id}`}
+            className="flex items-center gap-2 text-sm hover:text-accent transition-colors"
+          >
+            <span className="text-text-light">顧客</span>
+            <span className="font-medium">{customer.last_name} {customer.first_name}</span>
+          </Link>
+        )}
+        <p className="text-sm font-medium text-text-light">{menuDisplay}</p>
       </div>
 
-      {/* Customer link */}
-      {customer && (
-        <Link
-          href={`/customers/${customer.id}`}
-          className="block bg-surface border border-border rounded-xl p-3 hover:border-accent transition-colors"
-        >
-          <span className="text-sm text-text-light">顧客:</span>
-          <span className="font-medium ml-2">
-            {customer.last_name} {customer.first_name}
-          </span>
-        </Link>
-      )}
-
-      {/* 施術メニュー一覧（複数メニューがある場合） */}
+      {/* 施術メニュー一覧 */}
       {recordMenus.length > 0 && (
-        <div className="bg-surface border border-border rounded-2xl p-5 space-y-2">
-          <h3 className="text-sm font-bold mb-2">施術メニュー</h3>
+        <div className="space-y-2">
+          <h3 className="font-bold">施術メニュー</h3>
           {recordMenus.map((rm) => (
-            <div key={rm.id} className="flex items-center justify-between py-1.5">
-              <div className="flex-1">
-                <span className="text-sm">{rm.menu_name_snapshot}</span>
-                {rm.duration_minutes_snapshot && (
-                  <span className="text-xs text-text-light ml-2">{rm.duration_minutes_snapshot}分</span>
+            <div key={rm.id} className="bg-surface border border-border rounded-xl p-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">{rm.menu_name_snapshot}</p>
+                {rm.duration_minutes_snapshot != null && (
+                  <p className="text-xs text-text-light mt-0.5">{rm.duration_minutes_snapshot}分</p>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                {rm.price_snapshot != null && (
-                  <span className="text-sm">{rm.price_snapshot.toLocaleString()}円</span>
-                )}
-                <span className={`text-xs px-1.5 py-0.5 rounded ${
-                  rm.payment_type === "ticket" ? "bg-blue-100 text-blue-700" :
-                  rm.payment_type === "service" ? "bg-green-100 text-green-700" :
-                  rm.payment_type === "credit" ? "bg-purple-100 text-purple-700" :
-                  "bg-gray-100 text-gray-700"
+              <div className="flex items-center gap-2 shrink-0">
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  rm.payment_type === "ticket" ? "bg-blue-50 text-blue-700" :
+                  rm.payment_type === "service" ? "bg-green-50 text-green-700" :
+                  rm.payment_type === "credit" ? "bg-purple-50 text-purple-700" :
+                  "bg-gray-100 text-gray-600"
                 }`}>
                   {PAYMENT_TYPE_LABELS[rm.payment_type] ?? rm.payment_type}
                 </span>
+                {rm.price_snapshot != null && (
+                  <span className="text-sm font-bold tabular-nums">{rm.price_snapshot.toLocaleString()}円</span>
+                )}
               </div>
             </div>
           ))}
+          {recordMenus.length > 1 && (
+            <div className="flex items-center justify-between px-3 pt-1">
+              <span className="text-xs text-text-light">合計 {menuTotalDuration}分</span>
+              <span className="text-sm font-bold text-accent">{menuTotal.toLocaleString()}円</span>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Record details */}
-      <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
-        <DetailRow label="施術部位" value={record.treatment_area} />
-        <DetailRow label="使用化粧品・機器" value={record.products_used} />
-        <DetailRow label="施術前の状態" value={record.skin_condition_before} />
-        <DetailRow label="施術後の経過" value={record.notes_after} />
-        <DetailRow label="話した内容" value={record.conversation_notes} />
-        <DetailRow label="注意事項" value={record.caution_notes} />
-        <DetailRow label="次回への申し送り" value={record.next_visit_memo} />
-      </div>
+      {/* 施術メモ */}
+      <DetailSection
+        items={[
+          { label: "施術部位", value: record.treatment_area },
+          { label: "使用化粧品・機器", value: record.products_used },
+          { label: "施術前の状態", value: record.skin_condition_before },
+          { label: "施術後の経過", value: record.notes_after },
+          { label: "話した内容", value: record.conversation_notes },
+          { label: "注意事項", value: record.caution_notes, highlight: true },
+          { label: "次回への申し送り", value: record.next_visit_memo, highlight: true },
+        ]}
+      />
 
-      {/* Phase 6-2: 紐づく回数券購入 */}
+      {/* 回数券販売 */}
       {linkedTickets.length > 0 && (
-        <div className="bg-surface border border-border rounded-2xl p-5 space-y-2">
-          <h3 className="text-sm font-bold mb-2">回数券販売</h3>
+        <div className="space-y-2">
+          <h3 className="font-bold">回数券販売</h3>
           {linkedTickets.map((ticket) => (
-            <div key={ticket.id} className="flex items-center justify-between py-1.5">
-              <div className="flex-1">
-                <span className="text-sm">{ticket.ticket_name}</span>
-                <span className="text-xs text-text-light ml-2">{ticket.total_sessions}回</span>
+            <div key={ticket.id} className="bg-surface border border-border rounded-xl p-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">{ticket.ticket_name}</p>
+                <p className="text-xs text-text-light mt-0.5">{ticket.total_sessions}回</p>
               </div>
               {ticket.price != null && (
-                <span className="text-sm font-medium">{ticket.price.toLocaleString()}円</span>
+                <span className="text-sm font-bold tabular-nums">{ticket.price.toLocaleString()}円</span>
               )}
             </div>
           ))}
         </div>
       )}
 
-      {/* Phase 6-2: 紐づく物販記録 */}
+      {/* 物販記録 */}
       {linkedPurchases.length > 0 && (
-        <div className="bg-surface border border-border rounded-2xl p-5 space-y-2">
-          <h3 className="text-sm font-bold mb-2">物販記録</h3>
+        <div className="space-y-2">
+          <h3 className="font-bold">物販記録</h3>
           {linkedPurchases.map((purchase) => (
-            <div key={purchase.id} className="flex items-center justify-between py-1.5">
-              <div className="flex-1">
-                <span className="text-sm">{purchase.item_name}</span>
-                <span className="text-xs text-text-light ml-2">
-                  {purchase.quantity}個 × {purchase.unit_price.toLocaleString()}円
-                </span>
+            <div key={purchase.id} className="bg-surface border border-border rounded-xl p-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">{purchase.item_name}</p>
+                <p className="text-xs text-text-light mt-0.5">{purchase.quantity}個 × {purchase.unit_price.toLocaleString()}円</p>
               </div>
-              <span className="text-sm font-medium">{purchase.total_price.toLocaleString()}円</span>
+              <span className="text-sm font-bold tabular-nums">{purchase.total_price.toLocaleString()}円</span>
             </div>
           ))}
           {linkedPurchases.length > 1 && (
-            <div className="flex items-center justify-between pt-2 border-t border-border">
+            <div className="flex items-center justify-between px-3 pt-1">
               <span className="text-xs text-text-light">合計</span>
               <span className="text-sm font-bold text-accent">
                 {linkedPurchases.reduce((s, p) => s + p.total_price, 0).toLocaleString()}円
@@ -228,7 +237,7 @@ export default async function RecordDetailPage({
         </div>
       )}
 
-      {/* Photos - Before/After comparison */}
+      {/* 写真 */}
       {photos && photos.length > 0 && (
         <BeforeAfterComparison photos={photos} />
       )}
@@ -236,12 +245,22 @@ export default async function RecordDetailPage({
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: string | null }) {
-  if (!value) return null;
+type DetailItem = { label: string; value: string | null; highlight?: boolean };
+
+function DetailSection({ items }: { items: DetailItem[] }) {
+  const filled = items.filter((item) => item.value);
+  if (filled.length === 0) return null;
   return (
-    <div>
-      <p className="text-sm font-medium text-text-light mb-1">{label}</p>
-      <p className="text-sm whitespace-pre-wrap">{value}</p>
+    <div className="space-y-2">
+      <h3 className="font-bold">施術メモ</h3>
+      <div className="bg-surface border border-border rounded-2xl divide-y divide-border">
+        {filled.map((item) => (
+          <div key={item.label} className={`px-4 py-3 ${item.highlight ? "bg-accent/5" : ""}`}>
+            <p className="text-xs font-bold text-text-light mb-1">{item.label}</p>
+            <p className="text-sm whitespace-pre-wrap leading-relaxed">{item.value}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
