@@ -116,7 +116,7 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
         <div className="space-y-3">
           <AppointmentsCalendar selectedDate={selectedDate} appointments={appointments} businessHours={businessHours} salonHolidays={salonHolidays} selectedDay={selectedDay} onSelectDay={setSelectedDay} />
           {selectedDay !== null && selectedDay <= new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate() && (
-            <AppointmentsDayPanel selectedDate={selectedDate} selectedDay={selectedDay} appointments={appointments} businessHours={businessHours} salonHolidays={salonHolidays} onDrillThrough={(date: Date) => { setSelectedDate(date); setViewMode("day"); }} />
+            <AppointmentsDayPanel selectedDate={selectedDate} selectedDay={selectedDay} appointments={appointments} businessHours={businessHours} salonHolidays={salonHolidays} />
           )}
         </div>
       )}
