@@ -18,8 +18,8 @@ export default async function InventoryPage() {
     ? `${now.getFullYear() + 1}-01-31`
     : `${now.getFullYear()}-${String(now.getMonth() + 2).padStart(2, "0")}-01`;
 
-  // 商品数・在庫サマリー・今月の仕入額・セットアップ状態を並列取得
-  const [countRes, inventoryRes, purchaseRes, setupCheckRes] = await Promise.all([
+  // 商品数・在庫サマリー・今月の仕入額・累計仕入額・セットアップ状態を並列取得
+  const [countRes, inventoryRes, purchaseRes, totalPurchaseRes, setupCheckRes] = await Promise.all([
     supabase
       .from("products")
       .select("id", { count: "exact", head: true })
@@ -32,6 +32,12 @@ export default async function InventoryPage() {
       .eq("log_type", "purchase_in")
       .gte("logged_at", firstDay)
       .lt("logged_at", lastDay),
+    // 累計仕入額（全期間の purchase_in）
+    supabase
+      .from("inventory_logs")
+      .select("quantity, unit_cost_price")
+      .eq("salon_id", salon.id)
+      .eq("log_type", "purchase_in"),
     // 仕入れ or 棚卸しが1件でもあればセットアップ済み
     supabase
       .from("inventory_logs")
@@ -43,10 +49,10 @@ export default async function InventoryPage() {
   const hasProducts = (countRes.count ?? 0) > 0;
   const hasStockSetup = (setupCheckRes.count ?? 0) > 0;
   const items = (inventoryRes.data as InventoryItem[]) ?? [];
-  const monthlyPurchases = (purchaseRes.data ?? []).reduce(
-    (sum, row) => sum + (row.quantity ?? 0) * (row.unit_cost_price ?? 0),
-    0
-  );
+  const sumPurchases = (rows: { quantity: number | null; unit_cost_price: number | null }[]) =>
+    rows.reduce((sum, row) => sum + (row.quantity ?? 0) * (row.unit_cost_price ?? 0), 0);
+  const monthlyPurchases = sumPurchases(purchaseRes.data ?? []);
+  const totalPurchases = sumPurchases(totalPurchaseRes.data ?? []);
 
   return (
     <div className="space-y-4">
@@ -70,7 +76,7 @@ export default async function InventoryPage() {
           </Link>
         </div>
       ) : (
-        <InventoryDashboard items={items} monthlyPurchases={monthlyPurchases} salonId={salon.id} />
+        <InventoryDashboard items={items} monthlyPurchases={monthlyPurchases} totalPurchases={totalPurchases} salonId={salon.id} />
       )}
     </div>
   );

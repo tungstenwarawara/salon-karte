@@ -21,6 +21,7 @@ type SortKey = "name" | "low_stock";
 type Props = {
   items: InventoryItem[];
   monthlyPurchases: number;
+  totalPurchases: number;
   salonId: string;
 };
 
@@ -31,7 +32,7 @@ const quickActions = [
   { href: "/sales/inventory/tax-report", label: "確定申告", icon: "📄" },
 ];
 
-export function InventoryDashboard({ items, monthlyPurchases, salonId }: Props) {
+export function InventoryDashboard({ items, monthlyPurchases, totalPurchases, salonId }: Props) {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("name");
 
@@ -84,7 +85,7 @@ export function InventoryDashboard({ items, monthlyPurchases, salonId }: Props) 
         </div>
       )}
 
-      {/* サマリーカード 2x2 */}
+      {/* サマリーカード */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-surface border border-border rounded-xl p-4 text-center">
           <p className="text-xs text-text-light">商品数</p>
@@ -97,12 +98,18 @@ export function InventoryDashboard({ items, monthlyPurchases, salonId }: Props) 
           </p>
         </div>
         <div className="bg-surface border border-border rounded-xl p-4 text-center">
-          <p className="text-xs text-text-light">在庫評価額</p>
-          <p className="text-lg font-bold mt-1">¥{totalStockValue.toLocaleString()}</p>
-        </div>
-        <div className="bg-surface border border-border rounded-xl p-4 text-center">
           <p className="text-xs text-text-light">今月の仕入額</p>
           <p className="text-lg font-bold mt-1">¥{monthlyPurchases.toLocaleString()}</p>
+        </div>
+        <div className="bg-surface border border-border rounded-xl p-4 text-center">
+          <p className="text-xs text-text-light">累計仕入額</p>
+          <p className="text-lg font-bold mt-1">¥{totalPurchases.toLocaleString()}</p>
+          <p className="text-[10px] text-text-light mt-1">仕入れに使った合計金額</p>
+        </div>
+        <div className="col-span-2 bg-surface border border-border rounded-xl p-4 text-center">
+          <p className="text-xs text-text-light">在庫評価額</p>
+          <p className="text-lg font-bold mt-1">¥{totalStockValue.toLocaleString()}</p>
+          <p className="text-[10px] text-text-light mt-1">今ある在庫の価値（確定申告用・商品マスタの仕入単価で計算）</p>
         </div>
       </div>
 
