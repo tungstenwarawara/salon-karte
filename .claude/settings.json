@@ -68,6 +68,10 @@
           {
             "type": "command",
             "command": ".claude/hooks/pre-commit-check.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/warn-stale-plans.sh"
           }
         ]
       },

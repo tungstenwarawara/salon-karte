@@ -10,6 +10,18 @@ if [[ ! "$COMMAND" =~ ^git[[:space:]]+commit ]]; then
   exit 0
 fi
 
+# Co-Authored-By 行の存在チェック
+if [[ ! "$COMMAND" =~ Co-Authored-By ]]; then
+  jq -n '{
+    "hookSpecificOutput": {
+      "hookEventName": "PreToolUse",
+      "permissionDecision": "deny",
+      "permissionDecisionReason": "コミットメッセージに Co-Authored-By 行が含まれていません。規約に従って追加してください。"
+    }
+  }'
+  exit 0
+fi
+
 # カラム名照合チェックを実行
 PROJECT_DIR=$(echo "$INPUT" | jq -r '.cwd // empty')
 if [[ -z "$PROJECT_DIR" ]]; then
