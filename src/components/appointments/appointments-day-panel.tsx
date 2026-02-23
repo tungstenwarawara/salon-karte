@@ -37,7 +37,10 @@ export function AppointmentsDayPanel({ selectedDate, selectedDay, appointments, 
           {isHoliday && !isIrregular && <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">休</span>}
           {activeApts.length > 0 && <span className="text-xs text-text-light">{activeApts.length}件</span>}
         </div>
-        <button onClick={() => onDrillThrough(dayDate)} className="text-xs text-accent hover:underline">詳しく見る →</button>
+        <div className="flex items-center gap-2">
+          <Link href={`/appointments/new?date=${dayStr}`} className="text-xs bg-accent hover:bg-accent-light text-white px-3 py-1.5 rounded-lg transition-colors min-h-[44px] flex items-center">+ 予約を登録</Link>
+          <button onClick={() => onDrillThrough(dayDate)} className="text-xs text-accent hover:underline min-h-[44px] flex items-center">詳しく見る →</button>
+        </div>
       </div>
 
       {activeApts.length > 0 ? (

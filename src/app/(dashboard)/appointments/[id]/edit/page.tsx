@@ -150,11 +150,15 @@ export default function EditAppointmentPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && <ErrorAlert message={error} />}
 
+        {/* 1. メニュー選択（日時選択より先に配置） */}
+        <AppointmentMenuSelector menus={menus} selectedMenuIds={selectedMenuIds} onToggle={toggleMenu} totalDuration={totalDuration} totalPrice={totalPrice} />
+
+        {/* 2. 日付・時間選択 */}
         <AppointmentDateTimeSection
           appointmentDate={appointmentDate} onDateChange={setAppointmentDate}
           businessHours={businessHours} salonHolidays={salonHolidays} dayAppointments={dayAppointments}
           startHour={startHour} startMinute={startMinute} endHour={endHour} endMinute={endMinute}
-          isEndTimeManual={isEndTimeManual} selectedMenuIds={selectedMenuIds}
+          isEndTimeManual={isEndTimeManual} selectedMenuIds={selectedMenuIds} menuDuration={totalDuration}
           excludeAppointmentId={appointmentId}
           onSlotClick={(h, m) => { setStartHour(String(h)); setStartMinute(String(m).padStart(2, "0")); updateEndTimeFromMenus(selectedMenuIds, String(h), String(m).padStart(2, "0")); }}
           onStartHourChange={(h) => { setStartHour(h); updateEndTimeFromMenus(selectedMenuIds, h, startMinute); }}
@@ -164,8 +168,7 @@ export default function EditAppointmentPage() {
           onResetAutoEndTime={() => { setIsEndTimeManual(false); updateEndTimeFromMenus(selectedMenuIds, startHour, startMinute, true); }}
         />
 
-        <AppointmentMenuSelector menus={menus} selectedMenuIds={selectedMenuIds} onToggle={toggleMenu} totalDuration={totalDuration} totalPrice={totalPrice} />
-
+        {/* 3. その他 */}
         <div>
           <label htmlFor="source" className="block text-sm font-medium mb-1.5">予約経路</label>
           <select id="source" value={source} onChange={(e) => setSource(e.target.value)} className={INPUT_CLASS}>

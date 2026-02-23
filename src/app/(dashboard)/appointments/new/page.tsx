@@ -29,6 +29,7 @@ function NewAppointmentForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedCustomerId = searchParams.get("customer");
+  const preselectedDate = searchParams.get("date");
 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [menus, setMenus] = useState<TreatmentMenu[]>([]);
@@ -44,6 +45,7 @@ function NewAppointmentForm() {
   const [customerSearch, setCustomerSearch] = useState("");
   const [selectedMenuIds, setSelectedMenuIds] = useState<string[]>([]);
   const [appointmentDate, setAppointmentDate] = useState(() => {
+    if (preselectedDate && /^\d{4}-\d{2}-\d{2}$/.test(preselectedDate)) return preselectedDate;
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   });
@@ -153,7 +155,7 @@ function NewAppointmentForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && <ErrorAlert message={error} />}
 
-        {/* 顧客選択 */}
+        {/* 1. 顧客選択 */}
         <div className="bg-surface border border-border rounded-xl p-4 space-y-3">
           <label className="block text-sm font-medium">顧客</label>
           {selectedCustomer ? (
@@ -178,11 +180,15 @@ function NewAppointmentForm() {
           )}
         </div>
 
+        {/* 2. メニュー選択（日時選択より先に配置 — 所要時間でタイムスロットの空き判定に使う） */}
+        <AppointmentMenuSelector menus={menus} selectedMenuIds={selectedMenuIds} onToggle={toggleMenu} totalDuration={totalDuration} totalPrice={totalPrice} />
+
+        {/* 3. 日付・時間選択 */}
         <AppointmentDateTimeSection
           appointmentDate={appointmentDate} onDateChange={setAppointmentDate}
           businessHours={businessHours} salonHolidays={salonHolidays} dayAppointments={dayAppointments}
           startHour={startHour} startMinute={startMinute} endHour={endHour} endMinute={endMinute}
-          isEndTimeManual={isEndTimeManual} selectedMenuIds={selectedMenuIds}
+          isEndTimeManual={isEndTimeManual} selectedMenuIds={selectedMenuIds} menuDuration={totalDuration}
           onSlotClick={(h, m) => { setStartHour(String(h)); setStartMinute(String(m).padStart(2, "0")); updateEndTimeFromMenus(selectedMenuIds, String(h), String(m).padStart(2, "0")); }}
           onStartHourChange={(h) => { setStartHour(h); updateEndTimeFromMenus(selectedMenuIds, h, startMinute); }}
           onStartMinuteChange={(m) => { setStartMinute(m); updateEndTimeFromMenus(selectedMenuIds, startHour, m); }}
@@ -191,8 +197,7 @@ function NewAppointmentForm() {
           onResetAutoEndTime={() => { setIsEndTimeManual(false); updateEndTimeFromMenus(selectedMenuIds, startHour, startMinute, true); }}
         />
 
-        <AppointmentMenuSelector menus={menus} selectedMenuIds={selectedMenuIds} onToggle={toggleMenu} totalDuration={totalDuration} totalPrice={totalPrice} />
-
+        {/* 4. その他のオプション */}
         <CollapsibleSection label="その他のオプション（任意）">
           <div>
             <label htmlFor="source" className="block text-sm font-medium mb-1.5">予約経路</label>
