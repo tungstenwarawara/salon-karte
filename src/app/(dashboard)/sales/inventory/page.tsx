@@ -2,53 +2,49 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { ManagementTabs } from "@/components/inventory/management-tabs";
-
-type InventoryItem = {
-  product_id: string;
-  product_name: string;
-  category: string | null;
-  base_sell_price: number;
-  base_cost_price: number;
-  reorder_point: number;
-  is_active: boolean;
-  current_stock: number;
-  stock_value: number;
-};
+import { InventoryDashboard } from "@/components/inventory/inventory-dashboard";
+import type { InventoryItem } from "@/components/inventory/inventory-dashboard";
 
 export default async function InventoryPage() {
   const { user, salon, supabase } = await getAuthAndSalon();
   if (!user) redirect("/login");
   if (!salon) redirect("/setup");
 
-  // 商品数と在庫サマリーを並列取得
-  const [countRes, inventoryRes] = await Promise.all([
+  // 今月の範囲を計算
+  const now = new Date();
+  const firstDay = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  const lastDay = now.getMonth() === 11
+    ? `${now.getFullYear() + 1}-01-31`
+    : `${now.getFullYear()}-${String(now.getMonth() + 2).padStart(2, "0")}-01`;
+
+  // 商品数・在庫サマリー・今月の仕入額を並列取得
+  const [countRes, inventoryRes, purchaseRes] = await Promise.all([
     supabase
       .from("products")
       .select("id", { count: "exact", head: true })
       .eq("salon_id", salon.id),
     supabase.rpc("get_inventory_summary", { p_salon_id: salon.id }),
+    supabase
+      .from("inventory_logs")
+      .select("quantity, unit_cost_price")
+      .eq("salon_id", salon.id)
+      .eq("log_type", "purchase_in")
+      .gte("logged_at", firstDay)
+      .lt("logged_at", lastDay),
   ]);
 
   const hasProducts = (countRes.count ?? 0) > 0;
   const items = (inventoryRes.data as InventoryItem[]) ?? [];
-
-  const totalProducts = items.length;
-  const lowStockCount = items.filter((i) => i.current_stock <= i.reorder_point).length;
-  const totalStockValue = items.reduce((sum, i) => sum + (i.stock_value > 0 ? i.stock_value : 0), 0);
-
-  const quickActions = [
-    { href: "/sales/inventory/receive", label: "仕入記録", icon: "📦" },
-    { href: "/sales/inventory/consume", label: "消費・廃棄", icon: "📋" },
-    { href: "/sales/inventory/stocktake", label: "棚卸し", icon: "📊" },
-    { href: "/sales/inventory/tax-report", label: "確定申告", icon: "📄" },
-  ];
+  const monthlyPurchases = (purchaseRes.data ?? []).reduce(
+    (sum, row) => sum + (row.quantity ?? 0) * (row.unit_cost_price ?? 0),
+    0
+  );
 
   return (
     <div className="space-y-4">
       <ManagementTabs />
 
       {!hasProducts ? (
-        /* Onboarding */
         <div className="bg-surface border border-border rounded-2xl p-8 text-center space-y-4">
           <div className="text-4xl">📦</div>
           <h3 className="text-lg font-bold">在庫管理を始めましょう</h3>
@@ -64,88 +60,7 @@ export default async function InventoryPage() {
           </Link>
         </div>
       ) : (
-        <>
-          {/* Summary cards */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-surface border border-border rounded-xl p-4 text-center">
-              <p className="text-xs text-text-light">商品数</p>
-              <p className="text-xl font-bold mt-1">{totalProducts}</p>
-            </div>
-            <div className={`bg-surface border rounded-xl p-4 text-center ${lowStockCount > 0 ? "border-amber-300 bg-amber-50" : "border-border"}`}>
-              <p className="text-xs text-text-light">要発注</p>
-              <p className={`text-xl font-bold mt-1 ${lowStockCount > 0 ? "text-amber-600" : ""}`}>
-                {lowStockCount}
-              </p>
-            </div>
-            <div className="bg-surface border border-border rounded-xl p-4 text-center">
-              <p className="text-xs text-text-light">在庫評価額</p>
-              <p className="text-lg font-bold mt-1">¥{totalStockValue.toLocaleString()}</p>
-            </div>
-          </div>
-
-          {/* Quick actions */}
-          <div className="grid grid-cols-2 gap-3">
-            {quickActions.map((action) => (
-              <Link
-                key={action.href}
-                href={action.href}
-                className="bg-surface border border-border rounded-xl p-4 flex items-center gap-3 hover:bg-background transition-colors min-h-[56px]"
-              >
-                <span className="text-xl">{action.icon}</span>
-                <span className="text-sm font-medium">{action.label}</span>
-              </Link>
-            ))}
-          </div>
-
-          {/* Product stock list */}
-          <div className="bg-surface border border-border rounded-2xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm">在庫一覧</h3>
-              <Link
-                href="/sales/inventory/products"
-                className="text-xs text-accent hover:underline"
-              >
-                商品マスタ →
-              </Link>
-            </div>
-
-            <div className="space-y-2">
-              {items.map((item) => {
-                const isLow = item.current_stock <= item.reorder_point;
-                return (
-                  <div
-                    key={item.product_id}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl ${
-                      isLow ? "bg-amber-50 border border-amber-200" : "bg-background"
-                    }`}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{item.product_name}</p>
-                      {item.category && (
-                        <p className="text-xs text-text-light">{item.category}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-3">
-                      <div className="text-right">
-                        <p className={`text-sm font-bold ${isLow ? "text-amber-600" : ""}`}>
-                          {item.current_stock}個
-                        </p>
-                        <p className="text-[10px] text-text-light">
-                          発注点 {item.reorder_point}
-                        </p>
-                      </div>
-                      {isLow && (
-                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full shrink-0">
-                          要発注
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </>
+        <InventoryDashboard items={items} monthlyPurchases={monthlyPurchases} salonId={salon.id} />
       )}
     </div>
   );

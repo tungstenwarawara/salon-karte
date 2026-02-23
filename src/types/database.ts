@@ -1088,6 +1088,22 @@ export type Database = {
           status: string;
         };
       };
+      get_product_inventory_logs: {
+        Args: {
+          p_salon_id: string;
+          p_product_id: string;
+          p_limit?: number;
+        };
+        Returns: {
+          id: string;
+          log_type: string;
+          quantity: number;
+          unit_cost_price: number | null;
+          reason: string | null;
+          logged_at: string;
+          created_at: string;
+        }[];
+      };
       get_inventory_summary: {
         Args: {
           p_salon_id: string;
