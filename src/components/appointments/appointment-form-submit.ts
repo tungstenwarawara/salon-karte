@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { isWithinBusinessHours, getScheduleForDate } from "@/lib/business-hours";
-import type { TreatmentMenu, BusinessHours } from "@/components/appointments/types";
+import type { TreatmentMenu, BusinessHours, BookingSettings } from "@/components/appointments/types";
 
 type SubmitParams = {
   salonId: string;
@@ -16,6 +16,7 @@ type SubmitParams = {
   memo: string;
   businessHours?: BusinessHours | null;
   salonHolidays?: string[] | null;
+  bookingSettings?: BookingSettings | null;
 };
 
 type SubmitResult =
@@ -24,7 +25,7 @@ type SubmitResult =
 
 /** 予約新規作成のsubmit処理（バリデーション・重複チェック・中間テーブル挿入） */
 export async function submitAppointment(params: SubmitParams): Promise<SubmitResult> {
-  const { salonId, customerId, menus, selectedMenuIds, appointmentDate, startHour, startMinute, endHour, endMinute, source, memo, businessHours, salonHolidays } = params;
+  const { salonId, customerId, menus, selectedMenuIds, appointmentDate, startHour, startMinute, endHour, endMinute, source, memo, businessHours, salonHolidays, bookingSettings } = params;
   const supabase = createClient();
 
   const startTime = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
@@ -44,6 +45,26 @@ export async function submitAppointment(params: SubmitParams): Promise<SubmitRes
           success: false,
           error: `営業時間外の予約です（営業時間: ${schedule.open_time}〜${schedule.close_time}）。時間を修正してください`,
         };
+      }
+    }
+  }
+
+  // 予約受付制限チェック
+  if (bookingSettings) {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    if (appointmentDate === todayStr) {
+      if (!bookingSettings.same_day_enabled) {
+        return { success: false, error: "当日予約は受け付けていません。翌日以降の日付を選択してください" };
+      }
+      if (bookingSettings.lead_time_minutes > 0) {
+        const nowMin = now.getHours() * 60 + now.getMinutes();
+        if (startMin < nowMin + bookingSettings.lead_time_minutes) {
+          const h = Math.floor(bookingSettings.lead_time_minutes / 60);
+          const m = bookingSettings.lead_time_minutes % 60;
+          const label = h > 0 ? (m > 0 ? `${h}時間${m}分` : `${h}時間`) : `${m}分`;
+          return { success: false, error: `予約は施術開始の${label}前までに行ってください` };
+        }
       }
     }
   }

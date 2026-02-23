@@ -6,7 +6,7 @@ import { TimePicker } from "@/components/appointments/time-picker";
 import { MiniCalendar } from "@/components/appointments/mini-calendar";
 import { isBusinessDay, isIrregularHoliday, getScheduleForDate, timeToMinutes } from "@/lib/business-hours";
 import { getOutsideHoursWarning } from "@/components/appointments/business-hours-warning";
-import type { DayAppointment, BusinessHours } from "@/components/appointments/types";
+import type { DayAppointment, BusinessHours, BookingSettings } from "@/components/appointments/types";
 
 type Props = {
   appointmentDate: string;
@@ -34,6 +34,8 @@ type Props = {
   appointmentCounts?: Record<string, number>;
   /** 月変更時の予約取得コールバック */
   onMonthChange?: (year: number, month: number) => void;
+  /** 予約受付設定（当日不可・リードタイム） */
+  bookingSettings?: BookingSettings | null;
 };
 
 /** 予約フォームの日付・時間選択セクション（新規・編集共用） */
@@ -45,6 +47,7 @@ export function AppointmentDateTimeSection({
   onSlotClick, onStartHourChange, onStartMinuteChange,
   onEndHourChange, onEndMinuteChange, onResetAutoEndTime,
   excludeAppointmentId, appointmentCounts, onMonthChange,
+  bookingSettings,
 }: Props) {
   const [showManualTime, setShowManualTime] = useState(false);
 
@@ -99,6 +102,7 @@ export function AppointmentDateTimeSection({
           salonHolidays={salonHolidays}
           appointmentCounts={appointmentCounts}
           onMonthChange={onMonthChange}
+          bookingSettings={bookingSettings}
         />
       </div>
 
@@ -145,6 +149,7 @@ export function AppointmentDateTimeSection({
             selectedStartMin={selectedStartMin}
             menuDuration={menuDuration}
             excludeAppointmentId={excludeAppointmentId}
+            bookingSettings={bookingSettings}
             onSlotClick={onSlotClick}
           />
 

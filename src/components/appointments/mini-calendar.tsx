@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { isBusinessDay, isIrregularHoliday } from "@/lib/business-hours";
-import type { BusinessHours, DayAppointment } from "./types";
+import type { BusinessHours, DayAppointment, BookingSettings } from "./types";
 
 type Props = {
   selectedDate: string; // "YYYY-MM-DD"
@@ -14,6 +14,8 @@ type Props = {
   onMonthChange?: (year: number, month: number) => void;
   /** 日付ごとの予約件数（月変更時に親から渡される） */
   appointmentCounts?: Record<string, number>;
+  /** 予約受付設定（当日不可など） */
+  bookingSettings?: BookingSettings | null;
 };
 
 const DAY_NAMES = ["日", "月", "火", "水", "木", "金", "土"];
@@ -34,6 +36,7 @@ export function MiniCalendar({
   salonHolidays,
   appointmentCounts,
   onMonthChange,
+  bookingSettings,
 }: Props) {
   const selected = parseDate(selectedDate);
   const [viewYear, setViewYear] = useState(selected.getFullYear());
@@ -94,14 +97,18 @@ export function MiniCalendar({
           const isHoliday = businessHours && !isBusinessDay(businessHours, cellDate, salonHolidays);
           const isIrregular = isIrregularHoliday(salonHolidays, cellDate);
           const count = appointmentCounts?.[dateStr] ?? 0;
+          const isSameDayBlocked = isCellToday && bookingSettings?.same_day_enabled === false;
 
           return (
             <button
               key={day}
               type="button"
-              onClick={() => onDateChange(dateStr)}
+              disabled={isSameDayBlocked}
+              onClick={() => !isSameDayBlocked && onDateChange(dateStr)}
               className={`aspect-square flex flex-col items-center justify-center rounded-lg text-xs transition-colors relative ${
-                isSelected
+                isSameDayBlocked
+                  ? "text-gray-300 bg-gray-50 line-through cursor-not-allowed"
+                  : isSelected
                   ? "bg-accent text-white font-bold"
                   : isCellToday
                   ? "bg-accent/10 ring-1 ring-accent font-bold text-accent"

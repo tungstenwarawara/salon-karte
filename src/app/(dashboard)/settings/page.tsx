@@ -143,6 +143,22 @@ export default function SettingsPage() {
         </div>
       </Link>
 
+      {/* Booking rules link */}
+      <Link
+        href="/settings/booking-rules"
+        className="block bg-surface border border-border rounded-2xl p-5 hover:border-accent transition-colors"
+      >
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="font-bold">予約受付設定</h3>
+            <p className="text-sm text-text-light mt-1">
+              当日予約の可否・予約締切時間の設定
+            </p>
+          </div>
+          <span className="text-text-light">→</span>
+        </div>
+      </Link>
+
       {/* Holidays link */}
       <Link
         href="/settings/holidays"

@@ -1,4 +1,4 @@
-import type { Database, BusinessHours } from "@/types/database";
+import type { Database, BusinessHours, BookingSettings } from "@/types/database";
 
 export type TreatmentMenu = Database["public"]["Tables"]["treatment_menus"]["Row"];
 
@@ -23,4 +23,4 @@ export const INPUT_CLASS =
 export const SELECT_CLASS =
   "flex-1 rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors";
 
-export type { BusinessHours };
+export type { BusinessHours, BookingSettings };

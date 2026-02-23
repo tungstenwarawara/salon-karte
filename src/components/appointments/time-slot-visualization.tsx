@@ -5,7 +5,7 @@ import {
   getScheduleForDate,
   timeToMinutes,
 } from "@/lib/business-hours";
-import type { BusinessHours, DayAppointment } from "./types";
+import type { BusinessHours, DayAppointment, BookingSettings } from "./types";
 
 type Props = {
   appointmentDate: string;
@@ -18,6 +18,8 @@ type Props = {
   menuDuration: number;
   /** 編集ページの場合、現在の予約を除外するためのID */
   excludeAppointmentId?: string;
+  /** 予約受付設定（リードタイム制限） */
+  bookingSettings?: BookingSettings | null;
   onSlotClick: (hour: number, minute: number) => void;
 };
 
@@ -38,6 +40,7 @@ export function TimeSlotVisualization({
   selectedStartMin,
   menuDuration,
   excludeAppointmentId,
+  bookingSettings,
   onSlotClick,
 }: Props) {
   const [interval, setInterval] = useState<30 | 15>(30);
@@ -52,6 +55,16 @@ export function TimeSlotVisualization({
   const appointments = excludeAppointmentId
     ? dayAppointments.filter((a) => a.id !== excludeAppointmentId)
     : dayAppointments;
+
+  // リードタイム制限: 当日のみ、現在時刻+lead_time_minutes より前のスロットをブロック
+  const leadTimeMinMin = (() => {
+    const leadMin = bookingSettings?.lead_time_minutes ?? 0;
+    if (leadMin <= 0) return -1;
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    if (appointmentDate !== todayStr) return -1;
+    return today.getHours() * 60 + today.getMinutes() + leadMin;
+  })();
 
   // スロット生成
   const slots: number[] = [];
@@ -93,6 +106,8 @@ export function TimeSlotVisualization({
   // スロットの状態判定
   const getSlotState = (slotMin: number): SlotState => {
     if (isOccupied(slotMin)) return "occupied";
+    // リードタイム制限: 締切前のスロットはブロック
+    if (leadTimeMinMin > 0 && slotMin < leadTimeMinMin) return "no-fit";
     if (selectedStartMin !== null && slotMin === selectedStartMin) return "selected";
     if (selectedStartMin !== null && menuDuration > 0) {
       const endMin = selectedStartMin + menuDuration;

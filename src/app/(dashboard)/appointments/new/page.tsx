@@ -12,7 +12,7 @@ import { AppointmentMenuSelector } from "@/components/appointments/appointment-m
 import { AppointmentDateTimeSection } from "@/components/appointments/appointment-datetime-section";
 import { submitAppointment } from "@/components/appointments/appointment-form-submit";
 import { INPUT_CLASS, SOURCE_OPTIONS } from "@/components/appointments/types";
-import type { TreatmentMenu, DayAppointment, BusinessHours } from "@/components/appointments/types";
+import type { TreatmentMenu, DayAppointment, BusinessHours, BookingSettings } from "@/components/appointments/types";
 import type { Database } from "@/types/database";
 
 type Customer = Database["public"]["Tables"]["customers"]["Row"];
@@ -39,6 +39,7 @@ function NewAppointmentForm() {
   const [error, setError] = useState("");
   const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
   const [salonHolidays, setSalonHolidays] = useState<string[] | null>(null);
+  const [bookingSettings, setBookingSettings] = useState<BookingSettings | null>(null);
   const [dayAppointments, setDayAppointments] = useState<DayAppointment[]>([]);
 
   const [customerId, setCustomerId] = useState(preselectedCustomerId ?? "");
@@ -64,12 +65,13 @@ function NewAppointmentForm() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data: salon } = await supabase.from("salons").select("id, business_hours, salon_holidays").eq("owner_id", user.id)
-      .single<{ id: string; business_hours: BusinessHours | null; salon_holidays: string[] | null }>();
+    const { data: salon } = await supabase.from("salons").select("id, business_hours, salon_holidays, booking_settings").eq("owner_id", user.id)
+      .single<{ id: string; business_hours: BusinessHours | null; salon_holidays: string[] | null; booking_settings: BookingSettings | null }>();
     if (!salon) return;
     setSalonId(salon.id);
     setBusinessHours(salon.business_hours);
     setSalonHolidays(salon.salon_holidays);
+    setBookingSettings(salon.booking_settings);
 
     const [customersRes, menusRes] = await Promise.all([
       supabase.from("customers").select("id, last_name, first_name, last_name_kana, first_name_kana").eq("salon_id", salon.id).order("last_name_kana", { ascending: true }).returns<Customer[]>(),
@@ -119,7 +121,7 @@ function NewAppointmentForm() {
     const result = await submitAppointment({
       salonId, customerId, menus, selectedMenuIds,
       appointmentDate, startHour, startMinute, endHour, endMinute, source, memo,
-      businessHours, salonHolidays,
+      businessHours, salonHolidays, bookingSettings,
     });
     if (!result.success) { setError(result.error); setSaving(false); return; }
 
@@ -196,6 +198,7 @@ function NewAppointmentForm() {
           onEndHourChange={(h) => { setEndHour(h); setIsEndTimeManual(true); }}
           onEndMinuteChange={(m) => { setEndMinute(m); setIsEndTimeManual(true); }}
           onResetAutoEndTime={() => { setIsEndTimeManual(false); updateEndTimeFromMenus(selectedMenuIds, startHour, startMinute, true); }}
+          bookingSettings={bookingSettings}
         />
 
         {/* 4. その他のオプション */}

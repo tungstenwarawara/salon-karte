@@ -14,6 +14,11 @@ export type BusinessHours = {
   sunday: DaySchedule;
 };
 
+export type BookingSettings = {
+  same_day_enabled: boolean;
+  lead_time_minutes: number; // 0 = 制限なし / 30 / 60 / 120 / 180
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -26,6 +31,7 @@ export type Database = {
           address: string | null;
           business_hours: BusinessHours | null;
           salon_holidays: string[] | null;
+          booking_settings: BookingSettings | null;
           created_at: string;
           updated_at: string;
         };
@@ -37,6 +43,7 @@ export type Database = {
           address?: string | null;
           business_hours?: BusinessHours | null;
           salon_holidays?: string[] | null;
+          booking_settings?: BookingSettings | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -48,6 +55,7 @@ export type Database = {
           address?: string | null;
           business_hours?: BusinessHours | null;
           salon_holidays?: string[] | null;
+          booking_settings?: BookingSettings | null;
           created_at?: string;
           updated_at?: string;
         };
