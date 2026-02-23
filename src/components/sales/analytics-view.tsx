@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { ManagementTabs } from "@/components/inventory/management-tabs";
+import { PageHeader } from "@/components/layout/page-header";
 import { AnalyticsCards } from "@/components/sales/analytics-cards";
 import { TopCustomersList } from "@/components/sales/top-customers-list";
 import type { CustomerLtv } from "@/components/sales/top-customers-list";
@@ -91,7 +93,14 @@ export function AnalyticsView({ salonId, initialLtv, initialRepeat, initialYear,
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">顧客・メニュー分析</h2>
+      <ManagementTabs />
+      <PageHeader
+        title="顧客・メニュー分析"
+        breadcrumbs={[
+          { label: "売上レポート", href: "/sales" },
+          { label: "分析" },
+        ]}
+      />
 
       <AnalyticsCards
         avgRevenuePerVisit={avgRevenuePerVisit}
