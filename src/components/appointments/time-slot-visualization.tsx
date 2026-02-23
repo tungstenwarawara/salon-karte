@@ -172,7 +172,7 @@ export function TimeSlotVisualization({
                 <button
                   key={slotMin}
                   type="button"
-                  disabled={state === "occupied" || state === "no-fit"}
+                  disabled={state === "occupied" || state === "no-fit" || state === "duration-range"}
                   onClick={() => onSlotClick(Math.floor(slotMin / 60), slotMin % 60)}
                   className={`rounded-xl py-2.5 text-sm transition-colors min-h-[48px] flex flex-col items-center justify-center ${
                     state === "selected"

@@ -14,7 +14,6 @@ const navItems = [
 
 const fabActions = [
   { href: "/appointments/new", label: "予約を追加", icon: "fab-calendar" },
-  { href: "/records/new", label: "カルテを書く", icon: "fab-record" },
   { href: "/customers/new", label: "顧客を登録", icon: "fab-customer" },
 ];
 

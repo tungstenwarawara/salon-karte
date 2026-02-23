@@ -8,8 +8,10 @@ type AppointmentWithCustomer = Appointment & {
 
 export function TodayAppointments({
   appointments,
+  lastVisitMap,
 }: {
   appointments: AppointmentWithCustomer[] | null;
+  lastVisitMap?: Record<string, string>;
 }) {
   return (
     <div>
@@ -50,18 +52,34 @@ export function TodayAppointments({
                       </span>
                     )}
                   </div>
-                  {apt.menu_name_snapshot && (
+                    {apt.menu_name_snapshot && (
                     <p className="text-xs text-text-light mt-1 ml-[3.5rem]">
                       {apt.menu_name_snapshot}
                     </p>
                   )}
+                  {lastVisitMap?.[apt.customer_id] && (() => {
+                    const lastDate = new Date(lastVisitMap[apt.customer_id]);
+                    const daysSince = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+                    return (
+                      <p className="text-[10px] text-text-light mt-0.5 ml-[3.5rem]">
+                        前回来店: {daysSince === 0 ? "本日" : `${daysSince}日前`}
+                      </p>
+                    );
+                  })()}
                 </Link>
-                {!hasRecord && apt.status !== "cancelled" && (
+                {apt.status !== "cancelled" && (
                   <div className="mt-2 ml-[3.5rem]">
-                    <Link href={`/records/new?customer=${apt.customer_id}&appointment=${apt.id}`}
-                      className="text-xs text-accent hover:underline font-medium">
-                      カルテを作成 →
-                    </Link>
+                    {hasRecord ? (
+                      <Link href={`/records/${apt.treatment_record_id}`}
+                        className="text-xs text-text-light hover:text-accent hover:underline font-medium">
+                        カルテを見る →
+                      </Link>
+                    ) : (
+                      <Link href={`/records/new?customer=${apt.customer_id}&appointment=${apt.id}`}
+                        className="text-xs text-accent hover:underline font-medium">
+                        カルテを作成 →
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>

@@ -16,6 +16,8 @@ type Props = {
   };
   /** 営業時間外警告メッセージ */
   warningMessage?: string | null;
+  /** 営業時間の範囲（グレーアウト用） */
+  businessHoursRange?: { openHour: number; closeHour: number } | null;
 };
 
 export function TimePicker({
@@ -26,6 +28,7 @@ export function TimePicker({
   onMinuteChange,
   autoCalcInfo,
   warningMessage,
+  businessHoursRange,
 }: Props) {
   return (
     <div>
@@ -43,9 +46,16 @@ export function TimePicker({
           onChange={(e) => onHourChange(e.target.value)}
           className={SELECT_CLASS}
         >
-          {Array.from({ length: 24 }, (_, i) => (
-            <option key={i} value={String(i)}>{String(i).padStart(2, "0")}</option>
-          ))}
+          {Array.from({ length: 24 }, (_, i) => {
+            const isOutside = businessHoursRange
+              ? i < businessHoursRange.openHour || i >= businessHoursRange.closeHour
+              : false;
+            return (
+              <option key={i} value={String(i)} className={isOutside ? "text-gray-400" : ""}>
+                {String(i).padStart(2, "0")}{isOutside ? " (営業外)" : ""}
+              </option>
+            );
+          })}
         </select>
         <span className="text-lg font-medium">:</span>
         <select

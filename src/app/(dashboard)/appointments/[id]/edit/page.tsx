@@ -129,6 +129,7 @@ export default function EditAppointmentPage() {
     const result = await updateAppointment({
       appointmentId, salonId, menus, selectedMenuIds,
       appointmentDate, startHour, startMinute, endHour, endMinute, source, memo,
+      businessHours, salonHolidays,
     });
     if (!result.success) { setError(result.error); setSaving(false); return; }
     setFlashToast("予約を更新しました");

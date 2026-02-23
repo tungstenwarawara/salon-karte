@@ -4,7 +4,7 @@ import { useState } from "react";
 import { TimeSlotVisualization } from "@/components/appointments/time-slot-visualization";
 import { TimePicker } from "@/components/appointments/time-picker";
 import { MiniCalendar } from "@/components/appointments/mini-calendar";
-import { isBusinessDay, isIrregularHoliday } from "@/lib/business-hours";
+import { isBusinessDay, isIrregularHoliday, getScheduleForDate, timeToMinutes } from "@/lib/business-hours";
 import { getOutsideHoursWarning } from "@/components/appointments/business-hours-warning";
 import type { DayAppointment, BusinessHours } from "@/components/appointments/types";
 
@@ -60,6 +60,32 @@ export function AppointmentDateTimeSection({
   const selectedStartMin = startHour && startMinute
     ? Number(startHour) * 60 + Number(startMinute)
     : null;
+
+  // 営業時間の範囲（TimePickerのグレーアウト用）
+  const bhRange = (() => {
+    if (!businessHours || isClosedDay) return null;
+    const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays);
+    if (!schedule.is_open) return null;
+    return {
+      openHour: Math.floor(timeToMinutes(schedule.open_time) / 60),
+      closeHour: Math.ceil(timeToMinutes(schedule.close_time) / 60),
+    };
+  })();
+
+  // 開始時間の営業時間外警告（手動入力時のみ）
+  const startTimeWarning = (() => {
+    if (!businessHours || isClosedDay) return null;
+    const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays);
+    if (!schedule.is_open) return null;
+    const startStr = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
+    if (startStr < schedule.open_time) {
+      return `開始時間（${startStr}）が営業開始（${schedule.open_time}）より前です`;
+    }
+    if (startStr >= schedule.close_time) {
+      return `開始時間（${startStr}）が営業終了（${schedule.close_time}）以降です`;
+    }
+    return null;
+  })();
 
   return (
     <>
@@ -122,6 +148,11 @@ export function AppointmentDateTimeSection({
             onSlotClick={onSlotClick}
           />
 
+          {/* 開始時間の営業時間外警告 */}
+          {startTimeWarning && (
+            <p className="text-xs text-warning">{startTimeWarning}</p>
+          )}
+
           {/* 終了時間: デフォルトはサマリーのみ、手動変更も可能 */}
           {isEndTimeManual ? (
             <div className="space-y-2">
@@ -136,6 +167,7 @@ export function AppointmentDateTimeSection({
                   appointmentDate, businessHours, salonHolidays,
                   startHour, startMinute, endHour, endMinute,
                 })}
+                businessHoursRange={bhRange}
               />
             </div>
           ) : (

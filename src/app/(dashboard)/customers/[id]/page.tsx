@@ -151,14 +151,9 @@ export default async function CustomerDetailPage({
             { label: `${customer.last_name} ${customer.first_name}` },
           ]}
         >
-          <div className="flex items-center gap-3">
-            <Link href={`/records/new?customer=${id}`} className="text-sm bg-accent text-white px-3 py-1.5 rounded-lg hover:bg-accent-light transition-colors min-h-[44px] flex items-center font-medium">
-              カルテ作成
-            </Link>
-            <Link href={`/customers/${id}/edit`} className="text-sm text-accent hover:underline min-h-[44px] flex items-center">
-              編集
-            </Link>
-          </div>
+          <Link href={`/customers/${id}/edit`} className="text-sm text-accent hover:underline min-h-[44px] flex items-center">
+            編集
+          </Link>
         </PageHeader>
         {(customer.last_name_kana || customer.first_name_kana) && (
           <p className="text-sm text-text-light -mt-2">
@@ -175,23 +170,23 @@ export default async function CustomerDetailPage({
         nextAppointment={nextAppointment}
       />
 
+      <TreatmentHistory customerId={id} salonId={salon.id} customerName={`${customer.last_name}${customer.first_name}`} records={records} hasPhotos={hasPhotos} />
+
       <SalesSummary
         treatmentTotal={treatmentTotal}
         purchaseTotal={purchaseTotal}
         courseTicketTotal={courseTicketTotal}
       />
 
-      <CustomerLineSection lineLink={lineLink} />
-
-      <CustomerBasicInfo customer={customer} customerId={id} />
-
-      <CounselingSection customerId={id} sheets={counselingSheets} />
-
       <CourseTicketSection customerId={id} initialTickets={courseTickets} />
 
       <PurchaseHistory customerId={id} purchases={purchases} purchaseTotal={purchaseTotal} salonId={salon.id} />
 
-      <TreatmentHistory customerId={id} salonId={salon.id} customerName={`${customer.last_name}${customer.first_name}`} records={records} hasPhotos={hasPhotos} />
+      <CounselingSection customerId={id} sheets={counselingSheets} />
+
+      <CustomerBasicInfo customer={customer} customerId={id} />
+
+      <CustomerLineSection lineLink={lineLink} />
     </div>
   );
 }

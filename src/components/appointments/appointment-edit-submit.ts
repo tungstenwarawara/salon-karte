@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
-import type { TreatmentMenu } from "@/components/appointments/types";
+import { isWithinBusinessHours, getScheduleForDate } from "@/lib/business-hours";
+import type { TreatmentMenu, BusinessHours } from "@/components/appointments/types";
 
 type EditParams = {
   appointmentId: string;
@@ -13,6 +14,8 @@ type EditParams = {
   endMinute: string;
   source: string;
   memo: string;
+  businessHours?: BusinessHours | null;
+  salonHolidays?: string[] | null;
 };
 
 type EditResult =
@@ -21,7 +24,7 @@ type EditResult =
 
 /** 予約編集のsubmit処理（バリデーション・重複チェック・中間テーブル差し替え） */
 export async function updateAppointment(params: EditParams): Promise<EditResult> {
-  const { appointmentId, salonId, menus, selectedMenuIds, appointmentDate, startHour, startMinute, endHour, endMinute, source, memo } = params;
+  const { appointmentId, salonId, menus, selectedMenuIds, appointmentDate, startHour, startMinute, endHour, endMinute, source, memo, businessHours, salonHolidays } = params;
   const supabase = createClient();
 
   const startTime = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
@@ -30,6 +33,20 @@ export async function updateAppointment(params: EditParams): Promise<EditResult>
   const startMin = Number(startHour) * 60 + Number(startMinute);
   const endMin = Number(endHour) * 60 + Number(endMinute);
   if (endMin <= startMin) return { success: false, error: "終了時間は開始時間より後にしてください" };
+
+  // 営業時間チェック
+  if (businessHours) {
+    const withinHours = isWithinBusinessHours(businessHours, appointmentDate, startTime, endTime, salonHolidays);
+    if (!withinHours) {
+      const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays);
+      if (schedule.is_open) {
+        return {
+          success: false,
+          error: `営業時間外の予約です（営業時間: ${schedule.open_time}〜${schedule.close_time}）。時間を修正してください`,
+        };
+      }
+    }
+  }
 
   // 重複チェック（自分自身を除外）
   const { data: existing } = await supabase

@@ -61,7 +61,7 @@ function NewRecordForm() {
   const [pendingTickets, setPendingTickets] = useState<PendingTicket[]>([]);
   const [pendingPurchases, setPendingPurchases] = useState<PendingPurchase[]>([]);
   const [linkedAppointmentId, setLinkedAppointmentId] = useState<string | null>(appointmentParam);
-  const [detectedAppointment, setDetectedAppointment] = useState<DetectedAppointment | null>(null);
+  const [detectedAppointments, setDetectedAppointments] = useState<DetectedAppointment[]>([]);
 
   const customerId = presetCustomerId ?? selectedCustomerId;
   const appointmentId = linkedAppointmentId;
@@ -110,7 +110,7 @@ function NewRecordForm() {
 
   // 顧客選択後に当日予約を自動検知（URLパラメータなしの場合のみ）
   useEffect(() => {
-    if (!customerId || !salonId || appointmentParam) { setDetectedAppointment(null); return; }
+    if (!customerId || !salonId || appointmentParam) { setDetectedAppointments([]); return; }
     const detectAppointment = async () => {
       const supabase = createClient();
       const d = new Date();
@@ -124,20 +124,18 @@ function NewRecordForm() {
         .eq("status", "scheduled")
         .is("treatment_record_id", null)
         .order("start_time", { ascending: true })
-        .limit(1)
         .returns<DetectedAppointment[]>();
-      setDetectedAppointment(data && data.length > 0 ? data[0] : null);
+      setDetectedAppointments(data ?? []);
     };
     detectAppointment();
   }, [customerId, salonId, appointmentParam]);
 
-  const handleLinkAppointment = async () => {
-    if (!detectedAppointment) return;
-    setLinkedAppointmentId(detectedAppointment.id);
-    setDetectedAppointment(null);
+  const handleLinkAppointment = async (apt: DetectedAppointment) => {
+    setLinkedAppointmentId(apt.id);
+    setDetectedAppointments([]);
     // 予約メニューをプリフィル
     const supabase = createClient();
-    const { data: appointmentMenus } = await supabase.from("appointment_menus").select("id, menu_id, sort_order").eq("appointment_id", detectedAppointment.id).order("sort_order").returns<AppointmentMenu[]>();
+    const { data: appointmentMenus } = await supabase.from("appointment_menus").select("id, menu_id, sort_order").eq("appointment_id", apt.id).order("sort_order").returns<AppointmentMenu[]>();
     if (appointmentMenus && appointmentMenus.length > 0) {
       const ids = appointmentMenus.map((am) => am.menu_id).filter(Boolean) as string[];
       setSelectedMenuIds(ids);
@@ -222,9 +220,9 @@ function NewRecordForm() {
         </div>
       )}
 
-      {detectedAppointment && (
-        <AppointmentLinkBanner appointment={detectedAppointment} onLink={handleLinkAppointment} onDismiss={() => setDetectedAppointment(null)} />
-      )}
+      {detectedAppointments.length > 0 && detectedAppointments.map((apt) => (
+        <AppointmentLinkBanner key={apt.id} appointment={apt} onLink={() => handleLinkAppointment(apt)} onDismiss={() => setDetectedAppointments((prev) => prev.filter((a) => a.id !== apt.id))} />
+      ))}
 
       {customerId && <CourseTicketInfo courseTickets={courseTickets} />}
 

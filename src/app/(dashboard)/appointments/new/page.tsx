@@ -119,6 +119,7 @@ function NewAppointmentForm() {
     const result = await submitAppointment({
       salonId, customerId, menus, selectedMenuIds,
       appointmentDate, startHour, startMinute, endHour, endMinute, source, memo,
+      businessHours, salonHolidays,
     });
     if (!result.success) { setError(result.error); setSaving(false); return; }
 

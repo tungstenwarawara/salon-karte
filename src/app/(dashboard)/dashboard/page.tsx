@@ -117,6 +117,25 @@ export default async function DashboardPage() {
   const lapsedCustomers = lapsedCustomersRes.data as LapsedCustomer[] | null;
   const recentRecords = recentRecordsRes.data;
 
+  // 今日の予約の顧客ごとに前回来店日を取得
+  const lastVisitMap: Record<string, string> = {};
+  if (todayAppointments && todayAppointments.length > 0) {
+    const customerIds = [...new Set(todayAppointments.map((a) => a.customer_id))];
+    const { data: lastVisits } = await supabase
+      .from("treatment_records")
+      .select("customer_id, treatment_date")
+      .eq("salon_id", salon.id)
+      .in("customer_id", customerIds)
+      .order("treatment_date", { ascending: false });
+    if (lastVisits) {
+      for (const v of lastVisits) {
+        if (!lastVisitMap[v.customer_id]) {
+          lastVisitMap[v.customer_id] = v.treatment_date;
+        }
+      }
+    }
+  }
+
   // 在庫アラート: 在庫が発注点以下の商品を抽出
   const lowStockItems = (inventoryRes.data ?? []).filter(
     (item) => item.current_stock <= item.reorder_point
@@ -175,7 +194,7 @@ export default async function DashboardPage() {
 
       <InventoryAlert items={lowStockItems} />
 
-      <TodayAppointments appointments={todayAppointments} />
+      <TodayAppointments appointments={todayAppointments} lastVisitMap={lastVisitMap} />
 
       <BirthdayCustomers customers={birthdayCustomers} currentMonth={currentMonth} />
 
