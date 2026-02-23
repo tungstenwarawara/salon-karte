@@ -226,6 +226,25 @@ export function validateRecordRows(
     let purchaseQty = 1;
 
     if (productRaw) {
+      // 物販金額の生値を先に取得（列入れ違い検出用）
+      const ppRaw = colMap["product_price"] !== undefined ? (row[colMap["product_price"]] ?? "") : "";
+
+      // 列入れ違い検出: 商品名が数値のみ or 金額がテキスト
+      const nameLooksLikePrice = /^[¥￥]?\d[\d,，]*[円]?$/.test(productRaw.replace(/\s/g, ""));
+      const priceLooksLikeName = ppRaw.trim() !== "" && parsePrice(ppRaw) === null;
+
+      if (nameLooksLikePrice && priceLooksLikeName) {
+        // 両方逆 → ほぼ確実に列入れ違い。取り込みをブロック
+        status = "error";
+        messages.push("物販の「商品名」と「金額」の列が逆になっています。CSVを修正してください");
+      } else if (nameLooksLikePrice) {
+        if (status !== "error") status = "warning";
+        messages.push("商品名が数値のみです。金額の列と入れ違いになっていませんか？");
+      } else if (priceLooksLikeName) {
+        if (status !== "error") status = "warning";
+        messages.push("物販金額に数値以外が入力されています。商品名の列と入れ違いになっていませんか？");
+      }
+
       const prodResolved = resolveProduct(productRaw, existingProducts);
       purchaseProductId = prodResolved.id;
       if (prodResolved.message) {
@@ -234,7 +253,6 @@ export function validateRecordRows(
       }
 
       // 物販金額
-      const ppRaw = colMap["product_price"] !== undefined ? (row[colMap["product_price"]] ?? "") : "";
       purchasePrice = parsePrice(ppRaw);
       if (!purchasePrice && prodResolved.id) {
         // 商品マスタの売価を使用

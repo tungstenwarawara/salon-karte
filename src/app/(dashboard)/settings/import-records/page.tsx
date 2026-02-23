@@ -28,6 +28,11 @@ const columns: ColumnDef[] = [
   { key: "menu", label: "メニュー", render: (r: RecordRowValidation) => r.data.menu_name || "-" },
   { key: "price", label: "料金", render: (r: RecordRowValidation) => r.data.menu_price ? `¥${r.data.menu_price.toLocaleString()}` : "-" },
   { key: "product", label: "物販", render: (r: RecordRowValidation) => r.data.purchase_item ?? "-" },
+  { key: "product_price", label: "物販金額", render: (r: RecordRowValidation) =>
+    r.data.purchase_item
+      ? r.data.purchase_price ? `¥${r.data.purchase_price.toLocaleString()}` : "¥0"
+      : "-"
+  },
 ];
 
 export default function ImportRecordsPage() {
@@ -217,6 +222,17 @@ export default function ImportRecordsPage() {
             </>
           }
         />
+      )}
+
+      {step === "preview" && rows.some((r) =>
+        r.messages.some((m) => m.includes("列が逆"))
+      ) && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <p className="text-sm font-bold text-red-700">物販の列が入れ違いになっています</p>
+          <p className="text-xs text-red-600 mt-1">
+            「物販商品」と「物販金額」の列が逆になっている行があります。CSVファイルの列順を修正してから再アップロードしてください。
+          </p>
+        </div>
       )}
 
       {step === "preview" && (
