@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { Database } from "@/types/database";
 
 type CourseTicket = Database["public"]["Tables"]["course_tickets"]["Row"];
@@ -126,7 +127,17 @@ export function CourseTicketCard({
       )}
 
       <div className="flex gap-4 text-xs text-text-light">
-        <span>購入: {ticket.purchase_date}</span>
+        <span>
+          購入: {ticket.purchase_date}
+          {ticket.treatment_record_id && (
+            <>
+              {" ・ "}
+              <Link href={`/records/${ticket.treatment_record_id}`} className="text-accent hover:underline">
+                カルテ →
+              </Link>
+            </>
+          )}
+        </span>
         {ticket.expiry_date && <span>期限: {ticket.expiry_date}</span>}
         {ticket.price !== null && ticket.price > 0 && (
           <span>{ticket.price.toLocaleString()}円</span>

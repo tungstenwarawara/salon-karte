@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Database } from "@/types/database";
 
 type Purchase = Database["public"]["Tables"]["purchases"]["Row"];
@@ -60,6 +61,14 @@ export function PurchaseCard({
               <p className="text-sm font-medium truncate">{purchase.item_name}</p>
               <p className="text-xs text-text-light">
                 {purchase.purchase_date} ・ {purchase.unit_price.toLocaleString()}円 × {purchase.quantity}個
+                {purchase.treatment_record_id && (
+                  <>
+                    {" ・ "}
+                    <Link href={`/records/${purchase.treatment_record_id}`} className="text-accent hover:underline">
+                      カルテ →
+                    </Link>
+                  </>
+                )}
               </p>
             </div>
             <div className="shrink-0 flex items-center gap-2">
