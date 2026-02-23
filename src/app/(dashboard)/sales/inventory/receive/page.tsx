@@ -205,7 +205,7 @@ export default function ReceivePage() {
         <div className="flex gap-3 pt-2">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => router.push("/sales/inventory")}
             className="flex-1 bg-background border border-border text-text font-medium rounded-xl py-3 transition-colors min-h-[48px]"
           >
             戻る
