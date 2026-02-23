@@ -199,6 +199,7 @@ export default async function AppointmentDetailPage({
         salonId={salon.id}
         status={appointment.status}
         customerId={appointment.customer_id}
+        appointmentDate={appointment.appointment_date}
         treatmentRecordId={appointment.treatment_record_id}
         hasKarte={!!appointment.treatment_record_id}
       />

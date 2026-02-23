@@ -11,12 +11,13 @@ type Props = {
   salonId: string;
   status: string;
   customerId: string;
+  appointmentDate: string;
   treatmentRecordId: string | null;
   hasKarte: boolean;
 };
 
 /** 予約詳細ページのアクションボタン群（Client Component） */
-export function AppointmentActions({ appointmentId, salonId, status, customerId, treatmentRecordId, hasKarte }: Props) {
+export function AppointmentActions({ appointmentId, salonId, status, customerId, appointmentDate, treatmentRecordId, hasKarte }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -64,7 +65,7 @@ export function AppointmentActions({ appointmentId, salonId, status, customerId,
       {/* カルテ作成 / カルテを見る */}
       {(status === "scheduled" || (status === "completed" && !hasKarte)) && (
         <Link
-          href={`/records/new?customer=${customerId}&appointment=${appointmentId}`}
+          href={`/records/new?customer=${customerId}&appointment=${appointmentId}&date=${appointmentDate}`}
           className="block w-full text-center bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors min-h-[48px]"
         >
           カルテを作成

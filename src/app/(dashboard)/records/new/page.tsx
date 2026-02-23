@@ -18,15 +18,9 @@ import { PurchaseInlineForm } from "@/components/records/purchase-inline-form";
 import { TreatmentDetailFields } from "@/components/records/treatment-detail-fields";
 import { submitTreatmentRecord } from "@/components/records/treatment-form-submit";
 import { INPUT_CLASS } from "@/components/records/types";
-import { AppointmentLinkBanner } from "@/components/records/appointment-link-banner";
+import { AppointmentSelector, type SelectedAppointment } from "@/components/records/appointment-selector";
 import type { Menu, CourseTicket, Product, CustomerOption, MenuPaymentInfo, PendingTicket, PendingPurchase } from "@/components/records/types";
 import type { Database } from "@/types/database";
-
-type DetectedAppointment = {
-  id: string;
-  start_time: string;
-  menu_name_snapshot: string | null;
-};
 
 type AppointmentMenu = Database["public"]["Tables"]["appointment_menus"]["Row"];
 
@@ -43,6 +37,11 @@ function NewRecordForm() {
   const searchParams = useSearchParams();
   const presetCustomerId = searchParams.get("customer");
   const appointmentParam = searchParams.get("appointment");
+  const dateParam = searchParams.get("date");
+
+  // URLパラメータがある場合は予約選択ステップをスキップ
+  const hasPreset = !!(presetCustomerId || appointmentParam);
+  const [appointmentStepDone, setAppointmentStepDone] = useState(hasPreset);
 
   const [menus, setMenus] = useState<Menu[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
@@ -61,7 +60,6 @@ function NewRecordForm() {
   const [pendingTickets, setPendingTickets] = useState<PendingTicket[]>([]);
   const [pendingPurchases, setPendingPurchases] = useState<PendingPurchase[]>([]);
   const [linkedAppointmentId, setLinkedAppointmentId] = useState<string | null>(appointmentParam);
-  const [detectedAppointments, setDetectedAppointments] = useState<DetectedAppointment[]>([]);
 
   const customerId = presetCustomerId ?? selectedCustomerId;
   const appointmentId = linkedAppointmentId;
@@ -69,7 +67,7 @@ function NewRecordForm() {
   const [form, setForm] = useState(() => {
     const d = new Date();
     const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    return { treatment_date: today, treatment_area: "", products_used: "", skin_condition_before: "", notes_after: "", next_visit_memo: "", conversation_notes: "", caution_notes: "" };
+    return { treatment_date: dateParam ?? today, treatment_area: "", products_used: "", skin_condition_before: "", notes_after: "", next_visit_memo: "", conversation_notes: "", caution_notes: "" };
   });
 
   // 初期データ読み込み
@@ -108,39 +106,21 @@ function NewRecordForm() {
     load();
   }, [presetCustomerId, appointmentParam]);
 
-  // 顧客選択後に当日予約を自動検知（URLパラメータなしの場合のみ）
-  useEffect(() => {
-    if (!customerId || !salonId || appointmentParam) { setDetectedAppointments([]); return; }
-    const detectAppointment = async () => {
-      const supabase = createClient();
-      const d = new Date();
-      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      const { data } = await supabase
-        .from("appointments")
-        .select("id, start_time, menu_name_snapshot")
-        .eq("salon_id", salonId)
-        .eq("customer_id", customerId)
-        .eq("appointment_date", today)
-        .eq("status", "scheduled")
-        .is("treatment_record_id", null)
-        .order("start_time", { ascending: true })
-        .returns<DetectedAppointment[]>();
-      setDetectedAppointments(data ?? []);
-    };
-    detectAppointment();
-  }, [customerId, salonId, appointmentParam]);
-
-  const handleLinkAppointment = async (apt: DetectedAppointment) => {
-    setLinkedAppointmentId(apt.id);
-    setDetectedAppointments([]);
+  // 予約選択ステップで予約を選んだとき
+  const handleAppointmentSelect = async (data: SelectedAppointment) => {
+    setLinkedAppointmentId(data.appointmentId);
+    setSelectedCustomerId(data.customerId);
+    setCustomerName(data.customerName);
+    setForm((prev) => ({ ...prev, treatment_date: data.appointmentDate }));
     // 予約メニューをプリフィル
     const supabase = createClient();
-    const { data: appointmentMenus } = await supabase.from("appointment_menus").select("id, menu_id, sort_order").eq("appointment_id", apt.id).order("sort_order").returns<AppointmentMenu[]>();
+    const { data: appointmentMenus } = await supabase.from("appointment_menus").select("id, menu_id, sort_order").eq("appointment_id", data.appointmentId).order("sort_order").returns<AppointmentMenu[]>();
     if (appointmentMenus && appointmentMenus.length > 0) {
       const ids = appointmentMenus.map((am) => am.menu_id).filter(Boolean) as string[];
       setSelectedMenuIds(ids);
       setMenuPayments(ids.map((menuId) => ({ menuId, paymentType: "cash", ticketId: null, priceOverride: null })));
     }
+    setAppointmentStepDone(true);
   };
 
   // 顧客選択後に回数券を取得
@@ -206,12 +186,31 @@ function NewRecordForm() {
     router.push(`/customers/${customerId}`);
   };
 
+  // 予約選択ステップ（URLパラメータなしの場合）
+  if (!appointmentStepDone) {
+    return (
+      <div className="space-y-4">
+        <PageHeader title="施術記録を作成" breadcrumbs={[{ label: "カルテ作成" }]} />
+        {salonId ? (
+          <AppointmentSelector salonId={salonId} onSelect={handleAppointmentSelect} onSkip={() => setAppointmentStepDone(true)} />
+        ) : (
+          <div className="bg-surface border border-border rounded-2xl p-6 text-center">
+            <p className="text-text-light text-sm">読み込み中...</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <PageHeader title="施術記録を作成" breadcrumbs={[...(customerName ? [{ label: customerName, href: customerId ? `/customers/${customerId}` : undefined }] : []), { label: "カルテ作成" }]} />
 
       {presetCustomerId && customerName && <p className="text-text-light">顧客: <span className="font-medium text-text">{customerName}</span></p>}
-      {!presetCustomerId && <CustomerSelector customers={customers} selectedCustomerId={selectedCustomerId} customerName={customerName} onSelect={(id, name) => { setSelectedCustomerId(id); setCustomerName(name); }} />}
+      {!presetCustomerId && !linkedAppointmentId && <CustomerSelector customers={customers} selectedCustomerId={selectedCustomerId} customerName={customerName} onSelect={(id, name) => { setSelectedCustomerId(id); setCustomerName(name); }} />}
+      {!presetCustomerId && linkedAppointmentId && customerName && (
+        <p className="text-text-light">顧客: <span className="font-medium text-text">{customerName}</span></p>
+      )}
 
       {draftRestored && (
         <div className="bg-accent/10 text-accent text-sm rounded-xl px-4 py-3 flex items-center justify-between">
@@ -219,10 +218,6 @@ function NewRecordForm() {
           <button type="button" onClick={dismissDraftBanner} className="text-xs underline">閉じる</button>
         </div>
       )}
-
-      {detectedAppointments.length > 0 && detectedAppointments.map((apt) => (
-        <AppointmentLinkBanner key={apt.id} appointment={apt} onLink={() => handleLinkAppointment(apt)} onDismiss={() => setDetectedAppointments((prev) => prev.filter((a) => a.id !== apt.id))} />
-      ))}
 
       {customerId && <CourseTicketInfo courseTickets={courseTickets} />}
 
