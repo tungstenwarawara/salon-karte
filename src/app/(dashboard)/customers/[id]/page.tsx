@@ -5,11 +5,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import type { Database } from "@/types/database";
 import { VisitAnalytics } from "@/components/customers/visit-analytics";
 import { CustomerBasicInfo } from "@/components/customers/customer-basic-info";
-import { PurchaseHistory } from "@/components/customers/purchase-history";
-import { TreatmentHistory } from "@/components/customers/treatment-history";
-import { CourseTicketSection } from "@/components/customers/course-ticket-section";
-import { CounselingSection } from "@/components/customers/counseling-section";
 import { CustomerLineSection } from "@/components/customers/customer-line-section";
+import { CustomerDetailContent } from "@/components/customers/customer-detail-content";
 
 type CounselingSheet = Database["public"]["Tables"]["counseling_sheets"]["Row"];
 
@@ -159,17 +156,21 @@ export default async function CustomerDetailPage({
         nextAppointment={nextAppointment}
       />
 
-      <TreatmentHistory customerId={id} salonId={salon.id} customerName={`${customer.last_name}${customer.first_name}`} records={records} hasPhotos={hasPhotos} />
-
-      <CourseTicketSection customerId={id} initialTickets={courseTickets} />
-
-      <PurchaseHistory customerId={id} purchases={purchases} purchaseTotal={purchaseTotal} salonId={salon.id} />
-
-      <CounselingSection customerId={id} sheets={counselingSheets} />
-
       <CustomerBasicInfo customer={customer} customerId={id} />
 
       <CustomerLineSection lineLink={lineLink} />
+
+      <CustomerDetailContent
+        customerId={id}
+        salonId={salon.id}
+        customerName={`${customer.last_name}${customer.first_name}`}
+        records={records}
+        hasPhotos={hasPhotos}
+        courseTickets={courseTickets}
+        purchases={purchases}
+        purchaseTotal={purchaseTotal}
+        counselingSheets={counselingSheets}
+      />
     </div>
   );
 }

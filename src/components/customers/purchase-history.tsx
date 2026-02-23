@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { useIncrementalList } from "@/hooks/use-incremental-list";
 import type { Database } from "@/types/database";
 import { PurchaseCard } from "./purchase-card";
 import { Toast, useToast } from "@/components/ui/toast";
@@ -24,20 +25,17 @@ type Props = {
   salonId: string;
 };
 
-const INITIAL_SHOW = 5;
-
 export function PurchaseHistory({ customerId, purchases: initialPurchases, salonId }: Props) {
   const router = useRouter();
   const [purchases, setPurchases] = useState(initialPurchases);
-  const [showAll, setShowAll] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const { toast, showToast, hideToast } = useToast();
 
   const total = purchases.reduce((sum, p) => sum + p.total_price, 0);
-  const displayPurchases = showAll ? purchases : purchases.slice(0, INITIAL_SHOW);
-  const hasMore = purchases.length > INITIAL_SHOW;
+  const { displayItems, hasMore, remaining, showMore, collapse, isExpanded } =
+    useIncrementalList(purchases, 10, 5);
 
   const handleDelete = async (id: string) => {
     const purchase = purchases.find((p) => p.id === id);
@@ -115,21 +113,29 @@ export function PurchaseHistory({ customerId, purchases: initialPurchases, salon
       </p>
 
       {purchases.length > 0 ? (
-        <div className="space-y-2">
-          {displayPurchases.map((p) => (
-            <PurchaseCard key={p.id} purchase={p}
-              confirmDeleteId={confirmDeleteId} editingId={editingId} processingId={processingId}
-              onRequestDelete={setConfirmDeleteId}
-              onConfirmDelete={handleDelete}
-              onCancelDelete={() => setConfirmDeleteId(null)}
-              onStartEdit={setEditingId}
-              onCancelEdit={() => setEditingId(null)}
-              onSaveEdit={handleSaveEdit} />
-          ))}
+        <div>
+          <div className="space-y-2">
+            {displayItems.map((p) => (
+              <PurchaseCard key={p.id} purchase={p}
+                confirmDeleteId={confirmDeleteId} editingId={editingId} processingId={processingId}
+                onRequestDelete={setConfirmDeleteId}
+                onConfirmDelete={handleDelete}
+                onCancelDelete={() => setConfirmDeleteId(null)}
+                onStartEdit={setEditingId}
+                onCancelEdit={() => setEditingId(null)}
+                onSaveEdit={handleSaveEdit} />
+            ))}
+          </div>
           {hasMore && (
-            <button onClick={() => setShowAll(!showAll)}
-              className="w-full text-center text-sm text-accent py-2 min-h-[44px]">
-              {showAll ? "閉じる" : `もっと見る（残り${purchases.length - INITIAL_SHOW}件）`}
+            <button onClick={showMore}
+              className="w-full text-center text-sm text-accent py-2 min-h-[44px] mt-2">
+              もっと見る（残り{remaining}件）
+            </button>
+          )}
+          {isExpanded && (
+            <button onClick={collapse}
+              className="w-full text-center text-sm text-text-light py-2 min-h-[44px]">
+              閉じる
             </button>
           )}
         </div>

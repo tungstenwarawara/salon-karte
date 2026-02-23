@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { setFlashToast } from "@/components/ui/toast";
+import { useIncrementalList } from "@/hooks/use-incremental-list";
 import type { Database } from "@/types/database";
 import { CourseTicketCard } from "./course-ticket-card";
 
@@ -23,6 +24,12 @@ export function CourseTicketSection({
   const [adjustError, setAdjustError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // アクティブ/過去を分離
+  const activeTickets = tickets.filter((t) => t.status === "active");
+  const pastTickets = tickets.filter((t) => t.status !== "active");
+  const { displayItems: displayPastTickets, hasMore, remaining, showMore, collapse, isExpanded } =
+    useIncrementalList(pastTickets, 5, 3);
 
   const handleUseSession = async (ticketId: string) => {
     const ticket = tickets.find((t) => t.id === ticketId);
@@ -95,6 +102,24 @@ export function CourseTicketSection({
     setDeletingId(null);
   };
 
+  const ticketCardProps = (ticket: CourseTicket) => ({
+    ticket,
+    processingId,
+    deletingId,
+    editingId,
+    editValue,
+    adjustError,
+    confirmDeleteId,
+    onUseSession: handleUseSession,
+    onStartEdit: (id: string, used: number) => { setEditingId(id); setEditValue(used); setAdjustError(""); },
+    onCancelEdit: () => { setEditingId(null); setAdjustError(""); },
+    onAdjust: handleAdjust,
+    onEditValueChange: (v: number) => { setEditValue(v); setAdjustError(""); },
+    onRequestDelete: (id: string) => setConfirmDeleteId(id),
+    onConfirmDelete: handleDelete,
+    onCancelDelete: () => setConfirmDeleteId(null),
+  });
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -111,27 +136,43 @@ export function CourseTicketSection({
       </p>
 
       {tickets.length > 0 ? (
-        <div className="space-y-2">
-          {tickets.map((ticket) => (
-            <CourseTicketCard
-              key={ticket.id}
-              ticket={ticket}
-              processingId={processingId}
-              deletingId={deletingId}
-              editingId={editingId}
-              editValue={editValue}
-              adjustError={adjustError}
-              confirmDeleteId={confirmDeleteId}
-              onUseSession={handleUseSession}
-              onStartEdit={(id, used) => { setEditingId(id); setEditValue(used); setAdjustError(""); }}
-              onCancelEdit={() => { setEditingId(null); setAdjustError(""); }}
-              onAdjust={handleAdjust}
-              onEditValueChange={(v) => { setEditValue(v); setAdjustError(""); }}
-              onRequestDelete={(id) => setConfirmDeleteId(id)}
-              onConfirmDelete={handleDelete}
-              onCancelDelete={() => setConfirmDeleteId(null)}
-            />
-          ))}
+        <div>
+          {/* アクティブな回数券（常に全表示） */}
+          {activeTickets.length > 0 && (
+            <div className="space-y-2">
+              {activeTickets.map((ticket) => (
+                <CourseTicketCard key={ticket.id} {...ticketCardProps(ticket)} />
+              ))}
+            </div>
+          )}
+
+          {/* 過去の回数券（段階的表示） */}
+          {pastTickets.length > 0 && (
+            <div className={activeTickets.length > 0 ? "mt-3" : ""}>
+              <p className="text-xs text-text-light font-medium mb-1">過去の回数券</p>
+              <div className="space-y-2">
+                {displayPastTickets.map((ticket) => (
+                  <CourseTicketCard key={ticket.id} {...ticketCardProps(ticket)} />
+                ))}
+              </div>
+              {hasMore && (
+                <button
+                  onClick={showMore}
+                  className="w-full text-center text-sm text-accent py-2 min-h-[44px] mt-2"
+                >
+                  もっと見る（残り{remaining}件）
+                </button>
+              )}
+              {isExpanded && (
+                <button
+                  onClick={collapse}
+                  className="w-full text-center text-sm text-text-light py-2 min-h-[44px]"
+                >
+                  閉じる
+                </button>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-surface border border-border rounded-xl p-6 text-center">
