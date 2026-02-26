@@ -4,11 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
-import type { Database } from "@/types/database";
-
-type Salon = Database["public"]["Tables"]["salons"]["Row"];
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -17,23 +15,23 @@ export default function SettingsPage() {
     phone: string;
     address: string;
   }>({ name: "", phone: "", address: "" });
+  const [salonId, setSalonId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
     const load = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      const { user, salonId: sid } = await getClientAuth();
+      if (!user || !sid) return;
+      setSalonId(sid);
 
+      const supabase = createClient();
       const { data } = await supabase
         .from("salons")
         .select("id, name, phone, address")
-        .eq("owner_id", user.id)
-        .single<Salon>();
+        .eq("id", sid)
+        .single();
 
       if (data) {
         setSalon({
@@ -51,12 +49,9 @@ export default function SettingsPage() {
     setError("");
     setLoading(true);
 
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!salonId) { setError("認証エラー"); setLoading(false); return; }
 
+    const supabase = createClient();
     const { error } = await supabase
       .from("salons")
       .update({
@@ -64,7 +59,7 @@ export default function SettingsPage() {
         phone: salon.phone || null,
         address: salon.address || null,
       })
-      .eq("owner_id", user.id);
+      .eq("id", salonId);
 
     if (error) {
       setError("保存に失敗しました");
@@ -126,6 +121,22 @@ export default function SettingsPage() {
           {loading ? "保存中..." : "保存する"}
         </button>
       </form>
+
+      {/* Staff management link */}
+      <Link
+        href="/settings/staff"
+        className="block bg-surface border border-border rounded-2xl p-5 hover:border-accent transition-colors"
+      >
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="font-bold">スタッフ管理</h3>
+            <p className="text-sm text-text-light mt-1">
+              スタッフの追加・権限設定・招待
+            </p>
+          </div>
+          <span className="text-text-light">&rarr;</span>
+        </div>
+      </Link>
 
       {/* Business hours link */}
       <Link

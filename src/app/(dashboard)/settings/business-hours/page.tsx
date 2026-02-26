@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
@@ -18,6 +19,7 @@ const TIME_OPTIONS = generateTimeOptions();
 
 export default function BusinessHoursPage() {
   const [hours, setHours] = useState<BusinessHours>(DEFAULT_BUSINESS_HOURS);
+  const [salonId, setSalonId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -25,16 +27,15 @@ export default function BusinessHoursPage() {
 
   useEffect(() => {
     const load = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      const { user, salonId: sid } = await getClientAuth();
+      if (!user || !sid) return;
+      setSalonId(sid);
 
+      const supabase = createClient();
       const { data } = await supabase
         .from("salons")
         .select("business_hours")
-        .eq("owner_id", user.id)
+        .eq("id", sid)
         .single<{ business_hours: BusinessHours | null }>();
 
       if (data?.business_hours) {
@@ -70,21 +71,17 @@ export default function BusinessHoursPage() {
       }
     }
 
-    setSaving(true);
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
+    if (!salonId) {
       setError("認証エラーです。再ログインしてください。");
-      setSaving(false);
       return;
     }
 
+    setSaving(true);
+    const supabase = createClient();
     const { error: updateError } = await supabase
       .from("salons")
       .update({ business_hours: hours })
-      .eq("owner_id", user.id);
+      .eq("id", salonId);
 
     if (updateError) {
       setError("保存に失敗しました");

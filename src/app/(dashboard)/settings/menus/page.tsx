@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
@@ -32,25 +33,16 @@ export default function MenusPage() {
   }, []);
 
   const loadMenus = async () => {
+    const { user, salonId: sid } = await getClientAuth();
+    if (!user || !sid) return;
+
+    setSalonId(sid);
+
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: salon } = await supabase
-      .from("salons")
-      .select("id")
-      .eq("owner_id", user.id)
-      .single<{ id: string }>();
-    if (!salon) return;
-
-    setSalonId(salon.id);
-
     const { data } = await supabase
       .from("treatment_menus")
       .select("id, name, category, duration_minutes, price, is_active, created_at")
-      .eq("salon_id", salon.id)
+      .eq("salon_id", sid)
       .order("created_at", { ascending: true })
       .returns<Menu[]>();
 

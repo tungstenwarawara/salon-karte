@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PhotoUpload, type PhotoEntry } from "@/components/records/photo-upload";
 import { PageHeader } from "@/components/layout/page-header";
 import { setFlashToast } from "@/components/ui/toast";
@@ -73,22 +74,20 @@ function NewRecordForm() {
   // 初期データ読み込み
   useEffect(() => {
     const load = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: salon } = await supabase.from("salons").select("id").eq("owner_id", user.id).single<{ id: string }>();
-      if (!salon) return;
-      setSalonId(salon.id);
+      const { user, salonId: resolvedSalonId } = await getClientAuth();
+      if (!user || !resolvedSalonId) return;
+      setSalonId(resolvedSalonId);
 
-      const menusQuery = supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", salon.id).eq("is_active", true).order("name").returns<Menu[]>();
-      const productsQuery = supabase.from("products").select("id, name, category, base_sell_price, base_cost_price").eq("salon_id", salon.id).eq("is_active", true).order("name").returns<Product[]>();
+      const supabase = createClient();
+      const menusQuery = supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name").returns<Menu[]>();
+      const productsQuery = supabase.from("products").select("id, name, category, base_sell_price, base_cost_price").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name").returns<Product[]>();
 
       if (!presetCustomerId) {
-        const customerQuery = supabase.from("customers").select("id, last_name, first_name, last_name_kana, first_name_kana").eq("salon_id", salon.id).order("last_name_kana", { ascending: true }).returns<CustomerOption[]>();
+        const customerQuery = supabase.from("customers").select("id, last_name, first_name, last_name_kana, first_name_kana").eq("salon_id", resolvedSalonId).order("last_name_kana", { ascending: true }).returns<CustomerOption[]>();
         const [menuRes, customerRes, productsRes] = await Promise.all([menusQuery, customerQuery, productsQuery]);
         setMenus(menuRes.data ?? []); setCustomers(customerRes.data ?? []); setProducts(productsRes.data ?? []);
       } else {
-        const customerNameQuery = supabase.from("customers").select("last_name, first_name").eq("id", presetCustomerId).eq("salon_id", salon.id).single<{ last_name: string; first_name: string }>();
+        const customerNameQuery = supabase.from("customers").select("last_name, first_name").eq("id", presetCustomerId).eq("salon_id", resolvedSalonId).single<{ last_name: string; first_name: string }>();
         const [menuRes, customerRes, productsRes] = await Promise.all([menusQuery, customerNameQuery, productsQuery]);
         setMenus(menuRes.data ?? []); setProducts(productsRes.data ?? []);
         if (customerRes.data) setCustomerName(`${customerRes.data.last_name} ${customerRes.data.first_name}`);

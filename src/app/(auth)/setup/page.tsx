@@ -26,6 +26,20 @@ export default function SetupPage() {
         return;
       }
 
+      // staff テーブルで所属サロン確認
+      const { data: staffRecord } = await supabase
+        .from("staff")
+        .select("salon_id")
+        .eq("auth_user_id", user.id)
+        .eq("is_active", true)
+        .single();
+
+      if (staffRecord) {
+        router.push("/dashboard");
+        return;
+      }
+
+      // フォールバック: owner_id で確認
       const { data: salon } = await supabase
         .from("salons")
         .select("id")
@@ -58,17 +72,34 @@ export default function SetupPage() {
       return;
     }
 
-    const { error } = await supabase.from("salons").insert({
-      owner_id: user.id,
-      name: salonName,
-      phone: phone || null,
-      address: address || null,
-    });
+    const { data: newSalon, error } = await supabase
+      .from("salons")
+      .insert({
+        owner_id: user.id,
+        name: salonName,
+        phone: phone || null,
+        address: address || null,
+      })
+      .select("id")
+      .single();
 
-    if (error) {
-      setError("サロン情報の登録に失敗しました。もう一度お試しください");
+    if (error || !newSalon) {
+      setError(`サロン情報の登録に失敗しました: ${error?.message || "不明なエラー"}`);
       setLoading(false);
       return;
+    }
+
+    // staff レコード（owner）を自動作成
+    const { error: staffError } = await supabase.from("staff").insert({
+      salon_id: newSalon.id,
+      auth_user_id: user.id,
+      name: "オーナー",
+      email: user.email!,
+      role: "owner",
+    });
+
+    if (staffError) {
+      console.error("staff レコード作成エラー:", staffError);
     }
 
     router.push("/dashboard");

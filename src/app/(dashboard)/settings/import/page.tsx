@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { ImportStepCard } from "@/components/import/import-step-card";
 
@@ -12,21 +13,14 @@ export default function ImportHubPage() {
 
   useEffect(() => {
     const load = async () => {
+      const { user, salonId } = await getClientAuth();
+      if (!user || !salonId) return;
+
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: salon } = await supabase
-        .from("salons")
-        .select("id")
-        .eq("owner_id", user.id)
-        .single();
-      if (!salon) return;
-
       const [custRes, prodRes, recRes] = await Promise.all([
-        supabase.from("customers").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
-        supabase.from("products").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
-        supabase.from("treatment_records").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
+        supabase.from("customers").select("id", { count: "exact", head: true }).eq("salon_id", salonId),
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("salon_id", salonId),
+        supabase.from("treatment_records").select("id", { count: "exact", head: true }).eq("salon_id", salonId),
       ]);
 
       setCounts({

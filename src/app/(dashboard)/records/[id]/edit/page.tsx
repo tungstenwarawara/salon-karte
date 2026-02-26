@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
@@ -53,20 +54,17 @@ export default function EditRecordPage() {
 
   useEffect(() => {
     const load = async () => {
+      const { user, salonId: resolvedSalonId } = await getClientAuth();
+      if (!user || !resolvedSalonId) return;
+      setSalonId(resolvedSalonId);
+
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: salon } = await supabase.from("salons").select("id").eq("owner_id", user.id).single<{ id: string }>();
-      if (!salon) return;
-      setSalonId(salon.id);
-
       const [menuRes, recordRes, recordMenusRes, purchasesRes, linkedTicketsRes] = await Promise.all([
-        supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", salon.id).order("name").returns<Menu[]>(),
-        supabase.from("treatment_records").select("id, customer_id, treatment_date, menu_id, treatment_area, products_used, skin_condition_before, notes_after, next_visit_memo, conversation_notes, caution_notes").eq("id", id).eq("salon_id", salon.id).single<TreatmentRecord>(),
+        supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).order("name").returns<Menu[]>(),
+        supabase.from("treatment_records").select("id, customer_id, treatment_date, menu_id, treatment_area, products_used, skin_condition_before, notes_after, next_visit_memo, conversation_notes, caution_notes").eq("id", id).eq("salon_id", resolvedSalonId).single<TreatmentRecord>(),
         supabase.from("treatment_record_menus").select("id, menu_id, menu_name_snapshot, price_snapshot, duration_minutes_snapshot, payment_type, ticket_id, sort_order").eq("treatment_record_id", id).order("sort_order").returns<TreatmentRecordMenu[]>(),
-        supabase.from("purchases").select("id, item_name, quantity, unit_price, total_price, memo, product_id").eq("treatment_record_id", id).eq("salon_id", salon.id).order("created_at").returns<Purchase[]>(),
-        supabase.from("course_tickets").select("id, ticket_name, total_sessions, used_sessions, price, status, memo").eq("treatment_record_id", id).eq("salon_id", salon.id).order("created_at").returns<CourseTicket[]>(),
+        supabase.from("purchases").select("id, item_name, quantity, unit_price, total_price, memo, product_id").eq("treatment_record_id", id).eq("salon_id", resolvedSalonId).order("created_at").returns<Purchase[]>(),
+        supabase.from("course_tickets").select("id, ticket_name, total_sessions, used_sessions, price, status, memo").eq("treatment_record_id", id).eq("salon_id", resolvedSalonId).order("created_at").returns<CourseTicket[]>(),
       ]);
 
       setMenus(menuRes.data ?? []);
@@ -108,12 +106,12 @@ export default function EditRecordPage() {
         }
 
         const { count } = await supabase.from("course_tickets").select("id", { count: "exact", head: true })
-          .eq("customer_id", record.customer_id).eq("salon_id", salon.id).eq("status", "active");
+          .eq("customer_id", record.customer_id).eq("salon_id", resolvedSalonId).eq("status", "active");
         if (count && count > 0) {
           setHasTickets(true);
           const { data: tickets } = await supabase.from("course_tickets")
             .select("id, ticket_name, total_sessions, used_sessions, price, status, memo, expiry_date")
-            .eq("customer_id", record.customer_id).eq("salon_id", salon.id).eq("status", "active")
+            .eq("customer_id", record.customer_id).eq("salon_id", resolvedSalonId).eq("status", "active")
             .order("purchase_date", { ascending: false }).returns<CourseTicket[]>();
           setCourseTickets(tickets ?? []);
         }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
@@ -26,18 +27,18 @@ export default function HolidaysPage() {
 
   useEffect(() => {
     const load = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { user, salonId: sid } = await getClientAuth();
+      if (!user || !sid) return;
+      setSalonId(sid);
 
+      const supabase = createClient();
       const { data: salon } = await supabase
         .from("salons")
         .select("id, business_hours, salon_holidays")
-        .eq("owner_id", user.id)
+        .eq("id", sid)
         .single<{ id: string; business_hours: BusinessHours | null; salon_holidays: string[] | null }>();
 
       if (salon) {
-        setSalonId(salon.id);
         if (salon.business_hours) setBusinessHours(salon.business_hours);
         const h = new Set(salon.salon_holidays ?? []);
         setHolidays(h);

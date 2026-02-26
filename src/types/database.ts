@@ -1021,6 +1021,50 @@ export type Database = {
           },
         ];
       };
+      staff: {
+        Row: {
+          id: string;
+          salon_id: string;
+          auth_user_id: string | null;
+          name: string;
+          email: string;
+          role: "owner" | "manager" | "staff";
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          salon_id: string;
+          auth_user_id?: string | null;
+          name: string;
+          email: string;
+          role: "owner" | "manager" | "staff";
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          salon_id?: string;
+          auth_user_id?: string | null;
+          name?: string;
+          email?: string;
+          role?: "owner" | "manager" | "staff";
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "staff_salon_id_fkey";
+            columns: ["salon_id"];
+            isOneToOne: false;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {

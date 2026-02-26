@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
@@ -42,24 +43,15 @@ export default function ConsumePage() {
   }, []);
 
   const loadProducts = async () => {
+    const { user, salonId: resolvedSalonId } = await getClientAuth();
+    if (!user || !resolvedSalonId) return;
+    setSalonId(resolvedSalonId);
+
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: salon } = await supabase
-      .from("salons")
-      .select("id")
-      .eq("owner_id", user.id)
-      .single<{ id: string }>();
-    if (!salon) return;
-    setSalonId(salon.id);
-
     const { data } = await supabase
       .from("products")
       .select("id, name, category")
-      .eq("salon_id", salon.id)
+      .eq("salon_id", resolvedSalonId)
       .eq("is_active", true)
       .order("name")
       .returns<Product[]>();

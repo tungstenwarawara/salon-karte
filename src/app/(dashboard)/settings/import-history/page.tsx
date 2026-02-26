@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import type { Database } from "@/types/database";
@@ -31,18 +32,15 @@ export default function ImportHistoryPage() {
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: salon } = await supabase
-      .from("salons").select("id").eq("owner_id", user.id).single();
-    if (!salon) return;
-    setSalonId(salon.id);
+    const { user, salonId: sid } = await getClientAuth();
+    if (!user || !sid) return;
+    setSalonId(sid);
 
+    const supabase = createClient();
     const { data } = await supabase
       .from("import_batches")
       .select("id, salon_id, batch_type, filename, total_count, success_count, failed_count, entity_ids, created_at")
-      .eq("salon_id", salon.id)
+      .eq("salon_id", sid)
       .order("created_at", { ascending: false })
       .limit(50);
     setBatches(data ?? []);

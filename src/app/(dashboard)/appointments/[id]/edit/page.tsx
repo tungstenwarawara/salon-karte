@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
@@ -44,21 +45,22 @@ export default function EditAppointmentPage() {
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
+    const { user, salonId: resolvedSalonId } = await getClientAuth();
+    if (!user || !resolvedSalonId) { setLoading(false); return; }
+    setSalonId(resolvedSalonId);
+
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
-    const { data: salon } = await supabase.from("salons").select("id, business_hours, salon_holidays").eq("owner_id", user.id)
+    const { data: salon } = await supabase.from("salons").select("id, business_hours, salon_holidays").eq("id", resolvedSalonId)
       .single<{ id: string; business_hours: BusinessHours | null; salon_holidays: string[] | null }>();
     if (!salon) { setLoading(false); return; }
-    setSalonId(salon.id);
     setBusinessHours(salon.business_hours);
     setSalonHolidays(salon.salon_holidays);
 
     const [appointmentRes, menuRes, junctionRes] = await Promise.all([
       supabase.from("appointments").select("id, customer_id, appointment_date, start_time, end_time, source, memo, status, customers(last_name, first_name)")
-        .eq("id", appointmentId).eq("salon_id", salon.id)
+        .eq("id", appointmentId).eq("salon_id", resolvedSalonId)
         .single<Appointment & { customers: { last_name: string; first_name: string } | null }>(),
-      supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", salon.id).eq("is_active", true).order("name").returns<TreatmentMenu[]>(),
+      supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name").returns<TreatmentMenu[]>(),
       supabase.from("appointment_menus").select("menu_id").eq("appointment_id", appointmentId).order("sort_order"),
     ]);
 

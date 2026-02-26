@@ -30,12 +30,25 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}${next}`);
       }
 
-      // For signup flow, check if user already has a salon
+      // staff テーブルで所属サロン確認
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (user) {
+        // staff テーブルで検索（プライマリパス）
+        const { data: staffRecord } = await supabase
+          .from("staff")
+          .select("salon_id")
+          .eq("auth_user_id", user.id)
+          .eq("is_active", true)
+          .single();
+
+        if (staffRecord) {
+          return NextResponse.redirect(`${origin}/dashboard`);
+        }
+
+        // フォールバック: owner_id で確認
         const { data: salon } = await supabase
           .from("salons")
           .select("id")

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
@@ -22,6 +23,7 @@ const DEFAULT_SETTINGS: BookingSettings = {
 
 export default function BookingRulesPage() {
   const [settings, setSettings] = useState<BookingSettings>(DEFAULT_SETTINGS);
+  const [salonId, setSalonId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -29,13 +31,15 @@ export default function BookingRulesPage() {
 
   useEffect(() => {
     const load = async () => {
+      const { user, salonId: sid } = await getClientAuth();
+      if (!user || !sid) return;
+      setSalonId(sid);
+
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
       const { data } = await supabase
         .from("salons")
         .select("booking_settings")
-        .eq("owner_id", user.id)
+        .eq("id", sid)
         .single<{ booking_settings: BookingSettings | null }>();
       if (data?.booking_settings) {
         setSettings(data.booking_settings);
@@ -47,14 +51,13 @@ export default function BookingRulesPage() {
 
   const handleSave = async () => {
     setError("");
+    if (!salonId) { setError("認証エラー"); return; }
     setSaving(true);
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
     const { error: updateError } = await supabase
       .from("salons")
       .update({ booking_settings: settings })
-      .eq("owner_id", user.id);
+      .eq("id", salonId);
     if (updateError) {
       setError(`保存に失敗しました: ${updateError.message}`);
       console.error("booking_settings update error:", updateError);

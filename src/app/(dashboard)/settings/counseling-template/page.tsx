@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
@@ -19,18 +20,18 @@ export default function CounselingTemplatePage() {
   const { toast, showToast, hideToast } = useToast();
 
   const loadTemplate = useCallback(async () => {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { user, salonId: sid } = await getClientAuth();
+    if (!user || !sid) return;
+    setSalonId(sid);
 
+    const supabase = createClient();
     const { data: salon } = await supabase
       .from("salons")
       .select("id, counseling_template")
-      .eq("owner_id", user.id)
+      .eq("id", sid)
       .single();
 
     if (!salon) return;
-    setSalonId(salon.id);
     const raw = salon.counseling_template as unknown as CounselingTemplate | null;
     setTemplate(raw ?? structuredClone(DEFAULT_COUNSELING_TEMPLATE));
   }, []);

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import type { CsvTaxReport, CsvMonthlySales } from "@/lib/csv-generators";
 import { TaxReportSections } from "@/components/inventory/tax-report-sections";
@@ -14,20 +15,13 @@ export default function TaxReportPage() {
 
   const loadReport = useCallback(async (targetYear: number) => {
     setLoading(true);
+    const { user, salonId } = await getClientAuth();
+    if (!user || !salonId) return;
+
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: salon } = await supabase
-      .from("salons")
-      .select("id")
-      .eq("owner_id", user.id)
-      .single<{ id: string }>();
-    if (!salon) return;
-
     const [taxRes, salesRes] = await Promise.all([
-      supabase.rpc("get_tax_report", { p_salon_id: salon.id, p_year: targetYear }),
-      supabase.rpc("get_monthly_sales_summary", { p_salon_id: salon.id, p_year: targetYear }),
+      supabase.rpc("get_tax_report", { p_salon_id: salonId, p_year: targetYear }),
+      supabase.rpc("get_monthly_sales_summary", { p_salon_id: salonId, p_year: targetYear }),
     ]);
 
     if (taxRes.data) setReport(taxRes.data as unknown as CsvTaxReport);

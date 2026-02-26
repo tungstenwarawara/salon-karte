@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { LineSetupGuide } from "@/components/settings/line-setup-guide";
 import { LineStatus } from "@/components/settings/line-status";
@@ -21,21 +22,14 @@ export default function LineSettingsPage() {
 
   useEffect(() => {
     const load = async () => {
+      const { user, salonId } = await getClientAuth();
+      if (!user || !salonId) return;
+
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: salon } = await supabase
-        .from("salons")
-        .select("id")
-        .eq("owner_id", user.id)
-        .single();
-      if (!salon) return;
-
       const { data } = await supabase
         .from("salon_line_configs")
         .select("id, webhook_secret, is_active, reminder_enabled, confirmation_enabled")
-        .eq("salon_id", salon.id)
+        .eq("salon_id", salonId)
         .single();
 
       if (data) setConfig(data);

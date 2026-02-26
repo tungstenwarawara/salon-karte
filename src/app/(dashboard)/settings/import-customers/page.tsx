@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { CsvUploadStep } from "@/components/import/csv-upload-step";
@@ -44,15 +45,13 @@ export default function ImportCustomersPage() {
   useEffect(() => { loadSalonData(); }, []);
 
   const loadSalonData = async () => {
+    const { user, salonId: sid } = await getClientAuth();
+    if (!user || !sid) return;
+    setSalonId(sid);
+
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: salon } = await supabase
-      .from("salons").select("id").eq("owner_id", user.id).single();
-    if (!salon) return;
-    setSalonId(salon.id);
     const { data: customers } = await supabase
-      .from("customers").select("last_name, first_name, phone, email").eq("salon_id", salon.id);
+      .from("customers").select("last_name, first_name, phone, email").eq("salon_id", sid);
     setExistingCustomers(customers ?? []);
   };
 

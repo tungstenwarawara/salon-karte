@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { CsvUploadStep } from "@/components/import/csv-upload-step";
@@ -55,21 +56,18 @@ export default function ImportRecordsPage() {
   useEffect(() => { loadSalonData(); }, []);
 
   const loadSalonData = async () => {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: salon } = await supabase
-      .from("salons").select("id").eq("owner_id", user.id).single();
-    if (!salon) return;
-    setSalonId(salon.id);
+    const { user, salonId: sid } = await getClientAuth();
+    if (!user || !sid) return;
+    setSalonId(sid);
 
+    const supabase = createClient();
     const [custRes, prodRes] = await Promise.all([
       supabase.from("customers")
         .select("id, last_name, first_name, last_name_kana, first_name_kana")
-        .eq("salon_id", salon.id),
+        .eq("salon_id", sid),
       supabase.from("products")
         .select("id, name, base_sell_price, base_cost_price")
-        .eq("salon_id", salon.id).eq("is_active", true),
+        .eq("salon_id", sid).eq("is_active", true),
     ]);
     setCustomers(custRes.data ?? []);
     setProducts(prodRes.data ?? []);

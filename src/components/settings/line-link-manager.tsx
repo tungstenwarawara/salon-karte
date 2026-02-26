@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { Toast, useToast } from "@/components/ui/toast";
 import { LineLinkCard } from "@/components/settings/line-link-card";
@@ -35,19 +36,16 @@ export function LineLinkManager() {
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
+    const { user, salonId } = await getClientAuth();
+    if (!user || !salonId) return;
+
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: salon } = await supabase.from("salons").select("id").eq("owner_id", user.id).single();
-    if (!salon) return;
-
     const [linksRes, cusRes] = await Promise.all([
       supabase.from("customer_line_links")
         .select("id, line_user_id, display_name, picture_url, is_following, customer_id, linked_at")
-        .eq("salon_id", salon.id).order("created_at", { ascending: false }),
+        .eq("salon_id", salonId).order("created_at", { ascending: false }),
       supabase.from("customers").select("id, last_name, first_name")
-        .eq("salon_id", salon.id).order("last_name", { ascending: true }),
+        .eq("salon_id", salonId).order("last_name", { ascending: true }),
     ]);
     setLinks(linksRes.data ?? []);
     setCustomers(cusRes.data ?? []);

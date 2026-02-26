@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
@@ -51,29 +52,16 @@ export default function NewCustomerPage() {
     setError("");
     setLoading(true);
 
+    const { user, salonId } = await getClientAuth();
+    if (!user || !salonId) {
+      setError("認証エラー");
+      setLoading(false);
+      return;
+    }
+
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setError("ログインセッションが切れました");
-      setLoading(false);
-      return;
-    }
-
-    const { data: salon } = await supabase
-      .from("salons")
-      .select("id")
-      .eq("owner_id", user.id)
-      .single<{ id: string }>();
-    if (!salon) {
-      setError("サロン情報が見つかりません");
-      setLoading(false);
-      return;
-    }
-
     const { data: newCustomer, error } = await supabase.from("customers").insert({
-      salon_id: salon.id,
+      salon_id: salonId,
       last_name: form.last_name,
       first_name: form.first_name,
       last_name_kana: form.last_name_kana || null,

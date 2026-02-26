@@ -29,11 +29,25 @@ export default function LoginPage() {
       return;
     }
 
-    // Check if salon exists to determine redirect target
+    // staff テーブルで所属サロン確認
+    const userId = (await supabase.auth.getUser()).data.user!.id;
+    const { data: staffRecord } = await supabase
+      .from("staff")
+      .select("salon_id")
+      .eq("auth_user_id", userId)
+      .eq("is_active", true)
+      .single();
+
+    if (staffRecord) {
+      router.push("/dashboard");
+      return;
+    }
+
+    // フォールバック: owner_id で確認（移行期対応）
     const { data: salon } = await supabase
       .from("salons")
       .select("id")
-      .eq("owner_id", (await supabase.auth.getUser()).data.user!.id)
+      .eq("owner_id", userId)
       .single();
 
     router.push(salon ? "/dashboard" : "/setup");
