@@ -77,7 +77,7 @@ export default function MenusPage() {
         .eq("id", editingId)
         .eq("salon_id", salonId);
       if (error) {
-        setError("メニューの更新に失敗しました");
+        setError(`メニューの更新に失敗しました: ${error.message}`);
         setLoading(false);
         return;
       }
@@ -86,7 +86,7 @@ export default function MenusPage() {
         .from("treatment_menus")
         .insert({ ...payload, salon_id: salonId });
       if (error) {
-        setError("メニューの追加に失敗しました");
+        setError(`メニューの追加に失敗しました: ${error.message}`);
         setLoading(false);
         return;
       }
@@ -118,7 +118,7 @@ export default function MenusPage() {
       .eq("id", menuId)
       .eq("salon_id", salonId);
     if (error) {
-      setError("ステータスの変更に失敗しました");
+      setError(`ステータスの変更に失敗しました: ${error.message}`);
       return;
     }
     loadMenus();
@@ -130,7 +130,7 @@ export default function MenusPage() {
     const supabase = createClient();
     const { error } = await supabase.from("treatment_menus").delete().eq("id", menuId).eq("salon_id", salonId);
     if (error) {
-      setError("メニューの削除に失敗しました");
+      setError(`メニューの削除に失敗しました: ${error.message}`);
       return;
     }
     loadMenus();

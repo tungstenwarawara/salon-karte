@@ -6,9 +6,14 @@ import { buildReminderMessage } from "@/lib/line/messages";
 
 // POST: 前日リマインド（Vercel Cron Job: 毎日 12:00 UTC = 21:00 JST）
 export async function POST(request: Request) {
-  // CRON_SECRET検証
+  // CRON_SECRET検証（未設定時はリクエストを拒否）
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    console.error("CRON_SECRET が設定されていません");
+    return NextResponse.json({ error: "サーバー設定エラー" }, { status: 500 });
+  }
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "認証エラー" }, { status: 401 });
   }
 

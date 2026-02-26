@@ -62,7 +62,8 @@ export default function SettingsPage() {
       .eq("id", salonId);
 
     if (error) {
-      setError("保存に失敗しました");
+      console.error("サロン情報保存エラー:", error);
+      setError(`保存に失敗しました: ${error.message}`);
     } else {
       showToast("サロン情報を保存しました");
     }

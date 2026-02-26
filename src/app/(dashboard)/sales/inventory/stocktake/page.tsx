@@ -104,7 +104,8 @@ export default function StocktakePage() {
       .insert(logs);
 
     if (insertError) {
-      setError("棚卸し調整の登録に失敗しました");
+      console.error("棚卸し調整エラー:", insertError);
+      setError(`棚卸し調整の登録に失敗しました: ${insertError.message}`);
       setSaving(false);
       return;
     }

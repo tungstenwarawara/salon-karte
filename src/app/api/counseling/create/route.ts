@@ -8,10 +8,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "認証エラー" }, { status: 401 });
   }
 
-  const body = await request.json();
-  const { customer_id } = body as { customer_id: string };
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 });
+  }
 
-  if (!customer_id) {
+  const { customer_id } = (body ?? {}) as { customer_id: string };
+
+  if (!customer_id || typeof customer_id !== "string") {
     return NextResponse.json({ error: "顧客IDが必要です" }, { status: 400 });
   }
 

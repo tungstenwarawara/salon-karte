@@ -40,7 +40,8 @@ export default function SignupPage() {
     });
 
     if (error) {
-      setError("登録に失敗しました。別のメールアドレスをお試しください");
+      console.error("サインアップエラー:", error);
+      setError(`登録に失敗しました: ${error.message}`);
       setLoading(false);
       return;
     }

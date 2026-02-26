@@ -81,7 +81,8 @@ export default function NewCustomerPage() {
     }).select("id").single<{ id: string }>();
 
     if (error || !newCustomer) {
-      setError("登録に失敗しました。もう一度お試しください");
+      console.error("顧客登録エラー:", error);
+      setError(`登録に失敗しました: ${error?.message ?? "不明なエラー"}`);
       setLoading(false);
       return;
     }

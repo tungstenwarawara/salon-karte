@@ -71,7 +71,7 @@ export default function HolidaysPage() {
       .from("salons")
       .update({ salon_holidays: Array.from(holidays).sort() })
       .eq("id", salonId);
-    if (updateError) { setError("保存に失敗しました"); setSaving(false); return; }
+    if (updateError) { console.error("不定休保存エラー:", updateError); setError(`保存に失敗しました: ${updateError.message}`); setSaving(false); return; }
     setOriginalHolidays(new Set(holidays));
     showToast("不定休を保存しました");
     setSaving(false);

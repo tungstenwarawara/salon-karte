@@ -102,7 +102,8 @@ export default function ConsumePage() {
     });
 
     if (insertError) {
-      setError("記録の登録に失敗しました");
+      console.error("在庫記録エラー:", insertError);
+      setError(`記録の登録に失敗しました: ${insertError.message}`);
       setLoading(false);
       return;
     }

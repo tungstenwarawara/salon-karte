@@ -43,7 +43,7 @@ export function PhotoManageSection({ recordId, salonId }: { recordId: string; sa
     setDeletingId(photo.id);
     setError(null);
     try {
-      await deletePhoto(photo.id, photo.storage_path);
+      await deletePhoto(photo.id, photo.storage_path, salonId);
       setPhotos((prev) => prev.filter((p) => p.id !== photo.id));
       setConfirmId(null);
     } catch (e) {

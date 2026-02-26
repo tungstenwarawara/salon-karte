@@ -96,6 +96,13 @@ export async function updateTreatmentRecord(params: UpdateParams): Promise<Updat
 export async function deleteTreatmentRecord(recordId: string, salonId: string): Promise<{ success: boolean; error?: string }> {
   const supabase = createClient();
 
+  // サロン所有権を先に検証（子レコード操作前に確認）
+  const { data: ownerCheck } = await supabase
+    .from("treatment_records").select("id").eq("id", recordId).eq("salon_id", salonId).single();
+  if (!ownerCheck) {
+    return { success: false, error: "この施術記録を削除する権限がありません" };
+  }
+
   // 写真の削除
   const { data: photos } = await supabase.from("treatment_photos").select("storage_path").eq("treatment_record_id", recordId);
   if (photos && photos.length > 0) await supabase.storage.from("treatment-photos").remove(photos.map((p) => p.storage_path));
@@ -113,20 +120,20 @@ export async function deleteTreatmentRecord(recordId: string, salonId: string): 
   }
 
   // 物販の取消
-  const { data: linkedPurchasesToReverse } = await supabase.from("purchases").select("id, product_id").eq("treatment_record_id", recordId);
+  const { data: linkedPurchasesToReverse } = await supabase.from("purchases").select("id, product_id").eq("treatment_record_id", recordId).eq("salon_id", salonId);
   if (linkedPurchasesToReverse) {
     for (const purchase of linkedPurchasesToReverse) {
       if (purchase.product_id) {
         const { error: reverseErr } = await supabase.rpc("reverse_product_sale", { p_purchase_id: purchase.id });
         if (reverseErr) console.error("Purchase reverse on delete error:", reverseErr);
       } else {
-        await supabase.from("purchases").delete().eq("id", purchase.id);
+        await supabase.from("purchases").delete().eq("id", purchase.id).eq("salon_id", salonId);
       }
     }
   }
 
   // 回数券販売の削除
-  await supabase.from("course_tickets").delete().eq("treatment_record_id", recordId);
+  await supabase.from("course_tickets").delete().eq("treatment_record_id", recordId).eq("salon_id", salonId);
 
   // 紐づく予約の参照をクリーンアップ
   await supabase.from("appointments")

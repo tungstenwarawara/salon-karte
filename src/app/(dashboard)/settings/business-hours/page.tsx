@@ -84,7 +84,8 @@ export default function BusinessHoursPage() {
       .eq("id", salonId);
 
     if (updateError) {
-      setError("保存に失敗しました");
+      console.error("営業時間保存エラー:", updateError);
+      setError(`保存に失敗しました: ${updateError.message}`);
     } else {
       showToast("営業時間を保存しました");
     }

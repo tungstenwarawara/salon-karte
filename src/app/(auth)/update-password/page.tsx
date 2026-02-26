@@ -37,7 +37,8 @@ function UpdatePasswordForm() {
     });
 
     if (error) {
-      setError("パスワードの設定に失敗しました。リンクの有効期限が切れている可能性があります。");
+      console.error("パスワード設定エラー:", error);
+      setError(`パスワードの設定に失敗しました: ${error.message}`);
       setLoading(false);
       return;
     }

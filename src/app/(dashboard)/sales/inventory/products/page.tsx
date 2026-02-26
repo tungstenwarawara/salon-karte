@@ -73,7 +73,8 @@ export default function ProductsPage() {
         .eq("id", editingId)
         .eq("salon_id", salonId);
       if (error) {
-        setError("商品の更新に失敗しました");
+        console.error("商品更新エラー:", error);
+        setError(`商品の更新に失敗しました: ${error.message}`);
         setLoading(false);
         return;
       }
@@ -82,7 +83,8 @@ export default function ProductsPage() {
         .from("products")
         .insert({ ...payload, salon_id: salonId });
       if (error) {
-        setError("商品の追加に失敗しました");
+        console.error("商品追加エラー:", error);
+        setError(`商品の追加に失敗しました: ${error.message}`);
         setLoading(false);
         return;
       }
@@ -116,7 +118,8 @@ export default function ProductsPage() {
       .eq("id", productId)
       .eq("salon_id", salonId);
     if (error) {
-      setError("ステータスの変更に失敗しました");
+      console.error("ステータス変更エラー:", error);
+      setError(`ステータスの変更に失敗しました: ${error.message}`);
       return;
     }
     loadProducts();
@@ -128,7 +131,8 @@ export default function ProductsPage() {
     const supabase = createClient();
     const { error } = await supabase.from("products").delete().eq("id", productId).eq("salon_id", salonId);
     if (error) {
-      setError("商品の削除に失敗しました。在庫ログがある場合は非表示にしてください。");
+      console.error("商品削除エラー:", error);
+      setError(`商品の削除に失敗しました: ${error.message}`);
       return;
     }
     loadProducts();

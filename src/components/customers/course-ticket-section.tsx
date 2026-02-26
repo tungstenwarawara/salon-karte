@@ -12,9 +12,11 @@ type CourseTicket = Database["public"]["Tables"]["course_tickets"]["Row"];
 
 export function CourseTicketSection({
   customerId,
+  salonId,
   initialTickets,
 }: {
   customerId: string;
+  salonId: string;
   initialTickets: CourseTicket[];
 }) {
   const [tickets, setTickets] = useState<CourseTicket[]>(initialTickets);
@@ -92,7 +94,7 @@ export function CourseTicketSection({
     setConfirmDeleteId(null);
     setDeletingId(ticketId);
     const supabase = createClient();
-    const { error } = await supabase.from("course_tickets").delete().eq("id", ticketId);
+    const { error } = await supabase.from("course_tickets").delete().eq("id", ticketId).eq("salon_id", salonId);
     if (error) {
       setAdjustError("削除に失敗しました");
       setDeletingId(null);

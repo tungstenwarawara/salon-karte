@@ -123,7 +123,7 @@ export async function submitTreatmentRecord(params: SubmitParams): Promise<Submi
 
   // 6. 予約ステータス更新
   if (appointmentId) {
-    await supabase.from("appointments").update({ treatment_record_id: record.id, status: "completed" }).eq("id", appointmentId);
+    await supabase.from("appointments").update({ treatment_record_id: record.id, status: "completed" }).eq("id", appointmentId).eq("salon_id", salonId);
   }
 
   if (warnings.length > 0) {

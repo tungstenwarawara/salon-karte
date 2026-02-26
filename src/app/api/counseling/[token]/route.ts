@@ -7,11 +7,22 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
-  const body = await request.json();
-  const { responses } = body as { responses: Record<string, unknown> };
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 });
+  }
 
-  if (!responses) {
+  const { responses } = (body ?? {}) as { responses: Record<string, unknown> };
+
+  if (!responses || typeof responses !== "object" || Array.isArray(responses) || Object.keys(responses).length === 0) {
     return NextResponse.json({ error: "回答データが必要です" }, { status: 400 });
+  }
+
+  // 回答データのサイズ制限（100KB以上は不正）
+  if (JSON.stringify(responses).length > 100_000) {
+    return NextResponse.json({ error: "回答データが大きすぎます" }, { status: 400 });
   }
 
   const admin = createAdminClient();

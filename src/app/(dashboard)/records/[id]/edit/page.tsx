@@ -183,10 +183,10 @@ export default function EditRecordPage() {
 
     if (purchase?.product_id) {
       const { error: rpcError } = await supabase.rpc("reverse_product_sale", { p_purchase_id: purchaseId });
-      if (rpcError) { setError("物販の削除に失敗しました"); setDeletingPurchaseId(null); return; }
+      if (rpcError) { console.error("物販削除エラー:", rpcError); setError(`物販の削除に失敗しました: ${rpcError.message}`); setDeletingPurchaseId(null); return; }
     } else {
-      const { error: delError } = await supabase.from("purchases").delete().eq("id", purchaseId);
-      if (delError) { setError("物販の削除に失敗しました"); setDeletingPurchaseId(null); return; }
+      const { error: delError } = await supabase.from("purchases").delete().eq("id", purchaseId).eq("salon_id", salonId);
+      if (delError) { console.error("物販削除エラー:", delError); setError(`物販の削除に失敗しました: ${delError.message}`); setDeletingPurchaseId(null); return; }
     }
     setLinkedPurchases((prev) => prev.filter((p) => p.id !== purchaseId));
     setDeletingPurchaseId(null);
@@ -196,8 +196,8 @@ export default function EditRecordPage() {
     if (!confirm("この回数券を削除しますか？")) return;
     setDeletingTicketId(ticketId);
     const supabase = createClient();
-    const { error: delError } = await supabase.from("course_tickets").delete().eq("id", ticketId);
-    if (delError) { setError("回数券の削除に失敗しました"); setDeletingTicketId(null); return; }
+    const { error: delError } = await supabase.from("course_tickets").delete().eq("id", ticketId).eq("salon_id", salonId);
+    if (delError) { console.error("回数券削除エラー:", delError); setError(`回数券の削除に失敗しました: ${delError.message}`); setDeletingTicketId(null); return; }
     setLinkedTickets((prev) => prev.filter((t) => t.id !== ticketId));
     setDeletingTicketId(null);
   };

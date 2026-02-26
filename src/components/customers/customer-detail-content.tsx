@@ -75,7 +75,7 @@ export function CustomerDetailContent({
           />
         </div>
         <div className={activeTab === "tickets" ? "" : "hidden"}>
-          <CourseTicketSection customerId={customerId} initialTickets={courseTickets} />
+          <CourseTicketSection customerId={customerId} salonId={salonId} initialTickets={courseTickets} />
         </div>
         <div className={activeTab === "purchases" ? "" : "hidden"}>
           <PurchaseHistory

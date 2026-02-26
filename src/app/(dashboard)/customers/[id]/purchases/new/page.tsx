@@ -52,6 +52,7 @@ export default function NewPurchasePage() {
           .from("customers")
           .select("last_name, first_name")
           .eq("id", customerId)
+          .eq("salon_id", resolvedSalonId)
           .single<{ last_name: string; first_name: string }>(),
         supabase
           .from("products")
@@ -132,9 +133,12 @@ export default function NewPurchasePage() {
       }
 
       // 残り在庫を表示
-      const result = data as { purchase_id: string; remaining_stock: number } | null;
+      const result = data as { purchase_id: string; remaining_stock: number; stock_warning?: boolean } | null;
       if (result) {
         setRemainingStock(result.remaining_stock);
+        if (result.stock_warning) {
+          setFlashToast(`在庫不足の警告があります（残り在庫: ${result.remaining_stock}）`);
+        }
       }
     } else {
       // 自由入力モード

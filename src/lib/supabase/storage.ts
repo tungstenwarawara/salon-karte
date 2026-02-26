@@ -226,8 +226,28 @@ export async function getPhotoUrls(storagePaths: string[]): Promise<Map<string, 
   return urlMap;
 }
 
-export async function deletePhoto(photoId: string, storagePath: string) {
+export async function deletePhoto(photoId: string, storagePath: string, salonId?: string) {
   const supabase = createClient();
+
+  // サロン所有権を検証（treatment_photos → treatment_records.salon_id）
+  if (salonId) {
+    const { data: photo } = await supabase
+      .from("treatment_photos")
+      .select("treatment_record_id")
+      .eq("id", photoId)
+      .single();
+    if (photo) {
+      const { data: record } = await supabase
+        .from("treatment_records")
+        .select("id")
+        .eq("id", photo.treatment_record_id)
+        .eq("salon_id", salonId)
+        .single();
+      if (!record) {
+        throw new Error("この写真を削除する権限がありません");
+      }
+    }
+  }
 
   // DB レコードを先に削除（参照整合性を優先）
   const { error: dbError } = await supabase

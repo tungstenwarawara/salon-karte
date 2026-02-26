@@ -21,7 +21,8 @@ export default function ResetPasswordPage() {
     });
 
     if (error) {
-      setError("パスワードリセットメールの送信に失敗しました");
+      console.error("パスワードリセットエラー:", error);
+      setError(`パスワードリセットメールの送信に失敗しました: ${error.message}`);
       setLoading(false);
       return;
     }
