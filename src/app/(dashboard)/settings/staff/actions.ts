@@ -39,7 +39,7 @@ export async function inviteStaff(
   const adminClient = createAdminClient();
   const { data: invitedUser, error: inviteError } =
     await adminClient.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/update-password%3Finvite%3D1`,
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/update-password?invite=1`,
     });
 
   if (inviteError || !invitedUser.user) {
@@ -104,7 +104,7 @@ export async function resendInvite(staffId: string) {
     // 既存ユーザー: resetPasswordForEmail でパスワード設定メール送信
     const { error: resetError } =
       await adminClient.auth.resetPasswordForEmail(target.email, {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/update-password%3Finvite%3D1`,
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/update-password?invite=1`,
       });
 
     if (resetError) {
@@ -115,7 +115,7 @@ export async function resendInvite(staffId: string) {
     // 未登録ユーザー: inviteUserByEmail で新規招待
     const { data: invitedUser, error: inviteError } =
       await adminClient.auth.admin.inviteUserByEmail(target.email, {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/update-password%3Finvite%3D1`,
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/update-password?invite=1`,
       });
 
     if (inviteError) {

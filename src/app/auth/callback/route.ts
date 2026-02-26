@@ -34,8 +34,9 @@ export async function GET(request: Request) {
   // 招待・パスワードリセットフローでは既存セッションをクリアしてからトークンを処理
   // 既存セッション（例: オーナー）が残っていると、トークン検証が失敗し
   // /login にリダイレクト → ミドルウェアが既存セッションで /dashboard に転送してしまう
-  const isTokenFlow = !!(tokenHash && type) || !!(code && next);
-  if (isTokenFlow) {
+  // 注: type が invite/recovery の場合のみ（通常のOAuth codeフローは対象外）
+  const isInviteOrRecovery = type === "invite" || type === "recovery";
+  if (isInviteOrRecovery) {
     await supabase.auth.signOut();
   }
 
