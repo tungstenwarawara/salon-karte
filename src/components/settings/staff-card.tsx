@@ -16,6 +16,8 @@ type Props = {
   isCurrentUser: boolean;
   onUpdate: (id: string, name: string, role: "owner" | "manager" | "staff") => Promise<void>;
   onToggleActive: (id: string, isActive: boolean) => Promise<void>;
+  onResendInvite: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -24,12 +26,12 @@ const ROLE_LABELS: Record<string, string> = {
   staff: "スタッフ",
 };
 
-export function StaffCard({ staff, isCurrentUser, onUpdate, onToggleActive }: Props) {
+export function StaffCard({ staff, isCurrentUser, onUpdate, onToggleActive, onResendInvite, onDelete }: Props) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(staff.name);
   const [editRole, setEditRole] = useState(staff.role);
   const [saving, setSaving] = useState(false);
-  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<"deactivate" | "delete" | null>(null);
 
   const handleSave = async () => {
     setSaving(true);
@@ -42,9 +44,23 @@ export function StaffCard({ staff, isCurrentUser, onUpdate, onToggleActive }: Pr
     setSaving(true);
     await onToggleActive(staff.id, !staff.is_active);
     setSaving(false);
-    setConfirmDeactivate(false);
+    setConfirmAction(null);
   };
 
+  const handleDelete = async () => {
+    setSaving(true);
+    await onDelete(staff.id);
+    setSaving(false);
+    setConfirmAction(null);
+  };
+
+  const handleResend = async () => {
+    setSaving(true);
+    await onResendInvite(staff.id);
+    setSaving(false);
+  };
+
+  // 編集モード
   if (editing) {
     return (
       <div className="bg-background rounded-xl p-3 space-y-3">
@@ -66,25 +82,14 @@ export function StaffCard({ staff, isCurrentUser, onUpdate, onToggleActive }: Pr
               <p className="text-xs text-text-light mt-1">※ オーナー権限は変更できません</p>
             </div>
           ) : (
-            <RoleSelector
-              value={editRole as "manager" | "staff"}
-              onChange={(r) => setEditRole(r)}
-              name={`role-${staff.id}`}
-            />
+            <RoleSelector value={editRole as "manager" | "staff"} onChange={(r) => setEditRole(r)} name={`role-${staff.id}`} />
           )}
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={handleSave}
-            disabled={saving || !editName.trim()}
-            className="flex-1 bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl py-2.5 transition-colors disabled:opacity-50 min-h-[44px]"
-          >
+          <button onClick={handleSave} disabled={saving || !editName.trim()} className="flex-1 bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl py-2.5 transition-colors disabled:opacity-50 min-h-[44px]">
             {saving ? "保存中..." : "保存"}
           </button>
-          <button
-            onClick={() => { setEditing(false); setEditName(staff.name); setEditRole(staff.role); }}
-            className="flex-1 bg-surface border border-border text-sm font-medium rounded-xl py-2.5 transition-colors min-h-[44px]"
-          >
+          <button onClick={() => { setEditing(false); setEditName(staff.name); setEditRole(staff.role); }} className="flex-1 bg-surface border border-border text-sm font-medium rounded-xl py-2.5 transition-colors min-h-[44px]">
             キャンセル
           </button>
         </div>
@@ -92,33 +97,33 @@ export function StaffCard({ staff, isCurrentUser, onUpdate, onToggleActive }: Pr
     );
   }
 
-  if (confirmDeactivate) {
+  // 確認パネル（無効化 or 削除）
+  if (confirmAction) {
+    const isDelete = confirmAction === "delete";
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
         <p className="text-sm font-medium">
-          {staff.name} を無効化しますか？
+          {staff.name} を{isDelete ? "削除" : "無効化"}しますか？
         </p>
         <p className="text-xs text-text-light">
-          無効化するとログインできなくなります。後から再有効化できます。
+          {isDelete
+            ? "この操作は取り消せません。スタッフのアカウントとデータが完全に削除されます。"
+            : "無効化するとログインできなくなります。後から再有効化できます。"}
         </p>
         <div className="flex gap-2">
-          <button
-            onClick={handleToggle}
-            disabled={saving}
-            className="flex-1 bg-error text-white text-sm font-medium rounded-xl py-2.5 transition-colors disabled:opacity-50 min-h-[44px]"
-          >
-            {saving ? "処理中..." : "無効化する"}
+          <button onClick={isDelete ? handleDelete : handleToggle} disabled={saving} className="flex-1 bg-error text-white text-sm font-medium rounded-xl py-2.5 transition-colors disabled:opacity-50 min-h-[44px]">
+            {saving ? "処理中..." : isDelete ? "削除する" : "無効化する"}
           </button>
-          <button
-            onClick={() => setConfirmDeactivate(false)}
-            className="flex-1 bg-surface border border-border text-sm font-medium rounded-xl py-2.5 transition-colors min-h-[44px]"
-          >
+          <button onClick={() => setConfirmAction(null)} className="flex-1 bg-surface border border-border text-sm font-medium rounded-xl py-2.5 transition-colors min-h-[44px]">
             キャンセル
           </button>
         </div>
       </div>
     );
   }
+
+  // 通常表示
+  const showActions = !isCurrentUser && staff.role !== "owner";
 
   return (
     <div className={`bg-surface border border-border rounded-xl p-3 space-y-2 ${!staff.is_active ? "opacity-60" : ""}`}>
@@ -130,42 +135,36 @@ export function StaffCard({ staff, isCurrentUser, onUpdate, onToggleActive }: Pr
               {ROLE_LABELS[staff.role]}
             </span>
             {!staff.is_active && (
-              <span className="shrink-0 text-xs bg-error/10 text-error rounded-full px-2 py-0.5">
-                無効
-              </span>
+              <span className="shrink-0 text-xs bg-error/10 text-error rounded-full px-2 py-0.5">無効</span>
             )}
             {isCurrentUser && (
-              <span className="shrink-0 text-xs bg-border rounded-full px-2 py-0.5">
-                自分
-              </span>
+              <span className="shrink-0 text-xs bg-border rounded-full px-2 py-0.5">自分</span>
             )}
           </div>
           <p className="text-sm text-text-light mt-0.5 truncate">{staff.email}</p>
         </div>
         <div className="flex gap-1 shrink-0 ml-2">
-          <button
-            onClick={() => setEditing(true)}
-            className="text-xs text-accent px-2 py-1.5 rounded-lg hover:bg-accent/5 min-h-[44px]"
-          >
+          <button onClick={() => setEditing(true)} className="text-xs text-accent px-2 py-1.5 rounded-lg hover:bg-accent/5 min-h-[44px]">
             編集
           </button>
-          {!isCurrentUser && staff.role !== "owner" && (
-            staff.is_active ? (
-              <button
-                onClick={() => setConfirmDeactivate(true)}
-                className="text-xs text-error px-2 py-1.5 rounded-lg hover:bg-error/5 min-h-[44px]"
-              >
-                無効化
+          {showActions && (
+            <>
+              <button onClick={handleResend} disabled={saving} className="text-xs text-accent px-2 py-1.5 rounded-lg hover:bg-accent/5 min-h-[44px]">
+                {saving ? "送信中..." : "再招待"}
               </button>
-            ) : (
-              <button
-                onClick={handleToggle}
-                disabled={saving}
-                className="text-xs text-accent px-2 py-1.5 rounded-lg hover:bg-accent/5 min-h-[44px]"
-              >
-                {saving ? "処理中..." : "再有効化"}
+              {staff.is_active ? (
+                <button onClick={() => setConfirmAction("deactivate")} className="text-xs text-error px-2 py-1.5 rounded-lg hover:bg-error/5 min-h-[44px]">
+                  無効化
+                </button>
+              ) : (
+                <button onClick={handleToggle} disabled={saving} className="text-xs text-accent px-2 py-1.5 rounded-lg hover:bg-accent/5 min-h-[44px]">
+                  {saving ? "処理中..." : "再有効化"}
+                </button>
+              )}
+              <button onClick={() => setConfirmAction("delete")} className="text-xs text-error px-2 py-1.5 rounded-lg hover:bg-error/5 min-h-[44px]">
+                削除
               </button>
-            )
+            </>
           )}
         </div>
       </div>

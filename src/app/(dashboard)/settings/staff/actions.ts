@@ -65,6 +65,116 @@ export async function inviteStaff(
 }
 
 /**
+ * 招待メール再送信
+ * オーナーのみ実行可能
+ */
+export async function resendInvite(staffId: string) {
+  const { user, salon, staff, supabase } = await getAuthAndSalon();
+
+  if (!user || !salon) {
+    return { error: "認証エラー" };
+  }
+
+  if (staff && staff.role !== "owner") {
+    return { error: "招待メールの再送はオーナーのみ実行できます" };
+  }
+
+  // 対象スタッフのメールアドレスを取得
+  const { data: target } = await supabase
+    .from("staff")
+    .select("email, role")
+    .eq("id", staffId)
+    .eq("salon_id", salon.id)
+    .single();
+
+  if (!target) {
+    return { error: "スタッフが見つかりません" };
+  }
+
+  if (target.role === "owner") {
+    return { error: "オーナーには招待メールを送信できません" };
+  }
+
+  const adminClient = createAdminClient();
+  const { error: inviteError } =
+    await adminClient.auth.admin.inviteUserByEmail(target.email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/update-password%3Finvite%3D1`,
+    });
+
+  if (inviteError) {
+    console.error("招待メール再送エラー:", inviteError);
+    return { error: `招待メールの再送に失敗しました: ${inviteError.message}` };
+  }
+
+  return { success: true };
+}
+
+/**
+ * スタッフ完全削除（staff レコード + auth.users）
+ * オーナーのみ実行可能。オーナー自身は削除不可。
+ */
+export async function deleteStaff(staffId: string) {
+  const { user, salon, staff, supabase } = await getAuthAndSalon();
+
+  if (!user || !salon) {
+    return { error: "認証エラー" };
+  }
+
+  if (staff && staff.role !== "owner") {
+    return { error: "スタッフの削除はオーナーのみ実行できます" };
+  }
+
+  // 対象スタッフを取得
+  const { data: target } = await supabase
+    .from("staff")
+    .select("id, auth_user_id, role")
+    .eq("id", staffId)
+    .eq("salon_id", salon.id)
+    .single();
+
+  if (!target) {
+    return { error: "スタッフが見つかりません" };
+  }
+
+  if (target.role === "owner") {
+    return { error: "オーナーは削除できません" };
+  }
+
+  // 紐づく予約の staff_id を NULL に
+  await supabase
+    .from("appointments")
+    .update({ staff_id: null })
+    .eq("staff_id", staffId)
+    .eq("salon_id", salon.id);
+
+  // staff レコード削除
+  const { error: deleteError } = await supabase
+    .from("staff")
+    .delete()
+    .eq("id", staffId)
+    .eq("salon_id", salon.id);
+
+  if (deleteError) {
+    console.error("staff 削除エラー:", deleteError);
+    return { error: `削除に失敗しました: ${deleteError.message}` };
+  }
+
+  // auth.users からも削除
+  if (target.auth_user_id) {
+    const adminClient = createAdminClient();
+    const { error: authDeleteError } =
+      await adminClient.auth.admin.deleteUser(target.auth_user_id);
+
+    if (authDeleteError) {
+      console.error("auth.users 削除エラー:", authDeleteError);
+      // staff は既に削除済みなので警告のみ
+    }
+  }
+
+  return { success: true };
+}
+
+/**
  * スタッフ情報更新（名前・権限）
  * オーナーのみ実行可能
  */

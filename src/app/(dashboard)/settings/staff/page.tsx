@@ -9,7 +9,7 @@ import { StaffCard } from "@/components/settings/staff-card";
 import { RoleSelector } from "@/components/settings/role-selector";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { Toast, useToast } from "@/components/ui/toast";
-import { inviteStaff, updateStaff, toggleStaffActive } from "./actions";
+import { inviteStaff, updateStaff, toggleStaffActive, resendInvite, deleteStaff } from "./actions";
 
 type StaffMember = {
   id: string;
@@ -96,6 +96,25 @@ export default function StaffPage() {
       return;
     }
     showToast(isActive ? "スタッフを再有効化しました" : "スタッフを無効化しました");
+    loadStaff();
+  };
+
+  const handleResendInvite = async (id: string) => {
+    const result = await resendInvite(id);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    showToast("招待メールを再送しました");
+  };
+
+  const handleDelete = async (id: string) => {
+    const result = await deleteStaff(id);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    showToast("スタッフを削除しました");
     loadStaff();
   };
 
@@ -197,6 +216,8 @@ export default function StaffPage() {
               isCurrentUser={s.auth_user_id === currentUserId}
               onUpdate={handleUpdate}
               onToggleActive={handleToggleActive}
+              onResendInvite={handleResendInvite}
+              onDelete={handleDelete}
             />
           ))}
         </div>
