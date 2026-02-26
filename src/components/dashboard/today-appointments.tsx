@@ -4,6 +4,7 @@ import type { Database } from "@/types/database";
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
 type AppointmentWithCustomer = Appointment & {
   customers: { last_name: string; first_name: string } | null;
+  staff: { name: string } | null;
 };
 
 export function TodayAppointments({
@@ -52,9 +53,12 @@ export function TodayAppointments({
                     </span>
                   )}
                 </div>
-                {apt.menu_name_snapshot && (
+                {(apt.menu_name_snapshot || apt.staff?.name) && (
                   <p className="text-xs text-text-light mt-1 ml-[3.5rem]">
                     {apt.menu_name_snapshot}
+                    {apt.staff?.name && (
+                      <span className="ml-2">担当: {apt.staff.name}</span>
+                    )}
                   </p>
                 )}
                 {lastVisitMap?.[apt.customer_id] && (() => {

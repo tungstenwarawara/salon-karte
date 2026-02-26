@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   // 予約情報を取得
   const { data: appointment } = await supabase
     .from("appointments")
-    .select("id, customer_id, appointment_date, start_time")
+    .select("id, customer_id, appointment_date, start_time, staff_id")
     .eq("id", appointment_id)
     .eq("salon_id", salon.id)
     .single();
@@ -49,6 +49,18 @@ export async function POST(request: Request) {
     .order("sort_order", { ascending: true });
 
   const menuNames = (appointmentMenus ?? []).map((m) => m.menu_name_snapshot);
+
+  // スタッフ名を取得
+  let staffName: string | null = null;
+  if (appointment.staff_id) {
+    const { data: staff } = await supabase
+      .from("staff")
+      .select("name")
+      .eq("id", appointment.staff_id)
+      .eq("salon_id", salon.id)
+      .single();
+    staffName = staff?.name ?? null;
+  }
 
   // 顧客名を取得
   const { data: customer } = await supabase
@@ -82,6 +94,7 @@ export async function POST(request: Request) {
     startTime: appointment.start_time,
     menuNames,
     salonName: salon.name,
+    staffName,
   });
 
   try {

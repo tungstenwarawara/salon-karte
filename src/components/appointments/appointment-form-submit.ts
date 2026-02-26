@@ -5,6 +5,7 @@ import type { TreatmentMenu, BusinessHours, BookingSettings } from "@/components
 type SubmitParams = {
   salonId: string;
   customerId: string;
+  staffId: string | null;
   menus: TreatmentMenu[];
   selectedMenuIds: string[];
   appointmentDate: string;
@@ -25,7 +26,7 @@ type SubmitResult =
 
 /** 予約新規作成のsubmit処理（バリデーション・重複チェック・中間テーブル挿入） */
 export async function submitAppointment(params: SubmitParams): Promise<SubmitResult> {
-  const { salonId, customerId, menus, selectedMenuIds, appointmentDate, startHour, startMinute, endHour, endMinute, source, memo, businessHours, salonHolidays, bookingSettings } = params;
+  const { salonId, customerId, staffId, menus, selectedMenuIds, appointmentDate, startHour, startMinute, endHour, endMinute, source, memo, businessHours, salonHolidays, bookingSettings } = params;
   const supabase = createClient();
 
   const startTime = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
@@ -69,13 +70,15 @@ export async function submitAppointment(params: SubmitParams): Promise<SubmitRes
     }
   }
 
-  // 重複チェック
-  const { data: existing } = await supabase
+  // 重複チェック（staffIdがある場合はスタッフ単位でチェック）
+  let overlapQuery = supabase
     .from("appointments")
     .select("id, start_time, end_time, customers(last_name, first_name)")
     .eq("salon_id", salonId)
     .eq("appointment_date", appointmentDate)
     .neq("status", "cancelled");
+  if (staffId) overlapQuery = overlapQuery.eq("staff_id", staffId);
+  const { data: existing } = await overlapQuery;
 
   if (existing && existing.length > 0) {
     const toMin = (t: string) => {
@@ -105,7 +108,7 @@ export async function submitAppointment(params: SubmitParams): Promise<SubmitRes
   const { data: inserted, error: insertError } = await supabase
     .from("appointments")
     .insert({
-      salon_id: salonId, customer_id: customerId,
+      salon_id: salonId, customer_id: customerId, staff_id: staffId,
       menu_id: selectedMenuIds[0] || null, menu_name_snapshot: menuNameSnapshot,
       appointment_date: appointmentDate, start_time: startTime, end_time: endTime,
       source, memo: memo || null,

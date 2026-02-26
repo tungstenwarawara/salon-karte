@@ -6,6 +6,7 @@ export type DayAppointment = {
   id: string;
   start_time: string;
   end_time: string | null;
+  staff_id: string | null;
   customers: { last_name: string; first_name: string } | null;
 };
 

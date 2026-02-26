@@ -5,6 +5,7 @@ import type { TreatmentMenu, BusinessHours } from "@/components/appointments/typ
 type EditParams = {
   appointmentId: string;
   salonId: string;
+  staffId: string | null;
   menus: TreatmentMenu[];
   selectedMenuIds: string[];
   appointmentDate: string;
@@ -24,7 +25,7 @@ type EditResult =
 
 /** 予約編集のsubmit処理（バリデーション・重複チェック・中間テーブル差し替え） */
 export async function updateAppointment(params: EditParams): Promise<EditResult> {
-  const { appointmentId, salonId, menus, selectedMenuIds, appointmentDate, startHour, startMinute, endHour, endMinute, source, memo, businessHours, salonHolidays } = params;
+  const { appointmentId, salonId, staffId, menus, selectedMenuIds, appointmentDate, startHour, startMinute, endHour, endMinute, source, memo, businessHours, salonHolidays } = params;
   const supabase = createClient();
 
   const startTime = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
@@ -48,14 +49,16 @@ export async function updateAppointment(params: EditParams): Promise<EditResult>
     }
   }
 
-  // 重複チェック（自分自身を除外）
-  const { data: existing } = await supabase
+  // 重複チェック（自分自身を除外、staffIdがある場合はスタッフ単位でチェック）
+  let overlapQuery = supabase
     .from("appointments")
     .select("id, start_time, end_time, customers(last_name, first_name)")
     .eq("salon_id", salonId)
     .eq("appointment_date", appointmentDate)
     .neq("status", "cancelled")
     .neq("id", appointmentId);
+  if (staffId) overlapQuery = overlapQuery.eq("staff_id", staffId);
+  const { data: existing } = await overlapQuery;
 
   if (existing && existing.length > 0) {
     const toMin = (t: string) => {
@@ -85,7 +88,7 @@ export async function updateAppointment(params: EditParams): Promise<EditResult>
   const { error: updateError } = await supabase.from("appointments").update({
     menu_id: selectedMenuIds[0] || null, menu_name_snapshot: menuNameSnapshot,
     appointment_date: appointmentDate, start_time: startTime, end_time: endTime,
-    source, memo: memo || null,
+    source, memo: memo || null, staff_id: staffId,
   }).eq("id", appointmentId).eq("salon_id", salonId);
 
   if (updateError) return { success: false, error: `予約の更新に失敗しました: ${updateError.message}` };

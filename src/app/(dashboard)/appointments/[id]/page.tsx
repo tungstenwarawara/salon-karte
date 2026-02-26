@@ -11,6 +11,7 @@ type AppointmentMenu = Database["public"]["Tables"]["appointment_menus"]["Row"];
 
 type AppointmentWithCustomer = Appointment & {
   customers: { id: string; last_name: string; first_name: string } | null;
+  staff: { name: string } | null;
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -39,7 +40,7 @@ export default async function AppointmentDetailPage({
   const [appointmentRes, menusRes] = await Promise.all([
     supabase
       .from("appointments")
-      .select("id, customer_id, appointment_date, start_time, end_time, source, memo, status, menu_name_snapshot, treatment_record_id, customers(id, last_name, first_name)")
+      .select("id, customer_id, appointment_date, start_time, end_time, source, memo, status, menu_name_snapshot, treatment_record_id, customers(id, last_name, first_name), staff(name)")
       .eq("id", id)
       .eq("salon_id", salon.id)
       .single<AppointmentWithCustomer>(),
@@ -105,6 +106,9 @@ export default async function AppointmentDetailPage({
             <span className="text-sm text-text-light">
               {SOURCE_LABELS[appointment.source] ?? appointment.source}
             </span>
+          )}
+          {appointment.staff?.name && (
+            <span className="text-sm text-text-light">担当: {appointment.staff.name}</span>
           )}
         </div>
         <div>

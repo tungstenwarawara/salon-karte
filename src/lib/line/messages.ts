@@ -21,6 +21,7 @@ type AppointmentInfo = {
   startTime: string;
   menuNames: string[];
   salonName: string;
+  staffName?: string | null;
 };
 
 // 予約確認メッセージ（予約作成時に即時送信）
@@ -29,19 +30,22 @@ export function buildConfirmationMessage(info: AppointmentInfo): { type: string;
   const time = formatTime(info.startTime);
   const menus = info.menuNames.length > 0 ? info.menuNames.join("、") : "未指定";
 
+  const lines = [
+    `${info.customerName}様`,
+    "",
+    "ご予約を承りました。",
+    "",
+    `日時: ${date} ${time}〜`,
+    `メニュー: ${menus}`,
+  ];
+  if (info.staffName) {
+    lines.push(`担当: ${info.staffName}`);
+  }
+  lines.push("", "ご来店をお待ちしております。", info.salonName);
+
   return {
     type: "text",
-    text: [
-      `${info.customerName}様`,
-      "",
-      "ご予約を承りました。",
-      "",
-      `日時: ${date} ${time}〜`,
-      `メニュー: ${menus}`,
-      "",
-      "ご来店をお待ちしております。",
-      info.salonName,
-    ].join("\n"),
+    text: lines.join("\n"),
   };
 }
 
@@ -51,17 +55,21 @@ export function buildReminderMessage(info: AppointmentInfo): { type: string; tex
   const time = formatTime(info.startTime);
   const menus = info.menuNames.length > 0 ? info.menuNames.join("、") : "未指定";
 
+  const lines = [
+    `${info.customerName}様`,
+    "",
+    "明日のご予約のお知らせです。",
+    "",
+    `日時: ${date} ${time}〜`,
+    `メニュー: ${menus}`,
+  ];
+  if (info.staffName) {
+    lines.push(`担当: ${info.staffName}`);
+  }
+  lines.push("", `${info.salonName}でお待ちしております。`);
+
   return {
     type: "text",
-    text: [
-      `${info.customerName}様`,
-      "",
-      "明日のご予約のお知らせです。",
-      "",
-      `日時: ${date} ${time}〜`,
-      `メニュー: ${menus}`,
-      "",
-      `${info.salonName}でお待ちしております。`,
-    ].join("\n"),
+    text: lines.join("\n"),
   };
 }

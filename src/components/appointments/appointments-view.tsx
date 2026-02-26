@@ -38,7 +38,7 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
 
     const { data } = await supabase
       .from("appointments")
-      .select("*, customers(last_name, first_name)")
+      .select("*, customers(last_name, first_name), staff(name)")
       .eq("salon_id", salonId)
       .gte("appointment_date", startDate)
       .lte("appointment_date", endDate)

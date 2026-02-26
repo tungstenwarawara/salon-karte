@@ -55,12 +55,12 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     supabase
       .from("appointments")
-      .select("id, customer_id, start_time, status, menu_name_snapshot, customers(last_name, first_name)")
+      .select("id, customer_id, start_time, status, menu_name_snapshot, customers(last_name, first_name), staff(name)")
       .eq("salon_id", salon.id)
       .eq("appointment_date", today)
       .neq("status", "cancelled")
       .order("start_time", { ascending: true })
-      .returns<(Appointment & { customers: { last_name: string; first_name: string } | null })[]>(),
+      .returns<(Appointment & { customers: { last_name: string; first_name: string } | null; staff: { name: string } | null })[]>(),
     supabase
       .from("customers")
       .select("id", { count: "exact", head: true })

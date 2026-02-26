@@ -316,6 +316,7 @@ export type Database = {
           source: string | null;
           memo: string | null;
           treatment_record_id: string | null;
+          staff_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -332,6 +333,7 @@ export type Database = {
           source?: string | null;
           memo?: string | null;
           treatment_record_id?: string | null;
+          staff_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -348,6 +350,7 @@ export type Database = {
           source?: string | null;
           memo?: string | null;
           treatment_record_id?: string | null;
+          staff_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -378,6 +381,13 @@ export type Database = {
             columns: ["treatment_record_id"];
             isOneToOne: false;
             referencedRelation: "treatment_records";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "appointments_staff_id_fkey";
+            columns: ["staff_id"];
+            isOneToOne: false;
+            referencedRelation: "staff";
             referencedColumns: ["id"];
           },
         ];

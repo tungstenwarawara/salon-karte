@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     // 明日の予約を取得（scheduled のみ）
     const { data: appointments } = await adminClient
       .from("appointments")
-      .select("id, customer_id, appointment_date, start_time")
+      .select("id, customer_id, appointment_date, start_time, staff_id")
       .eq("salon_id", config.salon_id)
       .eq("appointment_date", tomorrowStr)
       .eq("status", "scheduled");
@@ -86,12 +86,25 @@ export async function POST(request: Request) {
 
       const menuNames = (menus ?? []).map((m) => m.menu_name_snapshot);
 
+      // スタッフ名を取得
+      let staffName: string | null = null;
+      if (apt.staff_id) {
+        const { data: staffData } = await adminClient
+          .from("staff")
+          .select("name")
+          .eq("id", apt.staff_id)
+          .eq("salon_id", config.salon_id)
+          .single();
+        staffName = staffData?.name ?? null;
+      }
+
       const message = buildReminderMessage({
         customerName: `${customer.last_name}${customer.first_name}`,
         appointmentDate: apt.appointment_date,
         startTime: apt.start_time,
         menuNames,
         salonName: salon.name,
+        staffName,
       });
 
       try {

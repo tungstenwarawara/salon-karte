@@ -31,6 +31,8 @@ export default function EditAppointmentPage() {
   const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
   const [salonHolidays, setSalonHolidays] = useState<string[] | null>(null);
   const [dayAppointments, setDayAppointments] = useState<DayAppointment[]>([]);
+  const [staffList, setStaffList] = useState<{ id: string; name: string }[]>([]);
+  const [staffId, setStaffId] = useState<string>("");
 
   const [selectedMenuIds, setSelectedMenuIds] = useState<string[]>([]);
   const [appointmentDate, setAppointmentDate] = useState("");
@@ -56,17 +58,21 @@ export default function EditAppointmentPage() {
     setBusinessHours(salon.business_hours);
     setSalonHolidays(salon.salon_holidays);
 
-    const [appointmentRes, menuRes, junctionRes] = await Promise.all([
-      supabase.from("appointments").select("id, customer_id, appointment_date, start_time, end_time, source, memo, status, customers(last_name, first_name)")
+    const [appointmentRes, menuRes, junctionRes, staffRes] = await Promise.all([
+      supabase.from("appointments").select("id, customer_id, staff_id, appointment_date, start_time, end_time, source, memo, status, customers(last_name, first_name)")
         .eq("id", appointmentId).eq("salon_id", resolvedSalonId)
         .single<Appointment & { customers: { last_name: string; first_name: string } | null }>(),
       supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name").returns<TreatmentMenu[]>(),
       supabase.from("appointment_menus").select("menu_id").eq("appointment_id", appointmentId).order("sort_order"),
+      supabase.from("staff").select("id, name").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name"),
     ]);
 
     const appointment = appointmentRes.data;
     if (!appointment) { router.push("/appointments"); return; }
     setMenus(menuRes.data ?? []);
+    const staffData = (staffRes.data ?? []) as { id: string; name: string }[];
+    setStaffList(staffData);
+    if (appointment.staff_id) setStaffId(appointment.staff_id);
 
     const existingMenus = junctionRes.data;
     if (existingMenus && existingMenus.length > 0) {
@@ -93,18 +99,19 @@ export default function EditAppointmentPage() {
     setLoading(false);
   };
 
-  // 日付変更時に当日の予約を取得
+  // 日付・スタッフ変更時に当日の予約を取得
   useEffect(() => {
     if (!salonId || !appointmentDate) return;
     const loadDayAppointments = async () => {
       const supabase = createClient();
-      const { data } = await supabase.from("appointments").select("id, start_time, end_time, customers(last_name, first_name)")
-        .eq("salon_id", salonId).eq("appointment_date", appointmentDate).neq("status", "cancelled")
-        .order("start_time", { ascending: true }).returns<DayAppointment[]>();
+      let query = supabase.from("appointments").select("id, start_time, end_time, customers(last_name, first_name)")
+        .eq("salon_id", salonId).eq("appointment_date", appointmentDate).neq("status", "cancelled");
+      if (staffId) query = query.eq("staff_id", staffId);
+      const { data } = await query.order("start_time", { ascending: true }).returns<DayAppointment[]>();
       setDayAppointments(data ?? []);
     };
     loadDayAppointments();
-  }, [salonId, appointmentDate]);
+  }, [salonId, appointmentDate, staffId]);
 
   const updateEndTimeFromMenus = (menuIds: string[], sH: string, sM: string, forceCalc = false) => {
     if (!forceCalc && isEndTimeManual) return;
@@ -129,7 +136,7 @@ export default function EditAppointmentPage() {
     e.preventDefault();
     setError(""); setSaving(true);
     const result = await updateAppointment({
-      appointmentId, salonId, menus, selectedMenuIds,
+      appointmentId, salonId, staffId: staffId || null, menus, selectedMenuIds,
       appointmentDate, startHour, startMinute, endHour, endMinute, source, memo,
       businessHours, salonHolidays,
     });
@@ -153,10 +160,20 @@ export default function EditAppointmentPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && <ErrorAlert message={error} />}
 
-        {/* 1. メニュー選択（日時選択より先に配置） */}
+        {/* 1. スタッフ選択（複数スタッフがいる場合のみ表示） */}
+        {staffList.length > 1 && (
+          <div className="bg-surface border border-border rounded-xl p-4">
+            <label className="block text-sm font-medium mb-1.5">担当スタッフ</label>
+            <select value={staffId} onChange={(e) => setStaffId(e.target.value)} className={INPUT_CLASS}>
+              {staffList.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+        )}
+
+        {/* 2. メニュー選択（日時選択より先に配置） */}
         <AppointmentMenuSelector menus={menus} selectedMenuIds={selectedMenuIds} onToggle={toggleMenu} totalDuration={totalDuration} totalPrice={totalPrice} />
 
-        {/* 2. 日付・時間選択 */}
+        {/* 3. 日付・時間選択 */}
         <AppointmentDateTimeSection
           appointmentDate={appointmentDate} onDateChange={setAppointmentDate}
           businessHours={businessHours} salonHolidays={salonHolidays} dayAppointments={dayAppointments}
@@ -171,7 +188,7 @@ export default function EditAppointmentPage() {
           onResetAutoEndTime={() => { setIsEndTimeManual(false); updateEndTimeFromMenus(selectedMenuIds, startHour, startMinute, true); }}
         />
 
-        {/* 3. その他 */}
+        {/* 4. その他 */}
         <div>
           <label htmlFor="source" className="block text-sm font-medium mb-1.5">予約経路</label>
           <select id="source" value={source} onChange={(e) => setSource(e.target.value)} className={INPUT_CLASS}>

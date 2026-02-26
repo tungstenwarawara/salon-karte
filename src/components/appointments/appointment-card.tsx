@@ -6,6 +6,7 @@ import type { Database } from "@/types/database";
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
 type AppointmentWithCustomer = Appointment & {
   customers: { last_name: string; first_name: string } | null;
+  staff: { name: string } | null;
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -45,9 +46,14 @@ export function AppointmentCard({ appointment: apt }: { appointment: Appointment
         </div>
       </div>
       <div className="flex items-center justify-between mt-1">
-        <span className="font-medium text-sm">
-          {customer ? `${customer.last_name} ${customer.first_name}` : "不明"}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-sm">
+            {customer ? `${customer.last_name} ${customer.first_name}` : "不明"}
+          </span>
+          {apt.staff?.name && (
+            <span className="text-xs text-text-light">担当: {apt.staff.name}</span>
+          )}
+        </div>
         {apt.menu_name_snapshot && (
           <span className="text-xs text-text-light">{apt.menu_name_snapshot}</span>
         )}

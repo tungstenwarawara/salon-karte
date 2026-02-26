@@ -42,6 +42,8 @@ function NewAppointmentForm() {
   const [salonHolidays, setSalonHolidays] = useState<string[] | null>(null);
   const [bookingSettings, setBookingSettings] = useState<BookingSettings | null>(null);
   const [dayAppointments, setDayAppointments] = useState<DayAppointment[]>([]);
+  const [staffList, setStaffList] = useState<{ id: string; name: string }[]>([]);
+  const [staffId, setStaffId] = useState<string>("");
 
   const [customerId, setCustomerId] = useState(preselectedCustomerId ?? "");
   const [customerSearch, setCustomerSearch] = useState("");
@@ -63,7 +65,7 @@ function NewAppointmentForm() {
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
-    const { user, salonId: resolvedSalonId } = await getClientAuth();
+    const { user, salonId: resolvedSalonId, staff } = await getClientAuth();
     if (!user || !resolvedSalonId) return;
     setSalonId(resolvedSalonId);
 
@@ -75,27 +77,32 @@ function NewAppointmentForm() {
     setSalonHolidays(salon.salon_holidays);
     setBookingSettings(salon.booking_settings);
 
-    const [customersRes, menusRes] = await Promise.all([
+    const [customersRes, menusRes, staffRes] = await Promise.all([
       supabase.from("customers").select("id, last_name, first_name, last_name_kana, first_name_kana").eq("salon_id", resolvedSalonId).order("last_name_kana", { ascending: true }).returns<Customer[]>(),
       supabase.from("treatment_menus").select("id, name, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name").returns<TreatmentMenu[]>(),
+      supabase.from("staff").select("id, name").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name"),
     ]);
     setCustomers(customersRes.data ?? []);
     setMenus(menusRes.data ?? []);
+    const staffData = (staffRes.data ?? []) as { id: string; name: string }[];
+    setStaffList(staffData);
+    if (staff?.id) setStaffId(staff.id);
     setLoading(false);
   };
 
-  // 日付変更時に当日の予約を取得
+  // 日付・スタッフ変更時に当日の予約を取得
   useEffect(() => {
     if (!salonId || !appointmentDate) return;
     const loadDayAppointments = async () => {
       const supabase = createClient();
-      const { data } = await supabase.from("appointments").select("id, start_time, end_time, customers(last_name, first_name)")
-        .eq("salon_id", salonId).eq("appointment_date", appointmentDate).neq("status", "cancelled")
-        .order("start_time", { ascending: true }).returns<DayAppointment[]>();
+      let query = supabase.from("appointments").select("id, start_time, end_time, customers(last_name, first_name)")
+        .eq("salon_id", salonId).eq("appointment_date", appointmentDate).neq("status", "cancelled");
+      if (staffId) query = query.eq("staff_id", staffId);
+      const { data } = await query.order("start_time", { ascending: true }).returns<DayAppointment[]>();
       setDayAppointments(data ?? []);
     };
     loadDayAppointments();
-  }, [salonId, appointmentDate]);
+  }, [salonId, appointmentDate, staffId]);
 
   const updateEndTimeFromMenus = (menuIds: string[], sH: string, sM: string, forceCalc = false) => {
     if (!forceCalc && isEndTimeManual) return;
@@ -121,7 +128,7 @@ function NewAppointmentForm() {
     if (!customerId) { setError("顧客を選択してください"); return; }
     setError(""); setSaving(true);
     const result = await submitAppointment({
-      salonId, customerId, menus, selectedMenuIds,
+      salonId, customerId, staffId: staffId || null, menus, selectedMenuIds,
       appointmentDate, startHour, startMinute, endHour, endMinute, source, memo,
       businessHours, salonHolidays, bookingSettings,
     });
@@ -185,10 +192,20 @@ function NewAppointmentForm() {
           )}
         </div>
 
-        {/* 2. メニュー選択（日時選択より先に配置 — 所要時間でタイムスロットの空き判定に使う） */}
+        {/* 2. スタッフ選択（複数スタッフがいる場合のみ表示） */}
+        {staffList.length > 1 && (
+          <div className="bg-surface border border-border rounded-xl p-4">
+            <label className="block text-sm font-medium mb-1.5">担当スタッフ</label>
+            <select value={staffId} onChange={(e) => setStaffId(e.target.value)} className={INPUT_CLASS}>
+              {staffList.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+        )}
+
+        {/* 3. メニュー選択（日時選択より先に配置 — 所要時間でタイムスロットの空き判定に使う） */}
         <AppointmentMenuSelector menus={menus} selectedMenuIds={selectedMenuIds} onToggle={toggleMenu} totalDuration={totalDuration} totalPrice={totalPrice} />
 
-        {/* 3. 日付・時間選択 */}
+        {/* 4. 日付・時間選択 */}
         <AppointmentDateTimeSection
           appointmentDate={appointmentDate} onDateChange={setAppointmentDate}
           businessHours={businessHours} salonHolidays={salonHolidays} dayAppointments={dayAppointments}
@@ -203,7 +220,7 @@ function NewAppointmentForm() {
           bookingSettings={bookingSettings}
         />
 
-        {/* 4. その他のオプション */}
+        {/* 5. その他のオプション */}
         <CollapsibleSection label="その他のオプション（任意）">
           <div>
             <label htmlFor="source" className="block text-sm font-medium mb-1.5">予約経路</label>
