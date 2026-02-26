@@ -31,6 +31,14 @@ export async function GET(request: Request) {
   const supabase = await createClient();
   let authSuccess = false;
 
+  // 招待・パスワードリセットフローでは既存セッションをクリアしてからトークンを処理
+  // 既存セッション（例: オーナー）が残っていると、トークン検証が失敗し
+  // /login にリダイレクト → ミドルウェアが既存セッションで /dashboard に転送してしまう
+  const isTokenFlow = !!(tokenHash && type) || !!(code && next);
+  if (isTokenFlow) {
+    await supabase.auth.signOut();
+  }
+
   // パターン1: PKCE コードフロー
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
