@@ -4,7 +4,6 @@ import { useState } from "react";
 import QRCode from "qrcode";
 import type { Database } from "@/types/database";
 import { ResponseViewer } from "@/components/counseling/response-viewer";
-import type { CounselingResponses } from "@/components/counseling/response-viewer";
 
 type CounselingSheet = Database["public"]["Tables"]["counseling_sheets"]["Row"];
 
@@ -100,7 +99,7 @@ export function CounselingSection({ customerId, sheets }: Props) {
                   {expandedId === s.id ? "閉じる" : "回答を見る"}
                 </button>
               </div>
-              {expandedId === s.id && <ResponseViewer responses={s.responses as CounselingResponses | null} />}
+              {expandedId === s.id && <ResponseViewer responses={s.responses as Record<string, unknown> | null} />}
             </div>
           ))}
           {hasMoreSubmitted && (

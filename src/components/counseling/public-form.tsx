@@ -3,32 +3,36 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { StepIndicator } from "./step-indicator";
-import { StepHealth } from "./step-health";
-import { StepTreatment } from "./step-treatment";
-import { StepOther } from "./step-other";
+import { TemplateStep } from "./template-step";
+import type { CounselingTemplate, CounselingResponseData } from "@/types/counseling-template";
 
 type Props = {
   token: string;
+  template: CounselingTemplate;
 };
 
-const INITIAL_HEALTH = { allergies: "", medications: "", conditions: [] as string[], notes: "" };
-const INITIAL_TREATMENT = { concerns: "", desired_outcome: "", frequency: "", budget: "" };
-const INITIAL_OTHER = { referral_source: "", notes: "" };
-
-export function PublicForm({ token }: Props) {
+export function PublicForm({ token, template }: Props) {
   const router = useRouter();
+  const sections = template.sections;
+  const totalSteps = sections.length;
+
   const [step, setStep] = useState(0);
-  const [health, setHealth] = useState(INITIAL_HEALTH);
-  const [treatment, setTreatment] = useState(INITIAL_TREATMENT);
-  const [other, setOther] = useState(INITIAL_OTHER);
+  const [responses, setResponses] = useState<CounselingResponseData>(() => {
+    const init: CounselingResponseData = {};
+    for (const s of sections) {
+      init[s.id] = {};
+    }
+    return init;
+  });
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const canSubmit = agreed;
+  const isLastStep = step === totalSteps - 1;
+  const currentSection = sections[step];
 
   const handleSubmit = async () => {
-    if (!canSubmit || submitting) return;
+    if (!agreed || submitting) return;
     setSubmitting(true);
     setError("");
 
@@ -36,9 +40,7 @@ export function PublicForm({ token }: Props) {
       const res = await fetch(`/api/counseling/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          responses: { health, treatment, other },
-        }),
+        body: JSON.stringify({ responses }),
       });
 
       if (!res.ok) {
@@ -57,12 +59,26 @@ export function PublicForm({ token }: Props) {
 
   return (
     <div className="bg-surface border border-border rounded-2xl p-4 space-y-4">
-      <StepIndicator currentStep={step} />
+      <StepIndicator labels={sections.map((s) => s.title)} currentStep={step} />
 
-      {step === 0 && <StepHealth data={health} onChange={setHealth} />}
-      {step === 1 && <StepTreatment data={treatment} onChange={setTreatment} />}
-      {step === 2 && (
-        <StepOther data={other} onChange={setOther} agreed={agreed} onAgreeChange={setAgreed} />
+      <TemplateStep
+        section={currentSection}
+        data={responses[currentSection.id] ?? {}}
+        onChange={(data) => setResponses((prev) => ({ ...prev, [currentSection.id]: data }))}
+      />
+
+      {isLastStep && (
+        <label className="flex items-start gap-3 p-3 border border-border rounded-lg bg-surface cursor-pointer">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-0.5 w-5 h-5 accent-accent flex-shrink-0"
+          />
+          <span className="text-xs text-text-light leading-relaxed">
+            入力いただいた内容は、施術サービスの向上を目的として当サロンが適切に管理・利用いたします。
+          </span>
+        </label>
       )}
 
       {error && (
@@ -80,7 +96,7 @@ export function PublicForm({ token }: Props) {
           </button>
         )}
 
-        {step < 2 ? (
+        {!isLastStep ? (
           <button
             type="button"
             onClick={() => setStep((s) => s + 1)}
@@ -92,7 +108,7 @@ export function PublicForm({ token }: Props) {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!canSubmit || submitting}
+            disabled={!agreed || submitting}
             className="flex-1 bg-accent text-white rounded-lg py-3 text-sm font-medium min-h-[48px] disabled:opacity-50"
           >
             {submitting ? "送信中..." : "送信する"}

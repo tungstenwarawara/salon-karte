@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PublicForm } from "@/components/counseling/public-form";
+import { DEFAULT_COUNSELING_TEMPLATE } from "@/lib/counseling-default-template";
+import type { CounselingTemplate } from "@/types/counseling-template";
 
 export default async function CounselingPage({
   params,
@@ -12,7 +14,7 @@ export default async function CounselingPage({
 
   const { data: sheet } = await admin
     .from("counseling_sheets")
-    .select("id, token, status, expires_at, salon_id, salons(name)")
+    .select("id, token, status, expires_at, salon_id, salons(name, counseling_template)")
     .eq("token", token)
     .single();
 
@@ -33,7 +35,9 @@ export default async function CounselingPage({
     redirect(`/c/${token}/expired`);
   }
 
-  const salonName = (sheet.salons as unknown as { name: string } | null)?.name ?? "サロン";
+  const salonData = sheet.salons as unknown as { name: string; counseling_template: CounselingTemplate | null } | null;
+  const salonName = salonData?.name ?? "サロン";
+  const template = salonData?.counseling_template ?? DEFAULT_COUNSELING_TEMPLATE;
 
   return (
     <div className="space-y-4">
@@ -41,7 +45,7 @@ export default async function CounselingPage({
         <h1 className="text-xl font-bold">{salonName}</h1>
         <p className="text-sm text-text-light">カウンセリングシート</p>
       </div>
-      <PublicForm token={token} />
+      <PublicForm token={token} template={template} />
     </div>
   );
 }

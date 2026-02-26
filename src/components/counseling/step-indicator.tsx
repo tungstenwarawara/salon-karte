@@ -1,14 +1,13 @@
-const STEP_LABELS = ["健康状態", "施術の希望", "その他"];
-
 type Props = {
+  labels: string[];
   currentStep: number;
 };
 
-export function StepIndicator({ currentStep }: Props) {
+export function StepIndicator({ labels, currentStep }: Props) {
   return (
     <div className="flex items-center gap-2">
-      {STEP_LABELS.map((label, i) => (
-        <div key={label} className="flex-1 text-center">
+      {labels.map((label, i) => (
+        <div key={i} className="flex-1 text-center">
           <div
             className={`h-1.5 rounded-full mb-1 transition-colors ${
               i <= currentStep ? "bg-accent" : "bg-border"

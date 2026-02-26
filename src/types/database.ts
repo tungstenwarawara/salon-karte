@@ -1,3 +1,6 @@
+import type { CounselingTemplate } from "./counseling-template";
+export type { CounselingTemplate };
+
 export type DaySchedule = {
   is_open: boolean;
   open_time: string; // "HH:MM"
@@ -32,6 +35,7 @@ export type Database = {
           business_hours: BusinessHours | null;
           salon_holidays: string[] | null;
           booking_settings: BookingSettings | null;
+          counseling_template: CounselingTemplate | null;
           created_at: string;
           updated_at: string;
         };
@@ -44,6 +48,7 @@ export type Database = {
           business_hours?: BusinessHours | null;
           salon_holidays?: string[] | null;
           booking_settings?: BookingSettings | null;
+          counseling_template?: CounselingTemplate | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -56,6 +61,7 @@ export type Database = {
           business_hours?: BusinessHours | null;
           salon_holidays?: string[] | null;
           booking_settings?: BookingSettings | null;
+          counseling_template?: CounselingTemplate | null;
           created_at?: string;
           updated_at?: string;
         };
