@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
@@ -21,10 +20,9 @@ type StaffMember = {
 };
 
 export default function StaffPage() {
-  const router = useRouter();
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [currentUserId, setCurrentUserId] = useState("");
-  const [currentStaffRole, setCurrentStaffRole] = useState<string | null>(null);
+  const [currentStaffRole, setCurrentStaffRole] = useState<string | null | "loading">("loading");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { toast, showToast, hideToast } = useToast();
@@ -79,7 +77,7 @@ export default function StaffPage() {
     loadStaff();
   };
 
-  const handleUpdate = async (id: string, name: string, role: "owner" | "manager" | "staff") => {
+  const handleUpdate = async (id: string, name: string, role: "manager" | "staff") => {
     const result = await updateStaff(id, name, role);
     if (result.error) {
       setError(result.error);
@@ -118,7 +116,8 @@ export default function StaffPage() {
     loadStaff();
   };
 
-  const isOwner = currentStaffRole === "owner" || currentStaffRole === null;
+  // loading中はfalse、ロード完了後にowner判定（nullはフォールバック: owner_idで認証されたユーザー）
+  const isOwner = currentStaffRole !== "loading" && (currentStaffRole === "owner" || currentStaffRole === null);
 
   return (
     <div className="space-y-4">
@@ -214,6 +213,7 @@ export default function StaffPage() {
               key={s.id}
               staff={s}
               isCurrentUser={s.auth_user_id === currentUserId}
+              isOwner={isOwner}
               onUpdate={handleUpdate}
               onToggleActive={handleToggleActive}
               onResendInvite={handleResendInvite}

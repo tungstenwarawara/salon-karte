@@ -9,12 +9,14 @@ type StaffMember = {
   email: string;
   role: "owner" | "manager" | "staff";
   is_active: boolean;
+  auth_user_id: string | null;
 };
 
 type Props = {
   staff: StaffMember;
   isCurrentUser: boolean;
-  onUpdate: (id: string, name: string, role: "owner" | "manager" | "staff") => Promise<void>;
+  isOwner: boolean;
+  onUpdate: (id: string, name: string, role: "manager" | "staff") => Promise<void>;
   onToggleActive: (id: string, isActive: boolean) => Promise<void>;
   onResendInvite: (id: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -26,10 +28,12 @@ const ROLE_LABELS: Record<string, string> = {
   staff: "スタッフ",
 };
 
-export function StaffCard({ staff, isCurrentUser, onUpdate, onToggleActive, onResendInvite, onDelete }: Props) {
+export function StaffCard({ staff, isCurrentUser, isOwner, onUpdate, onToggleActive, onResendInvite, onDelete }: Props) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(staff.name);
-  const [editRole, setEditRole] = useState(staff.role);
+  const [editRole, setEditRole] = useState<"manager" | "staff">(
+    staff.role === "owner" ? "manager" : staff.role
+  );
   const [saving, setSaving] = useState(false);
   const [confirmAction, setConfirmAction] = useState<"deactivate" | "delete" | null>(null);
 
@@ -60,7 +64,7 @@ export function StaffCard({ staff, isCurrentUser, onUpdate, onToggleActive, onRe
     setSaving(false);
   };
 
-  // 編集モード
+  // 編集モード（オーナーのみ表示可能）
   if (editing) {
     return (
       <div className="bg-background rounded-xl p-3 space-y-3">
@@ -82,14 +86,14 @@ export function StaffCard({ staff, isCurrentUser, onUpdate, onToggleActive, onRe
               <p className="text-xs text-text-light mt-1">※ オーナー権限は変更できません</p>
             </div>
           ) : (
-            <RoleSelector value={editRole as "manager" | "staff"} onChange={(r) => setEditRole(r)} name={`role-${staff.id}`} />
+            <RoleSelector value={editRole} onChange={(r) => setEditRole(r)} name={`role-${staff.id}`} />
           )}
         </div>
         <div className="flex gap-2">
           <button onClick={handleSave} disabled={saving || !editName.trim()} className="flex-1 bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl py-2.5 transition-colors disabled:opacity-50 min-h-[44px]">
             {saving ? "保存中..." : "保存"}
           </button>
-          <button onClick={() => { setEditing(false); setEditName(staff.name); setEditRole(staff.role); }} className="flex-1 bg-surface border border-border text-sm font-medium rounded-xl py-2.5 transition-colors min-h-[44px]">
+          <button onClick={() => { setEditing(false); setEditName(staff.name); setEditRole(staff.role === "owner" ? "manager" : staff.role); }} className="flex-1 bg-surface border border-border text-sm font-medium rounded-xl py-2.5 transition-colors min-h-[44px]">
             キャンセル
           </button>
         </div>
@@ -123,7 +127,7 @@ export function StaffCard({ staff, isCurrentUser, onUpdate, onToggleActive, onRe
   }
 
   // 通常表示
-  const showActions = !isCurrentUser && staff.role !== "owner";
+  const showActions = isOwner && !isCurrentUser && staff.role !== "owner";
 
   return (
     <div className={`bg-surface border border-border rounded-xl p-3 space-y-2 ${!staff.is_active ? "opacity-60" : ""}`}>
@@ -144,9 +148,11 @@ export function StaffCard({ staff, isCurrentUser, onUpdate, onToggleActive, onRe
           <p className="text-sm text-text-light mt-0.5 truncate">{staff.email}</p>
         </div>
         <div className="flex gap-1 shrink-0 ml-2">
-          <button onClick={() => setEditing(true)} className="text-xs text-accent px-2 py-1.5 rounded-lg hover:bg-accent/5 min-h-[44px]">
-            編集
-          </button>
+          {isOwner && (
+            <button onClick={() => setEditing(true)} className="text-xs text-accent px-2 py-1.5 rounded-lg hover:bg-accent/5 min-h-[44px]">
+              編集
+            </button>
+          )}
           {showActions && (
             <>
               <button onClick={handleResend} disabled={saving} className="text-xs text-accent px-2 py-1.5 rounded-lg hover:bg-accent/5 min-h-[44px]">

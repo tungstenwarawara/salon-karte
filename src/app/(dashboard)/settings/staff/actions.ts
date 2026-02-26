@@ -65,8 +65,9 @@ export async function inviteStaff(
 }
 
 /**
- * 招待メール再送信
+ * 招待メール再送信（パスワード再設定メール）
  * オーナーのみ実行可能
+ * 既存ユーザーには resetPasswordForEmail を使用
  */
 export async function resendInvite(staffId: string) {
   const { user, salon, staff, supabase } = await getAuthAndSalon();
@@ -82,7 +83,7 @@ export async function resendInvite(staffId: string) {
   // 対象スタッフのメールアドレスを取得
   const { data: target } = await supabase
     .from("staff")
-    .select("email, role")
+    .select("email, role, auth_user_id")
     .eq("id", staffId)
     .eq("salon_id", salon.id)
     .single();
@@ -96,22 +97,49 @@ export async function resendInvite(staffId: string) {
   }
 
   const adminClient = createAdminClient();
-  const { error: inviteError } =
-    await adminClient.auth.admin.inviteUserByEmail(target.email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/update-password%3Finvite%3D1`,
-    });
 
-  if (inviteError) {
-    console.error("招待メール再送エラー:", inviteError);
-    return { error: `招待メールの再送に失敗しました: ${inviteError.message}` };
+  // auth_user_id が存在する = 既にauth.usersに登録済み → パスワード再設定メールを送信
+  // auth_user_id が null = 未登録 → inviteUserByEmail で招待
+  if (target.auth_user_id) {
+    // 既存ユーザー: resetPasswordForEmail でパスワード設定メール送信
+    const { error: resetError } =
+      await adminClient.auth.resetPasswordForEmail(target.email, {
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/update-password%3Finvite%3D1`,
+      });
+
+    if (resetError) {
+      console.error("招待メール再送エラー:", resetError);
+      return { error: `招待メールの再送に失敗しました: ${resetError.message}` };
+    }
+  } else {
+    // 未登録ユーザー: inviteUserByEmail で新規招待
+    const { data: invitedUser, error: inviteError } =
+      await adminClient.auth.admin.inviteUserByEmail(target.email, {
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/update-password%3Finvite%3D1`,
+      });
+
+    if (inviteError) {
+      console.error("招待メール再送エラー:", inviteError);
+      return { error: `招待メールの再送に失敗しました: ${inviteError.message}` };
+    }
+
+    // auth_user_id を更新（初回招待時にstaffレコードにIDが未設定の場合）
+    if (invitedUser?.user) {
+      await supabase
+        .from("staff")
+        .update({ auth_user_id: invitedUser.user.id })
+        .eq("id", staffId)
+        .eq("salon_id", salon.id);
+    }
   }
 
   return { success: true };
 }
 
 /**
- * スタッフ完全削除（staff レコード + auth.users）
+ * スタッフ完全削除（auth.users + staff レコード + 予約の紐づけ解除）
  * オーナーのみ実行可能。オーナー自身は削除不可。
+ * auth.users を先に削除し、失敗時はstaffレコードを残す（孤立防止）
  */
 export async function deleteStaff(staffId: string) {
   const { user, salon, staff, supabase } = await getAuthAndSalon();
@@ -140,14 +168,26 @@ export async function deleteStaff(staffId: string) {
     return { error: "オーナーは削除できません" };
   }
 
-  // 紐づく予約の staff_id を NULL に
+  // 1. auth.users から先に削除（孤立レコード防止）
+  if (target.auth_user_id) {
+    const adminClient = createAdminClient();
+    const { error: authDeleteError } =
+      await adminClient.auth.admin.deleteUser(target.auth_user_id);
+
+    if (authDeleteError) {
+      console.error("auth.users 削除エラー:", authDeleteError);
+      return { error: `アカウント削除に失敗しました: ${authDeleteError.message}` };
+    }
+  }
+
+  // 2. 紐づく予約の staff_id を NULL に
   await supabase
     .from("appointments")
     .update({ staff_id: null })
     .eq("staff_id", staffId)
     .eq("salon_id", salon.id);
 
-  // staff レコード削除
+  // 3. staff レコード削除
   const { error: deleteError } = await supabase
     .from("staff")
     .delete()
@@ -159,29 +199,17 @@ export async function deleteStaff(staffId: string) {
     return { error: `削除に失敗しました: ${deleteError.message}` };
   }
 
-  // auth.users からも削除
-  if (target.auth_user_id) {
-    const adminClient = createAdminClient();
-    const { error: authDeleteError } =
-      await adminClient.auth.admin.deleteUser(target.auth_user_id);
-
-    if (authDeleteError) {
-      console.error("auth.users 削除エラー:", authDeleteError);
-      // staff は既に削除済みなので警告のみ
-    }
-  }
-
   return { success: true };
 }
 
 /**
  * スタッフ情報更新（名前・権限）
- * オーナーのみ実行可能
+ * オーナーのみ実行可能。オーナー権限への昇格は不可。
  */
 export async function updateStaff(
   staffId: string,
   name: string,
-  role: "owner" | "manager" | "staff"
+  role: "manager" | "staff"
 ) {
   const { user, salon, staff, supabase } = await getAuthAndSalon();
 
@@ -191,6 +219,27 @@ export async function updateStaff(
 
   if (staff && staff.role !== "owner") {
     return { error: "スタッフの編集はオーナーのみ実行できます" };
+  }
+
+  // オーナー権限への昇格を防止（型でも制限しているが二重チェック）
+  if (role !== "manager" && role !== "staff") {
+    return { error: "無効な権限です" };
+  }
+
+  // 対象がオーナーでないことを確認（オーナーの権限変更を防止）
+  const { data: target } = await supabase
+    .from("staff")
+    .select("role")
+    .eq("id", staffId)
+    .eq("salon_id", salon.id)
+    .single();
+
+  if (!target) {
+    return { error: "スタッフが見つかりません" };
+  }
+
+  if (target.role === "owner") {
+    return { error: "オーナーの権限は変更できません" };
   }
 
   const { error: updateError } = await supabase
@@ -209,7 +258,7 @@ export async function updateStaff(
 
 /**
  * スタッフ無効化/再有効化
- * オーナーのみ実行可能。オーナー自身は無効化不可。
+ * オーナーのみ実行可能。オーナーは無効化不可。
  */
 export async function toggleStaffActive(staffId: string, isActive: boolean) {
   const { user, salon, staff, supabase } = await getAuthAndSalon();
@@ -222,9 +271,20 @@ export async function toggleStaffActive(staffId: string, isActive: boolean) {
     return { error: "スタッフの状態変更はオーナーのみ実行できます" };
   }
 
-  // オーナー自身の無効化を防止
-  if (!isActive && staff?.id === staffId) {
-    return { error: "オーナー自身を無効化することはできません" };
+  // 対象スタッフのロールを確認（オーナー無効化を防止）
+  const { data: target } = await supabase
+    .from("staff")
+    .select("role")
+    .eq("id", staffId)
+    .eq("salon_id", salon.id)
+    .single();
+
+  if (!target) {
+    return { error: "スタッフが見つかりません" };
+  }
+
+  if (!isActive && target.role === "owner") {
+    return { error: "オーナーを無効化することはできません" };
   }
 
   const { error: updateError } = await supabase
