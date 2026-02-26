@@ -14,8 +14,7 @@ export default async function RecordsPage() {
     .select("id, treatment_date, menu_name_snapshot, customer_id, customers(id, last_name, first_name)")
     .eq("salon_id", salon.id)
     .order("treatment_date", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(100);
+    .order("created_at", { ascending: false });
 
   const allRecords = (records ?? []).map((r) => {
     const c = r.customers as { id: string; last_name: string; first_name: string } | null;

@@ -12,7 +12,7 @@ export default async function CustomersPage() {
   const [customersResult, visitResult] = await Promise.all([
     supabase
       .from("customers")
-      .select("id, last_name, first_name, last_name_kana, first_name_kana, phone")
+      .select("id, last_name, first_name, last_name_kana, first_name_kana, phone, graduated_at")
       .eq("salon_id", salon.id)
       .order("last_name_kana", { ascending: true }),
     supabase
@@ -35,6 +35,7 @@ export default async function CustomersPage() {
       last_name_kana: c.last_name_kana,
       first_name_kana: c.first_name_kana,
       phone: c.phone,
+      graduated_at: c.graduated_at,
       visit_count: visit?.visit_count ?? 0,
       last_visit_date: visit?.last_visit_date ?? null,
     };

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { formatDateShort } from "@/lib/format";
+import { RecordListFilters, type PeriodFilter } from "./record-list-filters";
 
 type RecordItem = {
   id: string;
@@ -11,21 +12,59 @@ type RecordItem = {
   customerName: string;
 };
 
+function getDateRange(period: PeriodFilter): { start: string; end: string } | null {
+  if (period === "all") return null;
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  switch (period) {
+    case "this_month":
+      return {
+        start: `${y}-${String(m + 1).padStart(2, "0")}-01`,
+        end: `${y}-${String(m + 1).padStart(2, "0")}-31`,
+      };
+    case "last_month": {
+      const d = new Date(y, m - 1, 1);
+      return {
+        start: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`,
+        end: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-31`,
+      };
+    }
+    case "3months": {
+      const d = new Date(y, m - 2, 1);
+      return {
+        start: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`,
+        end: `${y}-${String(m + 1).padStart(2, "0")}-31`,
+      };
+    }
+  }
+}
+
+const PAGE_SIZE = 20;
+
 export function RecordListSearch({ records }: { records: RecordItem[] }) {
   const [query, setQuery] = useState("");
-  const [showAll, setShowAll] = useState(false);
+  const [period, setPeriod] = useState<PeriodFilter>("all");
+  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
 
-  const filtered = query
-    ? records.filter(
-        (r) =>
-          r.customerName.includes(query) ||
-          r.menuName.includes(query)
-      )
+  const resetPagination = () => setDisplayCount(PAGE_SIZE);
+
+  // 期間フィルター
+  const range = getDateRange(period);
+  const afterPeriod = range
+    ? records.filter((r) => r.treatmentDate >= range.start && r.treatmentDate <= range.end)
     : records;
 
-  const INITIAL_COUNT = 20;
-  const displayed = showAll ? filtered : filtered.slice(0, INITIAL_COUNT);
-  const hasMore = filtered.length > INITIAL_COUNT && !showAll;
+  // テキスト検索
+  const filtered = query
+    ? afterPeriod.filter(
+        (r) => r.customerName.includes(query) || r.menuName.includes(query)
+      )
+    : afterPeriod;
+
+  // ページネーション
+  const displayed = filtered.slice(0, displayCount);
+  const hasMore = filtered.length > displayCount;
 
   // 日付でグループ化
   const grouped: { date: string; items: RecordItem[] }[] = [];
@@ -47,10 +86,7 @@ export function RecordListSearch({ records }: { records: RecordItem[] }) {
         <input
           type="text"
           value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setShowAll(false);
-          }}
+          onChange={(e) => { setQuery(e.target.value); resetPagination(); }}
           placeholder="顧客名・メニュー名で検索"
           className="w-full bg-surface border border-border rounded-xl px-4 py-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
         />
@@ -64,12 +100,34 @@ export function RecordListSearch({ records }: { records: RecordItem[] }) {
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
         </svg>
+        {query && (
+          <button
+            onClick={() => setQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light hover:text-text p-1"
+            aria-label="検索をクリア"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* 期間フィルター + 件数 */}
+      <div className="flex items-center justify-between gap-2">
+        <RecordListFilters
+          period={period}
+          onPeriodChange={(p) => { setPeriod(p); resetPagination(); }}
+        />
+        <span className="text-xs text-text-light whitespace-nowrap">
+          {filtered.length}件
+        </span>
       </div>
 
       {/* 結果 */}
-      {filtered.length === 0 && query && (
+      {filtered.length === 0 && (query || period !== "all") && (
         <p className="text-sm text-text-light text-center py-4">
-          「{query}」に一致するカルテはありません
+          該当するカルテはありません
         </p>
       )}
 
@@ -97,10 +155,10 @@ export function RecordListSearch({ records }: { records: RecordItem[] }) {
 
       {hasMore && (
         <button
-          onClick={() => setShowAll(true)}
+          onClick={() => setDisplayCount((c) => c + PAGE_SIZE)}
           className="w-full text-center text-sm text-accent py-2 min-h-[44px]"
         >
-          もっと見る（残り{filtered.length - INITIAL_COUNT}件）
+          もっと見る（残り{filtered.length - displayCount}件）
         </button>
       )}
     </>

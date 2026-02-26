@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { CustomerListFilters, type SortKey, type VisitFilter } from "./customer-list-filters";
+import { CustomerCard } from "./customer-card";
 
 type CustomerWithVisitInfo = {
   id: string;
@@ -10,6 +12,7 @@ type CustomerWithVisitInfo = {
   last_name_kana: string | null;
   first_name_kana: string | null;
   phone: string | null;
+  graduated_at: string | null;
   visit_count: number;
   last_visit_date: string | null;
 };
@@ -20,38 +23,46 @@ function daysSince(dateStr: string | null): number | null {
   return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
-function getVisitLabel(days: number | null): { text: string; color: string } | null {
-  if (days === null) return { text: "未来店", color: "text-gray-400" };
-  if (days >= 90) return { text: `${days}日前`, color: "text-red-500" };
-  if (days >= 60) return { text: `${days}日前`, color: "text-orange-500" };
-  if (days >= 30) return { text: `${days}日前`, color: "text-yellow-600" };
-  return null;
-}
-
-type SortKey = "kana" | "last_visit" | "visit_count";
+const PAGE_SIZE = 20;
 
 type Props = {
   customers: CustomerWithVisitInfo[];
 };
 
-/** 顧客一覧の検索・ソート・表示を担当するClient Component */
+/** 顧客一覧の検索・フィルター・ソート・表示を担当するClient Component */
 export function CustomerList({ customers }: Props) {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("kana");
+  const [visitFilter, setVisitFilter] = useState<VisitFilter>("all");
+  const [hideGraduated, setHideGraduated] = useState(true);
+  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
 
-  const filtered = customers.filter((c) => {
+  const resetPagination = () => setDisplayCount(PAGE_SIZE);
+
+  // フィルター・検索・ソートのパイプライン
+  const afterGraduated = hideGraduated
+    ? customers.filter((c) => !c.graduated_at)
+    : customers;
+
+  const afterVisitFilter = visitFilter === "all"
+    ? afterGraduated
+    : afterGraduated.filter((c) => {
+        const days = daysSince(c.last_visit_date);
+        const threshold = parseInt(visitFilter);
+        return days === null || days >= threshold;
+      });
+
+  const afterSearch = afterVisitFilter.filter((c) => {
     if (!search) return true;
     const s = search.toLowerCase();
     return (
       `${c.last_name}${c.first_name}`.includes(s) ||
-      `${c.last_name_kana ?? ""}${c.first_name_kana ?? ""}`
-        .toLowerCase()
-        .includes(s) ||
+      `${c.last_name_kana ?? ""}${c.first_name_kana ?? ""}`.toLowerCase().includes(s) ||
       (c.phone ?? "").includes(s)
     );
   });
 
-  const sorted = [...filtered].sort((a, b) => {
+  const sorted = [...afterSearch].sort((a, b) => {
     switch (sortBy) {
       case "last_visit": {
         if (!a.last_visit_date && !b.last_visit_date) return 0;
@@ -67,6 +78,10 @@ export function CustomerList({ customers }: Props) {
     }
   });
 
+  const displayed = sorted.slice(0, displayCount);
+  const hasMore = sorted.length > displayCount;
+  const graduatedCount = customers.filter((c) => c.graduated_at).length;
+
   return (
     <>
       {/* ヘッダー */}
@@ -74,7 +89,9 @@ export function CustomerList({ customers }: Props) {
         <div className="flex items-baseline gap-2">
           <h2 className="text-xl font-bold">顧客一覧</h2>
           <span className="text-sm text-text-light">
-            {search ? `${sorted.length}/${customers.length}名` : `${customers.length}名`}
+            {sorted.length !== customers.length
+              ? `${sorted.length}/${customers.length}名`
+              : `${customers.length}名`}
           </span>
         </div>
         <Link
@@ -90,7 +107,7 @@ export function CustomerList({ customers }: Props) {
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); resetPagination(); }}
           placeholder="名前・カナ・電話番号で検索"
           className="w-full rounded-xl border border-border bg-background px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
         />
@@ -107,73 +124,27 @@ export function CustomerList({ customers }: Props) {
         )}
       </div>
 
-      {/* ソート */}
-      <div className="flex gap-2">
-        {([
-          ["kana", "カナ順"],
-          ["last_visit", "来店日順"],
-          ["visit_count", "来店回数"],
-        ] as [SortKey, string][]).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setSortBy(key)}
-            className={`text-xs px-3 py-1.5 rounded-lg transition-colors min-h-[44px] ${
-              sortBy === key
-                ? "bg-accent text-white"
-                : "bg-surface border border-border text-text-light"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* フィルター・ソート */}
+      <CustomerListFilters
+        visitFilter={visitFilter}
+        onVisitFilterChange={(f) => { setVisitFilter(f); resetPagination(); }}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        hideGraduated={hideGraduated}
+        onHideGraduatedChange={(v) => { setHideGraduated(v); resetPagination(); }}
+        graduatedCount={graduatedCount}
+      />
 
       {/* 一覧 */}
-      {sorted.length > 0 ? (
+      {displayed.length > 0 ? (
         <div className="space-y-2">
-          {sorted.map((customer) => {
-            const days = daysSince(customer.last_visit_date);
-            const visitLabel = getVisitLabel(days);
-            return (
-              <Link
-                key={customer.id}
-                href={`/customers/${customer.id}`}
-                className="block bg-surface border border-border rounded-xl p-4 hover:border-accent transition-colors"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium">
-                      {customer.last_name} {customer.first_name}
-                    </p>
-                    {(customer.last_name_kana || customer.first_name_kana) && (
-                      <p className="text-sm text-text-light">
-                        {customer.last_name_kana} {customer.first_name_kana}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right shrink-0 ml-3">
-                    <p className="text-xs text-text-light">
-                      {customer.visit_count}回来店
-                    </p>
-                    {visitLabel && (
-                      <p className={`text-xs font-medium ${visitLabel.color}`}>
-                        {visitLabel.text}
-                      </p>
-                    )}
-                    {!visitLabel && customer.last_visit_date && (
-                      <p className="text-xs text-text-light">
-                        {customer.last_visit_date}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+          {displayed.map((c) => (
+            <CustomerCard key={c.id} {...c} />
+          ))}
         </div>
       ) : (
         <div className="bg-surface border border-border rounded-xl p-6 text-center">
-          {search ? (
+          {search || visitFilter !== "all" ? (
             <p className="text-text-light">該当する顧客が見つかりません</p>
           ) : (
             <>
@@ -187,6 +158,16 @@ export function CustomerList({ customers }: Props) {
             </>
           )}
         </div>
+      )}
+
+      {/* もっと見る */}
+      {hasMore && (
+        <button
+          onClick={() => setDisplayCount((c) => c + PAGE_SIZE)}
+          className="w-full text-center text-sm text-accent py-2 min-h-[44px]"
+        >
+          もっと見る（残り{sorted.length - displayCount}件）
+        </button>
       )}
     </>
   );
