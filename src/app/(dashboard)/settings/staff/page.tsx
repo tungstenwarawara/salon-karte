@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { StaffCard } from "@/components/settings/staff-card";
+import { RoleSelector } from "@/components/settings/role-selector";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { Toast, useToast } from "@/components/ui/toast";
 import { inviteStaff, updateStaff, toggleStaffActive } from "./actions";
@@ -152,16 +153,9 @@ export default function StaffPage() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">権限</label>
-            <select
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value as "manager" | "staff")}
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-            >
-              <option value="staff">スタッフ</option>
-              <option value="manager">マネージャー</option>
-            </select>
-            <p className="text-xs text-text-light mt-1">
-              マネージャーはスタッフと同じ機能に加え、今後売上情報等の閲覧が可能になります
+            <RoleSelector value={inviteRole} onChange={setInviteRole} name="invite-role" />
+            <p className="text-xs text-text-light mt-2">
+              ※ スタッフ管理・設定変更はオーナーのみ行えます
             </p>
           </div>
           <div className="flex gap-2">

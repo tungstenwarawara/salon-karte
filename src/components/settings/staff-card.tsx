@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { RoleSelector } from "@/components/settings/role-selector";
 
 type StaffMember = {
   id: string;
@@ -58,18 +59,18 @@ export function StaffCard({ staff, isCurrentUser, onUpdate, onToggleActive }: Pr
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">権限</label>
-          <select
-            value={editRole}
-            onChange={(e) => setEditRole(e.target.value as typeof editRole)}
-            disabled={staff.role === "owner"}
-            className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors disabled:opacity-50"
-          >
-            <option value="owner">オーナー</option>
-            <option value="manager">マネージャー</option>
-            <option value="staff">スタッフ</option>
-          </select>
-          {staff.role === "owner" && (
-            <p className="text-xs text-text-light mt-1">オーナー権限は変更できません</p>
+          {staff.role === "owner" ? (
+            <div className="border border-border rounded-xl p-3 bg-surface opacity-60">
+              <span className="font-medium text-sm">オーナー</span>
+              <p className="text-xs text-text-light mt-1">全機能の利用・スタッフ管理・設定変更が行えます</p>
+              <p className="text-xs text-text-light mt-1">※ オーナー権限は変更できません</p>
+            </div>
+          ) : (
+            <RoleSelector
+              value={editRole as "manager" | "staff"}
+              onChange={(r) => setEditRole(r)}
+              name={`role-${staff.id}`}
+            />
           )}
         </div>
         <div className="flex gap-2">

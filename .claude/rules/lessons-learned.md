@@ -6,6 +6,11 @@
 - 本番DBにマイグレーション未適用のままデプロイ → マージ前に適用確認必須 (2026-02-19)
 - Supabase dashboardから直接適用しローカルファイル不在 → 全マイグレーションはローカルファイルで管理 (2026-02-19)
 
+## RLSポリシー
+- テーブルA の RLS が テーブルB をクエリし、テーブルB の RLS がテーブルA をクエリすると無限再帰が発生 → `SECURITY DEFINER` 関数でベーステーブル（salons）のRLSをバイパスして循環を断つ (2026-02-26)
+  - 具体例: `salon_select` → staff クエリ → `staff_select` → salons クエリ → `salon_select` → 無限ループ
+  - 対策: `get_owned_salon_ids()` を SECURITY DEFINER で作成し、staff の RLS から salons を直接クエリせずにこの関数経由にする
+
 ## RPC関数
 - RPC関数にSET search_path未設定 → 必ず `SECURITY INVOKER` + `SET search_path = public` (2026-02-19)
 - `CREATE OR REPLACE` でパラメータ数が異なるとオーバーロード発生、PostgRESTが300を返す → パラメータ変更時は旧シグネチャを `DROP FUNCTION` してから作成 (2026-02-22)
