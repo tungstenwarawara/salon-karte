@@ -39,7 +39,7 @@ export async function inviteStaff(
   const adminClient = createAdminClient();
   const { data: invitedUser, error: inviteError } =
     await adminClient.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/update-password%3Finvite%3D1`,
     });
 
   if (inviteError || !invitedUser.user) {
