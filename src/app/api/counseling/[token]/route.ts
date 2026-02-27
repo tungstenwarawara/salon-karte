@@ -87,6 +87,23 @@ export async function POST(
     }
 
     customerId = newCustomer.id;
+  } else if (customer_info) {
+    // 既存顧客の情報補完（情報不足時にフォームで追加入力された場合）
+    const updates: Record<string, string | null> = {};
+    if (customer_info.last_name_kana?.trim()) updates.last_name_kana = customer_info.last_name_kana.trim();
+    if (customer_info.first_name_kana?.trim()) updates.first_name_kana = customer_info.first_name_kana.trim();
+    if (customer_info.phone?.trim()) updates.phone = customer_info.phone.trim();
+    if (customer_info.email?.trim()) updates.email = customer_info.email.trim();
+    if (customer_info.birth_date) updates.birth_date = customer_info.birth_date;
+    if (customer_info.gender) updates.gender = customer_info.gender;
+
+    if (Object.keys(updates).length > 0) {
+      await admin
+        .from("customers")
+        .update(updates)
+        .eq("id", customerId)
+        .eq("salon_id", sheet.salon_id);
+    }
   }
 
   // 回答を保存 + 顧客紐づけ

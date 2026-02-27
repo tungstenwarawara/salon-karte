@@ -66,6 +66,44 @@ export default async function CounselingPage({
 
   const isAnonymous = sheet.customer_id === null;
 
+  // 既存顧客の場合: 情報不足なら基本情報ステップを表示（プリフィル付き）
+  let existingCustomerInfo: {
+    last_name: string; first_name: string;
+    last_name_kana: string; first_name_kana: string;
+    phone: string; email: string; gender: string; birth_date: string;
+  } | undefined;
+  let needsInfoCollection = false;
+
+  if (sheet.customer_id) {
+    const { data: customer } = await admin
+      .from("customers")
+      .select("last_name, first_name, last_name_kana, first_name_kana, phone, email, birth_date")
+      .eq("id", sheet.customer_id)
+      .eq("salon_id", sheet.salon_id)
+      .single();
+
+    if (customer) {
+      const hasKana = !!(customer.last_name_kana || customer.first_name_kana);
+      const hasEmail = !!customer.email;
+      const hasBirthDate = !!customer.birth_date;
+      // カナ・メール・生年月日が全て未入力なら情報不足と判定
+      needsInfoCollection = !hasKana && !hasEmail && !hasBirthDate;
+
+      if (needsInfoCollection) {
+        existingCustomerInfo = {
+          last_name: customer.last_name ?? "",
+          first_name: customer.first_name ?? "",
+          last_name_kana: customer.last_name_kana ?? "",
+          first_name_kana: customer.first_name_kana ?? "",
+          phone: customer.phone ?? "",
+          email: customer.email ?? "",
+          gender: "",
+          birth_date: customer.birth_date ?? "",
+        };
+      }
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="text-center space-y-1">
@@ -74,7 +112,13 @@ export default async function CounselingPage({
           {templateName ?? "カウンセリングシート"}
         </p>
       </div>
-      <PublicForm token={token} template={template} isAnonymous={isAnonymous} />
+      <PublicForm
+        token={token}
+        template={template}
+        isAnonymous={isAnonymous}
+        needsInfoCollection={needsInfoCollection}
+        existingCustomerInfo={existingCustomerInfo}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import { AppointmentMenuSelector } from "@/components/appointments/appointment-menu-selector";
 import { AppointmentDateTimeSection } from "@/components/appointments/appointment-datetime-section";
 import { submitAppointment } from "@/components/appointments/appointment-form-submit";
+import { InlineCustomerCreate } from "@/components/appointments/inline-customer-create";
 import { INPUT_CLASS, SOURCE_OPTIONS } from "@/components/appointments/types";
 import type { TreatmentMenu, DayAppointment, BusinessHours, BookingSettings } from "@/components/appointments/types";
 import type { Database } from "@/types/database";
@@ -50,6 +51,7 @@ function NewAppointmentForm() {
 
   const [customerId, setCustomerId] = useState(preselectedCustomerId ?? "");
   const [customerSearch, setCustomerSearch] = useState("");
+  const [showInlineCreate, setShowInlineCreate] = useState(false);
   const [selectedMenuIds, setSelectedMenuIds] = useState<string[]>([]);
   const [appointmentDate, setAppointmentDate] = useState(() => {
     if (preselectedDate && /^\d{4}-\d{2}-\d{2}$/.test(preselectedDate)) return preselectedDate;
@@ -206,6 +208,17 @@ function NewAppointmentForm() {
                 ))}
                 {filteredCustomers.length === 0 && <p className="text-sm text-text-light text-center py-2">該当する顧客がいません</p>}
               </div>
+              {showInlineCreate ? (
+                <InlineCustomerCreate
+                  salonId={salonId}
+                  onCreated={(c) => { setCustomers((prev) => [c as Customer, ...prev]); setCustomerId(c.id); setShowInlineCreate(false); }}
+                  onCancel={() => setShowInlineCreate(false)}
+                />
+              ) : (
+                <button type="button" onClick={() => setShowInlineCreate(true)} className="w-full text-center text-sm text-accent py-2 min-h-[44px] border-t border-border mt-2">
+                  + 新規顧客を登録
+                </button>
+              )}
             </>
           )}
         </div>

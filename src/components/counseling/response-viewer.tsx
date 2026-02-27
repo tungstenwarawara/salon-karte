@@ -25,7 +25,6 @@ function isLegacyFormat(responses: unknown): responses is LegacyResponses {
 }
 
 function isSectionFormat(r: Record<string, unknown>): boolean {
-  // 新形式: 各値が { fieldId: value } のオブジェクト（配列でもstringでもないobject）
   for (const val of Object.values(r)) {
     if (val && typeof val === "object" && !Array.isArray(val)) {
       const inner = Object.values(val as Record<string, unknown>);
@@ -43,9 +42,8 @@ type Props = {
 };
 
 export function ResponseViewer({ responses, template }: Props) {
-  if (!responses) return <p className="text-xs text-text-light">回答データがありません</p>;
+  if (!responses) return <p className="text-sm text-text-light">回答データがありません</p>;
 
-  // 旧形式との後方互換
   if (isLegacyFormat(responses)) {
     return <LegacyViewer responses={responses} />;
   }
@@ -64,11 +62,10 @@ export function ResponseViewer({ responses, template }: Props) {
     }
   }
 
-  // 新形式: CounselingResponseData
   const data = responses as CounselingResponseData;
 
   return (
-    <div className="space-y-3 text-sm">
+    <div className="space-y-3">
       {Object.entries(data).map(([sectionId, fields]) => {
         const entries = Object.entries(fields).filter(([, v]) => {
           if (Array.isArray(v)) return v.length > 0;
@@ -81,14 +78,16 @@ export function ResponseViewer({ responses, template }: Props) {
           ?? sectionId;
 
         return (
-          <div key={sectionId} className="space-y-1">
-            <p className="text-xs font-bold text-text-light">{sectionTitle}</p>
+          <div key={sectionId} className="bg-surface border border-border rounded-xl p-3 space-y-2">
+            <p className="text-sm font-bold">{sectionTitle}</p>
             {entries.map(([fieldId, value]) => {
-              const display = Array.isArray(value) ? value.join("、") : String(value);
               const label = fieldLabels.get(sectionId)?.get(fieldId)
                 ?? LEGACY_LABELS[sectionId]?.[fieldId]
                 ?? fieldId;
-              return <Row key={fieldId} label={label} value={display} />;
+              if (Array.isArray(value) && value.length > 0) {
+                return <TagRow key={fieldId} label={label} values={value} />;
+              }
+              return <Row key={fieldId} label={label} value={String(value)} />;
             })}
           </div>
         );
@@ -100,21 +99,21 @@ export function ResponseViewer({ responses, template }: Props) {
 function LegacyViewer({ responses }: { responses: LegacyResponses }) {
   const { health, treatment, other } = responses;
   return (
-    <div className="space-y-3 text-sm">
+    <div className="space-y-3">
       {health && (
-        <div className="space-y-1">
-          <p className="text-xs font-bold text-text-light">健康状態・アレルギー</p>
+        <div className="bg-surface border border-border rounded-xl p-3 space-y-2">
+          <p className="text-sm font-bold">健康状態・アレルギー</p>
           {health.allergies && <Row label="アレルギー" value={health.allergies} />}
           {health.medications && <Row label="服用中のお薬" value={health.medications} />}
           {health.conditions && health.conditions.length > 0 && (
-            <Row label="該当項目" value={health.conditions.join("、")} />
+            <TagRow label="該当項目" values={health.conditions} />
           )}
           {health.notes && <Row label="備考" value={health.notes} />}
         </div>
       )}
       {treatment && (
-        <div className="space-y-1">
-          <p className="text-xs font-bold text-text-light">施術のご希望</p>
+        <div className="bg-surface border border-border rounded-xl p-3 space-y-2">
+          <p className="text-sm font-bold">施術のご希望</p>
           {treatment.concerns && <Row label="お悩み" value={treatment.concerns} />}
           {treatment.desired_outcome && <Row label="理想の仕上がり" value={treatment.desired_outcome} />}
           {treatment.frequency && <Row label="来店頻度" value={treatment.frequency} />}
@@ -122,8 +121,8 @@ function LegacyViewer({ responses }: { responses: LegacyResponses }) {
         </div>
       )}
       {other && (
-        <div className="space-y-1">
-          <p className="text-xs font-bold text-text-light">その他</p>
+        <div className="bg-surface border border-border rounded-xl p-3 space-y-2">
+          <p className="text-sm font-bold">その他</p>
           {other.referral_source && <Row label="きっかけ" value={other.referral_source} />}
           {other.notes && <Row label="ご要望" value={other.notes} />}
         </div>
@@ -134,9 +133,24 @@ function LegacyViewer({ responses }: { responses: LegacyResponses }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex gap-2">
-      <span className="text-xs text-text-light w-24 flex-shrink-0">{label}</span>
-      <span className="text-xs">{value}</span>
+    <div className="space-y-0.5">
+      <p className="text-xs text-text-light">{label}</p>
+      <p className="text-sm">{value}</p>
+    </div>
+  );
+}
+
+function TagRow({ label, values }: { label: string; values: string[] }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs text-text-light">{label}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {values.map((v) => (
+          <span key={v} className="text-xs bg-accent/10 text-accent px-2 py-1 rounded-lg">
+            {v}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

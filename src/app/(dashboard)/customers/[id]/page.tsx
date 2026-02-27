@@ -118,16 +118,17 @@ export default async function CustomerDetailPage({
     is_default: d.is_default as boolean,
   }));
 
-  // 写真一括ダウンロードボタンの表示判定（head: true でデータ転送ゼロ）
+  // 写真件数取得（head: true でデータ転送ゼロ）
   const recordIds = records.map((r) => r.id);
-  let hasPhotos = false;
+  let photoCount = 0;
   if (recordIds.length > 0) {
     const { count } = await supabase
       .from("treatment_photos")
       .select("id", { count: "exact", head: true })
       .in("treatment_record_id", recordIds);
-    hasPhotos = (count ?? 0) > 0;
+    photoCount = count ?? 0;
   }
+  const hasPhotos = photoCount > 0;
 
   // 来店分析
   const visitCount = records.length;
@@ -227,6 +228,7 @@ export default async function CustomerDetailPage({
         customerName={`${customer.last_name}${customer.first_name}`}
         records={records}
         hasPhotos={hasPhotos}
+        photoCount={photoCount}
         courseTickets={courseTickets}
         purchases={purchases}
         purchaseTotal={purchaseTotal}

@@ -4,6 +4,7 @@ import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { PageHeader } from "@/components/layout/page-header";
 import { formatDateJa } from "@/lib/format";
 import { AppointmentActions } from "@/components/appointments/appointment-actions";
+import { CounselingIssueButton } from "@/components/counseling/counseling-issue-button";
 import type { Database } from "@/types/database";
 
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
@@ -69,6 +70,26 @@ export default async function AppointmentDetailPage({
     .limit(1);
 
   const prevKarte = prevRecords?.[0] ?? null;
+
+  // カウンセリング関連データ取得
+  const [counselingRes, templatesRes] = await Promise.all([
+    supabase
+      .from("counseling_sheets")
+      .select("id, token, status, expires_at")
+      .eq("customer_id", appointment.customer_id)
+      .eq("salon_id", salon.id)
+      .eq("status", "pending")
+      .gte("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("counseling_templates")
+      .select("id, name, is_default")
+      .eq("salon_id", salon.id)
+      .order("is_default", { ascending: false }),
+  ]);
+  const pendingSheet = counselingRes.data?.[0] ?? null;
+  const counselingTemplates = (templatesRes.data ?? []) as { id: string; name: string; is_default: boolean }[];
 
   const menuDisplay = menus.length > 0
     ? menus.map((m) => m.menu_name_snapshot).join("、")
@@ -195,6 +216,16 @@ export default async function AppointmentDetailPage({
             <p className="text-xs text-accent mt-1 text-right">詳細を見る →</p>
           </Link>
         </div>
+      )}
+
+      {/* カウンセリングシート発行（予定ステータス時のみ） */}
+      {appointment.status === "scheduled" && counselingTemplates.length > 0 && (
+        <CounselingIssueButton
+          customerId={appointment.customer_id}
+          templates={counselingTemplates}
+          hasPendingSheet={!!pendingSheet}
+          pendingSheetToken={pendingSheet?.token}
+        />
       )}
 
       {/* アクションボタン */}

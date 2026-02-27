@@ -8,6 +8,7 @@ import { TreatmentHistory } from "./treatment-history";
 import { CourseTicketSection } from "./course-ticket-section";
 import { PurchaseHistory } from "./purchase-history";
 import { CounselingSection } from "./counseling-section";
+import { PhotoGallery } from "./photo-gallery";
 
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
 type TreatmentRecordMenu = Database["public"]["Tables"]["treatment_record_menus"]["Row"];
@@ -32,6 +33,7 @@ type Props = {
   customerName: string;
   records: RecordWithMenus[];
   hasPhotos: boolean;
+  photoCount: number;
   courseTickets: CourseTicket[];
   purchases: Purchase[];
   purchaseTotal: number;
@@ -40,7 +42,7 @@ type Props = {
   counselingTemplates: CounselingTemplateItem[];
 };
 
-type TabKey = "treatment" | "tickets" | "purchases" | "counseling";
+type TabKey = "treatment" | "photos" | "tickets" | "purchases" | "counseling";
 
 export function CustomerDetailContent({
   customerId,
@@ -48,6 +50,7 @@ export function CustomerDetailContent({
   customerName,
   records,
   hasPhotos,
+  photoCount,
   courseTickets,
   purchases,
   purchaseTotal,
@@ -60,8 +63,11 @@ export function CustomerDetailContent({
   const activeTicketCount = courseTickets.filter((t) => t.status === "active").length;
   const submittedSheetCount = counselingSheets.filter((s) => s.status === "submitted").length;
 
+  const recordDates = new Map(records.map((r) => [r.id, r.treatment_date]));
+
   const tabs = [
     { key: "treatment", label: "施術", count: records.length },
+    ...(photoCount > 0 ? [{ key: "photos", label: "写真", count: photoCount }] : []),
     { key: "tickets", label: "回数券", count: activeTicketCount },
     { key: "purchases", label: "物販", count: purchases.length },
     { key: "counseling", label: "カウンセリング", count: submittedSheetCount },
@@ -86,6 +92,11 @@ export function CustomerDetailContent({
             hasPhotos={hasPhotos}
           />
         </div>
+        {photoCount > 0 && (
+          <div className={activeTab === "photos" ? "" : "hidden"}>
+            <PhotoGallery recordIds={records.map((r) => r.id)} recordDates={recordDates} />
+          </div>
+        )}
         <div className={activeTab === "tickets" ? "" : "hidden"}>
           <CourseTicketSection customerId={customerId} salonId={salonId} initialTickets={courseTickets} />
         </div>

@@ -6,6 +6,7 @@ export type LightboxPhoto = {
   url: string;
   label?: string;
   memo?: string;
+  date?: string;
 };
 
 type Props = {
@@ -81,11 +82,18 @@ export function PhotoLightbox({ photos, initialIndex, onClose }: Props) {
         <span className="text-white/80 text-sm">
           {currentIndex + 1} / {total}
         </span>
-        {photo?.label && (
-          <span className="text-white/60 text-xs bg-white/10 px-2 py-1 rounded-full">
-            {photo.label}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {photo?.date && (
+            <span className="text-white/60 text-xs">
+              {new Date(photo.date).toLocaleDateString("ja-JP")}
+            </span>
+          )}
+          {photo?.label && (
+            <span className="text-white/60 text-xs bg-white/10 px-2 py-1 rounded-full">
+              {photo.label}
+            </span>
+          )}
+        </div>
         <button
           onClick={onClose}
           className="text-white/80 hover:text-white min-w-[48px] min-h-[48px] flex items-center justify-center text-2xl"

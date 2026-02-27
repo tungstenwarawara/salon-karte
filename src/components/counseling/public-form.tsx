@@ -11,6 +11,8 @@ type Props = {
   token: string;
   template: CounselingTemplate;
   isAnonymous?: boolean;
+  needsInfoCollection?: boolean;
+  existingCustomerInfo?: CustomerInfo;
 };
 
 const emptyCustomerInfo: CustomerInfo = {
@@ -19,13 +21,14 @@ const emptyCustomerInfo: CustomerInfo = {
   phone: "", email: "", gender: "", birth_date: "",
 };
 
-export function PublicForm({ token, template, isAnonymous = false }: Props) {
+export function PublicForm({ token, template, isAnonymous = false, needsInfoCollection = false, existingCustomerInfo }: Props) {
   const router = useRouter();
   const sections = template.sections;
-  const totalSteps = sections.length + (isAnonymous ? 1 : 0);
+  const showBasicInfo = isAnonymous || needsInfoCollection;
+  const totalSteps = sections.length + (showBasicInfo ? 1 : 0);
 
   const [step, setStep] = useState(0);
-  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>(emptyCustomerInfo);
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>(existingCustomerInfo ?? emptyCustomerInfo);
   const [responses, setResponses] = useState<CounselingResponseData>(() => {
     const init: CounselingResponseData = {};
     for (const s of sections) { init[s.id] = {}; }
@@ -36,12 +39,12 @@ export function PublicForm({ token, template, isAnonymous = false }: Props) {
   const [error, setError] = useState("");
 
   const isLastStep = step === totalSteps - 1;
-  const isBasicInfoStep = isAnonymous && step === 0;
-  const sectionIndex = isAnonymous ? step - 1 : step;
+  const isBasicInfoStep = showBasicInfo && step === 0;
+  const sectionIndex = showBasicInfo ? step - 1 : step;
   const currentSection = !isBasicInfoStep ? sections[sectionIndex] : null;
 
   const stepLabels = [
-    ...(isAnonymous ? ["基本情報"] : []),
+    ...(showBasicInfo ? ["基本情報"] : []),
     ...sections.map((s) => s.title),
   ];
 
@@ -61,7 +64,7 @@ export function PublicForm({ token, template, isAnonymous = false }: Props) {
 
     try {
       const body: Record<string, unknown> = { responses };
-      if (isAnonymous) {
+      if (showBasicInfo) {
         body.customer_info = {
           last_name: customerInfo.last_name.trim(),
           first_name: customerInfo.first_name.trim(),

@@ -45,6 +45,7 @@ export function BeforeAfterComparison({
       url: urlMap.get(photo.storage_path) ?? "",
       label,
       memo: photo.memo ?? undefined,
+      date: photo.created_at ?? undefined,
     })),
   [allPhotos, urlMap]);
 
@@ -182,9 +183,16 @@ function PhotoCard({
           読み込めません
         </div>
       )}
-      {photo.memo && (
-        <div className="px-2 py-1.5">
-          <p className="text-xs text-text-light">{photo.memo}</p>
+      {(photo.memo || photo.created_at) && (
+        <div className="px-2 py-1.5 space-y-0.5">
+          {photo.created_at && (
+            <p className="text-[10px] text-text-light">
+              {new Date(photo.created_at).toLocaleDateString("ja-JP")}
+            </p>
+          )}
+          {photo.memo && (
+            <p className="text-xs text-text-light">{photo.memo}</p>
+          )}
         </div>
       )}
     </button>
