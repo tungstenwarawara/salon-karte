@@ -4,16 +4,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavIcon } from "./nav-icon";
 
-const navItems = [
-  { href: "/dashboard", label: "ホーム", icon: "home" },
-  { href: "/appointments", label: "予約", icon: "calendar" },
-  { href: "/records", label: "カルテ", icon: "records" },
-  { href: "/customers", label: "顧客", icon: "customers" },
-  { href: "/sales", label: "経営", icon: "sales" },
+const allNavItems = [
+  { href: "/dashboard", label: "ホーム", icon: "home", ownerOnly: false },
+  { href: "/appointments", label: "予約", icon: "calendar", ownerOnly: false },
+  { href: "/records", label: "カルテ", icon: "records", ownerOnly: false },
+  { href: "/customers", label: "顧客", icon: "customers", ownerOnly: false },
+  { href: "/sales", label: "経営", icon: "sales", ownerOnly: true },
 ];
 
-export function DashboardHeader() {
+type Props = {
+  /** null = フォールバックオーナー（staff未登録）、未指定 = オーナー扱い */
+  staffRole?: "owner" | "manager" | "staff" | null;
+};
+
+export function DashboardHeader({ staffRole }: Props) {
   const pathname = usePathname();
+  const isOwner = !staffRole || staffRole === "owner";
+  const navItems = allNavItems.filter((item) => !item.ownerOnly || isOwner);
 
   return (
     <>

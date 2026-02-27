@@ -4,8 +4,8 @@ import { SalesView } from "@/components/sales/sales-view";
 import type { MonthlySales } from "@/components/sales/sales-types";
 
 export default async function SalesPage() {
+  // オーナーのみアクセス可（sales/layout.tsx で制御）
   const { user, salon, supabase } = await getAuthAndSalon();
-
   if (!user) redirect("/login");
   if (!salon) redirect("/setup");
 

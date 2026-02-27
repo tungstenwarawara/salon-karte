@@ -8,6 +8,7 @@ import type { CsvTaxReport, CsvMonthlySales } from "@/lib/csv-generators";
 import { TaxReportSections } from "@/components/inventory/tax-report-sections";
 
 export default function TaxReportPage() {
+  // オーナーのみアクセス可（sales/layout.tsx で制御）
   const [report, setReport] = useState<CsvTaxReport | null>(null);
   const [monthlySales, setMonthlySales] = useState<CsvMonthlySales[]>([]);
   const [loading, setLoading] = useState(true);

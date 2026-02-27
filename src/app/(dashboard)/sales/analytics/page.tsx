@@ -28,6 +28,7 @@ type ProductRanking = {
 };
 
 export default async function AnalyticsPage() {
+  // オーナーのみアクセス可（sales/layout.tsx で制御）
   const { user, salon, supabase } = await getAuthAndSalon();
   if (!user) redirect("/login");
   if (!salon) redirect("/setup");
