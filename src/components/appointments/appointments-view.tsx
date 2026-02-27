@@ -9,7 +9,9 @@ import { AppointmentCard } from "@/components/appointments/appointment-card";
 import type { AppointmentWithCustomer } from "@/components/appointments/appointment-card";
 import { AppointmentsCalendar, toDateStr, DAY_NAMES } from "@/components/appointments/appointments-calendar";
 import { AppointmentsDayPanel } from "@/components/appointments/appointments-day-panel";
+import { WeekViewContainer } from "@/components/appointments/week-view-container";
 import { DateNavigator } from "@/components/ui/date-navigator";
+import { getWeekMonday } from "@/lib/staff-schedule";
 
 type Props = {
   salonId: string;
@@ -22,14 +24,15 @@ type Props = {
 export function AppointmentsView({ salonId, initialAppointments, initialBusinessHours, initialSalonHolidays }: Props) {
   const [appointments, setAppointments] = useState(initialAppointments);
   const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<"day" | "month">("month");
+  const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
   const businessHours = initialBusinessHours;
   const salonHolidays = initialSalonHolidays;
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  const loadAppointments = useCallback(async (date: Date, mode: "day" | "month") => {
+  const loadAppointments = useCallback(async (date: Date, mode: "day" | "week" | "month") => {
+    if (mode === "week") return; // WeekViewContainer側でフェッチ
     setLoading(true);
     const supabase = createClient();
     const [startDate, endDate] = mode === "day"
@@ -57,6 +60,7 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
   const navigateDate = (offset: number) => {
     const d = new Date(selectedDate);
     if (viewMode === "day") d.setDate(d.getDate() + offset);
+    else if (viewMode === "week") d.setDate(d.getDate() + offset * 7);
     else { d.setMonth(d.getMonth() + offset); setSelectedDay(null); }
     setSelectedDate(d);
   };
@@ -67,7 +71,9 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
   const isSelectedToday = toDateStr(selectedDate) === todayStr;
   const dateLabel = viewMode === "day"
     ? `${selectedDate.getFullYear()}/${selectedDate.getMonth() + 1}/${selectedDate.getDate()}（${DAY_NAMES[selectedDate.getDay()]}）`
-    : `${selectedDate.getFullYear()}年${selectedDate.getMonth() + 1}月`;
+    : viewMode === "week"
+      ? (() => { const ws = getWeekMonday(selectedDate); const we = new Date(ws); we.setDate(we.getDate() + 6); return `${ws.getMonth() + 1}/${ws.getDate()} 〜 ${we.getMonth() + 1}/${we.getDate()}`; })()
+      : `${selectedDate.getFullYear()}年${selectedDate.getMonth() + 1}月`;
 
   return (
     <div className="space-y-4">
@@ -78,9 +84,10 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
 
       {/* ビューモード切替 */}
       <div className="flex gap-2">
-        <button onClick={() => setViewMode("day")} className={`text-sm px-4 py-2 rounded-xl transition-colors min-h-[48px] ${viewMode === "day" ? "bg-accent text-white" : "bg-surface border border-border text-text-light hover:text-text"}`}>日別</button>
-        <button onClick={() => { setViewMode("month"); setSelectedDay(null); }} className={`text-sm px-4 py-2 rounded-xl transition-colors min-h-[48px] ${viewMode === "month" ? "bg-accent text-white" : "bg-surface border border-border text-text-light hover:text-text"}`}>月別</button>
-        <button onClick={goToToday} className={`text-sm px-4 py-2 rounded-xl transition-colors min-h-[48px] ml-auto ${isSelectedToday ? "bg-accent/10 text-accent border border-accent/30" : "bg-surface border border-border text-text-light hover:text-text"}`}>今日</button>
+        <button onClick={() => setViewMode("day")} className={`text-sm px-3 py-2 rounded-xl transition-colors min-h-[48px] ${viewMode === "day" ? "bg-accent text-white" : "bg-surface border border-border text-text-light hover:text-text"}`}>日別</button>
+        <button onClick={() => setViewMode("week")} className={`text-sm px-3 py-2 rounded-xl transition-colors min-h-[48px] ${viewMode === "week" ? "bg-accent text-white" : "bg-surface border border-border text-text-light hover:text-text"}`}>週別</button>
+        <button onClick={() => { setViewMode("month"); setSelectedDay(null); }} className={`text-sm px-3 py-2 rounded-xl transition-colors min-h-[48px] ${viewMode === "month" ? "bg-accent text-white" : "bg-surface border border-border text-text-light hover:text-text"}`}>月別</button>
+        <button onClick={goToToday} className={`text-sm px-3 py-2 rounded-xl transition-colors min-h-[48px] ml-auto ${isSelectedToday ? "bg-accent/10 text-accent border border-accent/30" : "bg-surface border border-border text-text-light hover:text-text"}`}>今日</button>
       </div>
 
       <DateNavigator label={dateLabel} onPrev={() => navigateDate(-1)} onNext={() => navigateDate(1)} />
@@ -93,7 +100,9 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
       })()}
 
       {/* コンテンツ */}
-      {loading ? (
+      {viewMode === "week" ? (
+        <WeekViewContainer salonId={salonId} selectedDate={selectedDate} businessHours={businessHours} salonHolidays={salonHolidays} />
+      ) : loading ? (
         <div className="text-center text-text-light py-8">読み込み中...</div>
       ) : viewMode === "day" ? (
         appointments.length > 0 ? (

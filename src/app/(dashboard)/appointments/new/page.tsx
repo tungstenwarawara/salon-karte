@@ -31,6 +31,8 @@ function NewAppointmentForm() {
   const searchParams = useSearchParams();
   const preselectedCustomerId = searchParams.get("customer");
   const preselectedDate = searchParams.get("date");
+  const preselectedTime = searchParams.get("time"); // "HH:MM" from week calendar
+  const preselectedStaffId = searchParams.get("staff");
 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [menus, setMenus] = useState<TreatmentMenu[]>([]);
@@ -53,10 +55,22 @@ function NewAppointmentForm() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   });
-  const [startHour, setStartHour] = useState("10");
-  const [startMinute, setStartMinute] = useState("00");
-  const [endHour, setEndHour] = useState("11");
-  const [endMinute, setEndMinute] = useState("00");
+  const [startHour, setStartHour] = useState(() => {
+    if (preselectedTime) { const [h] = preselectedTime.split(":"); return h ?? "10"; }
+    return "10";
+  });
+  const [startMinute, setStartMinute] = useState(() => {
+    if (preselectedTime) { const parts = preselectedTime.split(":"); return parts[1] ?? "00"; }
+    return "00";
+  });
+  const [endHour, setEndHour] = useState(() => {
+    if (preselectedTime) { const [h] = preselectedTime.split(":"); return String(Math.min(Number(h ?? 10) + 1, 23)); }
+    return "11";
+  });
+  const [endMinute, setEndMinute] = useState(() => {
+    if (preselectedTime) { const parts = preselectedTime.split(":"); return parts[1] ?? "00"; }
+    return "00";
+  });
   const [isEndTimeManual, setIsEndTimeManual] = useState(false);
   const [source, setSource] = useState("direct");
   const [memo, setMemo] = useState("");
@@ -86,7 +100,11 @@ function NewAppointmentForm() {
     setMenus(menusRes.data ?? []);
     const staffData = (staffRes.data ?? []) as { id: string; name: string }[];
     setStaffList(staffData);
-    if (staff?.id) setStaffId(staff.id);
+    if (preselectedStaffId && staffData.some((s) => s.id === preselectedStaffId)) {
+      setStaffId(preselectedStaffId);
+    } else if (staff?.id) {
+      setStaffId(staff.id);
+    }
     setLoading(false);
   };
 
