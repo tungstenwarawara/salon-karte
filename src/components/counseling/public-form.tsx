@@ -4,31 +4,25 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { StepIndicator } from "./step-indicator";
 import { TemplateStep } from "./template-step";
-import { BasicInfoStep, type CustomerInfo } from "./basic-info-step";
+import { CustomerInfoStep, type PublicCustomerInfo, emptyPublicCustomerInfo } from "./customer-info-step";
 import type { CounselingTemplate, CounselingResponseData } from "@/types/counseling-template";
 
 type Props = {
   token: string;
   template: CounselingTemplate;
   isAnonymous?: boolean;
-  needsInfoCollection?: boolean;
-  existingCustomerInfo?: CustomerInfo;
+  showCustomerInfo?: boolean;
+  existingCustomerInfo?: PublicCustomerInfo;
 };
 
-const emptyCustomerInfo: CustomerInfo = {
-  last_name: "", first_name: "",
-  last_name_kana: "", first_name_kana: "",
-  phone: "", email: "", gender: "", birth_date: "",
-};
-
-export function PublicForm({ token, template, isAnonymous = false, needsInfoCollection = false, existingCustomerInfo }: Props) {
+export function PublicForm({ token, template, isAnonymous = false, showCustomerInfo = false, existingCustomerInfo }: Props) {
   const router = useRouter();
   const sections = template.sections;
-  const showBasicInfo = isAnonymous || needsInfoCollection;
-  const totalSteps = sections.length + (showBasicInfo ? 1 : 0);
+  const showCustomerInfoStep = isAnonymous || showCustomerInfo;
+  const totalSteps = sections.length + (showCustomerInfoStep ? 1 : 0);
 
   const [step, setStep] = useState(0);
-  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>(existingCustomerInfo ?? emptyCustomerInfo);
+  const [customerInfo, setCustomerInfo] = useState<PublicCustomerInfo>(existingCustomerInfo ?? emptyPublicCustomerInfo);
   const [responses, setResponses] = useState<CounselingResponseData>(() => {
     const init: CounselingResponseData = {};
     for (const s of sections) { init[s.id] = {}; }
@@ -39,17 +33,17 @@ export function PublicForm({ token, template, isAnonymous = false, needsInfoColl
   const [error, setError] = useState("");
 
   const isLastStep = step === totalSteps - 1;
-  const isBasicInfoStep = showBasicInfo && step === 0;
-  const sectionIndex = showBasicInfo ? step - 1 : step;
-  const currentSection = !isBasicInfoStep ? sections[sectionIndex] : null;
+  const isCustomerInfoStep = showCustomerInfoStep && step === 0;
+  const sectionIndex = showCustomerInfoStep ? step - 1 : step;
+  const currentSection = !isCustomerInfoStep ? sections[sectionIndex] : null;
 
   const stepLabels = [
-    ...(showBasicInfo ? ["基本情報"] : []),
+    ...(showCustomerInfoStep ? ["お客様情報"] : []),
     ...sections.map((s) => s.title),
   ];
 
   const handleNext = () => {
-    if (isBasicInfoStep && (!customerInfo.last_name.trim() || !customerInfo.first_name.trim())) {
+    if (isCustomerInfoStep && (!customerInfo.last_name.trim() || !customerInfo.first_name.trim())) {
       setError("お名前（姓・名）は必須です");
       return;
     }
@@ -64,16 +58,23 @@ export function PublicForm({ token, template, isAnonymous = false, needsInfoColl
 
     try {
       const body: Record<string, unknown> = { responses };
-      if (showBasicInfo) {
+      if (showCustomerInfoStep) {
         body.customer_info = {
           last_name: customerInfo.last_name.trim(),
           first_name: customerInfo.first_name.trim(),
           last_name_kana: customerInfo.last_name_kana.trim() || undefined,
           first_name_kana: customerInfo.first_name_kana.trim() || undefined,
+          birth_date: customerInfo.birth_date || undefined,
           phone: customerInfo.phone.trim() || undefined,
           email: customerInfo.email.trim() || undefined,
-          gender: customerInfo.gender || undefined,
-          birth_date: customerInfo.birth_date || undefined,
+          address: customerInfo.address.trim() || undefined,
+          marital_status: customerInfo.marital_status || undefined,
+          has_children: customerInfo.has_children || undefined,
+          dm_allowed: customerInfo.dm_allowed,
+          height_cm: customerInfo.height_cm || undefined,
+          weight_kg: customerInfo.weight_kg || undefined,
+          allergies: customerInfo.allergies.trim() || undefined,
+          treatment_goal: customerInfo.treatment_goal.trim() || undefined,
         };
       }
 
@@ -101,8 +102,8 @@ export function PublicForm({ token, template, isAnonymous = false, needsInfoColl
     <div className="bg-surface border border-border rounded-2xl p-4 space-y-4">
       <StepIndicator labels={stepLabels} currentStep={step} />
 
-      {isBasicInfoStep ? (
-        <BasicInfoStep data={customerInfo} onChange={setCustomerInfo} />
+      {isCustomerInfoStep ? (
+        <CustomerInfoStep data={customerInfo} onChange={setCustomerInfo} />
       ) : currentSection ? (
         <TemplateStep
           section={currentSection}

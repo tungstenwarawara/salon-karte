@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PublicForm } from "@/components/counseling/public-form";
+import type { PublicCustomerInfo } from "@/components/counseling/customer-info-step";
+import { emptyPublicCustomerInfo } from "@/components/counseling/customer-info-step";
 import { DEFAULT_COUNSELING_TEMPLATE } from "@/lib/counseling-default-template";
 import type { CounselingTemplate } from "@/types/counseling-template";
 
@@ -14,7 +16,7 @@ export default async function CounselingPage({
 
   const { data: sheet } = await admin
     .from("counseling_sheets")
-    .select("id, token, status, expires_at, salon_id, customer_id, template_id")
+    .select("id, token, status, expires_at, salon_id, customer_id, template_id, include_customer_info")
     .eq("token", token)
     .single();
 
@@ -65,42 +67,38 @@ export default async function CounselingPage({
   }
 
   const isAnonymous = sheet.customer_id === null;
+  const showCustomerInfo = sheet.include_customer_info ?? false;
 
-  // 既存顧客の場合: 情報不足なら基本情報ステップを表示（プリフィル付き）
-  let existingCustomerInfo: {
-    last_name: string; first_name: string;
-    last_name_kana: string; first_name_kana: string;
-    phone: string; email: string; gender: string; birth_date: string;
-  } | undefined;
-  let needsInfoCollection = false;
+  // 既存顧客の場合: include_customer_infoフラグがONなら顧客情報ステップを表示（プリフィル付き）
+  let existingCustomerInfo: PublicCustomerInfo | undefined;
 
-  if (sheet.customer_id) {
+  if (sheet.customer_id && showCustomerInfo) {
     const { data: customer } = await admin
       .from("customers")
-      .select("last_name, first_name, last_name_kana, first_name_kana, phone, email, birth_date")
+      .select("last_name, first_name, last_name_kana, first_name_kana, birth_date, phone, email, address, marital_status, has_children, dm_allowed, height_cm, weight_kg, allergies, treatment_goal")
       .eq("id", sheet.customer_id)
       .eq("salon_id", sheet.salon_id)
       .single();
 
     if (customer) {
-      const hasKana = !!(customer.last_name_kana || customer.first_name_kana);
-      const hasEmail = !!customer.email;
-      const hasBirthDate = !!customer.birth_date;
-      // カナ・メール・生年月日が全て未入力なら情報不足と判定
-      needsInfoCollection = !hasKana && !hasEmail && !hasBirthDate;
-
-      if (needsInfoCollection) {
-        existingCustomerInfo = {
-          last_name: customer.last_name ?? "",
-          first_name: customer.first_name ?? "",
-          last_name_kana: customer.last_name_kana ?? "",
-          first_name_kana: customer.first_name_kana ?? "",
-          phone: customer.phone ?? "",
-          email: customer.email ?? "",
-          gender: "",
-          birth_date: customer.birth_date ?? "",
-        };
-      }
+      existingCustomerInfo = {
+        ...emptyPublicCustomerInfo,
+        last_name: customer.last_name ?? "",
+        first_name: customer.first_name ?? "",
+        last_name_kana: customer.last_name_kana ?? "",
+        first_name_kana: customer.first_name_kana ?? "",
+        birth_date: customer.birth_date ?? "",
+        phone: customer.phone ?? "",
+        email: customer.email ?? "",
+        address: customer.address ?? "",
+        marital_status: customer.marital_status ?? "",
+        has_children: customer.has_children === null ? "" : customer.has_children ? "true" : "false",
+        dm_allowed: customer.dm_allowed === false ? "false" : "true",
+        height_cm: customer.height_cm !== null ? String(customer.height_cm) : "",
+        weight_kg: customer.weight_kg !== null ? String(customer.weight_kg) : "",
+        allergies: customer.allergies ?? "",
+        treatment_goal: customer.treatment_goal ?? "",
+      };
     }
   }
 
@@ -116,7 +114,7 @@ export default async function CounselingPage({
         token={token}
         template={template}
         isAnonymous={isAnonymous}
-        needsInfoCollection={needsInfoCollection}
+        showCustomerInfo={showCustomerInfo}
         existingCustomerInfo={existingCustomerInfo}
       />
     </div>

@@ -15,7 +15,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 });
   }
 
-  const { customer_id, template_id } = (body ?? {}) as { customer_id: string; template_id?: string | null };
+  const { customer_id, template_id, include_customer_info } = (body ?? {}) as {
+    customer_id: string;
+    template_id?: string | null;
+    include_customer_info?: boolean;
+  };
 
   if (!customer_id || typeof customer_id !== "string") {
     return NextResponse.json({ error: "顧客IDが必要です" }, { status: 400 });
@@ -57,6 +61,7 @@ export async function POST(request: Request) {
       salon_id: salon.id,
       customer_id,
       template_id: template_id ?? null,
+      include_customer_info: include_customer_info ?? false,
       expires_at: expiresAt.toISOString(),
     })
     .select("id, token")

@@ -8,7 +8,6 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { DEFAULT_COUNSELING_TEMPLATE } from "@/lib/counseling-default-template";
-import { AnonymousLinkSection } from "@/components/counseling/anonymous-link-section";
 import type { CounselingTemplate } from "@/types/counseling-template";
 
 type Template = {
@@ -150,10 +149,6 @@ export default function CounselingTemplateListPage() {
         <p className="text-xs text-text-light mt-2">テンプレートは最大2つまで作成できます</p>
       </div>
 
-      {/* 新規顧客用リンク発行 */}
-      {salonId && (
-        <AnonymousLinkSection salonId={salonId} templates={templates} />
-      )}
     </div>
   );
 }

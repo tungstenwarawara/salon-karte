@@ -796,6 +796,7 @@ export type Database = {
           responses: Record<string, unknown> | null;
           submitted_at: string | null;
           expires_at: string;
+          include_customer_info: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -809,6 +810,7 @@ export type Database = {
           responses?: Record<string, unknown> | null;
           submitted_at?: string | null;
           expires_at: string;
+          include_customer_info?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -822,6 +824,7 @@ export type Database = {
           responses?: Record<string, unknown> | null;
           submitted_at?: string | null;
           expires_at?: string;
+          include_customer_info?: boolean;
           created_at?: string;
           updated_at?: string;
         };

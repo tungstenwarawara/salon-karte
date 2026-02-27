@@ -6,10 +6,17 @@ type CustomerInfoInput = {
   first_name: string;
   last_name_kana?: string;
   first_name_kana?: string;
+  birth_date?: string;
   phone?: string;
   email?: string;
-  gender?: string;
-  birth_date?: string;
+  address?: string;
+  marital_status?: string;
+  has_children?: string;
+  dm_allowed?: string;
+  height_cm?: string;
+  weight_kg?: string;
+  allergies?: string;
+  treatment_goal?: string;
 };
 
 // POST: カウンセリングシート送信（公開API — 認証不要、Admin Client使用）
@@ -67,6 +74,9 @@ export async function POST(
       return NextResponse.json({ error: "お名前（姓・名）は必須です" }, { status: 400 });
     }
 
+    const heightVal = customer_info.height_cm ? parseFloat(customer_info.height_cm) : null;
+    const weightVal = customer_info.weight_kg ? parseFloat(customer_info.weight_kg) : null;
+
     const { data: newCustomer, error: customerError } = await admin
       .from("customers")
       .insert({
@@ -75,9 +85,17 @@ export async function POST(
         first_name: customer_info.first_name.trim(),
         last_name_kana: customer_info.last_name_kana?.trim() || null,
         first_name_kana: customer_info.first_name_kana?.trim() || null,
+        birth_date: customer_info.birth_date || null,
         phone: customer_info.phone?.trim() || null,
         email: customer_info.email?.trim() || null,
-        birth_date: customer_info.birth_date || null,
+        address: customer_info.address?.trim() || null,
+        marital_status: customer_info.marital_status || null,
+        has_children: customer_info.has_children === "" || !customer_info.has_children ? null : customer_info.has_children === "true",
+        dm_allowed: customer_info.dm_allowed === "true",
+        height_cm: heightVal !== null && !isNaN(heightVal) ? heightVal : null,
+        weight_kg: weightVal !== null && !isNaN(weightVal) ? weightVal : null,
+        allergies: customer_info.allergies?.trim() || null,
+        treatment_goal: customer_info.treatment_goal?.trim() || null,
       })
       .select("id")
       .single();
@@ -88,22 +106,31 @@ export async function POST(
 
     customerId = newCustomer.id;
   } else if (customer_info) {
-    // 既存顧客の情報補完（情報不足時にフォームで追加入力された場合）
-    const updates: Record<string, string | null> = {};
-    if (customer_info.last_name_kana?.trim()) updates.last_name_kana = customer_info.last_name_kana.trim();
-    if (customer_info.first_name_kana?.trim()) updates.first_name_kana = customer_info.first_name_kana.trim();
-    if (customer_info.phone?.trim()) updates.phone = customer_info.phone.trim();
-    if (customer_info.email?.trim()) updates.email = customer_info.email.trim();
-    if (customer_info.birth_date) updates.birth_date = customer_info.birth_date;
-    if (customer_info.gender) updates.gender = customer_info.gender;
+    // 既存顧客の情報更新（include_customer_info有効時）
+    const heightVal = customer_info.height_cm ? parseFloat(customer_info.height_cm) : null;
+    const weightVal = customer_info.weight_kg ? parseFloat(customer_info.weight_kg) : null;
 
-    if (Object.keys(updates).length > 0) {
-      await admin
-        .from("customers")
-        .update(updates)
-        .eq("id", customerId)
-        .eq("salon_id", sheet.salon_id);
-    }
+    await admin
+      .from("customers")
+      .update({
+        last_name: customer_info.last_name.trim(),
+        first_name: customer_info.first_name.trim(),
+        last_name_kana: customer_info.last_name_kana?.trim() || null,
+        first_name_kana: customer_info.first_name_kana?.trim() || null,
+        birth_date: customer_info.birth_date || null,
+        phone: customer_info.phone?.trim() || null,
+        email: customer_info.email?.trim() || null,
+        address: customer_info.address?.trim() || null,
+        marital_status: customer_info.marital_status || null,
+        has_children: customer_info.has_children === "" || !customer_info.has_children ? null : customer_info.has_children === "true",
+        dm_allowed: customer_info.dm_allowed === "true",
+        height_cm: heightVal !== null && !isNaN(heightVal) ? heightVal : null,
+        weight_kg: weightVal !== null && !isNaN(weightVal) ? weightVal : null,
+        allergies: customer_info.allergies?.trim() || null,
+        treatment_goal: customer_info.treatment_goal?.trim() || null,
+      })
+      .eq("id", customerId)
+      .eq("salon_id", sheet.salon_id);
   }
 
   // 回答を保存 + 顧客紐づけ
