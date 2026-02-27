@@ -44,7 +44,7 @@ export function WeekAppointmentBlock({ appointment, top, height, left, width }: 
     <Link
       href={`/appointments/${appointment.id}`}
       className={`absolute rounded-lg overflow-hidden px-1 py-0.5 ${style} hover:opacity-80 transition-opacity z-10`}
-      style={{ top: `${top}px`, height: `${Math.max(height, 18)}px`, left: `${left}%`, width: `${width}%` }}
+      style={{ top: `${top}px`, height: `${Math.max(height, 22)}px`, left: `${left}%`, width: `${width}%` }}
       onClick={(e) => e.stopPropagation()}
     >
       {height >= 45 ? (

@@ -87,6 +87,13 @@ export function WeekGridColumn({ column, startHour, endHour }: Props) {
       {showTimeLine && (
         <div className="absolute left-0 right-0 h-[2px] bg-red-500 pointer-events-none z-20" style={{ top: `${timeLineTop}px` }} />
       )}
+
+      {/* 空きタップで予約作成のヒント（予約がない場合のみ） */}
+      {blocks.length === 0 && column.schedule.isWorking && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <span className="text-[10px] text-text-light/50">タップで予約作成</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -95,8 +102,8 @@ export function WeekGridColumn({ column, startHour, endHour }: Props) {
 type LayoutBlock = { appointment: WeekAppointment; top: number; height: number; left: number; width: number };
 
 function layoutAppointments(appointments: WeekAppointment[], rangeStartMin: number): LayoutBlock[] {
+  // cancelled は week-view-container 側で除外済み
   const items = appointments
-    .filter((a) => a.status !== "cancelled")
     .map((a) => ({
       appointment: a,
       startMin: timeToMinutes(a.start_time),
@@ -104,15 +111,18 @@ function layoutAppointments(appointments: WeekAppointment[], rangeStartMin: numb
     }))
     .sort((a, b) => a.startMin - b.startMin);
 
-  // 重複グループ分割
+  // 重複グループ分割（groupMaxEnd で O(n) に最適化）
   const groups: (typeof items)[] = [];
   let current: typeof items = [];
+  let groupMaxEnd = 0;
   for (const item of items) {
-    if (current.length === 0 || item.startMin < Math.max(...current.map((g) => g.endMin))) {
+    if (current.length === 0 || item.startMin < groupMaxEnd) {
       current.push(item);
+      groupMaxEnd = Math.max(groupMaxEnd, item.endMin);
     } else {
       groups.push(current);
       current = [item];
+      groupMaxEnd = item.endMin;
     }
   }
   if (current.length > 0) groups.push(current);
@@ -124,7 +134,7 @@ function layoutAppointments(appointments: WeekAppointment[], rangeStartMin: numb
       blocks.push({
         appointment: item.appointment,
         top: ((item.startMin - rangeStartMin) / 60) * HOUR_HEIGHT,
-        height: Math.max(((item.endMin - item.startMin) / 60) * HOUR_HEIGHT, 20),
+        height: Math.max(((item.endMin - item.startMin) / 60) * HOUR_HEIGHT, 22),
         left: (i / n) * 100,
         width: 100 / n,
       });

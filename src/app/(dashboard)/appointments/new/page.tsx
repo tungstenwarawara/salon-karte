@@ -31,7 +31,8 @@ function NewAppointmentForm() {
   const searchParams = useSearchParams();
   const preselectedCustomerId = searchParams.get("customer");
   const preselectedDate = searchParams.get("date");
-  const preselectedTime = searchParams.get("time"); // "HH:MM" from week calendar
+  const rawTime = searchParams.get("time");
+  const preselectedTime = rawTime && /^\d{2}:\d{2}$/.test(rawTime) ? rawTime : null;
   const preselectedStaffId = searchParams.get("staff");
 
   const [customers, setCustomers] = useState<Customer[]>([]);

@@ -157,9 +157,14 @@ export default function ShiftsPage() {
         <button onClick={() => changeWeek(-1)} className="text-sm text-accent hover:underline min-h-[44px] px-2">← 前週</button>
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">{weekLabel}</span>
-          <button onClick={goToday} className="text-xs text-accent border border-accent rounded-lg px-2 py-1 hover:bg-accent/5 min-h-[32px]">今週</button>
+          <button onClick={goToday} className="text-xs text-accent border border-accent rounded-lg px-2 py-1 hover:bg-accent/5 min-h-[44px]">今週</button>
         </div>
         <button onClick={() => changeWeek(1)} className="text-sm text-accent hover:underline min-h-[44px] px-2">次週 →</button>
+      </div>
+
+      {/* 操作説明 */}
+      <div className="text-xs text-text-light space-y-0.5 px-1">
+        <p>スタッフ名タップ → デフォルトスケジュール編集 ／ セルタップ → その日だけの特別変更</p>
       </div>
 
       {/* 週間グリッド */}
@@ -183,11 +188,6 @@ export default function ShiftsPage() {
         />
       )}
 
-      {/* 説明 */}
-      <div className="text-xs text-text-light space-y-1 px-1">
-        <p>スタッフ名をタップ → デフォルトスケジュールを編集</p>
-        <p>セルをタップ → その日だけの特別変更を設定</p>
-      </div>
     </div>
   );
 }
