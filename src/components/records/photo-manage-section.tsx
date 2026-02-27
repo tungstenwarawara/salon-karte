@@ -117,7 +117,7 @@ export function PhotoManageSection({ recordId, salonId }: { recordId: string; sa
 
       <PhotoGroup label="施術前" photos={beforePhotos} {...groupProps} onAdd={() => handleAddClick("before")} />
       <PhotoGroup label="施術後" photos={afterPhotos} {...groupProps} onAdd={() => handleAddClick("after")} />
-      <PhotoGroup label="その他の写真" photos={otherPhotos} {...groupProps} onAdd={() => handleAddClick("other")} />
+      <PhotoGroup label="その他" photos={otherPhotos} {...groupProps} onAdd={() => handleAddClick("other")} />
     </div>
   );
 }
