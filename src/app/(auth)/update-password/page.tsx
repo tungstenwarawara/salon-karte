@@ -1,8 +1,10 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { translateAuthError } from "@/lib/supabase/auth-errors";
 
 function UpdatePasswordForm() {
   const router = useRouter();
@@ -76,7 +78,7 @@ function UpdatePasswordForm() {
 
     if (error) {
       console.error("パスワード設定エラー:", error);
-      setError(`パスワードの設定に失敗しました: ${error.message}`);
+      setError(translateAuthError(error.message));
       setLoading(false);
       return;
     }
@@ -148,6 +150,15 @@ function UpdatePasswordForm() {
             {loading ? "設定中..." : isInvite ? "パスワードを設定してはじめる" : "パスワードを更新"}
           </button>
         </form>
+      )}
+
+      {isInvite && (
+        <p className="text-center text-sm text-text-light mt-4">
+          すでにパスワードを設定済みの方は
+          <Link href="/login" className="text-accent font-medium ml-1 hover:underline">
+            ログイン
+          </Link>
+        </p>
       )}
     </div>
   );

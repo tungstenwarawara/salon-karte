@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { translateAuthError } from "@/lib/supabase/auth-errors";
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
@@ -22,7 +23,7 @@ export default function ResetPasswordPage() {
 
     if (error) {
       console.error("パスワードリセットエラー:", error);
-      setError(`パスワードリセットメールの送信に失敗しました: ${error.message}`);
+      setError(translateAuthError(error.message));
       setLoading(false);
       return;
     }
