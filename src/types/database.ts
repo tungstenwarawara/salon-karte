@@ -1432,6 +1432,17 @@ export type Database = {
           last_visit_date: string | null;
         }[];
       };
+      check_import_batch_modifications: {
+        Args: {
+          p_batch_id: string;
+          p_salon_id: string;
+        };
+        Returns: {
+          modified_count: number;
+          total_count: number;
+          batch_type: string;
+        }[];
+      };
       undo_import_batch: {
         Args: {
           p_batch_id: string;
