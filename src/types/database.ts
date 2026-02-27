@@ -1050,6 +1050,7 @@ export type Database = {
           email: string;
           role: "owner" | "manager" | "staff";
           is_active: boolean;
+          default_schedule: BusinessHours | null;
           created_at: string;
           updated_at: string;
         };
@@ -1061,6 +1062,7 @@ export type Database = {
           email: string;
           role: "owner" | "manager" | "staff";
           is_active?: boolean;
+          default_schedule?: BusinessHours | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1072,12 +1074,67 @@ export type Database = {
           email?: string;
           role?: "owner" | "manager" | "staff";
           is_active?: boolean;
+          default_schedule?: BusinessHours | null;
           created_at?: string;
           updated_at?: string;
         };
         Relationships: [
           {
             foreignKeyName: "staff_salon_id_fkey";
+            columns: ["salon_id"];
+            isOneToOne: false;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      staff_schedule_overrides: {
+        Row: {
+          id: string;
+          staff_id: string;
+          salon_id: string;
+          override_date: string;
+          is_working: boolean;
+          start_time: string | null;
+          end_time: string | null;
+          memo: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          staff_id: string;
+          salon_id: string;
+          override_date: string;
+          is_working?: boolean;
+          start_time?: string | null;
+          end_time?: string | null;
+          memo?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          staff_id?: string;
+          salon_id?: string;
+          override_date?: string;
+          is_working?: boolean;
+          start_time?: string | null;
+          end_time?: string | null;
+          memo?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "staff_schedule_overrides_staff_id_fkey";
+            columns: ["staff_id"];
+            isOneToOne: false;
+            referencedRelation: "staff";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "staff_schedule_overrides_salon_id_fkey";
             columns: ["salon_id"];
             isOneToOne: false;
             referencedRelation: "salons";
