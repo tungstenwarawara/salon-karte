@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 
-// POST: カウンセリングシート作成（サロンオーナー認証済み）
+// POST: 匿名カウンセリングシート作成（新規顧客用、サロンオーナー認証済み）
 export async function POST(request: Request) {
   const { user, salon, supabase } = await getAuthAndSalon();
   if (!user || !salon) {
@@ -15,23 +15,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 });
   }
 
-  const { customer_id, template_id } = (body ?? {}) as { customer_id: string; template_id?: string | null };
-
-  if (!customer_id || typeof customer_id !== "string") {
-    return NextResponse.json({ error: "顧客IDが必要です" }, { status: 400 });
-  }
-
-  // 顧客がこのサロンに所属しているか確認
-  const { data: customer } = await supabase
-    .from("customers")
-    .select("id")
-    .eq("id", customer_id)
-    .eq("salon_id", salon.id)
-    .single();
-
-  if (!customer) {
-    return NextResponse.json({ error: "顧客が見つかりません" }, { status: 404 });
-  }
+  const { template_id } = (body ?? {}) as { template_id?: string | null };
 
   // template_idが指定された場合、このサロンのテンプレートか確認
   if (template_id) {
@@ -51,11 +35,11 @@ export async function POST(request: Request) {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
+  // customer_id = null で匿名シート作成
   const { data, error } = await supabase
     .from("counseling_sheets")
     .insert({
       salon_id: salon.id,
-      customer_id,
       template_id: template_id ?? null,
       expires_at: expiresAt.toISOString(),
     })

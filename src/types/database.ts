@@ -788,7 +788,8 @@ export type Database = {
         Row: {
           id: string;
           salon_id: string;
-          customer_id: string;
+          customer_id: string | null;
+          template_id: string | null;
           token: string;
           status: "pending" | "submitted";
           responses: Record<string, unknown> | null;
@@ -800,7 +801,8 @@ export type Database = {
         Insert: {
           id?: string;
           salon_id: string;
-          customer_id: string;
+          customer_id?: string | null;
+          template_id?: string | null;
           token?: string;
           status?: "pending" | "submitted";
           responses?: Record<string, unknown> | null;
@@ -812,7 +814,8 @@ export type Database = {
         Update: {
           id?: string;
           salon_id?: string;
-          customer_id?: string;
+          customer_id?: string | null;
+          template_id?: string | null;
           token?: string;
           status?: "pending" | "submitted";
           responses?: Record<string, unknown> | null;
@@ -834,6 +837,51 @@ export type Database = {
             columns: ["customer_id"];
             isOneToOne: false;
             referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "counseling_sheets_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "counseling_templates";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      counseling_templates: {
+        Row: {
+          id: string;
+          salon_id: string;
+          name: string;
+          template: CounselingTemplate;
+          is_default: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          salon_id: string;
+          name?: string;
+          template: CounselingTemplate;
+          is_default?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          salon_id?: string;
+          name?: string;
+          template?: CounselingTemplate;
+          is_default?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "counseling_templates_salon_id_fkey";
+            columns: ["salon_id"];
+            isOneToOne: false;
+            referencedRelation: "salons";
             referencedColumns: ["id"];
           },
         ];

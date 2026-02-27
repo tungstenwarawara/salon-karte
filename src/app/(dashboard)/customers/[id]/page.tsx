@@ -46,7 +46,7 @@ export default async function CustomerDetailPage({
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-  const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult, counselingResult, lineLinkResult, salonTemplateResult] = await Promise.all([
+  const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult, counselingResult, lineLinkResult, salonTemplateResult, counselingTemplatesResult] = await Promise.all([
     supabase
       .from("treatment_records")
       .select("id, treatment_date, menu_name_snapshot, skin_condition_before, customer_id, treatment_record_menus(id, menu_name_snapshot, price_snapshot, payment_type, ticket_id)")
@@ -96,6 +96,11 @@ export default async function CustomerDetailPage({
       .select("counseling_template")
       .eq("id", salon.id)
       .single(),
+    supabase
+      .from("counseling_templates")
+      .select("id, name, template, is_default")
+      .eq("salon_id", salon.id)
+      .order("is_default", { ascending: false }),
   ]);
 
   const records = recordsResult.data ?? [];
@@ -106,6 +111,12 @@ export default async function CustomerDetailPage({
   const lineLink = lineLinkResult.data;
   const counselingTemplate = (salonTemplateResult.data?.counseling_template as CounselingTemplate | null)
     ?? DEFAULT_COUNSELING_TEMPLATE;
+  const counselingTemplates = (counselingTemplatesResult.data ?? []).map((d) => ({
+    id: d.id as string,
+    name: d.name as string,
+    template: d.template as unknown as CounselingTemplate,
+    is_default: d.is_default as boolean,
+  }));
 
   // 写真一括ダウンロードボタンの表示判定（head: true でデータ転送ゼロ）
   const recordIds = records.map((r) => r.id);
@@ -221,6 +232,7 @@ export default async function CustomerDetailPage({
         purchaseTotal={purchaseTotal}
         counselingSheets={counselingSheets}
         counselingTemplate={counselingTemplate}
+        counselingTemplates={counselingTemplates}
       />
     </div>
   );

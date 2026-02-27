@@ -19,6 +19,13 @@ type RecordWithMenus = TreatmentRecord & {
   treatment_record_menus: TreatmentRecordMenu[];
 };
 
+type CounselingTemplateItem = {
+  id: string;
+  name: string;
+  template: CounselingTemplate;
+  is_default: boolean;
+};
+
 type Props = {
   customerId: string;
   salonId: string;
@@ -30,6 +37,7 @@ type Props = {
   purchaseTotal: number;
   counselingSheets: CounselingSheet[];
   counselingTemplate: CounselingTemplate | null;
+  counselingTemplates: CounselingTemplateItem[];
 };
 
 type TabKey = "treatment" | "tickets" | "purchases" | "counseling";
@@ -45,6 +53,7 @@ export function CustomerDetailContent({
   purchaseTotal,
   counselingSheets,
   counselingTemplate,
+  counselingTemplates,
 }: Props) {
   const [activeTab, setActiveTab] = useState<TabKey>("treatment");
 
@@ -89,7 +98,7 @@ export function CustomerDetailContent({
           />
         </div>
         <div className={activeTab === "counseling" ? "" : "hidden"}>
-          <CounselingSection customerId={customerId} sheets={counselingSheets} counselingTemplate={counselingTemplate} />
+          <CounselingSection customerId={customerId} sheets={counselingSheets} counselingTemplate={counselingTemplate} templates={counselingTemplates} />
         </div>
       </div>
     </div>

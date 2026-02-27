@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { getPhotoUrls } from "@/lib/supabase/storage";
+import { PhotoLightbox, type LightboxPhoto } from "@/components/ui/photo-lightbox";
 import type { Database } from "@/types/database";
 
 type TreatmentPhoto = Database["public"]["Tables"]["treatment_photos"]["Row"];
@@ -13,6 +14,7 @@ export function BeforeAfterComparison({
 }) {
   const [urlMap, setUrlMap] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   // 全写真のSigned URLを一括取得（N+1問題の解消）
   useEffect(() => {
@@ -30,6 +32,24 @@ export function BeforeAfterComparison({
   const beforePhotos = photos.filter((p) => p.photo_type === "before");
   const afterPhotos = photos.filter((p) => p.photo_type === "after");
   const otherPhotos = photos.filter((p) => p.photo_type === "other");
+
+  // ライトボックス用: 全写真をフラット配列化
+  const allPhotos = useMemo(() => [
+    ...beforePhotos.map((p) => ({ photo: p, label: "施術前" })),
+    ...afterPhotos.map((p) => ({ photo: p, label: "施術後" })),
+    ...otherPhotos.map((p) => ({ photo: p, label: "その他" })),
+  ], [beforePhotos, afterPhotos, otherPhotos]);
+
+  const lightboxPhotos: LightboxPhoto[] = useMemo(() =>
+    allPhotos.map(({ photo, label }) => ({
+      url: urlMap.get(photo.storage_path) ?? "",
+      label,
+      memo: photo.memo ?? undefined,
+    })),
+  [allPhotos, urlMap]);
+
+  const getPhotoIndex = (photo: TreatmentPhoto) =>
+    allPhotos.findIndex((p) => p.photo.id === photo.id);
 
   if (photos.length === 0) return null;
 
@@ -52,9 +72,9 @@ export function BeforeAfterComparison({
                 const after = afterPhotos[i];
                 return (
                   <div key={before.id} className="grid grid-cols-2 gap-2">
-                    <PhotoCard photo={before} url={urlMap.get(before.storage_path)} label="施術前" />
+                    <PhotoCard photo={before} url={urlMap.get(before.storage_path)} label="施術前" onClick={() => setLightboxIndex(getPhotoIndex(before))} />
                     {after ? (
-                      <PhotoCard photo={after} url={urlMap.get(after.storage_path)} label="施術後" />
+                      <PhotoCard photo={after} url={urlMap.get(after.storage_path)} label="施術後" onClick={() => setLightboxIndex(getPhotoIndex(after))} />
                     ) : (
                       <div className="bg-background border border-border rounded-xl aspect-square flex items-center justify-center text-text-light text-sm">
                         施術後の写真なし
@@ -68,7 +88,7 @@ export function BeforeAfterComparison({
                 <div className="grid grid-cols-2 gap-2">
                   {afterPhotos.slice(beforePhotos.length).map((photo) => (
                     <div key={photo.id} className="col-start-2">
-                      <PhotoCard photo={photo} url={urlMap.get(photo.storage_path)} label="施術後" />
+                      <PhotoCard photo={photo} url={urlMap.get(photo.storage_path)} label="施術後" onClick={() => setLightboxIndex(getPhotoIndex(photo))} />
                     </div>
                   ))}
                 </div>
@@ -82,7 +102,7 @@ export function BeforeAfterComparison({
               <p className="text-sm text-text-light mb-2">施術前</p>
               <div className="grid grid-cols-2 gap-2">
                 {beforePhotos.map((photo) => (
-                  <PhotoCard key={photo.id} photo={photo} url={urlMap.get(photo.storage_path)} />
+                  <PhotoCard key={photo.id} photo={photo} url={urlMap.get(photo.storage_path)} onClick={() => setLightboxIndex(getPhotoIndex(photo))} />
                 ))}
               </div>
             </div>
@@ -94,7 +114,7 @@ export function BeforeAfterComparison({
               <p className="text-sm text-text-light mb-2">施術後</p>
               <div className="grid grid-cols-2 gap-2">
                 {afterPhotos.map((photo) => (
-                  <PhotoCard key={photo.id} photo={photo} url={urlMap.get(photo.storage_path)} />
+                  <PhotoCard key={photo.id} photo={photo} url={urlMap.get(photo.storage_path)} onClick={() => setLightboxIndex(getPhotoIndex(photo))} />
                 ))}
               </div>
             </div>
@@ -106,10 +126,19 @@ export function BeforeAfterComparison({
               <p className="text-sm text-text-light mb-2">その他の写真</p>
               <div className="grid grid-cols-2 gap-2">
                 {otherPhotos.map((photo) => (
-                  <PhotoCard key={photo.id} photo={photo} url={urlMap.get(photo.storage_path)} />
+                  <PhotoCard key={photo.id} photo={photo} url={urlMap.get(photo.storage_path)} onClick={() => setLightboxIndex(getPhotoIndex(photo))} />
                 ))}
               </div>
             </div>
+          )}
+
+          {/* ライトボックス */}
+          {lightboxIndex !== null && (
+            <PhotoLightbox
+              photos={lightboxPhotos}
+              initialIndex={lightboxIndex}
+              onClose={() => setLightboxIndex(null)}
+            />
           )}
         </>
       )}
@@ -122,13 +151,19 @@ function PhotoCard({
   photo,
   url,
   label,
+  onClick,
 }: {
   photo: TreatmentPhoto;
   url?: string;
   label?: string;
+  onClick?: () => void;
 }) {
   return (
-    <div className="bg-background border border-border rounded-xl overflow-hidden">
+    <button
+      type="button"
+      onClick={onClick}
+      className="bg-background border border-border rounded-xl overflow-hidden text-left w-full cursor-pointer"
+    >
       {label && (
         <div className="px-2 py-1 bg-primary/10">
           <span className="text-xs font-medium text-primary">{label}</span>
@@ -152,6 +187,6 @@ function PhotoCard({
           <p className="text-xs text-text-light">{photo.memo}</p>
         </div>
       )}
-    </div>
+    </button>
   );
 }
