@@ -17,6 +17,8 @@
 - `npm run test:watch` — テスト監視モード
 - `npm run test:coverage` — カバレッジ付きテスト
 - `python3 scripts/check-select-columns.sh` — カラム名照合（コミット前必須）
+- `npx tsx scripts/seed-test-data.ts` — テストデータ投入（初回）
+- `npx tsx scripts/seed-test-data.ts --reset` — テストデータリセット
 
 ## コミット前チェック（必須）
 1. `npx tsc --noEmit` パス
@@ -32,9 +34,14 @@
 ## プッシュ後の業務テスト（必須）
 コミット＆プッシュ完了後、Claude Preview MCP で業務テストを実施する。
 
+### テストサロン（必須）
+- **業務テストには必ずテストサロンアカウントを使用する**
+- **本番アカウントでのテスト禁止**（実オーナーのデータは個人情報）
+- 詳細: `.claude/rules/test-salon.md` を参照
+
 ### 手順
 1. `preview_start(name: "dev")` でdev server起動（起動済みなら不要）
-2. ログイン済み状態を確認（未ログインなら `preview_eval` でセッション確認）
+2. テストサロンでログイン（`.claude/rules/test-salon.md` の認証情報を使用）
 3. `git diff` で変更ファイルを特定し、テスト選定ガイド（`.claude/tests/test-case-master.md`）に従いテスト対象フローを決定
 4. 対象フローの `[AUTO]` テストケースを `preview_snapshot` / `preview_click` / `preview_fill` / `preview_eval` で実行
 5. 全テスト結果をユーザーに報告（✅PASS / ❌FAIL / ⚠️WARN）
@@ -69,3 +76,4 @@
 - @.claude/rules/database.md — スキーマ・マイグレーション
 - @.claude/rules/performance.md — パフォーマンス最適化
 - @.claude/rules/lessons-learned.md — 過去の障害・教訓
+- @.claude/rules/test-salon.md — テストサロン運用ルール
