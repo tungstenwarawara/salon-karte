@@ -101,7 +101,20 @@ export async function resendInvite(staffId: string) {
   // auth_user_id が存在する = 既にauth.usersに登録済み → パスワード再設定メールを送信
   // auth_user_id が null = 未登録 → inviteUserByEmail で招待
   if (target.auth_user_id) {
-    // 既存ユーザー: resetPasswordForEmail でパスワード設定メール送信
+    // パスワードをランダム値にリセットしてから recovery メールを送信
+    // 理由: ユーザーが以前と同じパスワードを設定しようとすると
+    // Supabase が "same_password" エラーを返して詰まるため
+    const { error: updateError } =
+      await adminClient.auth.admin.updateUserById(target.auth_user_id, {
+        password: crypto.randomUUID(),
+      });
+
+    if (updateError) {
+      console.error("パスワードリセットエラー:", updateError);
+      return { error: `招待メールの再送に失敗しました: ${updateError.message}` };
+    }
+
+    // リカバリーメール送信
     const { error: resetError } =
       await adminClient.auth.resetPasswordForEmail(target.email, {
         redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/update-password?invite=1`,
