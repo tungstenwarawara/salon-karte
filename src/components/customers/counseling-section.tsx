@@ -26,6 +26,7 @@ export function CounselingSection({ customerId, sheets, counselingTemplate, temp
   const [creating, setCreating] = useState(false);
   const [showTemplateSelect, setShowTemplateSelect] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [includeCustomerInfo, setIncludeCustomerInfo] = useState(false);
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -39,14 +40,9 @@ export function CounselingSection({ customerId, sheets, counselingTemplate, temp
   const hasMoreSubmitted = submitted.length > 1;
 
   const handleCreateClick = () => {
-    if (templates.length <= 1) {
-      // テンプレート0〜1個: 即発行
-      handleCreate(templates[0]?.id ?? null);
-    } else {
-      // テンプレート2個: 選択UIを表示
-      setSelectedTemplateId(templates.find((t) => t.is_default)?.id ?? templates[0]?.id ?? null);
-      setShowTemplateSelect(true);
-    }
+    // テンプレート数に関わらず選択UIを表示（チェックボックスがあるため）
+    setSelectedTemplateId(templates.find((t) => t.is_default)?.id ?? templates[0]?.id ?? null);
+    setShowTemplateSelect(true);
   };
 
   const handleCreate = async (templateId: string | null) => {
@@ -56,11 +52,20 @@ export function CounselingSection({ customerId, sheets, counselingTemplate, temp
       const res = await fetch("/api/counseling/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customer_id: customerId, template_id: templateId }),
+        body: JSON.stringify({
+          customer_id: customerId,
+          template_id: templateId,
+          include_customer_info: includeCustomerInfo,
+        }),
       });
       if (res.ok) {
         const data = await res.json();
         setGeneratedToken(data.token);
+        // QRコードを自動生成
+        const url = getUrl(data.token);
+        const dataUrl = await QRCode.toDataURL(url, { width: 200, margin: 2 });
+        setQrDataUrl(dataUrl);
+        setShowQr(true);
       }
     } finally {
       setCreating(false);
@@ -112,25 +117,38 @@ export function CounselingSection({ customerId, sheets, counselingTemplate, temp
         </button>
       </div>
 
-      {/* テンプレート選択UI */}
+      {/* テンプレート選択 + オプションUI */}
       {showTemplateSelect && (
         <div className="bg-background rounded-xl p-3 space-y-3 mb-3">
-          <p className="text-sm font-medium">テンプレートを選択</p>
-          <div className="space-y-2">
-            {templates.map((t) => (
-              <label key={t.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-surface cursor-pointer">
-                <input
-                  type="radio"
-                  name="template"
-                  checked={selectedTemplateId === t.id}
-                  onChange={() => setSelectedTemplateId(t.id)}
-                  className="w-4 h-4 accent-accent"
-                />
-                <span className="text-sm">{t.name}</span>
-                {t.is_default && <span className="text-xs text-accent">デフォルト</span>}
-              </label>
-            ))}
-          </div>
+          {templates.length > 1 && (
+            <>
+              <p className="text-sm font-medium">テンプレートを選択</p>
+              <div className="space-y-2">
+                {templates.map((t) => (
+                  <label key={t.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-surface cursor-pointer">
+                    <input
+                      type="radio"
+                      name="template"
+                      checked={selectedTemplateId === t.id}
+                      onChange={() => setSelectedTemplateId(t.id)}
+                      className="w-4 h-4 accent-accent"
+                    />
+                    <span className="text-sm">{t.name}</span>
+                    {t.is_default && <span className="text-xs text-accent">デフォルト</span>}
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+          <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
+            <input
+              type="checkbox"
+              checked={includeCustomerInfo}
+              onChange={(e) => setIncludeCustomerInfo(e.target.checked)}
+              className="w-4 h-4 accent-accent flex-shrink-0"
+            />
+            <span className="text-sm">顧客情報の入力も含める</span>
+          </label>
           <div className="flex gap-2">
             <button
               onClick={() => setShowTemplateSelect(false)}
