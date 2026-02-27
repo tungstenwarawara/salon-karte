@@ -7,7 +7,7 @@ import { PhotoCard } from "./photo-card";
 type PhotoEntry = {
   file: File;
   preview: string;
-  type: "before" | "after";
+  type: "before" | "after" | "other";
   memo: string;
 };
 
@@ -19,7 +19,7 @@ export function PhotoUpload({
   onChange: (photos: PhotoEntry[]) => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const addingTypeRef = useRef<"before" | "after">("before");
+  const addingTypeRef = useRef<"before" | "after" | "other">("before");
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,7 +56,7 @@ export function PhotoUpload({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleAdd = (type: "before" | "after") => {
+  const handleAdd = (type: "before" | "after" | "other") => {
     addingTypeRef.current = type;
     setValidationError(null);
     fileInputRef.current?.click();
@@ -73,6 +73,7 @@ export function PhotoUpload({
 
   const beforePhotos = photos.filter((p) => p.type === "before");
   const afterPhotos = photos.filter((p) => p.type === "after");
+  const otherPhotos = photos.filter((p) => p.type === "other");
 
   return (
     <div className="space-y-4">
@@ -117,6 +118,17 @@ export function PhotoUpload({
         onRemove={handleRemove}
         onMemoChange={handleMemoChange}
         emptyLabel="タップして施術後の写真を追加"
+      />
+
+      {/* その他 */}
+      <PhotoSection
+        label="その他の写真"
+        photos={otherPhotos}
+        allPhotos={photos}
+        onAdd={() => handleAdd("other")}
+        onRemove={handleRemove}
+        onMemoChange={handleMemoChange}
+        emptyLabel="タップしてその他の写真を追加"
       />
     </div>
   );

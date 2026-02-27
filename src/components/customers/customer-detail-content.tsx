@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Database } from "@/types/database";
+import type { CounselingTemplate } from "@/types/counseling-template";
 import { CustomerDetailTabs } from "./customer-detail-tabs";
 import { TreatmentHistory } from "./treatment-history";
 import { CourseTicketSection } from "./course-ticket-section";
@@ -28,6 +29,7 @@ type Props = {
   purchases: Purchase[];
   purchaseTotal: number;
   counselingSheets: CounselingSheet[];
+  counselingTemplate: CounselingTemplate | null;
 };
 
 type TabKey = "treatment" | "tickets" | "purchases" | "counseling";
@@ -42,6 +44,7 @@ export function CustomerDetailContent({
   purchases,
   purchaseTotal,
   counselingSheets,
+  counselingTemplate,
 }: Props) {
   const [activeTab, setActiveTab] = useState<TabKey>("treatment");
 
@@ -86,7 +89,7 @@ export function CustomerDetailContent({
           />
         </div>
         <div className={activeTab === "counseling" ? "" : "hidden"}>
-          <CounselingSection customerId={customerId} sheets={counselingSheets} />
+          <CounselingSection customerId={customerId} sheets={counselingSheets} counselingTemplate={counselingTemplate} />
         </div>
       </div>
     </div>

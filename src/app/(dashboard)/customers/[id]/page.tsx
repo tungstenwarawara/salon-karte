@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { PageHeader } from "@/components/layout/page-header";
 import type { Database } from "@/types/database";
+import type { CounselingTemplate } from "@/types/counseling-template";
+import { DEFAULT_COUNSELING_TEMPLATE } from "@/lib/counseling-default-template";
 import { VisitAnalytics } from "@/components/customers/visit-analytics";
 import { CustomerBasicInfo } from "@/components/customers/customer-basic-info";
 import { CustomerLineSection } from "@/components/customers/customer-line-section";
@@ -44,7 +46,7 @@ export default async function CustomerDetailPage({
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-  const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult, counselingResult, lineLinkResult] = await Promise.all([
+  const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult, counselingResult, lineLinkResult, salonTemplateResult] = await Promise.all([
     supabase
       .from("treatment_records")
       .select("id, treatment_date, menu_name_snapshot, skin_condition_before, customer_id, treatment_record_menus(id, menu_name_snapshot, price_snapshot, payment_type, ticket_id)")
@@ -89,6 +91,11 @@ export default async function CustomerDetailPage({
       .eq("customer_id", id)
       .eq("salon_id", salon.id)
       .maybeSingle(),
+    supabase
+      .from("salons")
+      .select("counseling_template")
+      .eq("id", salon.id)
+      .single(),
   ]);
 
   const records = recordsResult.data ?? [];
@@ -97,6 +104,8 @@ export default async function CustomerDetailPage({
   const courseTickets = courseTicketsResult.data ?? [];
   const counselingSheets = counselingResult.data ?? [];
   const lineLink = lineLinkResult.data;
+  const counselingTemplate = (salonTemplateResult.data?.counseling_template as CounselingTemplate | null)
+    ?? DEFAULT_COUNSELING_TEMPLATE;
 
   // 写真一括ダウンロードボタンの表示判定（head: true でデータ転送ゼロ）
   const recordIds = records.map((r) => r.id);
@@ -211,6 +220,7 @@ export default async function CustomerDetailPage({
         purchases={purchases}
         purchaseTotal={purchaseTotal}
         counselingSheets={counselingSheets}
+        counselingTemplate={counselingTemplate}
       />
     </div>
   );

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import QRCode from "qrcode";
 import type { Database } from "@/types/database";
+import type { CounselingTemplate } from "@/types/counseling-template";
 import { ResponseViewer } from "@/components/counseling/response-viewer";
 
 type CounselingSheet = Database["public"]["Tables"]["counseling_sheets"]["Row"];
@@ -10,9 +11,10 @@ type CounselingSheet = Database["public"]["Tables"]["counseling_sheets"]["Row"];
 type Props = {
   customerId: string;
   sheets: CounselingSheet[];
+  counselingTemplate: CounselingTemplate | null;
 };
 
-export function CounselingSection({ customerId, sheets }: Props) {
+export function CounselingSection({ customerId, sheets, counselingTemplate }: Props) {
   const [creating, setCreating] = useState(false);
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -99,7 +101,7 @@ export function CounselingSection({ customerId, sheets }: Props) {
                   {expandedId === s.id ? "閉じる" : "回答を見る"}
                 </button>
               </div>
-              {expandedId === s.id && <ResponseViewer responses={s.responses as Record<string, unknown> | null} />}
+              {expandedId === s.id && <ResponseViewer responses={s.responses as Record<string, unknown> | null} template={counselingTemplate} />}
             </div>
           ))}
           {hasMoreSubmitted && (

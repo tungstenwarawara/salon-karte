@@ -29,6 +29,7 @@ export function BeforeAfterComparison({
 
   const beforePhotos = photos.filter((p) => p.photo_type === "before");
   const afterPhotos = photos.filter((p) => p.photo_type === "after");
+  const otherPhotos = photos.filter((p) => p.photo_type === "other");
 
   if (photos.length === 0) return null;
 
@@ -93,6 +94,18 @@ export function BeforeAfterComparison({
               <p className="text-sm text-text-light mb-2">施術後</p>
               <div className="grid grid-cols-2 gap-2">
                 {afterPhotos.map((photo) => (
+                  <PhotoCard key={photo.id} photo={photo} url={urlMap.get(photo.storage_path)} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* その他の写真 */}
+          {otherPhotos.length > 0 && (
+            <div>
+              <p className="text-sm text-text-light mb-2">その他の写真</p>
+              <div className="grid grid-cols-2 gap-2">
+                {otherPhotos.map((photo) => (
                   <PhotoCard key={photo.id} photo={photo} url={urlMap.get(photo.storage_path)} />
                 ))}
               </div>

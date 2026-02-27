@@ -28,7 +28,7 @@ type RecordMenu = {
   payment_type: string;
 };
 
-type Photo = { id: string; storage_path: string; photo_type: string; memo: string | null };
+type Photo = { id: string; storage_path: string; photo_type: string; memo: string | null; sort_order: number };
 type Purchase = { id: string; item_name: string; quantity: number; unit_price: number; total_price: number };
 type Ticket = { id: string; ticket_name: string; total_sessions: number; price: number | null };
 
@@ -57,9 +57,10 @@ export default async function KartePrintPage({
       .returns<RecordMenu[]>(),
     supabase
       .from("treatment_photos")
-      .select("id, storage_path, photo_type, memo")
+      .select("id, storage_path, photo_type, memo, sort_order")
       .eq("treatment_record_id", id)
       .order("photo_type")
+      .order("sort_order")
       .returns<Photo[]>(),
     supabase
       .from("purchases")

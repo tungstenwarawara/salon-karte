@@ -119,7 +119,8 @@ async function uploadSinglePhoto(
   recordId: string,
   salonId: string,
   photo: PhotoEntry,
-  index: number
+  index: number,
+  sortOrder?: number
 ): Promise<string | null> {
   // セキュリティ検証1: ファイルサイズチェック
   if (photo.file.size > MAX_FILE_SIZE) {
@@ -159,6 +160,7 @@ async function uploadSinglePhoto(
       storage_path: path,
       photo_type: photo.type,
       memo: photo.memo || null,
+      sort_order: sortOrder ?? index,
     });
 
   if (dbError) {
@@ -171,14 +173,15 @@ async function uploadSinglePhoto(
 export async function uploadPhotos(
   recordId: string,
   salonId: string,
-  photos: PhotoEntry[]
+  photos: PhotoEntry[],
+  sortOrders?: number[]
 ) {
   const supabase = createClient();
 
   // P4: 全写真を並列アップロード（逐次 → 並列で3〜4秒改善）
   const results = await Promise.allSettled(
     photos.map((photo, index) =>
-      uploadSinglePhoto(supabase, recordId, salonId, photo, index)
+      uploadSinglePhoto(supabase, recordId, salonId, photo, index, sortOrders?.[index])
     )
   );
 

@@ -1,4 +1,4 @@
-import type { CounselingResponseData } from "@/types/counseling-template";
+import type { CounselingResponseData, CounselingTemplate } from "@/types/counseling-template";
 
 // 旧形式の型定義（後方互換用）
 type LegacyHealthData = { allergies?: string; medications?: string; conditions?: string[]; notes?: string };
@@ -37,12 +37,31 @@ function isSectionFormat(r: Record<string, unknown>): boolean {
   return false;
 }
 
-export function ResponseViewer({ responses }: { responses: Record<string, unknown> | null }) {
+type Props = {
+  responses: Record<string, unknown> | null;
+  template?: CounselingTemplate | null;
+};
+
+export function ResponseViewer({ responses, template }: Props) {
   if (!responses) return <p className="text-xs text-text-light">回答データがありません</p>;
 
   // 旧形式との後方互換
   if (isLegacyFormat(responses)) {
     return <LegacyViewer responses={responses} />;
+  }
+
+  // テンプレートからラベル解決用Mapを構築
+  const sectionLabels = new Map<string, string>();
+  const fieldLabels = new Map<string, Map<string, string>>();
+  if (template) {
+    for (const section of template.sections) {
+      sectionLabels.set(section.id, section.title);
+      const fMap = new Map<string, string>();
+      for (const field of section.fields) {
+        fMap.set(field.id, field.label);
+      }
+      fieldLabels.set(section.id, fMap);
+    }
   }
 
   // 新形式: CounselingResponseData
@@ -57,14 +76,18 @@ export function ResponseViewer({ responses }: { responses: Record<string, unknow
         });
         if (entries.length === 0) return null;
 
+        const sectionTitle = sectionLabels.get(sectionId)
+          ?? LEGACY_SECTION_LABELS[sectionId]
+          ?? sectionId;
+
         return (
           <div key={sectionId} className="space-y-1">
-            <p className="text-xs font-bold text-text-light">
-              {LEGACY_SECTION_LABELS[sectionId] ?? sectionId}
-            </p>
+            <p className="text-xs font-bold text-text-light">{sectionTitle}</p>
             {entries.map(([fieldId, value]) => {
               const display = Array.isArray(value) ? value.join("、") : String(value);
-              const label = LEGACY_LABELS[sectionId]?.[fieldId] ?? fieldId;
+              const label = fieldLabels.get(sectionId)?.get(fieldId)
+                ?? LEGACY_LABELS[sectionId]?.[fieldId]
+                ?? fieldId;
               return <Row key={fieldId} label={label} value={display} />;
             })}
           </div>

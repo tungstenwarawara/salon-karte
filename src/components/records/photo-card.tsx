@@ -4,7 +4,7 @@ export function PhotoCard({
   onRemove,
   onMemoChange,
 }: {
-  photo: { preview: string; type: "before" | "after"; memo: string };
+  photo: { preview: string; type: "before" | "after" | "other"; memo: string };
   onRemove: () => void;
   onMemoChange: (memo: string) => void;
 }) {
@@ -13,7 +13,7 @@ export function PhotoCard({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={photo.preview}
-        alt={photo.type === "before" ? "施術前" : "施術後"}
+        alt={photo.type === "before" ? "施術前" : photo.type === "after" ? "施術後" : "その他"}
         className="w-full aspect-square object-cover"
       />
       <button
