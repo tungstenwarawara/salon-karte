@@ -16,9 +16,18 @@ const LEAD_TIME_OPTIONS = [
   { value: 180, label: "3時間前まで" },
 ] as const;
 
+const CONCURRENT_OPTIONS = [
+  { value: 1, label: "1（同時予約なし）" },
+  { value: 2, label: "2" },
+  { value: 3, label: "3" },
+  { value: 4, label: "4" },
+  { value: 5, label: "5" },
+] as const;
+
 const DEFAULT_SETTINGS: BookingSettings = {
   same_day_enabled: true,
   lead_time_minutes: 0,
+  max_concurrent_appointments: 1,
 };
 
 export default function BookingRulesPage() {
@@ -42,7 +51,7 @@ export default function BookingRulesPage() {
         .eq("id", sid)
         .single<{ booking_settings: BookingSettings | null }>();
       if (data?.booking_settings) {
-        setSettings(data.booking_settings);
+        setSettings({ ...DEFAULT_SETTINGS, ...data.booking_settings });
       }
       setLoading(false);
     };
@@ -127,6 +136,25 @@ export default function BookingRulesPage() {
             </select>
           </div>
         )}
+
+        {/* 同時予約数の上限 */}
+        <div className="space-y-2">
+          <h3 className="font-bold text-sm">同時予約数の上限</h3>
+          <p className="text-xs text-text-light">
+            同じ時間帯に受けられる予約の最大数（ベッド・部屋の数に合わせて設定）
+          </p>
+          <select
+            value={settings.max_concurrent_appointments}
+            onChange={(e) =>
+              setSettings({ ...settings, max_concurrent_appointments: Number(e.target.value) })
+            }
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors min-h-[48px]"
+          >
+            {CONCURRENT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <button

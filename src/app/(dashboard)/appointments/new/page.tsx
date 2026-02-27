@@ -109,19 +109,18 @@ function NewAppointmentForm() {
     setLoading(false);
   };
 
-  // 日付・スタッフ変更時に当日の予約を取得
+  // 日付変更時に当日の全予約を取得（同時予約上限チェック用にサロン全体）
   useEffect(() => {
     if (!salonId || !appointmentDate) return;
     const loadDayAppointments = async () => {
       const supabase = createClient();
-      let query = supabase.from("appointments").select("id, start_time, end_time, customers(last_name, first_name)")
-        .eq("salon_id", salonId).eq("appointment_date", appointmentDate).neq("status", "cancelled");
-      if (staffId) query = query.eq("staff_id", staffId);
-      const { data } = await query.order("start_time", { ascending: true }).returns<DayAppointment[]>();
+      const { data } = await supabase.from("appointments").select("id, start_time, end_time, customers(last_name, first_name)")
+        .eq("salon_id", salonId).eq("appointment_date", appointmentDate).neq("status", "cancelled")
+        .order("start_time", { ascending: true }).returns<DayAppointment[]>();
       setDayAppointments(data ?? []);
     };
     loadDayAppointments();
-  }, [salonId, appointmentDate, staffId]);
+  }, [salonId, appointmentDate]);
 
   const updateEndTimeFromMenus = (menuIds: string[], sH: string, sM: string, forceCalc = false) => {
     if (!forceCalc && isEndTimeManual) return;

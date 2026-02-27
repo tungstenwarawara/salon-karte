@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { isWithinBusinessHours, getScheduleForDate } from "@/lib/business-hours";
-import type { TreatmentMenu, BusinessHours } from "@/components/appointments/types";
+import type { TreatmentMenu, BusinessHours, BookingSettings } from "@/components/appointments/types";
 
 type EditParams = {
   appointmentId: string;
@@ -17,6 +17,7 @@ type EditParams = {
   memo: string;
   businessHours?: BusinessHours | null;
   salonHolidays?: string[] | null;
+  bookingSettings?: BookingSettings | null;
 };
 
 type EditResult =
@@ -25,7 +26,7 @@ type EditResult =
 
 /** 予約編集のsubmit処理（バリデーション・重複チェック・中間テーブル差し替え） */
 export async function updateAppointment(params: EditParams): Promise<EditResult> {
-  const { appointmentId, salonId, staffId, menus, selectedMenuIds, appointmentDate, startHour, startMinute, endHour, endMinute, source, memo, businessHours, salonHolidays } = params;
+  const { appointmentId, salonId, staffId, menus, selectedMenuIds, appointmentDate, startHour, startMinute, endHour, endMinute, source, memo, businessHours, salonHolidays, bookingSettings } = params;
   const supabase = createClient();
 
   const startTime = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
@@ -49,31 +50,35 @@ export async function updateAppointment(params: EditParams): Promise<EditResult>
     }
   }
 
-  // 重複チェック（自分自身を除外、staffIdがある場合はスタッフ単位でチェック）
-  let overlapQuery = supabase
+  // 同時予約数上限（デフォルト1）
+  const maxConcurrent = bookingSettings?.max_concurrent_appointments ?? 1;
+
+  // 重複チェック（自分自身を除外、サロン全体で取得）
+  const { data: existing } = await supabase
     .from("appointments")
     .select("id, start_time, end_time, customers(last_name, first_name)")
     .eq("salon_id", salonId)
     .eq("appointment_date", appointmentDate)
     .neq("status", "cancelled")
     .neq("id", appointmentId);
-  if (staffId) overlapQuery = overlapQuery.eq("staff_id", staffId);
-  const { data: existing } = await overlapQuery;
 
   if (existing && existing.length > 0) {
     const toMin = (t: string) => {
       const [hh, mm] = t.slice(0, 5).split(":").map(Number);
       return hh * 60 + mm;
     };
-    const overlap = existing.find((apt) => {
+    const overlapping = existing.filter((apt) => {
       const eStart = toMin(apt.start_time);
       const eEnd = apt.end_time ? toMin(apt.end_time) : eStart + 60;
       return startMin < eEnd && eStart < endMin;
     });
-    if (overlap) {
-      const c = overlap.customers as { last_name: string; first_name: string } | null;
-      const name = c ? `${c.last_name} ${c.first_name}` : "別の顧客";
-      return { success: false, error: `この時間帯には既に${name}様の予約があります（${overlap.start_time.slice(0, 5)}〜）` };
+    if (overlapping.length >= maxConcurrent) {
+      if (maxConcurrent <= 1 && overlapping[0]) {
+        const c = overlapping[0].customers as { last_name: string; first_name: string } | null;
+        const name = c ? `${c.last_name} ${c.first_name}` : "別の顧客";
+        return { success: false, error: `この時間帯には既に${name}様の予約があります（${overlapping[0].start_time.slice(0, 5)}〜）` };
+      }
+      return { success: false, error: `この時間帯の予約数が上限（${maxConcurrent}件）に達しています` };
     }
   }
 

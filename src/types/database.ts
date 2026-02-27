@@ -20,6 +20,7 @@ export type BusinessHours = {
 export type BookingSettings = {
   same_day_enabled: boolean;
   lead_time_minutes: number; // 0 = 制限なし / 30 / 60 / 120 / 180
+  max_concurrent_appointments: number; // 同時予約上限 1〜5, デフォルト1
 };
 
 export type Database = {

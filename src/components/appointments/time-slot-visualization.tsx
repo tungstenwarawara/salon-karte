@@ -72,13 +72,17 @@ export function TimeSlotVisualization({
     slots.push(m);
   }
 
-  // 予約済みスロットの判定
+  // 同時予約上限
+  const maxConcurrent = bookingSettings?.max_concurrent_appointments ?? 1;
+
+  // 予約済みスロットの判定（同時予約上限に達しているか）
   const isOccupied = (slotMin: number): boolean => {
-    return appointments.some((apt) => {
+    const overlapping = appointments.filter((apt) => {
       const aStart = timeToMinutes(apt.start_time.slice(0, 5));
       const aEnd = apt.end_time ? timeToMinutes(apt.end_time.slice(0, 5)) : aStart + 60;
       return slotMin >= aStart && slotMin < aEnd;
     });
+    return overlapping.length >= maxConcurrent;
   };
 
   // 予約中の顧客名を取得

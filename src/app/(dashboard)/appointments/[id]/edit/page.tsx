@@ -12,7 +12,7 @@ import { AppointmentMenuSelector } from "@/components/appointments/appointment-m
 import { AppointmentDateTimeSection } from "@/components/appointments/appointment-datetime-section";
 import { updateAppointment } from "@/components/appointments/appointment-edit-submit";
 import { INPUT_CLASS, SOURCE_OPTIONS } from "@/components/appointments/types";
-import type { TreatmentMenu, DayAppointment, BusinessHours } from "@/components/appointments/types";
+import type { TreatmentMenu, DayAppointment, BusinessHours, BookingSettings } from "@/components/appointments/types";
 import type { Database } from "@/types/database";
 
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
@@ -30,6 +30,7 @@ export default function EditAppointmentPage() {
   const [customerName, setCustomerName] = useState("");
   const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
   const [salonHolidays, setSalonHolidays] = useState<string[] | null>(null);
+  const [bookingSettings, setBookingSettings] = useState<BookingSettings | null>(null);
   const [dayAppointments, setDayAppointments] = useState<DayAppointment[]>([]);
   const [staffList, setStaffList] = useState<{ id: string; name: string }[]>([]);
   const [staffId, setStaffId] = useState<string>("");
@@ -52,11 +53,12 @@ export default function EditAppointmentPage() {
     setSalonId(resolvedSalonId);
 
     const supabase = createClient();
-    const { data: salon } = await supabase.from("salons").select("id, business_hours, salon_holidays").eq("id", resolvedSalonId)
-      .single<{ id: string; business_hours: BusinessHours | null; salon_holidays: string[] | null }>();
+    const { data: salon } = await supabase.from("salons").select("id, business_hours, salon_holidays, booking_settings").eq("id", resolvedSalonId)
+      .single<{ id: string; business_hours: BusinessHours | null; salon_holidays: string[] | null; booking_settings: BookingSettings | null }>();
     if (!salon) { setLoading(false); return; }
     setBusinessHours(salon.business_hours);
     setSalonHolidays(salon.salon_holidays);
+    setBookingSettings(salon.booking_settings);
 
     const [appointmentRes, menuRes, junctionRes, staffRes] = await Promise.all([
       supabase.from("appointments").select("id, customer_id, staff_id, appointment_date, start_time, end_time, source, memo, status, customers(last_name, first_name)")
@@ -99,19 +101,18 @@ export default function EditAppointmentPage() {
     setLoading(false);
   };
 
-  // 日付・スタッフ変更時に当日の予約を取得
+  // 日付変更時に当日の全予約を取得（同時予約上限チェック用にサロン全体）
   useEffect(() => {
     if (!salonId || !appointmentDate) return;
     const loadDayAppointments = async () => {
       const supabase = createClient();
-      let query = supabase.from("appointments").select("id, start_time, end_time, customers(last_name, first_name)")
-        .eq("salon_id", salonId).eq("appointment_date", appointmentDate).neq("status", "cancelled");
-      if (staffId) query = query.eq("staff_id", staffId);
-      const { data } = await query.order("start_time", { ascending: true }).returns<DayAppointment[]>();
+      const { data } = await supabase.from("appointments").select("id, start_time, end_time, customers(last_name, first_name)")
+        .eq("salon_id", salonId).eq("appointment_date", appointmentDate).neq("status", "cancelled")
+        .order("start_time", { ascending: true }).returns<DayAppointment[]>();
       setDayAppointments(data ?? []);
     };
     loadDayAppointments();
-  }, [salonId, appointmentDate, staffId]);
+  }, [salonId, appointmentDate]);
 
   const updateEndTimeFromMenus = (menuIds: string[], sH: string, sM: string, forceCalc = false) => {
     if (!forceCalc && isEndTimeManual) return;
@@ -138,7 +139,7 @@ export default function EditAppointmentPage() {
     const result = await updateAppointment({
       appointmentId, salonId, staffId: staffId || null, menus, selectedMenuIds,
       appointmentDate, startHour, startMinute, endHour, endMinute, source, memo,
-      businessHours, salonHolidays,
+      businessHours, salonHolidays, bookingSettings,
     });
     if (!result.success) { setError(result.error); setSaving(false); return; }
     setFlashToast("予約を更新しました");
@@ -177,6 +178,7 @@ export default function EditAppointmentPage() {
         <AppointmentDateTimeSection
           appointmentDate={appointmentDate} onDateChange={setAppointmentDate}
           businessHours={businessHours} salonHolidays={salonHolidays} dayAppointments={dayAppointments}
+          bookingSettings={bookingSettings}
           startHour={startHour} startMinute={startMinute} endHour={endHour} endMinute={endMinute}
           isEndTimeManual={isEndTimeManual} selectedMenuIds={selectedMenuIds} menuDuration={totalDuration}
           excludeAppointmentId={appointmentId}
