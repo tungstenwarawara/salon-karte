@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import QRCode from "qrcode";
 
 type Template = {
@@ -40,9 +40,12 @@ export function CounselingIssueButton({ customerId, templates, hasPendingSheet, 
   };
 
   // 発行済みシートのQRを初回表示時に生成
-  if (hasPendingSheet && token && sheetUrl && !qrDataUrl) {
-    generateQr(sheetUrl);
-  }
+  useEffect(() => {
+    if (hasPendingSheet && token && sheetUrl && !qrDataUrl) {
+      generateQr(sheetUrl);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPendingSheet, token]);
 
   const handleIssue = async () => {
     setIssuing(true);
