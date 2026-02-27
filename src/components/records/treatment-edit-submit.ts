@@ -15,6 +15,7 @@ type EditFormData = {
 type UpdateParams = {
   recordId: string;
   salonId: string;
+  staffId: string | null;
   form: EditFormData;
   menus: Menu[];
   selectedMenuIds: string[];
@@ -28,7 +29,7 @@ type UpdateResult =
 
 /** カルテ編集のsubmit処理（メニュー更新・回数券diff処理） */
 export async function updateTreatmentRecord(params: UpdateParams): Promise<UpdateResult> {
-  const { recordId, salonId, form, menus, selectedMenuIds, menuPayments, originalTicketPayments } = params;
+  const { recordId, salonId, staffId, form, menus, selectedMenuIds, menuPayments, originalTicketPayments } = params;
   const supabase = createClient();
 
   const firstMenuId = selectedMenuIds[0] || null;
@@ -37,6 +38,7 @@ export async function updateTreatmentRecord(params: UpdateParams): Promise<Updat
 
   // 1. カルテ本体をUPDATE
   const { error: updateError } = await supabase.from("treatment_records").update({
+    staff_id: staffId,
     treatment_date: form.treatment_date, menu_id: firstMenuId, menu_name_snapshot: menuNameSnapshot,
     treatment_area: form.treatment_area || null, products_used: form.products_used || null,
     skin_condition_before: form.skin_condition_before || null, notes_after: form.notes_after || null,

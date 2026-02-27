@@ -196,6 +196,7 @@ export type Database = {
           id: string;
           customer_id: string;
           salon_id: string;
+          staff_id: string | null;
           treatment_date: string;
           menu_id: string | null;
           menu_name_snapshot: string | null;
@@ -213,6 +214,7 @@ export type Database = {
           id?: string;
           customer_id: string;
           salon_id: string;
+          staff_id?: string | null;
           treatment_date?: string;
           menu_id?: string | null;
           menu_name_snapshot?: string | null;
@@ -230,6 +232,7 @@ export type Database = {
           id?: string;
           customer_id?: string;
           salon_id?: string;
+          staff_id?: string | null;
           treatment_date?: string;
           menu_id?: string | null;
           menu_name_snapshot?: string | null;
@@ -263,6 +266,13 @@ export type Database = {
             columns: ["menu_id"];
             isOneToOne: false;
             referencedRelation: "treatment_menus";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "treatment_records_staff_id_fkey";
+            columns: ["staff_id"];
+            isOneToOne: false;
+            referencedRelation: "staff";
             referencedColumns: ["id"];
           },
         ];
@@ -1071,6 +1081,45 @@ export type Database = {
             columns: ["salon_id"];
             isOneToOne: false;
             referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      staff_menus: {
+        Row: {
+          id: string;
+          staff_id: string;
+          menu_id: string;
+          nomination_fee: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          staff_id: string;
+          menu_id: string;
+          nomination_fee?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          staff_id?: string;
+          menu_id?: string;
+          nomination_fee?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "staff_menus_staff_id_fkey";
+            columns: ["staff_id"];
+            isOneToOne: false;
+            referencedRelation: "staff";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "staff_menus_menu_id_fkey";
+            columns: ["menu_id"];
+            isOneToOne: false;
+            referencedRelation: "treatment_menus";
             referencedColumns: ["id"];
           },
         ];

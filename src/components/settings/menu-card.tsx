@@ -4,13 +4,14 @@ type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
 
 type MenuCardProps = {
   menu: Menu;
+  staffNames?: string[];
   onEdit: (menu: Menu) => void;
   onToggleActive: (menuId: string, currentActive: boolean) => void;
   onDelete: (menuId: string) => void;
 };
 
 /** 施術メニュー一覧のカード表示 */
-export function MenuCard({ menu, onEdit, onToggleActive, onDelete }: MenuCardProps) {
+export function MenuCard({ menu, staffNames, onEdit, onToggleActive, onDelete }: MenuCardProps) {
   return (
     <div
       className={`bg-surface border rounded-xl p-4 ${menu.is_active ? "border-border" : "border-border opacity-60"}`}
@@ -30,6 +31,9 @@ export function MenuCard({ menu, onEdit, onToggleActive, onDelete }: MenuCardPro
             {menu.duration_minutes && <span>{menu.duration_minutes}分</span>}
             {menu.price && <span>{menu.price.toLocaleString()}円</span>}
           </div>
+          {staffNames && staffNames.length > 0 && (
+            <p className="text-xs text-text-light mt-1">担当: {staffNames.join("、")}</p>
+          )}
         </div>
         <div className="flex items-center gap-3 shrink-0 ml-3">
           {/* 表示切替トグル */}

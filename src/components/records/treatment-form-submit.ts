@@ -17,6 +17,7 @@ type RecordFormData = {
 type SubmitParams = {
   customerId: string;
   salonId: string;
+  staffId: string | null;
   form: RecordFormData;
   menus: Menu[];
   selectedMenuIds: string[];
@@ -33,7 +34,7 @@ type SubmitResult =
 
 /** カルテ新規作成のsubmit処理（メニュー・回数券・物販・写真の一括保存） */
 export async function submitTreatmentRecord(params: SubmitParams): Promise<SubmitResult> {
-  const { customerId, salonId, form, menus, selectedMenuIds, menuPayments, pendingTickets, pendingPurchases, photos, appointmentId } = params;
+  const { customerId, salonId, staffId, form, menus, selectedMenuIds, menuPayments, pendingTickets, pendingPurchases, photos, appointmentId } = params;
   const supabase = createClient();
 
   const firstMenuId = selectedMenuIds[0] || null;
@@ -44,7 +45,7 @@ export async function submitTreatmentRecord(params: SubmitParams): Promise<Submi
   const { data: record, error: insertError } = await supabase
     .from("treatment_records")
     .insert({
-      customer_id: customerId, salon_id: salonId, treatment_date: form.treatment_date,
+      customer_id: customerId, salon_id: salonId, staff_id: staffId, treatment_date: form.treatment_date,
       menu_id: firstMenuId, menu_name_snapshot: menuNameSnapshot,
       treatment_area: form.treatment_area || null, products_used: form.products_used || null,
       skin_condition_before: form.skin_condition_before || null, notes_after: form.notes_after || null,

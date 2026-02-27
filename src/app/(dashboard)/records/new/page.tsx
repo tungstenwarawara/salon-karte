@@ -40,10 +40,7 @@ function NewRecordForm() {
   const appointmentParam = searchParams.get("appointment");
   const dateParam = searchParams.get("date");
 
-  // URLパラメータがある場合は予約選択ステップをスキップ
-  const hasPreset = !!(presetCustomerId || appointmentParam);
-  const [appointmentStepDone, setAppointmentStepDone] = useState(hasPreset);
-
+  const [appointmentStepDone, setAppointmentStepDone] = useState(!!(presetCustomerId || appointmentParam));
   const [menus, setMenus] = useState<Menu[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState(presetCustomerId ?? "");
@@ -52,7 +49,8 @@ function NewRecordForm() {
   const [salonId, setSalonId] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
-
+  const [staffList, setStaffList] = useState<{ id: string; name: string }[]>([]);
+  const [staffId, setStaffId] = useState<string | null>(null);
   const [selectedMenuIds, setSelectedMenuIds] = useState<string[]>([]);
   const [menuPayments, setMenuPayments] = useState<MenuPaymentInfo[]>([]);
   const [courseTickets, setCourseTickets] = useState<CourseTicket[]>([]);
@@ -74,23 +72,26 @@ function NewRecordForm() {
   // 初期データ読み込み
   useEffect(() => {
     const load = async () => {
-      const { user, salonId: resolvedSalonId } = await getClientAuth();
+      const { user, salonId: resolvedSalonId, staff } = await getClientAuth();
       if (!user || !resolvedSalonId) return;
       setSalonId(resolvedSalonId);
 
       const supabase = createClient();
       const menusQuery = supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name").returns<Menu[]>();
       const productsQuery = supabase.from("products").select("id, name, category, base_sell_price, base_cost_price").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name").returns<Product[]>();
+      const staffQuery = supabase.from("staff").select("id, name").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name");
 
       if (!presetCustomerId) {
         const customerQuery = supabase.from("customers").select("id, last_name, first_name, last_name_kana, first_name_kana").eq("salon_id", resolvedSalonId).order("last_name_kana", { ascending: true }).returns<CustomerOption[]>();
-        const [menuRes, customerRes, productsRes] = await Promise.all([menusQuery, customerQuery, productsQuery]);
+        const [menuRes, customerRes, productsRes, staffRes] = await Promise.all([menusQuery, customerQuery, productsQuery, staffQuery]);
         setMenus(menuRes.data ?? []); setCustomers(customerRes.data ?? []); setProducts(productsRes.data ?? []);
+        if (staffRes.data) { setStaffList(staffRes.data); if (staff) setStaffId(staff.id); }
       } else {
         const customerNameQuery = supabase.from("customers").select("last_name, first_name").eq("id", presetCustomerId).eq("salon_id", resolvedSalonId).single<{ last_name: string; first_name: string }>();
-        const [menuRes, customerRes, productsRes] = await Promise.all([menusQuery, customerNameQuery, productsQuery]);
+        const [menuRes, customerRes, productsRes, staffRes] = await Promise.all([menusQuery, customerNameQuery, productsQuery, staffQuery]);
         setMenus(menuRes.data ?? []); setProducts(productsRes.data ?? []);
         if (customerRes.data) setCustomerName(`${customerRes.data.last_name} ${customerRes.data.first_name}`);
+        if (staffRes.data) { setStaffList(staffRes.data); if (staff) setStaffId(staff.id); }
       }
 
       if (appointmentParam) {
@@ -176,7 +177,7 @@ function NewRecordForm() {
     setError(""); setLoading(true);
 
     const result = await submitTreatmentRecord({
-      customerId, salonId, form, menus, selectedMenuIds, menuPayments, pendingTickets, pendingPurchases, photos, appointmentId,
+      customerId, salonId, staffId, form, menus, selectedMenuIds, menuPayments, pendingTickets, pendingPurchases, photos, appointmentId,
     });
 
     if (!result.success) { setError(result.error); setLoading(false); return; }
@@ -227,6 +228,15 @@ function NewRecordForm() {
           <label className="block text-sm font-medium mb-1.5">施術日 <span className="text-error">*</span></label>
           <input type="date" value={form.treatment_date} onChange={(e) => updateField("treatment_date", e.target.value)} required className={INPUT_CLASS} />
         </div>
+
+        {staffList.length > 1 && (
+          <div>
+            <label className="block text-sm font-medium mb-1.5">担当スタッフ</label>
+            <select value={staffId ?? ""} onChange={(e) => setStaffId(e.target.value || null)} className={INPUT_CLASS}>
+              {staffList.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+        )}
 
         <MenuSelector menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments} onToggle={toggleMenu} />
         <PaymentSection menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments} courseTickets={courseTickets} hasTickets={hasTickets} onSetAllPaymentType={setAllPaymentType} onSetAllService={setAllService} onUpdatePayment={updateMenuPayment} onUpdatePrice={updateMenuPrice} onUpdateTicket={updateMenuTicket} showCashTotal />

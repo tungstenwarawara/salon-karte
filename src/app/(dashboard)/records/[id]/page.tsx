@@ -14,6 +14,7 @@ type CourseTicket = Database["public"]["Tables"]["course_tickets"]["Row"];
 
 type RecordWithCustomer = TreatmentRecord & {
   customers: { id: string; last_name: string; first_name: string } | null;
+  staff: { name: string } | null;
 };
 
 const PAYMENT_TYPE_LABELS: Record<string, string> = {
@@ -37,7 +38,7 @@ export default async function RecordDetailPage({
   const [recordRes, photosRes, recordMenusRes, purchasesRes, ticketsRes, appointmentRes] = await Promise.all([
     supabase
       .from("treatment_records")
-      .select("id, treatment_date, menu_name_snapshot, treatment_area, products_used, skin_condition_before, notes_after, conversation_notes, caution_notes, next_visit_memo, customer_id, customers(id, last_name, first_name)")
+      .select("id, treatment_date, menu_name_snapshot, treatment_area, products_used, skin_condition_before, notes_after, conversation_notes, caution_notes, next_visit_memo, customer_id, staff_id, customers(id, last_name, first_name), staff(name)")
       .eq("id", id)
       .eq("salon_id", salon.id)
       .single<RecordWithCustomer>(),
@@ -142,6 +143,12 @@ export default async function RecordDetailPage({
             <span className="text-text-light">顧客</span>
             <span className="font-medium">{customer.last_name} {customer.first_name}</span>
           </Link>
+        )}
+        {record.staff && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-text-light">担当</span>
+            <span className="font-medium">{record.staff.name}</span>
+          </div>
         )}
         <p className="text-sm font-medium text-text-light">{menuDisplay}</p>
       </div>

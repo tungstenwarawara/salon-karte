@@ -37,6 +37,9 @@ export default function EditRecordPage() {
   const [selectedMenuIds, setSelectedMenuIds] = useState<string[]>([]);
   const [menuPayments, setMenuPayments] = useState<MenuPaymentInfo[]>([]);
 
+  const [staffList, setStaffList] = useState<{ id: string; name: string }[]>([]);
+  const [staffId, setStaffId] = useState<string | null>(null);
+
   const [courseTickets, setCourseTickets] = useState<CourseTicket[]>([]);
   const [hasTickets, setHasTickets] = useState(false);
   const [originalTicketPayments, setOriginalTicketPayments] = useState<Map<string, string>>(new Map());
@@ -59,22 +62,25 @@ export default function EditRecordPage() {
       setSalonId(resolvedSalonId);
 
       const supabase = createClient();
-      const [menuRes, recordRes, recordMenusRes, purchasesRes, linkedTicketsRes] = await Promise.all([
+      const [menuRes, recordRes, recordMenusRes, purchasesRes, linkedTicketsRes, staffRes] = await Promise.all([
         supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).order("name").returns<Menu[]>(),
-        supabase.from("treatment_records").select("id, customer_id, treatment_date, menu_id, treatment_area, products_used, skin_condition_before, notes_after, next_visit_memo, conversation_notes, caution_notes").eq("id", id).eq("salon_id", resolvedSalonId).single<TreatmentRecord>(),
+        supabase.from("treatment_records").select("id, customer_id, staff_id, treatment_date, menu_id, treatment_area, products_used, skin_condition_before, notes_after, next_visit_memo, conversation_notes, caution_notes").eq("id", id).eq("salon_id", resolvedSalonId).single<TreatmentRecord>(),
         supabase.from("treatment_record_menus").select("id, menu_id, menu_name_snapshot, price_snapshot, duration_minutes_snapshot, payment_type, ticket_id, sort_order").eq("treatment_record_id", id).order("sort_order").returns<TreatmentRecordMenu[]>(),
         supabase.from("purchases").select("id, item_name, quantity, unit_price, total_price, memo, product_id").eq("treatment_record_id", id).eq("salon_id", resolvedSalonId).order("created_at").returns<Purchase[]>(),
         supabase.from("course_tickets").select("id, ticket_name, total_sessions, used_sessions, price, status, memo").eq("treatment_record_id", id).eq("salon_id", resolvedSalonId).order("created_at").returns<CourseTicket[]>(),
+        supabase.from("staff").select("id, name").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name"),
       ]);
 
       setMenus(menuRes.data ?? []);
       setLinkedPurchases(purchasesRes.data ?? []);
+      if (staffRes.data) setStaffList(staffRes.data);
       setLinkedTickets(linkedTicketsRes.data ?? []);
       const existingMenus = recordMenusRes.data ?? [];
 
       const record = recordRes.data;
       if (record) {
         setCustomerId(record.customer_id);
+        setStaffId(record.staff_id);
         setForm({
           treatment_date: record.treatment_date, treatment_area: record.treatment_area ?? "",
           products_used: record.products_used ?? "", skin_condition_before: record.skin_condition_before ?? "",
@@ -160,7 +166,7 @@ export default function EditRecordPage() {
     e.preventDefault();
     setError(""); setLoading(true);
     const result = await updateTreatmentRecord({
-      recordId: id, salonId, form, menus, selectedMenuIds, menuPayments, originalTicketPayments,
+      recordId: id, salonId, staffId, form, menus, selectedMenuIds, menuPayments, originalTicketPayments,
     });
     if (!result.success) { setError(result.error); setLoading(false); return; }
     setFlashToast("施術記録を更新しました");
@@ -215,6 +221,15 @@ export default function EditRecordPage() {
           <label className="block text-sm font-medium mb-1.5">施術日 <span className="text-error">*</span></label>
           <input type="date" value={form.treatment_date} onChange={(e) => updateField("treatment_date", e.target.value)} required className={INPUT_CLASS} />
         </div>
+
+        {staffList.length > 1 && (
+          <div>
+            <label className="block text-sm font-medium mb-1.5">担当スタッフ</label>
+            <select value={staffId ?? ""} onChange={(e) => setStaffId(e.target.value || null)} className={INPUT_CLASS}>
+              {staffList.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+        )}
 
         <MenuSelector menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments} onToggle={toggleMenu} />
 
