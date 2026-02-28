@@ -9,6 +9,7 @@ import { RoleSelector } from "@/components/settings/role-selector";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { Toast, useToast } from "@/components/ui/toast";
 import { inviteStaff, updateStaff, toggleStaffActive, resendInvite, deleteStaff } from "./actions";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type StaffMember = {
   id: string;
@@ -203,9 +204,10 @@ export default function StaffPage() {
           ))}
         </div>
       ) : staffList.length === 0 ? (
-        <div className="bg-surface border border-border rounded-xl p-6 text-center">
-          <p className="text-text-light text-sm">スタッフはまだ登録されていません</p>
-        </div>
+        <EmptyState
+          illustration="customer"
+          message="スタッフはまだ登録されていません"
+        />
       ) : (
         <div className="space-y-3">
           {staffList.map((s) => (

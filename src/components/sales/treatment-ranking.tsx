@@ -1,4 +1,5 @@
 import { formatYen } from "@/components/sales/sales-types";
+import { EmptyState } from "@/components/ui/empty-state";
 
 // 汎用ランキングアイテム型
 export type RankingItem = {
@@ -18,9 +19,10 @@ type RankingCardProps = {
 export function RankingCard({ title, items, unit, emptyMessage }: RankingCardProps) {
   if (items.length === 0) {
     return (
-      <div className="bg-surface border border-border rounded-2xl p-6 text-center text-text-light">
-        <p className="text-sm">{emptyMessage}</p>
-      </div>
+      <EmptyState
+        illustration="chart"
+        message={emptyMessage}
+      />
     );
   }
 

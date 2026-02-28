@@ -9,6 +9,7 @@ import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { DEFAULT_COUNSELING_TEMPLATE } from "@/lib/counseling-default-template";
 import type { CounselingTemplate } from "@/types/counseling-template";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type Template = {
   id: string;
@@ -135,16 +136,11 @@ export default function CounselingTemplateListPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-surface border border-border rounded-xl p-6 text-center">
-            <p className="text-text-light text-sm">テンプレートはまだありません</p>
-            <button
-              onClick={handleCreate}
-              disabled={creating}
-              className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
-            >
-              最初のテンプレートを作成する →
-            </button>
-          </div>
+          <EmptyState
+            illustration="clipboard"
+            message="テンプレートはまだありません"
+            action={{ label: "最初のテンプレートを作成する →", onClick: handleCreate }}
+          />
         )}
         <p className="text-xs text-text-light mt-2">テンプレートは最大2つまで作成できます</p>
       </div>

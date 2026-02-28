@@ -7,6 +7,7 @@ import { setFlashToast } from "@/components/ui/toast";
 import { useIncrementalList } from "@/hooks/use-incremental-list";
 import type { Database } from "@/types/database";
 import { CourseTicketCard } from "./course-ticket-card";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type CourseTicket = Database["public"]["Tables"]["course_tickets"]["Row"];
 
@@ -177,15 +178,11 @@ export function CourseTicketSection({
           )}
         </div>
       ) : (
-        <div className="bg-surface border border-border rounded-xl p-6 text-center">
-          <p className="text-text-light text-sm">コースチケットはまだありません</p>
-          <Link
-            href={`/customers/${customerId}/tickets/new`}
-            className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
-          >
-            最初の回数券を登録する →
-          </Link>
-        </div>
+        <EmptyState
+          illustration="record"
+          message="コースチケットはまだありません"
+          action={{ label: "最初の回数券を登録する →", href: `/customers/${customerId}/tickets/new` }}
+        />
       )}
     </div>
   );

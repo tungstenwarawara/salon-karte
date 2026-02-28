@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import type { Database } from "@/types/database";
 import type { CounselingTemplate } from "@/types/counseling-template";
 import { ResponseViewer } from "@/components/counseling/response-viewer";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type CounselingSheet = Database["public"]["Tables"]["counseling_sheets"]["Row"];
 
@@ -238,9 +239,10 @@ export function CounselingSection({ customerId, sheets, counselingTemplate, temp
           )}
         </div>
       ) : (
-        <div className="bg-surface border border-border rounded-xl p-6 text-center">
-          <p className="text-text-light text-sm">カウンセリングシートはまだありません</p>
-        </div>
+        <EmptyState
+          illustration="clipboard"
+          message="カウンセリングシートはまだありません"
+        />
       )}
     </div>
   );

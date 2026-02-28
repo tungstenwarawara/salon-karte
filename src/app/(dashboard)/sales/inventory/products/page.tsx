@@ -9,6 +9,7 @@ import { ErrorAlert } from "@/components/ui/error-alert";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import { ProductCard } from "@/components/inventory/product-card";
 import type { Database } from "@/types/database";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
 
@@ -254,15 +255,11 @@ export default function ProductsPage() {
         </div>
       ) : (
         !showForm && (
-          <div className="bg-surface border border-border rounded-xl p-6 text-center">
-            <p className="text-text-light">商品が登録されていません</p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
-            >
-              最初の商品を登録する →
-            </button>
-          </div>
+          <EmptyState
+            illustration="product"
+            message="商品が登録されていません"
+            action={{ label: "最初の商品を登録する →", onClick: () => setShowForm(true) }}
+          />
         )
       )}
     </div>

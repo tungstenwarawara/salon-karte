@@ -6,6 +6,7 @@ import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import type { Database } from "@/types/database";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type ImportBatch = Database["public"]["Tables"]["import_batches"]["Row"];
 
@@ -134,9 +135,10 @@ export default function ImportHistoryPage() {
           ))}
         </div>
       ) : batches.length === 0 ? (
-        <div className="bg-surface border border-border rounded-xl p-6 text-center">
-          <p className="text-text-light text-sm">取り込み履歴はまだありません</p>
-        </div>
+        <EmptyState
+          illustration="clipboard"
+          message="取り込み履歴はまだありません"
+        />
       ) : (
         <div className="space-y-3">
           {batches.map((batch) => (

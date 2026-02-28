@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { CustomerListFilters, type SortKey, type VisitFilter } from "./customer-list-filters";
 import { CustomerCard } from "./customer-card";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type CustomerWithVisitInfo = {
   id: string;
@@ -142,22 +143,16 @@ export function CustomerList({ customers }: Props) {
             <CustomerCard key={c.id} {...c} />
           ))}
         </div>
-      ) : (
+      ) : search || visitFilter !== "all" ? (
         <div className="bg-surface border border-border rounded-xl p-6 text-center">
-          {search || visitFilter !== "all" ? (
-            <p className="text-text-light">該当する顧客が見つかりません</p>
-          ) : (
-            <>
-              <p className="text-text-light">顧客が登録されていません</p>
-              <Link
-                href="/customers/new"
-                className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
-              >
-                最初のお客様を登録する →
-              </Link>
-            </>
-          )}
+          <p className="text-text-light">該当する顧客が見つかりません</p>
         </div>
+      ) : (
+        <EmptyState
+          illustration="customer"
+          message="顧客が登録されていません"
+          action={{ label: "最初のお客様を登録する →", href: "/customers/new" }}
+        />
       )}
 
       {/* もっと見る */}

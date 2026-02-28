@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ManagementTabs } from "@/components/inventory/management-tabs";
 import { InventoryDashboard } from "@/components/inventory/inventory-dashboard";
 import { InventorySetupGuide } from "@/components/inventory/inventory-setup-guide";
@@ -61,20 +61,13 @@ export default async function InventoryPage() {
       {hasProducts && !hasStockSetup && <InventorySetupGuide />}
 
       {!hasProducts ? (
-        <div className="bg-surface border border-border rounded-2xl p-8 text-center space-y-4">
-          <div className="text-4xl">📦</div>
-          <h3 className="text-lg font-bold">在庫管理を始めましょう</h3>
-          <p className="text-sm text-text-light">
-            商品を登録すると、在庫数の管理や<br />
-            確定申告用のレポートが使えるようになります
-          </p>
-          <Link
-            href="/sales/inventory/products"
-            className="inline-block bg-accent hover:bg-accent-light text-white font-medium rounded-xl px-6 py-3 transition-colors min-h-[48px]"
-          >
-            商品を登録する
-          </Link>
-        </div>
+        <EmptyState
+          illustration="product"
+          message="在庫管理を始めましょう"
+          description="商品を登録すると、在庫数の管理や確定申告用のレポートが使えるようになります"
+          action={{ label: "商品を登録する", href: "/sales/inventory/products" }}
+          size="md"
+        />
       ) : (
         <InventoryDashboard items={items} monthlyPurchases={monthlyPurchases} totalPurchases={totalPurchases} salonId={salon.id} />
       )}

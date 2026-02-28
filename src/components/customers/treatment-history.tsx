@@ -6,6 +6,7 @@ import { formatDateShort } from "@/lib/format";
 import { useIncrementalList } from "@/hooks/use-incremental-list";
 import { PhotoDownloadButton } from "@/components/customers/photo-download-button";
 import type { Database } from "@/types/database";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
 type TreatmentRecordMenu = Database["public"]["Tables"]["treatment_record_menus"]["Row"];
@@ -114,15 +115,11 @@ export function TreatmentHistory({ customerId, salonId, customerName, records, h
           )}
         </div>
       ) : (
-        <div className="bg-surface border border-border rounded-xl p-6 text-center">
-          <p className="text-text-light text-sm">施術記録はまだありません</p>
-          <Link
-            href={`/records/new?customer=${customerId}`}
-            className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
-          >
-            最初のカルテを登録する →
-          </Link>
-        </div>
+        <EmptyState
+          illustration="record"
+          message="施術記録はまだありません"
+          action={{ label: "最初のカルテを登録する →", href: `/records/new?customer=${customerId}` }}
+        />
       )}
     </div>
   );

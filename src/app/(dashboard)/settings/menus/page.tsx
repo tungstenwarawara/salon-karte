@@ -8,6 +8,7 @@ import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { MenuCard } from "@/components/settings/menu-card";
 import { StaffMenuSelector } from "@/components/settings/staff-menu-selector";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
@@ -193,12 +194,11 @@ export default function MenusPage() {
         </div>
       ) : (
         !showForm && (
-          <div className="bg-surface border border-border rounded-xl p-6 text-center">
-            <p className="text-text-light">メニューが登録されていません</p>
-            <button onClick={() => setShowForm(true)} className="inline-block mt-2 text-sm text-accent hover:underline font-medium">
-              最初のメニューを登録する →
-            </button>
-          </div>
+          <EmptyState
+            illustration="clipboard"
+            message="メニューが登録されていません"
+            action={{ label: "最初のメニューを登録する →", onClick: () => setShowForm(true) }}
+          />
         )
       )}
     </div>

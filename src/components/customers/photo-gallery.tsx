@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getPhotoUrls } from "@/lib/supabase/storage";
 import { PhotoLightbox, type LightboxPhoto } from "@/components/ui/photo-lightbox";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type PhotoRow = {
   id: string;
@@ -85,9 +86,10 @@ export function PhotoGallery({ recordIds, recordDates }: Props) {
 
   if (photos.length === 0) {
     return (
-      <div className="bg-surface border border-border rounded-xl p-6 text-center">
-        <p className="text-text-light text-sm">写真はまだありません</p>
-      </div>
+      <EmptyState
+        illustration="record"
+        message="写真はまだありません"
+      />
     );
   }
 

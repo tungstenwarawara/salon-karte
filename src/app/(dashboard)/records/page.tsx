@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { PageHeader } from "@/components/layout/page-header";
 import { RecordListSearch } from "@/components/records/record-list-search";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default async function RecordsPage() {
   const { user, salon, supabase } = await getAuthAndSalon();
@@ -40,15 +41,11 @@ export default async function RecordsPage() {
       <RecordListSearch records={allRecords} />
 
       {allRecords.length === 0 && (
-        <div className="bg-surface border border-border rounded-xl p-6 text-center">
-          <p className="text-text-light text-sm">カルテはまだありません</p>
-          <Link
-            href="/records/new"
-            className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
-          >
-            最初のカルテを作成する →
-          </Link>
-        </div>
+        <EmptyState
+          illustration="record"
+          message="カルテはまだありません"
+          action={{ label: "最初のカルテを作成する →", href: "/records/new" }}
+        />
       )}
     </div>
   );

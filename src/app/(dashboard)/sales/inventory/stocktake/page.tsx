@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type InventoryItem = {
   product_id: string;
@@ -163,15 +164,11 @@ export default function StocktakePage() {
           ))}
         </div>
       ) : entries.length === 0 ? (
-        <div className="bg-surface border border-border rounded-xl p-6 text-center text-text-light">
-          <p>アクティブな商品がありません</p>
-          <a
-            href="/sales/inventory/products"
-            className="inline-block mt-2 text-sm text-accent hover:underline font-medium"
-          >
-            商品を登録する →
-          </a>
-        </div>
+        <EmptyState
+          illustration="product"
+          message="アクティブな商品がありません"
+          action={{ label: "商品を登録する →", href: "/sales/inventory/products" }}
+        />
       ) : (
         <>
           <div className="bg-surface border border-border rounded-2xl p-4 space-y-1">

@@ -10,6 +10,7 @@ import { SalesMonthlyList } from "@/components/sales/sales-monthly-list";
 import { SalesYearlySummary } from "@/components/sales/sales-yearly-summary";
 import { getFilteredTotal, CATEGORY_OPTIONS } from "@/components/sales/sales-types";
 import type { MonthlySales, DailySales, CategoryFilter } from "@/components/sales/sales-types";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type Props = {
   salonId: string;
@@ -138,13 +139,12 @@ export function SalesView({ salonId, initialData, initialYear, initialDeferredRe
           </div>
         </div>
       ) : visibleData.length === 0 || grandTotal === 0 ? (
-        <div className="bg-surface border border-border rounded-xl p-8 text-center text-text-light">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-12 h-12 mx-auto mb-3 text-border">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
-          </svg>
-          <p className="font-medium">まだ売上データがありません</p>
-          <p className="text-xs mt-1">カルテや物販を登録すると集計されます</p>
-        </div>
+        <EmptyState
+          illustration="chart"
+          message="まだ売上データがありません"
+          description="カルテや物販を登録すると集計されます"
+          size="md"
+        />
       ) : (
         <>
           <SalesYearlySummary yearTotal={yearTotal} grandTotal={grandTotal} deferredRevenue={deferredRevenue} />

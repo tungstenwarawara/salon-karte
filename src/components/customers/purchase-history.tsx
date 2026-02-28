@@ -8,6 +8,7 @@ import { useIncrementalList } from "@/hooks/use-incremental-list";
 import type { Database } from "@/types/database";
 import { PurchaseCard } from "./purchase-card";
 import { Toast, useToast } from "@/components/ui/toast";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type Purchase = Database["public"]["Tables"]["purchases"]["Row"];
 
@@ -140,13 +141,11 @@ export function PurchaseHistory({ customerId, purchases: initialPurchases, salon
           )}
         </div>
       ) : (
-        <div className="bg-surface border border-border rounded-xl p-6 text-center">
-          <p className="text-text-light text-sm">購入記録はまだありません</p>
-          <Link href={`/customers/${customerId}/purchases/new`}
-            className="inline-block mt-2 text-sm text-accent hover:underline font-medium">
-            最初の物販を登録する →
-          </Link>
-        </div>
+        <EmptyState
+          illustration="product"
+          message="購入記録はまだありません"
+          action={{ label: "最初の物販を登録する →", href: `/customers/${customerId}/purchases/new` }}
+        />
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
