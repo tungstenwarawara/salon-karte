@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 type ToastType = "success" | "error";
 
@@ -78,6 +79,7 @@ export function setFlashToast(message: string, type: ToastType = "success") {
 }
 
 export function FlashToast() {
+  const pathname = usePathname();
   const [flash, setFlash] = useState<{ message: string; type: ToastType } | null>(null);
 
   useEffect(() => {
@@ -86,7 +88,7 @@ export function FlashToast() {
       sessionStorage.removeItem(FLASH_TOAST_KEY);
       setFlash(JSON.parse(stored));
     }
-  }, []);
+  }, [pathname]);
 
   if (!flash) return null;
 
