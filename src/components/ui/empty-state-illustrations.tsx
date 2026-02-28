@@ -151,20 +151,103 @@ function RecordIllustration({ className }: IllustrationProps) {
   );
 }
 
-/** カレンダー — 予約・スケジュール系 */
+/** カレンダー — 予約・時計・ボタニカル・花（Gemini生成） */
 function CalendarIllustration({ className }: IllustrationProps) {
   return (
-    <svg viewBox="0 0 48 48" fill="none" className={className}>
-      <circle cx="24" cy="24" r="22" fill="currentColor" opacity="0.06" />
-      <rect x="11" y="13" width="26" height="22" rx="2" stroke="currentColor" strokeWidth="1.8" />
-      <line x1="11" y1="19" x2="37" y2="19" stroke="currentColor" strokeWidth="1.8" />
-      <line x1="18" y1="10" x2="18" y2="16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <line x1="30" y1="10" x2="30" y2="16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="19" cy="25" r="1.2" fill="currentColor" opacity="0.4" />
-      <circle cx="24" cy="25" r="1.2" fill="currentColor" opacity="0.4" />
-      <circle cx="29" cy="25" r="1.2" fill="currentColor" opacity="0.4" />
-      <circle cx="19" cy="30" r="1.2" fill="currentColor" opacity="0.4" />
-      <circle cx="24" cy="30" r="1.2" fill="currentColor" opacity="0.3" />
+    <svg viewBox="0 0 200 160" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>{`
+          .ai-m{stroke:#C4956A;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;fill:none}
+          .ai-s{stroke:#8B7B6B;stroke-width:.8;stroke-linecap:round;stroke-linejoin:round;fill:none}
+          .ai-fm{fill:#C4956A}.ai-fs{fill:#8B7B6B}.ai-fb{fill:#FAF8F5}
+          .ai-float{animation:aiFloat 6s ease-in-out infinite}
+          .ai-pulse{animation:aiPulse 2s ease-in-out infinite;transform-origin:center}
+          .ai-rmin{animation:aiRMin 45s linear infinite;transform-origin:100px 80px}
+          .ai-rhr{animation:aiRHr 45s linear infinite;transform-origin:100px 80px}
+          .ai-tw1{animation:aiTw 3s ease-in-out infinite}
+          .ai-tw2{animation:aiTw 4s ease-in-out infinite 1s}
+          .ai-tw3{animation:aiTw 3.5s ease-in-out infinite .5s}
+          .ai-sl{animation:aiSwL 7s ease-in-out infinite;transform-origin:20px 140px}
+          .ai-sr{animation:aiSwR 8s ease-in-out infinite;transform-origin:180px 140px}
+          @keyframes aiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+          @keyframes aiPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+          @keyframes aiRMin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+          @keyframes aiRHr{0%{transform:rotate(0)}100%{transform:rotate(30deg)}}
+          @keyframes aiTw{0%,100%{opacity:.5;transform:scale(.9)}50%{opacity:1;transform:scale(1.1)}}
+          @keyframes aiSwL{0%,100%{transform:rotate(0)}50%{transform:rotate(4deg)}}
+          @keyframes aiSwR{0%,100%{transform:rotate(0)}50%{transform:rotate(-4deg)}}
+        `}</style>
+        <g id="ai-flower">
+          <path d="M 0 -4 C 2 -7 5 -3 1 -1 C 5 -3 7 0 3 1 C 6 4 2 6 0 2 C -2 6 -6 4 -3 1 C -7 0 -5 -3 -1 -1 C -5 -3 -2 -7 0 -4 Z" className="ai-fb ai-m" />
+          <circle cx="0" cy="0" r="1.5" className="ai-fm" />
+        </g>
+      </defs>
+      {/* 背景時計モチーフ */}
+      <g opacity="0.4">
+        <circle cx="100" cy="80" r="60" className="ai-s" strokeDasharray="2 6" />
+        <circle cx="100" cy="80" r="50" className="ai-s" opacity="0.2" />
+        <g className="ai-rmin">
+          <line x1="100" y1="80" x2="100" y2="35" className="ai-s" />
+          <circle cx="100" cy="35" r="1.5" className="ai-fs" />
+        </g>
+        <g className="ai-rhr">
+          <line x1="100" y1="80" x2="125" y2="80" className="ai-s" />
+          <circle cx="125" cy="80" r="1.5" className="ai-fs" />
+        </g>
+        <circle cx="100" cy="80" r="2.5" className="ai-fb ai-s" />
+      </g>
+      {/* 枝葉（左） */}
+      <g className="ai-sl">
+        <path d="M 20 130 Q 10 80 45 35" className="ai-s" opacity="0.6" />
+        <path d="M 18 105 Q 10 100 15 90 Q 22 95 18 105" className="ai-fb ai-s" />
+        <path d="M 25 80 Q 35 75 30 65 Q 22 70 25 80" className="ai-fb ai-s" />
+        <path d="M 38 55 Q 30 50 35 40 Q 42 45 38 55" className="ai-fb ai-s" />
+      </g>
+      {/* 枝葉（右） */}
+      <g className="ai-sr">
+        <path d="M 180 130 Q 190 80 155 35" className="ai-s" opacity="0.6" />
+        <path d="M 182 105 Q 190 100 185 90 Q 178 95 182 105" className="ai-fb ai-s" />
+        <path d="M 175 80 Q 165 75 170 65 Q 178 70 175 80" className="ai-fb ai-s" />
+        <path d="M 162 55 Q 170 50 165 40 Q 158 45 162 55" className="ai-fb ai-s" />
+      </g>
+      {/* 花 */}
+      <g className="ai-tw1" transform="translate(40, 40) scale(0.9)"><use href="#ai-flower" /></g>
+      <g className="ai-tw2" transform="translate(160, 110) scale(1)"><use href="#ai-flower" /></g>
+      <g className="ai-tw3" transform="translate(150, 35) scale(0.8)"><use href="#ai-flower" /></g>
+      <g className="ai-tw1" transform="translate(45, 120) scale(0.85)"><use href="#ai-flower" /></g>
+      {/* スパークル */}
+      <circle cx="70" cy="25" r="1" className="ai-fm ai-tw2" />
+      <circle cx="130" cy="135" r="1.5" className="ai-fm ai-tw3" />
+      {/* カレンダー本体 */}
+      <g className="ai-float">
+        <rect x="65" y="45" width="70" height="75" rx="8" className="ai-fb ai-m" />
+        <path d="M 65 65 L 135 65" className="ai-m" />
+        <rect x="76" y="38" width="4" height="14" rx="2" className="ai-fb ai-m" />
+        <rect x="120" y="38" width="4" height="14" rx="2" className="ai-fb ai-m" />
+        <line x1="78" y1="42" x2="78" y2="48" className="ai-s" opacity="0.5" />
+        <line x1="122" y1="42" x2="122" y2="48" className="ai-s" opacity="0.5" />
+        {/* 日付ドット */}
+        <g opacity="0.4">
+          <circle cx="76" cy="78" r="1.2" className="ai-fs" />
+          <circle cx="88" cy="78" r="1.2" className="ai-fs" />
+          <circle cx="100" cy="78" r="1.2" className="ai-fs" />
+          <circle cx="112" cy="78" r="1.2" className="ai-fs" />
+          <circle cx="124" cy="78" r="1.2" className="ai-fs" />
+          <circle cx="76" cy="90" r="1.2" className="ai-fs" />
+          <circle cx="88" cy="90" r="1.2" className="ai-fs" />
+          <circle cx="112" cy="90" r="1.2" className="ai-fs" />
+          <circle cx="124" cy="90" r="1.2" className="ai-fs" />
+          <circle cx="76" cy="102" r="1.2" className="ai-fs" />
+          <circle cx="88" cy="102" r="1.2" className="ai-fs" />
+          <circle cx="100" cy="102" r="1.2" className="ai-fs" />
+          <circle cx="112" cy="102" r="1.2" className="ai-fs" />
+          <circle cx="124" cy="102" r="1.2" className="ai-fs" />
+        </g>
+        {/* ハイライト日付（ハート） */}
+        <g transform="translate(100, 89)">
+          <path d="M 0 3.5 C -4 -0.5 -7 -3 -4 -6 C -2.5 -7.5 0 -6 0 -4.5 C 0 -6 2.5 -7.5 4 -6 C 7 -3 4 -0.5 0 3.5 Z" className="ai-fm ai-pulse" />
+        </g>
+      </g>
     </svg>
   );
 }
@@ -230,7 +313,7 @@ type Props = {
 export function EmptyStateIllustration({ type, size = "sm" }: Props) {
   const Component = illustrations[type];
   // Gemini版はビューポートが大きいため別サイズ
-  const isRich = type === "customer" || type === "record";
+  const isRich = type === "customer" || type === "record" || type === "calendar";
   const sizeClass = isRich
     ? (size === "md" ? "w-40 h-auto" : "w-28 h-auto")
     : (size === "md" ? "w-16 h-16" : "w-12 h-12");
