@@ -6,6 +6,7 @@ import { SummaryCards } from "@/components/dashboard/summary-cards";
 import { InventoryAlert } from "@/components/dashboard/inventory-alert";
 import { TodayAppointments } from "@/components/dashboard/today-appointments";
 import { BirthdayCustomers } from "@/components/dashboard/birthday-customers";
+import { KpiTrendCards } from "@/components/dashboard/kpi-trend-cards";
 
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
 
@@ -44,6 +45,12 @@ export default async function DashboardPage() {
     current_stock: number;
     reorder_point: number;
   };
+  type DashboardKpi = {
+    current_month_revenue: number;
+    previous_month_revenue: number;
+    current_month_visits: number;
+    previous_month_visits: number;
+  };
 
   const [
     todayAppointmentsRes,
@@ -52,6 +59,7 @@ export default async function DashboardPage() {
     lapsedCustomersRes,
     birthdayRes,
     inventoryRes,
+    kpiRes,
   ] = await Promise.all([
     supabase
       .from("appointments")
@@ -81,6 +89,9 @@ export default async function DashboardPage() {
     supabase
       .rpc("get_inventory_summary", { p_salon_id: salon.id })
       .returns<InventoryAlertItem[]>(),
+    supabase
+      .rpc("get_dashboard_kpi", { p_salon_id: salon.id })
+      .returns<DashboardKpi[]>(),
   ]);
 
   const todayAppointments = todayAppointmentsRes.data;
@@ -106,6 +117,13 @@ export default async function DashboardPage() {
       }
     }
   }
+
+  const kpi = kpiRes.data?.[0] ?? {
+    current_month_revenue: 0,
+    previous_month_revenue: 0,
+    current_month_visits: 0,
+    previous_month_visits: 0,
+  };
 
   // 在庫アラート: 在庫が発注点以下の商品を抽出
   const lowStockItems = (inventoryRes.data ?? []).filter(
@@ -153,6 +171,13 @@ export default async function DashboardPage() {
         appointmentCount={appointmentCount}
         lapsedCount={lapsedCount}
         customerCount={customerCount ?? 0}
+      />
+
+      <KpiTrendCards
+        currentRevenue={kpi.current_month_revenue}
+        previousRevenue={kpi.previous_month_revenue}
+        currentVisits={kpi.current_month_visits}
+        previousVisits={kpi.previous_month_visits}
       />
 
       <InventoryAlert items={lowStockItems} />

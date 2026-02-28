@@ -1457,6 +1457,17 @@ export type Database = {
           batch_type: string;
         }[];
       };
+      get_dashboard_kpi: {
+        Args: {
+          p_salon_id: string;
+        };
+        Returns: {
+          current_month_revenue: number;
+          previous_month_revenue: number;
+          current_month_visits: number;
+          previous_month_visits: number;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

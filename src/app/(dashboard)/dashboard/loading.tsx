@@ -5,9 +5,14 @@ export default function DashboardLoading() {
         <div className="h-7 w-40 skeleton rounded-lg" />
         <div className="h-4 w-24 skeleton rounded-lg mt-1" />
       </div>
-      <div className="grid grid-cols-3 gap-3">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="skeleton border border-border rounded-2xl p-3 h-20" />
+      <div className="grid grid-cols-2 gap-3">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="skeleton border border-border rounded-2xl p-4 h-20" />
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="skeleton border border-border rounded-2xl p-4 h-24" />
         ))}
       </div>
       <div className="skeleton border border-border rounded-2xl p-5 h-36" />
