@@ -424,7 +424,7 @@ function ChartIllustration({ className }: IllustrationProps) {
   );
 }
 
-/** 設定 — 花歯車＋サロン窓＋ボタニカル（Gemini生成） */
+/** 設定 — 設定カード＋スライダー＋トグル＋花マンダラ＋ボタニカル（Gemini生成） */
 function ClipboardIllustration({ className }: IllustrationProps) {
   return (
     <svg viewBox="0 0 200 160" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
@@ -434,74 +434,95 @@ function ClipboardIllustration({ className }: IllustrationProps) {
           .si-s{stroke:#8B7B6B;stroke-width:.8;stroke-linecap:round;stroke-linejoin:round;fill:none}
           .si-fm{fill:#C4956A}.si-fs{fill:#8B7B6B}.si-fb{fill:#FAF8F5}
           .si-float{animation:siFloat 6s ease-in-out infinite}
-          .si-spin{animation:siSpin 24s linear infinite;transform-origin:0 0}
-          .si-spinr{animation:siSpinR 20s linear infinite;transform-origin:0 0}
-          .si-tw{animation:siTw 3s ease-in-out infinite}
+          .si-spin{animation:siSpin 30s linear infinite;transform-origin:0px 0px}
+          .si-tw{animation:siTw 4s ease-in-out infinite}
           .si-sl{animation:siSwL 7s ease-in-out infinite;transform-origin:25px 140px}
           .si-sr{animation:siSwR 8s ease-in-out infinite;transform-origin:175px 140px}
+          .si-sld1{animation:siSld1 6s ease-in-out infinite}
+          .si-sld2{animation:siSld2 6s ease-in-out infinite 1.5s}
+          .si-tbg{animation:siTBg 6s ease-in-out infinite 3s}
+          .si-tknob{animation:siTKnob 6s ease-in-out infinite 3s}
           @keyframes siFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
           @keyframes siSpin{100%{transform:rotate(360deg)}}
-          @keyframes siSpinR{100%{transform:rotate(-360deg)}}
-          @keyframes siTw{0%,100%{opacity:.4;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+          @keyframes siTw{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
           @keyframes siSwL{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
           @keyframes siSwR{0%,100%{transform:rotate(0)}50%{transform:rotate(-3deg)}}
+          @keyframes siSld1{0%,20%,100%{transform:translateX(0)}50%,70%{transform:translateX(-25px)}}
+          @keyframes siSld2{0%,20%,100%{transform:translateX(0)}50%,70%{transform:translateX(25px)}}
+          @keyframes siTBg{0%,20%,100%{fill:#FAF8F5;stroke:#8B7B6B}50%,70%{fill:#C4956A;stroke:#C4956A}}
+          @keyframes siTKnob{0%,20%,100%{transform:translateX(0)}50%,70%{transform:translateX(10px)}}
         `}</style>
-        <path id="si-petal" d="M -3 -24 L -4 -34 C -2 -38 2 -38 4 -34 L 3 -24" className="si-fb si-m" />
-        <g id="si-gear">
-          <use href="#si-petal" />
-          <use href="#si-petal" transform="rotate(45)" />
-          <use href="#si-petal" transform="rotate(90)" />
-          <use href="#si-petal" transform="rotate(135)" />
-          <use href="#si-petal" transform="rotate(180)" />
-          <use href="#si-petal" transform="rotate(225)" />
-          <use href="#si-petal" transform="rotate(270)" />
-          <use href="#si-petal" transform="rotate(315)" />
-          <circle cx="0" cy="0" r="24" className="si-fb si-m" />
-          <circle cx="0" cy="0" r="18" className="si-s" strokeDasharray="2 4" />
+        <path id="si-star" d="M 0 -3 Q 0 0 3 0 Q 0 0 0 3 Q 0 0 -3 0 Q 0 0 0 -3 Z" className="si-fm" />
+        <g id="si-petals">
+          <path d="M 0 -12 C 10 -25, 15 -40, 0 -50 C -15 -40, -10 -25, 0 -12 Z" className="si-m" />
         </g>
-        <path id="si-star" d="M 0 -4 Q 0 0 4 0 Q 0 0 0 4 Q 0 0 -4 0 Q 0 0 0 -4 Z" className="si-fm" />
       </defs>
+      {/* 背景花マンダラ */}
+      <g transform="translate(100, 80)">
+        <g className="si-spin" opacity="0.25">
+          <circle cx="0" cy="0" r="55" className="si-m" strokeDasharray="1 6" />
+          <circle cx="0" cy="0" r="45" className="si-s" opacity="0.5" />
+          <use href="#si-petals" />
+          <use href="#si-petals" transform="rotate(45)" />
+          <use href="#si-petals" transform="rotate(90)" />
+          <use href="#si-petals" transform="rotate(135)" />
+          <use href="#si-petals" transform="rotate(180)" />
+          <use href="#si-petals" transform="rotate(225)" />
+          <use href="#si-petals" transform="rotate(270)" />
+          <use href="#si-petals" transform="rotate(315)" />
+        </g>
+      </g>
       {/* 枝葉（左） */}
       <g className="si-sl">
-        <path d="M 25 140 Q 15 80 55 30" className="si-s" opacity="0.6" />
-        <path d="M 22 110 Q 12 105 18 95 Q 25 100 22 110" className="si-fb si-s" />
+        <path d="M 25 140 Q 10 80 50 30" className="si-s" opacity="0.6" />
+        <path d="M 22 110 Q 12 105 16 95 Q 25 100 22 110" className="si-fb si-s" />
         <path d="M 32 85 Q 42 80 36 70 Q 28 75 32 85" className="si-fb si-s" />
         <path d="M 42 55 Q 32 50 38 40 Q 46 45 42 55" className="si-fb si-s" />
       </g>
       {/* 枝葉（右） */}
       <g className="si-sr">
-        <path d="M 175 140 Q 185 80 145 30" className="si-s" opacity="0.6" />
-        <path d="M 178 110 Q 188 105 182 95 Q 175 100 178 110" className="si-fb si-s" />
+        <path d="M 175 140 Q 190 80 150 30" className="si-s" opacity="0.6" />
+        <path d="M 178 110 Q 188 105 184 95 Q 175 100 178 110" className="si-fb si-s" />
         <path d="M 168 85 Q 158 80 164 70 Q 172 75 168 85" className="si-fb si-s" />
         <path d="M 158 55 Q 168 50 162 40 Q 154 45 158 55" className="si-fb si-s" />
       </g>
-      {/* 背景小歯車 */}
-      <g transform="translate(45, 115) scale(0.4)" className="si-float" style={{animationDelay:"1s",opacity:0.7}}>
-        <g className="si-spinr"><use href="#si-gear" /></g>
-      </g>
-      <g transform="translate(155, 45) scale(0.35)" className="si-float" style={{animationDelay:"2s",opacity:0.7}}>
-        <g className="si-spin"><use href="#si-gear" /></g>
+      {/* 設定カード */}
+      <g className="si-float">
+        <rect x="60" y="35" width="80" height="90" rx="8" className="si-fb si-m" />
+        {/* カード上部ボタニカルモチーフ */}
+        <path d="M 100 40 C 97 43, 97 46, 100 48 C 103 46, 103 43, 100 40 Z" className="si-fm" opacity="0.7" />
+        <line x1="60" y1="52" x2="140" y2="52" className="si-m" opacity="0.3" />
+        {/* スライダー1 */}
+        <g>
+          <line x1="72" y1="65" x2="128" y2="65" className="si-s" opacity="0.4" />
+          <g className="si-sld1">
+            <circle cx="115" cy="65" r="4.5" className="si-fb si-m" />
+            <circle cx="115" cy="65" r="1.5" className="si-fm" />
+          </g>
+        </g>
+        {/* スライダー2 */}
+        <g>
+          <line x1="72" y1="80" x2="128" y2="80" className="si-s" opacity="0.4" />
+          <g className="si-sld2">
+            <circle cx="85" cy="80" r="4.5" className="si-fb si-m" />
+            <circle cx="85" cy="80" r="1.5" className="si-fm" />
+          </g>
+        </g>
+        {/* トグルスイッチ */}
+        <g>
+          <rect x="72" y="90" width="22" height="12" rx="6" className="si-s si-tbg" />
+          <circle cx="78" cy="96" r="4" className="si-fb si-m si-tknob" />
+          <line x1="102" y1="96" x2="128" y2="96" className="si-s" opacity="0.4" strokeDasharray="2 2" />
+        </g>
       </g>
       {/* スパークル */}
-      <use href="#si-star" x="55" y="40" className="si-tw" style={{transformOrigin:"55px 40px"}} />
-      <use href="#si-star" x="145" y="115" className="si-tw" style={{animationDelay:"1.5s",transformOrigin:"145px 115px"}} />
-      <use href="#si-star" x="135" y="35" className="si-tw" style={{animationDelay:".7s",transformOrigin:"135px 35px"}} />
-      {/* メイン歯車＋サロン窓 */}
-      <g className="si-float" transform="translate(100, 80)">
-        <circle cx="0" cy="0" r="42" className="si-s" strokeDasharray="1 6" opacity="0.4" />
-        <g className="si-spin"><use href="#si-gear" /></g>
-        {/* サロン窓（静止） */}
-        <g>
-          <rect x="-10" y="-6" width="20" height="14" className="si-fb si-m" />
-          <line x1="0" y1="-6" x2="0" y2="8" className="si-s" />
-          <line x1="-10" y1="1" x2="10" y2="1" className="si-s" />
-          <path d="M -14 -6 L -12 -14 L 12 -14 L 14 -6 Q 10.5 -3 7 -6 Q 3.5 -3 0 -6 Q -3.5 -3 -7 -6 Q -10.5 -3 -14 -6 Z" className="si-fm si-m" />
-          <line x1="-13" y1="8" x2="13" y2="8" className="si-m" strokeWidth="1.5" />
-          <polygon points="-8,8 -7,4 -3,4 -2,8" className="si-fs" />
-          <circle cx="-6" cy="2" r="1.5" className="si-fm" />
-          <circle cx="-4" cy="0" r="2" className="si-fm" />
-          <circle cx="-2" cy="2" r="1.5" className="si-fm" />
-        </g>
+      <use href="#si-star" x="45" y="35" className="si-tw" style={{transformOrigin:"45px 35px"}} />
+      <use href="#si-star" x="155" y="115" className="si-tw" style={{animationDelay:"1s",transformOrigin:"155px 115px"}} />
+      <g transform="translate(145, 30) scale(0.7)">
+        <use href="#si-star" className="si-tw" style={{animationDelay:"2s",transformOrigin:"0px 0px"}} />
+      </g>
+      <g transform="translate(50, 125) scale(0.9)">
+        <use href="#si-star" className="si-tw" style={{animationDelay:"0.5s",transformOrigin:"0px 0px"}} />
       </g>
     </svg>
   );

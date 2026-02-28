@@ -73,6 +73,24 @@ input, select, textarea {
 .animation-delay-300 { animation-delay: 0.3s; }
 .animation-delay-400 { animation-delay: 0.4s; }
 
+/* ローディングイラスト パルスアニメーション */
+@keyframes loading-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(0.97); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes loading-pulse-text {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.loading-pulse {
+  animation: loading-pulse 2.5s ease-in-out infinite;
+}
+
+.loading-pulse-text {
+  animation: loading-pulse-text 2.5s ease-in-out infinite 0.3s;
+}
 
 /* Details/Summary chevron rotation */
 details[open] .details-open-rotate {
