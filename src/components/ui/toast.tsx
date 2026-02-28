@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 type ToastType = "success" | "error";
 
@@ -12,20 +11,22 @@ interface ToastProps {
   onClose: () => void;
 }
 
-export function Toast({ message, type = "success", duration = 2500, onClose }: ToastProps) {
+export function Toast({ message, type = "success", duration = 3500, onClose }: ToastProps) {
   const [visible, setVisible] = useState(false);
+  // onCloseをrefで安定化（useEffectの不要な再実行を防止）
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
-    // Trigger enter animation
     requestAnimationFrame(() => setVisible(true));
 
     const timer = setTimeout(() => {
       setVisible(false);
-      setTimeout(onClose, 300); // Wait for exit animation
+      setTimeout(() => onCloseRef.current(), 300);
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [duration, onClose]);
+  }, [duration]);
 
   const bgColor = type === "success" ? "bg-accent" : "bg-error";
 
@@ -71,26 +72,82 @@ export function useToast() {
 /**
  * sessionStorageベースのフラッシュToast
  * router.push()前にsetFlashToast()を呼び、遷移先で自動表示
+ *
+ * useSyncExternalStore方式:
+ * - モジュールスコープの外部ストアでToastデータを管理
+ * - Reactが公式に推奨する外部ストア連携パターン
+ * - Server Component内のClient Componentでも確実に再レンダリングが発火する
  */
 const FLASH_TOAST_KEY = "flash_toast";
 
-export function setFlashToast(message: string, type: ToastType = "success") {
-  sessionStorage.setItem(FLASH_TOAST_KEY, JSON.stringify({ message, type }));
+// --- 外部ストア ---
+type FlashData = { message: string; type: ToastType } | null;
+let _flashData: FlashData = null;
+const _listeners = new Set<() => void>();
+
+function emitChange() {
+  _listeners.forEach((l) => l());
 }
 
-export function FlashToast() {
-  const pathname = usePathname();
-  const [flash, setFlash] = useState<{ message: string; type: ToastType } | null>(null);
+function subscribe(listener: () => void) {
+  _listeners.add(listener);
+  return () => _listeners.delete(listener);
+}
 
+function getSnapshot(): FlashData {
+  return _flashData;
+}
+
+function getServerSnapshot(): FlashData {
+  return null;
+}
+
+function setFlashData(data: FlashData) {
+  _flashData = data;
+  emitChange();
+}
+
+// --- 公開API ---
+
+/** router.push()の前に呼ぶ。遷移先でToastを自動表示 */
+export function setFlashToast(message: string, type: ToastType = "success") {
+  // sessionStorageに保存（フルリロード対応）
+  sessionStorage.setItem(FLASH_TOAST_KEY, JSON.stringify({ message, type }));
+  // 遷移完了後にストアを更新
+  setTimeout(() => {
+    const stored = sessionStorage.getItem(FLASH_TOAST_KEY);
+    if (stored) {
+      sessionStorage.removeItem(FLASH_TOAST_KEY);
+      setFlashData(JSON.parse(stored) as FlashData);
+    }
+  }, 150);
+}
+
+/**
+ * FlashToast表示コンポーネント（layoutに配置）
+ * useSyncExternalStoreで外部ストアを購読し、確実に再レンダリングする
+ */
+export function FlashToast() {
+  const flash = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+  const handleClose = useCallback(() => {
+    setFlashData(null);
+  }, []);
+
+  // マウント時にsessionStorageをチェック（フルリロード対応）
   useEffect(() => {
     const stored = sessionStorage.getItem(FLASH_TOAST_KEY);
     if (stored) {
       sessionStorage.removeItem(FLASH_TOAST_KEY);
-      setFlash(JSON.parse(stored));
+      setFlashData(JSON.parse(stored) as FlashData);
     }
-  }, [pathname]);
+  }, []);
 
-  if (!flash) return null;
-
-  return <Toast message={flash.message} type={flash.type} onClose={() => setFlash(null)} />;
+  return (
+    <div id="flash-toast-container">
+      {flash && (
+        <Toast message={flash.message} type={flash.type} onClose={handleClose} />
+      )}
+    </div>
+  );
 }
