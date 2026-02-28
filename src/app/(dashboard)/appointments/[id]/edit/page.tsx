@@ -12,6 +12,7 @@ import { AppointmentMenuSelector } from "@/components/appointments/appointment-m
 import { AppointmentDateTimeSection } from "@/components/appointments/appointment-datetime-section";
 import { updateAppointment } from "@/components/appointments/appointment-edit-submit";
 import { INPUT_CLASS, SOURCE_OPTIONS } from "@/components/appointments/types";
+import { SubmitButton } from "@/components/ui/submit-button";
 import type { TreatmentMenu, DayAppointment, BusinessHours, BookingSettings } from "@/components/appointments/types";
 import type { Database } from "@/types/database";
 
@@ -205,7 +206,7 @@ export default function EditAppointmentPage() {
 
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={() => router.back()} className="flex-1 bg-background border border-border text-text font-medium rounded-xl py-3 transition-colors min-h-[48px]">キャンセル</button>
-          <button type="submit" disabled={saving} className="flex-1 bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]">{saving ? "保存中..." : "保存する"}</button>
+          <SubmitButton loading={saving} className="flex-1" />
         </div>
       </form>
     </div>

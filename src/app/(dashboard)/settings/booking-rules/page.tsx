@@ -6,6 +6,7 @@ import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { SubmitButton } from "@/components/ui/submit-button";
 import type { BookingSettings } from "@/types/database";
 
 const LEAD_TIME_OPTIONS = [
@@ -157,13 +158,7 @@ export default function BookingRulesPage() {
         </div>
       </div>
 
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]"
-      >
-        {saving ? "保存中..." : "保存する"}
-      </button>
+      <SubmitButton type="button" onClick={handleSave} loading={saving} className="w-full" />
     </div>
   );
 }

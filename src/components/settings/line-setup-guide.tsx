@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Toast, useToast } from "@/components/ui/toast";
 
 type LineConfig = {
@@ -164,13 +165,7 @@ export function LineSetupGuide({ onConnected }: Props) {
           <p className="text-xs text-text-light mt-1">暗号化して保存されます</p>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]"
-        >
-          {loading ? "保存中..." : "保存する"}
-        </button>
+        <SubmitButton loading={loading} className="w-full" />
       </form>
     </>
   );

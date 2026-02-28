@@ -10,6 +10,7 @@ import { ErrorAlert } from "@/components/ui/error-alert";
 import { SectionEditor } from "@/components/counseling/section-editor";
 import { TemplatePreview } from "@/components/counseling/template-preview";
 import { DEFAULT_COUNSELING_TEMPLATE } from "@/lib/counseling-default-template";
+import { SubmitButton } from "@/components/ui/submit-button";
 import type { CounselingTemplate, TemplateSection } from "@/types/counseling-template";
 
 export default function CounselingTemplateEditPage() {
@@ -246,14 +247,7 @@ export default function CounselingTemplateEditPage() {
             >
               デフォルトに戻す
             </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]"
-            >
-              {saving ? "保存中..." : "保存する"}
-            </button>
+            <SubmitButton type="button" onClick={handleSave} loading={saving} className="flex-1 text-sm" />
           </div>
 
           <button

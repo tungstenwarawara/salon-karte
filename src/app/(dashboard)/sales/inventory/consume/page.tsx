@@ -7,6 +7,7 @@ import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
+import { SubmitButton } from "@/components/ui/submit-button";
 import type { Database } from "@/types/database";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
@@ -240,13 +241,7 @@ export default function ConsumePage() {
           >
             戻る
           </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]"
-          >
-            {loading ? "保存中..." : "保存する"}
-          </button>
+          <SubmitButton loading={loading} className="flex-1" />
         </div>
       </form>
 

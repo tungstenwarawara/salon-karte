@@ -13,6 +13,7 @@ import { AppointmentMenuSelector } from "@/components/appointments/appointment-m
 import { AppointmentDateTimeSection } from "@/components/appointments/appointment-datetime-section";
 import { submitAppointment } from "@/components/appointments/appointment-form-submit";
 import { InlineCustomerCreate } from "@/components/appointments/inline-customer-create";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { INPUT_CLASS, SOURCE_OPTIONS } from "@/components/appointments/types";
 import type { TreatmentMenu, DayAppointment, BusinessHours, BookingSettings } from "@/components/appointments/types";
 import type { Database } from "@/types/database";
@@ -275,10 +276,7 @@ function NewAppointmentForm() {
           <p className="text-xs text-text-light -mt-2 ml-8">LINE連携済みの顧客に予約確認メッセージを送信します</p>
         </CollapsibleSection>
 
-        <button type="submit" disabled={saving}
-          className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]">
-          {saving ? "保存中..." : "保存する"}
-        </button>
+        <SubmitButton loading={saving} className="w-full" />
       </form>
     </div>
   );

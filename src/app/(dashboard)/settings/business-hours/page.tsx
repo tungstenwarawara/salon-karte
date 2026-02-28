@@ -6,6 +6,7 @@ import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { SubmitButton } from "@/components/ui/submit-button";
 import type { BusinessHours, DaySchedule } from "@/types/database";
 import {
   ORDERED_DAYS,
@@ -187,13 +188,7 @@ export default function BusinessHoursPage() {
           })}
         </div>
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]"
-        >
-          {saving ? "保存中..." : "保存する"}
-        </button>
+        <SubmitButton loading={saving} className="w-full" />
       </form>
     </div>
   );

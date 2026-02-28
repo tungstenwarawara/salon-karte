@@ -7,6 +7,7 @@ import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { PurchaseFormFields } from "@/components/customers/purchase-form-fields";
 import type { Database } from "@/types/database";
 
@@ -212,13 +213,7 @@ export default function NewPurchasePage() {
           >
             キャンセル
           </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]"
-          >
-            {loading ? "保存中..." : "保存する"}
-          </button>
+          <SubmitButton loading={loading} className="flex-1" />
         </div>
       </form>
     </div>

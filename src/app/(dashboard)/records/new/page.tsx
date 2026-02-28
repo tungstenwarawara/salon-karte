@@ -10,6 +10,7 @@ import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { useFormDraft } from "@/lib/hooks/use-form-draft";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { MenuSelector } from "@/components/records/menu-selector";
 import { PaymentSection } from "@/components/records/payment-section";
 import { CourseTicketInfo } from "@/components/records/course-ticket-info";
@@ -292,7 +293,7 @@ function NewRecordForm() {
 
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={() => router.back()} className="flex-1 bg-background border border-border text-text font-medium rounded-xl py-3 transition-colors min-h-[48px]">キャンセル</button>
-          <button type="submit" disabled={loading} className="flex-1 bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]">{loading ? "保存中..." : "保存する"}</button>
+          <SubmitButton loading={loading} className="flex-1" />
         </div>
       </form>
     </div>

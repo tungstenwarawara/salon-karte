@@ -7,6 +7,7 @@ import { getClientAuth } from "@/lib/supabase/client-auth";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { SettingsLinkCard } from "@/components/settings/settings-link-card";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -79,9 +80,7 @@ export default function SettingsPage() {
           <label className="block text-sm font-medium mb-1.5">住所</label>
           <input type="text" value={salon.address} onChange={(e) => setSalon({ ...salon, address: e.target.value })} className={inputClass} />
         </div>
-        <button type="submit" disabled={loading} className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]">
-          {loading ? "保存中..." : "保存する"}
-        </button>
+        <SubmitButton loading={loading} className="w-full" />
       </form>
 
       {/* 設定リンク */}

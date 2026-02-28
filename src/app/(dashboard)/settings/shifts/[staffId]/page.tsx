@@ -7,6 +7,7 @@ import { getClientAuth } from "@/lib/supabase/client-auth";
 import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { SubmitButton } from "@/components/ui/submit-button";
 import type { BusinessHours, DaySchedule } from "@/types/database";
 import {
   ORDERED_DAYS, DAY_LABELS, DEFAULT_BUSINESS_HOURS,
@@ -166,9 +167,7 @@ export default function StaffDefaultSchedulePage() {
           <button type="button" onClick={() => router.back()} className="flex-1 bg-surface border border-border text-text font-medium rounded-xl py-3 transition-colors min-h-[48px]">
             キャンセル
           </button>
-          <button type="submit" disabled={saving} className="flex-1 bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]">
-            {saving ? "保存中..." : "保存する"}
-          </button>
+          <SubmitButton loading={saving} className="flex-1" />
         </div>
       </form>
 

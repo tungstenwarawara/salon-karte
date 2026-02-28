@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { useFormDraft } from "@/lib/hooks/use-form-draft";
 import {
   BasicInfoFields,
@@ -144,13 +145,7 @@ export default function NewCustomerPage() {
           >
             キャンセル
           </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]"
-          >
-            {loading ? "保存中..." : "保存する"}
-          </button>
+          <SubmitButton loading={loading} className="flex-1" />
         </div>
       </form>
     </div>
