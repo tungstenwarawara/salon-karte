@@ -31,33 +31,44 @@
 - 日本語で記述
 - Co-Authored-By 行を付与
 
-## プッシュ後の業務テスト（必須）
-コミット＆プッシュ完了後、Claude Preview MCP で業務テストを実施する。
+## コミット後の検証（3段階）
+変更の種類に応じてテストレベルを選択する。**毎回フルE2Eは不要。**
 
-### テストサロン（必須）
+### レベル1: ビルド検証のみ（最小）
+- **対象**: CSS/デザイン変更、コンポーネントのスタイル修正、ドキュメント変更、`src/lib/` のみの変更
+- **手順**: `npx tsc --noEmit` → `npm test` → `npm run build` → コミット
+- **E2E不要** — preview_screenshot でUI確認するだけで十分
+
+### レベル2: スポット検証（中）
+- **対象**: 特定ページのロジック変更、フォーム修正、データ表示変更
+- **手順**: ビルド検証 + 該当ページのみ preview_snapshot / preview_click で動作確認
+- ログイン → 該当ページ遷移 → 基本操作確認で完了
+
+### レベル3: フルフロー検証（最大）
+- **対象**: DB変更（マイグレーション）、認証フロー変更、複数領域にまたがるロジック変更
+- **手順**: テスト選定ガイド（`.claude/tests/test-case-master.md`）に従いフル実施
+
+### テストサロン（レベル2・3で必須）
 - **業務テストには必ずテストサロンアカウントを使用する**
 - **本番アカウントでのテスト禁止**（実オーナーのデータは個人情報）
 - 詳細: `.claude/rules/test-salon.md` を参照
 
-### 手順
-1. `preview_start(name: "dev")` でdev server起動（起動済みなら不要）
-2. テストサロンでログイン（`.claude/rules/test-salon.md` の認証情報を使用）
-3. `git diff` で変更ファイルを特定し、テスト選定ガイド（`.claude/tests/test-case-master.md`）に従いテスト対象フローを決定
-4. 対象フローの `[AUTO]` テストケースを `preview_snapshot` / `preview_click` / `preview_fill` / `preview_eval` で実行
-5. 全テスト結果をユーザーに報告（✅PASS / ❌FAIL / ⚠️WARN）
-6. ❌FAIL がある場合はその場で修正→再テスト→再コミット＆プッシュ
-
-### テスト範囲の決定ルール
-- **src/components/customers/**, **src/app/**/customers/** 変更** → フロー1（顧客管理）
-- **src/components/appointments/**, **src/app/**/appointments/** 変更** → フロー2（予約管理）
-- **src/components/records/**, **src/app/**/records/** 変更** → フロー3（カルテ管理）
-- **src/components/inventory/**, **src/app/**/sales/inventory/** 変更** → フロー4（物販・在庫）
-- **回数券関連** → フロー5
-- **src/components/settings/**, **src/app/**/settings/** 変更** → フロー6-8（該当セクション）
-- **src/components/dashboard/**, **src/app/**/dashboard/** 変更** → フロー10
-- **src/lib/** のみ変更 → ユニットテスト（npm test）で十分、業務テスト不要
-- **CLAUDE.md、.claude/rules/、docs のみ** → 業務テスト不要
-- **複数領域にまたがる変更** → 該当する全フロー + フロー10（ダッシュボード）
+### レベル判定の早見表
+| 変更内容 | レベル |
+|---------|-------|
+| CSS / Tailwindクラス / スタイルのみ | 1 |
+| globals.css / カラーパレット変更 | 1 |
+| コンポーネントのUI調整（ロジック変更なし） | 1 |
+| SVG / イラスト / アニメーション追加 | 1 |
+| CLAUDE.md / .claude/rules/ / docs のみ | 1（ビルド不要） |
+| `src/lib/` のユーティリティ変更 | 1 |
+| 特定ページのフォームロジック変更 | 2 |
+| データ取得・表示の変更 | 2 |
+| 新規ページ追加 | 2 |
+| DBマイグレーション | 3 |
+| 認証・ミドルウェア変更 | 3 |
+| RPC関数の変更 | 3 |
+| 複数領域にまたがるロジック変更 | 3 |
 
 ## ディレクトリ構成
 - `src/app/(dashboard)/` — 各ページ（App Router）
