@@ -1,5 +1,7 @@
 "use client";
 
+import { BrandLogo } from "@/components/ui/brand-logo";
+
 /**
  * ログインページ用ビジュアル要素
  * Gemini生成のアニメーションSVG（サロンアーチ＋ボタニカル）
@@ -160,8 +162,8 @@ export function LoginVisual() {
       </svg>
 
       {/* ブランドロゴ */}
-      <h1 className="mt-3 text-3xl font-bold tracking-wide text-primary">
-        サロンカルテ
+      <h1 className="mt-3">
+        <BrandLogo size="lg" />
       </h1>
       <p className="mt-1.5 text-sm text-text-light tracking-widest">
         あなたのサロンを、もっとスマートに

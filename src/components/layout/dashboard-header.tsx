@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavIcon } from "./nav-icon";
+import { BrandLogo } from "@/components/ui/brand-logo";
 
 const allNavItems = [
   { href: "/dashboard", label: "ホーム", icon: "home", ownerOnly: false },
@@ -26,8 +27,8 @@ export function DashboardHeader({ staffRole }: Props) {
     <>
       {/* トップヘッダー */}
       <header className="sticky top-0 z-50 bg-surface border-b border-border px-4 py-3 flex items-center justify-between">
-        <Link href="/dashboard" className="text-lg font-bold text-primary">
-          サロンカルテ
+        <Link href="/dashboard" className="flex items-center">
+          <BrandLogo size="sm" />
         </Link>
         <div className="flex items-center gap-3">
           <Link href="/settings" className="text-text-light hover:text-accent transition-colors" aria-label="設定">
