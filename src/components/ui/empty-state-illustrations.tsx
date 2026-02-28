@@ -264,29 +264,157 @@ function ProductIllustration({ className }: IllustrationProps) {
   );
 }
 
-/** 棒グラフ — 売上、ランキング */
+/** 売上レポート — 成長グラフ＋花＋葉（Gemini生成） */
 function ChartIllustration({ className }: IllustrationProps) {
   return (
-    <svg viewBox="0 0 48 48" fill="none" className={className}>
-      <circle cx="24" cy="24" r="22" fill="currentColor" opacity="0.06" />
-      <rect x="13" y="26" width="5" height="10" rx="1" stroke="currentColor" strokeWidth="1.8" />
-      <rect x="21.5" y="18" width="5" height="18" rx="1" stroke="currentColor" strokeWidth="1.8" />
-      <rect x="30" y="22" width="5" height="14" rx="1" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M12 14l8 4 8-6 8 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" opacity="0.4" />
-      <circle cx="36" cy="14" r="1.5" fill="currentColor" opacity="0.4" />
+    <svg viewBox="0 0 200 160" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>{`
+          .sr-m{stroke:#C4956A;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;fill:none}
+          .sr-s{stroke:#8B7B6B;stroke-width:.8;stroke-linecap:round;stroke-linejoin:round;fill:none}
+          .sr-bg{stroke:#FAF8F5;stroke-linecap:round;fill:none}
+          .sr-fm{fill:#C4956A}.sr-fs{fill:#8B7B6B}.sr-fb{fill:#FAF8F5}
+          .sr-sway{animation:srSway 6s ease-in-out infinite;transform-origin:25px 135px}
+          .sr-aura{animation:srAura 4s ease-in-out infinite;transform-origin:145px 35px}
+          .sr-tw{animation:srTw 3s ease-in-out infinite;transform-origin:center}
+          .sr-float{animation:srFloat 5s ease-in-out infinite}
+          .sr-trace{stroke-dasharray:15 200;animation:srTrace 3.5s ease-in-out infinite;opacity:.8}
+          @keyframes srSway{0%,100%{transform:rotate(0)}50%{transform:rotate(1.5deg)}}
+          @keyframes srAura{0%,100%{transform:scale(1);opacity:.04}50%{transform:scale(1.05);opacity:.08}}
+          @keyframes srTw{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+          @keyframes srFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+          @keyframes srTrace{0%{stroke-dashoffset:200;opacity:0}10%{opacity:1}80%{opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+        `}</style>
+        <path id="sr-star" d="M 0 -3 Q 0 0 3 0 Q 0 0 0 3 Q 0 0 -3 0 Q 0 0 0 -3 Z" className="sr-fm" />
+        <path id="sr-leaf" d="M 0 0 C -2 -3, -4 -1, -3 2 C -1 4, 2 3, 0 0" className="sr-fm" />
+      </defs>
+      {/* オーラ */}
+      <circle cx="145" cy="35" r="35" className="sr-fm sr-aura" />
+      <circle cx="145" cy="35" r="20" className="sr-fm sr-aura" style={{animationDelay:"-2s"}} />
+      {/* グラフ軸 */}
+      <g className="sr-s" opacity="0.4">
+        <g opacity="0.5" strokeDasharray="1 4">
+          <line x1="25" y1="105" x2="170" y2="105" />
+          <line x1="25" y1="75" x2="170" y2="75" />
+          <line x1="25" y1="45" x2="170" y2="45" />
+        </g>
+        <line x1="25" y1="20" x2="25" y2="135" />
+        <polyline points="22,25 25,20 28,25" />
+        <line x1="25" y1="135" x2="175" y2="135" />
+        <polyline points="170,132 175,135 170,138" />
+      </g>
+      {/* 背景トレンド線 */}
+      <path d="M 25 135 C 60 125, 100 115, 140 100" className="sr-s" opacity="0.3" strokeDasharray="2 4" />
+      {/* メイン植物グラフ */}
+      <g className="sr-sway">
+        <path d="M 25 135 C 70 130, 100 85, 145 35" className="sr-m" />
+        <path d="M 25 135 C 70 130, 100 85, 145 35" className="sr-m sr-trace" strokeWidth="2" />
+        {/* 葉 */}
+        <path d="M 55 122 C 45 115, 40 105, 45 100 C 52 103, 58 110, 55 122" className="sr-fb sr-m" />
+        <path d="M 95 92 C 105 82, 115 82, 120 87 C 115 95, 105 97, 95 92" className="sr-fb sr-m" />
+        <path d="M 120 62 C 110 55, 105 45, 110 40 C 118 45, 122 55, 120 62" className="sr-fb sr-m" />
+        {/* 頂点の花 */}
+        <g transform="translate(145, 35) rotate(15)">
+          <path d="M 0 0 C -8 -12, -15 -15, -10 -22 C -5 -25, 0 -15, 0 0" className="sr-fb sr-m" />
+          <path d="M 0 0 C 8 -12, 15 -15, 10 -22 C 5 -25, 0 -15, 0 0" className="sr-fb sr-m" />
+          <path d="M 0 0 C -6 -15, -4 -25, 0 -28 C 4 -25, 6 -15, 0 0" className="sr-fm sr-m" />
+          <path d="M 0 0 C -12 -5, -18 -2, -16 4 C -10 6, -5 2, 0 0" className="sr-fb sr-m" />
+          <path d="M 0 0 C 12 -5, 18 -2, 16 4 C 10 6, 5 2, 0 0" className="sr-fb sr-m" />
+          <path d="M 0 0 L -2 -12 M 0 0 L 2 -12 M 0 0 L 0 -14" className="sr-bg" strokeWidth="0.8" />
+        </g>
+      </g>
+      {/* スパークル */}
+      <g transform="translate(125, 20)"><use href="#sr-star" className="sr-tw" /></g>
+      <g transform="translate(165, 45)"><use href="#sr-star" className="sr-tw" style={{animationDelay:"1s"}} /></g>
+      <g transform="translate(155, 15) scale(1.2)"><use href="#sr-star" className="sr-tw" style={{animationDelay:"2s"}} /></g>
+      <g transform="translate(80, 70)"><use href="#sr-star" className="sr-tw" style={{animationDelay:".5s"}} /></g>
+      {/* 浮遊する小さな葉 */}
+      <g className="sr-float"><use href="#sr-leaf" transform="translate(60, 60)" opacity="0.4" /></g>
+      <g className="sr-float" style={{animationDelay:"1.5s"}}><use href="#sr-leaf" transform="translate(110, 30) rotate(45) scale(0.8)" opacity="0.5" /></g>
+      <g className="sr-float" style={{animationDelay:".7s"}}><use href="#sr-leaf" transform="translate(160, 80) rotate(-30) scale(1.2)" opacity="0.3" /></g>
     </svg>
   );
 }
 
-/** クリップボード+チェック — テンプレート、設定、カウンセリング */
+/** 設定 — 花歯車＋サロン窓＋ボタニカル（Gemini生成） */
 function ClipboardIllustration({ className }: IllustrationProps) {
   return (
-    <svg viewBox="0 0 48 48" fill="none" className={className}>
-      <circle cx="24" cy="24" r="22" fill="currentColor" opacity="0.06" />
-      <rect x="13" y="12" width="22" height="26" rx="2" stroke="currentColor" strokeWidth="1.8" />
-      <rect x="19" y="9" width="10" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M19 22l3 3 7-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1="19" y1="31" x2="29" y2="31" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity="0.4" />
+    <svg viewBox="0 0 200 160" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>{`
+          .si-m{stroke:#C4956A;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;fill:none}
+          .si-s{stroke:#8B7B6B;stroke-width:.8;stroke-linecap:round;stroke-linejoin:round;fill:none}
+          .si-fm{fill:#C4956A}.si-fs{fill:#8B7B6B}.si-fb{fill:#FAF8F5}
+          .si-float{animation:siFloat 6s ease-in-out infinite}
+          .si-spin{animation:siSpin 24s linear infinite;transform-origin:0 0}
+          .si-spinr{animation:siSpinR 20s linear infinite;transform-origin:0 0}
+          .si-tw{animation:siTw 3s ease-in-out infinite}
+          .si-sl{animation:siSwL 7s ease-in-out infinite;transform-origin:25px 140px}
+          .si-sr{animation:siSwR 8s ease-in-out infinite;transform-origin:175px 140px}
+          @keyframes siFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+          @keyframes siSpin{100%{transform:rotate(360deg)}}
+          @keyframes siSpinR{100%{transform:rotate(-360deg)}}
+          @keyframes siTw{0%,100%{opacity:.4;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+          @keyframes siSwL{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
+          @keyframes siSwR{0%,100%{transform:rotate(0)}50%{transform:rotate(-3deg)}}
+        `}</style>
+        <path id="si-petal" d="M -3 -24 L -4 -34 C -2 -38 2 -38 4 -34 L 3 -24" className="si-fb si-m" />
+        <g id="si-gear">
+          <use href="#si-petal" />
+          <use href="#si-petal" transform="rotate(45)" />
+          <use href="#si-petal" transform="rotate(90)" />
+          <use href="#si-petal" transform="rotate(135)" />
+          <use href="#si-petal" transform="rotate(180)" />
+          <use href="#si-petal" transform="rotate(225)" />
+          <use href="#si-petal" transform="rotate(270)" />
+          <use href="#si-petal" transform="rotate(315)" />
+          <circle cx="0" cy="0" r="24" className="si-fb si-m" />
+          <circle cx="0" cy="0" r="18" className="si-s" strokeDasharray="2 4" />
+        </g>
+        <path id="si-star" d="M 0 -4 Q 0 0 4 0 Q 0 0 0 4 Q 0 0 -4 0 Q 0 0 0 -4 Z" className="si-fm" />
+      </defs>
+      {/* 枝葉（左） */}
+      <g className="si-sl">
+        <path d="M 25 140 Q 15 80 55 30" className="si-s" opacity="0.6" />
+        <path d="M 22 110 Q 12 105 18 95 Q 25 100 22 110" className="si-fb si-s" />
+        <path d="M 32 85 Q 42 80 36 70 Q 28 75 32 85" className="si-fb si-s" />
+        <path d="M 42 55 Q 32 50 38 40 Q 46 45 42 55" className="si-fb si-s" />
+      </g>
+      {/* 枝葉（右） */}
+      <g className="si-sr">
+        <path d="M 175 140 Q 185 80 145 30" className="si-s" opacity="0.6" />
+        <path d="M 178 110 Q 188 105 182 95 Q 175 100 178 110" className="si-fb si-s" />
+        <path d="M 168 85 Q 158 80 164 70 Q 172 75 168 85" className="si-fb si-s" />
+        <path d="M 158 55 Q 168 50 162 40 Q 154 45 158 55" className="si-fb si-s" />
+      </g>
+      {/* 背景小歯車 */}
+      <g transform="translate(45, 115) scale(0.4)" className="si-float" style={{animationDelay:"1s",opacity:0.7}}>
+        <g className="si-spinr"><use href="#si-gear" /></g>
+      </g>
+      <g transform="translate(155, 45) scale(0.35)" className="si-float" style={{animationDelay:"2s",opacity:0.7}}>
+        <g className="si-spin"><use href="#si-gear" /></g>
+      </g>
+      {/* スパークル */}
+      <use href="#si-star" x="55" y="40" className="si-tw" style={{transformOrigin:"55px 40px"}} />
+      <use href="#si-star" x="145" y="115" className="si-tw" style={{animationDelay:"1.5s",transformOrigin:"145px 115px"}} />
+      <use href="#si-star" x="135" y="35" className="si-tw" style={{animationDelay:".7s",transformOrigin:"135px 35px"}} />
+      {/* メイン歯車＋サロン窓 */}
+      <g className="si-float" transform="translate(100, 80)">
+        <circle cx="0" cy="0" r="42" className="si-s" strokeDasharray="1 6" opacity="0.4" />
+        <g className="si-spin"><use href="#si-gear" /></g>
+        {/* サロン窓（静止） */}
+        <g>
+          <rect x="-10" y="-6" width="20" height="14" className="si-fb si-m" />
+          <line x1="0" y1="-6" x2="0" y2="8" className="si-s" />
+          <line x1="-10" y1="1" x2="10" y2="1" className="si-s" />
+          <path d="M -14 -6 L -12 -14 L 12 -14 L 14 -6 Q 10.5 -3 7 -6 Q 3.5 -3 0 -6 Q -3.5 -3 -7 -6 Q -10.5 -3 -14 -6 Z" className="si-fm si-m" />
+          <line x1="-13" y1="8" x2="13" y2="8" className="si-m" strokeWidth="1.5" />
+          <polygon points="-8,8 -7,4 -3,4 -2,8" className="si-fs" />
+          <circle cx="-6" cy="2" r="1.5" className="si-fm" />
+          <circle cx="-4" cy="0" r="2" className="si-fm" />
+          <circle cx="-2" cy="2" r="1.5" className="si-fm" />
+        </g>
+      </g>
     </svg>
   );
 }
@@ -313,7 +441,7 @@ type Props = {
 export function EmptyStateIllustration({ type, size = "sm" }: Props) {
   const Component = illustrations[type];
   // Gemini版はビューポートが大きいため別サイズ
-  const isRich = type === "customer" || type === "record" || type === "calendar";
+  const isRich = type === "customer" || type === "record" || type === "calendar" || type === "chart" || type === "clipboard";
   const sizeClass = isRich
     ? (size === "md" ? "w-40 h-auto" : "w-28 h-auto")
     : (size === "md" ? "w-16 h-16" : "w-12 h-12");
