@@ -73,23 +73,6 @@ input, select, textarea {
 .animation-delay-300 { animation-delay: 0.3s; }
 .animation-delay-400 { animation-delay: 0.4s; }
 
-/* ボタニカルイラスト 微揺れ */
-@keyframes leaf-sway-left {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(-2deg); }
-}
-@keyframes leaf-sway-right {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(2deg); }
-}
-.animate-leaf-sway-left {
-  animation: leaf-sway-left 4s ease-in-out infinite;
-  transform-origin: bottom center;
-}
-.animate-leaf-sway-right {
-  animation: leaf-sway-right 4.5s ease-in-out infinite;
-  transform-origin: bottom center;
-}
 
 /* Details/Summary chevron rotation */
 details[open] .details-open-rotate {
