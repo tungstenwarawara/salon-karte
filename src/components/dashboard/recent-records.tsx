@@ -29,7 +29,7 @@ export function RecentRecords({
             <Link
               key={record.id}
               href={`/records/${record.id}`}
-              className="block bg-surface border border-border rounded-xl p-3 hover:border-accent transition-colors"
+              className="block bg-surface border border-border rounded-xl p-3 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
             >
               <div className="flex justify-between items-center">
                 <span className="font-medium text-sm">

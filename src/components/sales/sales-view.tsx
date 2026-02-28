@@ -152,7 +152,7 @@ export function SalesView({ salonId, initialData, initialYear, initialDeferredRe
           {/* 分析ページへのリンク */}
           <Link
             href="/sales/analytics"
-            className="block bg-surface border border-border rounded-xl px-4 py-3 hover:border-accent transition-colors"
+            className="block bg-surface border border-border rounded-xl px-4 py-3 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
           >
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">顧客・メニュー分析を見る</span>

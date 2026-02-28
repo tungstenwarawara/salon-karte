@@ -32,7 +32,7 @@ export function CustomerCard(customer: Props) {
   return (
     <Link
       href={`/customers/${customer.id}`}
-      className="block bg-surface border border-border rounded-xl p-4 hover:border-accent transition-colors"
+      className="block bg-surface border border-border rounded-xl p-4 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
     >
       <div className="flex justify-between items-start">
         <div>

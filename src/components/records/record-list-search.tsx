@@ -141,7 +141,7 @@ export function RecordListSearch({ records }: { records: RecordItem[] }) {
               <Link
                 key={r.id}
                 href={`/records/${r.id}`}
-                className="block bg-surface border border-border rounded-xl p-3 hover:border-accent transition-colors"
+                className="block bg-surface border border-border rounded-xl p-3 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-sm">{r.customerName}</span>

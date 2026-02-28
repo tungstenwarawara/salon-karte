@@ -33,7 +33,7 @@ export function AppointmentCard({ appointment: apt }: { appointment: Appointment
   return (
     <Link
       href={`/appointments/${apt.id}`}
-      className={`block bg-surface border border-border rounded-xl p-3 hover:border-accent transition-colors ${borderClass}`}
+      className={`block bg-surface border border-border rounded-xl p-3 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200 ${borderClass}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 export default function AnalyticsLoading() {
   return (
-    <div className="space-y-4 animate-pulse">
+    <div className="space-y-4">
       <div className="h-7 w-48 bg-border rounded" />
       <div className="grid grid-cols-2 gap-3">
         {[1, 2, 3, 4].map((i) => (

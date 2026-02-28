@@ -80,7 +80,7 @@ export function TreatmentHistory({ customerId, salonId, customerName, records, h
                     <Link
                       key={record.id}
                       href={`/records/${record.id}`}
-                      className="block bg-surface border border-border rounded-xl p-3 hover:border-accent transition-colors"
+                      className="block bg-surface border border-border rounded-xl p-3 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-sm text-text-light shrink-0">{formatDateShort(record.treatment_date)}</span>

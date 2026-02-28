@@ -145,7 +145,7 @@ export default async function AppointmentDetailPage({
       {customer && (
         <Link
           href={`/customers/${customer.id}`}
-          className="block bg-surface border border-border rounded-2xl p-5 hover:border-accent transition-colors"
+          className="block bg-surface border border-border rounded-2xl p-5 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
         >
           <p className="text-sm font-medium text-text-light mb-1">顧客</p>
           <p className="font-bold">{customer.last_name} {customer.first_name}</p>
@@ -201,7 +201,7 @@ export default async function AppointmentDetailPage({
           <h3 className="text-sm font-bold text-text-light mb-2">前回のカルテ</h3>
           <Link
             href={`/records/${prevKarte.id}`}
-            className="block bg-surface border border-border rounded-xl p-3 hover:border-accent transition-colors"
+            className="block bg-surface border border-border rounded-xl p-3 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
           >
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">{prevKarte.menu_name_snapshot ?? "施術記録"}</span>

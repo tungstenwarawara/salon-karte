@@ -1,6 +1,6 @@
 export default function ImportHubLoading() {
   return (
-    <div className="space-y-5 animate-pulse">
+    <div className="space-y-5">
       <div className="h-8 bg-border rounded w-1/3" />
       <div className="bg-surface border border-border rounded-2xl p-4">
         <div className="h-4 bg-border rounded w-2/3 mb-2" />

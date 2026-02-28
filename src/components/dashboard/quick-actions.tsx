@@ -5,7 +5,7 @@ export function QuickActions() {
     <div className="grid grid-cols-2 gap-2">
       <Link
         href="/appointments/new"
-        className="bg-surface border border-border rounded-xl p-3 text-center hover:border-accent transition-colors"
+        className="bg-surface border border-border rounded-xl p-3 text-center hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
       >
         <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center mx-auto mb-1.5">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-accent">
@@ -16,7 +16,7 @@ export function QuickActions() {
       </Link>
       <Link
         href="/customers/new"
-        className="bg-surface border border-border rounded-xl p-3 text-center hover:border-accent transition-colors"
+        className="bg-surface border border-border rounded-xl p-3 text-center hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
       >
         <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center mx-auto mb-1.5">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-accent">

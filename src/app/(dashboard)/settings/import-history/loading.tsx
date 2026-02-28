@@ -1,10 +1,10 @@
 export default function Loading() {
   return (
     <div className="space-y-4">
-      <div className="h-8 bg-border rounded w-1/3 animate-pulse" />
+      <div className="h-8 skeleton rounded w-1/3" />
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-surface border border-border rounded-xl p-4 animate-pulse">
+          <div key={i} className="skeleton border border-border rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div className="space-y-2 flex-1">
                 <div className="h-4 bg-border rounded w-1/4" />

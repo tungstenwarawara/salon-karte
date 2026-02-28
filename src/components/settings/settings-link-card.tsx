@@ -11,7 +11,7 @@ export function SettingsLinkCard({ href, title, description }: SettingsLinkCardP
   return (
     <Link
       href={href}
-      className="block bg-surface border border-border rounded-2xl p-5 hover:border-accent transition-colors"
+      className="block bg-surface border border-border rounded-2xl p-5 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
     >
       <div className="flex justify-between items-center">
         <div>

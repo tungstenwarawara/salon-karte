@@ -32,7 +32,7 @@ export function TodayAppointments({
               <Link
                 key={apt.id}
                 href={`/appointments/${apt.id}`}
-                className={`block bg-surface border rounded-xl p-3 hover:border-accent transition-colors ${
+                className={`block bg-surface border rounded-xl p-3 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200 ${
                   isCompleted ? "border-green-200 bg-green-50/50" : "border-border"
                 } ${needsKarte ? "border-l-4 border-l-orange-400" : ""}`}
               >
