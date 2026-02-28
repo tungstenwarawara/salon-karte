@@ -7,6 +7,7 @@ import { InventoryAlert } from "@/components/dashboard/inventory-alert";
 import { TodayAppointments } from "@/components/dashboard/today-appointments";
 import { BirthdayCustomers } from "@/components/dashboard/birthday-customers";
 import { KpiTrendCards } from "@/components/dashboard/kpi-trend-cards";
+import { GreetingVisual } from "@/components/dashboard/greeting-visual";
 
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
 
@@ -157,10 +158,13 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      {/* 挨拶 */}
+      {/* 挨拶 + ビジュアル */}
       <div>
-        <p className="text-text-light text-sm">{getGreeting()}</p>
-        <h2 className="text-xl font-bold mt-0.5">{salon.name}</h2>
+        <GreetingVisual />
+        <div className="mt-2 text-center">
+          <p className="text-text-light text-sm">{getGreeting()}</p>
+          <h2 className="text-xl font-bold mt-0.5">{salon.name}</h2>
+        </div>
       </div>
 
       {!allSetupDone && (
