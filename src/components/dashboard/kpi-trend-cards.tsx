@@ -6,6 +6,8 @@ type Props = {
   previousRevenue: number;
   currentVisits: number;
   previousVisits: number;
+  /** スタッフ権限の場合は売上カードを非表示 */
+  staffRole: "owner" | "manager" | "staff" | null;
 };
 
 export function KpiTrendCards({
@@ -13,39 +15,45 @@ export function KpiTrendCards({
   previousRevenue,
   currentVisits,
   previousVisits,
+  staffRole,
 }: Props) {
   const revenueChange = getChangePercent(currentRevenue, previousRevenue);
   const visitChange = getChangePercent(currentVisits, previousVisits);
+  // オーナー・マネージャーのみ売上を表示（staffロールには非表示）
+  const canSeeRevenue = staffRole !== "staff";
 
   return (
     <div className="grid grid-cols-2 gap-3">
-      {/* 今月の売上 */}
-      <Link
-        href="/sales"
-        className="bg-surface border border-border rounded-2xl p-4 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
-      >
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-accent">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-              </svg>
+      {/* 今月の売上（オーナー/マネージャーのみ） */}
+      {canSeeRevenue && (
+        <Link
+          href="/sales"
+          className="bg-surface border border-border rounded-2xl p-4 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
+        >
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-accent">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              </div>
+              {revenueChange && (
+                <span className={`text-xs font-medium ${revenueChange.color}`}>
+                  {revenueChange.text}
+                  <span className="text-text-light font-normal ml-0.5">先月比</span>
+                </span>
+              )}
             </div>
-            {revenueChange && (
-              <span className={`text-xs font-medium ${revenueChange.color}`}>
-                {revenueChange.text}
-              </span>
-            )}
+            <p className="text-lg font-bold truncate">{formatYen(currentRevenue)}</p>
+            <p className="text-xs text-text-light">今月の売上</p>
           </div>
-          <p className="text-lg font-bold truncate">{formatYen(currentRevenue)}</p>
-          <p className="text-xs text-text-light">今月の売上</p>
-        </div>
-      </Link>
+        </Link>
+      )}
 
       {/* 今月の来店 */}
       <Link
         href="/records"
-        className="bg-surface border border-border rounded-2xl p-4 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
+        className={`bg-surface border border-border rounded-2xl p-4 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200${!canSeeRevenue ? " col-span-2" : ""}`}
       >
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -57,6 +65,7 @@ export function KpiTrendCards({
             {visitChange && (
               <span className={`text-xs font-medium ${visitChange.color}`}>
                 {visitChange.text}
+                <span className="text-text-light font-normal ml-0.5">先月比</span>
               </span>
             )}
           </div>

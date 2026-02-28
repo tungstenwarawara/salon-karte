@@ -18,7 +18,7 @@ function getGreeting(): string {
 }
 
 export default async function DashboardPage() {
-  const { user, salon, supabase } = await getAuthAndSalon();
+  const { user, salon, staff, supabase } = await getAuthAndSalon();
 
   if (!user) {
     redirect("/login");
@@ -178,6 +178,7 @@ export default async function DashboardPage() {
         previousRevenue={kpi.previous_month_revenue}
         currentVisits={kpi.current_month_visits}
         previousVisits={kpi.previous_month_visits}
+        staffRole={staff?.role ?? null}
       />
 
       <InventoryAlert items={lowStockItems} />
