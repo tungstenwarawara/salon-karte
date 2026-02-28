@@ -79,16 +79,74 @@ function CustomerIllustration({ className }: IllustrationProps) {
   );
 }
 
-/** ペン+ノート — カルテ、施術履歴、回数券、写真 */
+/** カルテ — 見開きノート＋ペン＋ハーブ（Gemini生成） */
 function RecordIllustration({ className }: IllustrationProps) {
   return (
-    <svg viewBox="0 0 48 48" fill="none" className={className}>
-      <circle cx="24" cy="24" r="22" fill="currentColor" opacity="0.06" />
-      <rect x="13" y="10" width="18" height="24" rx="2" stroke="currentColor" strokeWidth="1.8" />
-      <line x1="17" y1="17" x2="27" y2="17" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity="0.5" />
-      <line x1="17" y1="21" x2="25" y2="21" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity="0.5" />
-      <line x1="17" y1="25" x2="23" y2="25" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" opacity="0.5" />
-      <path d="M29 28l6-6 3 3-6 6-3.5.5.5-3.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox="0 0 200 160" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>{`
+          .ri-m{stroke:#C4956A;stroke-width:1;stroke-linecap:round;stroke-linejoin:round;fill:none}
+          .ri-s{stroke:#8B7B6B;stroke-width:.75;stroke-linecap:round;stroke-linejoin:round;fill:none}
+          .ri-float{animation:riF 6s ease-in-out infinite}
+          .ri-float-d{animation:riF2 7s ease-in-out infinite 1s}
+          .ri-sway{transform-origin:20px 140px;animation:riSway 5s ease-in-out infinite}
+          .ri-tw{animation:riTw 4s ease-in-out infinite;transform-origin:center}
+          .ri-dl{stroke-dasharray:40}
+          .ri-d1{animation:riDraw 6s ease-in-out infinite}
+          .ri-d2{animation:riDraw 6s ease-in-out infinite .5s}
+          .ri-d3{animation:riDraw 6s ease-in-out infinite 1s}
+          @keyframes riF{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+          @keyframes riF2{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+          @keyframes riSway{0%,100%{transform:rotate(0)}50%{transform:rotate(4deg)}}
+          @keyframes riTw{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+          @keyframes riDraw{0%,10%{stroke-dashoffset:40;opacity:0}30%,80%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+        `}</style>
+      </defs>
+      {/* スパークル */}
+      <g fill="#C4956A" className="ri-tw" style={{transformOrigin:"25px 35px"}}>
+        <path d="M 20 35 Q 25 35 25 30 Q 25 35 30 35 Q 25 35 25 40 Q 25 35 20 35 Z" />
+      </g>
+      <g fill="#C4956A" className="ri-tw" style={{transformOrigin:"175px 115px",animationDelay:"2s"}}>
+        <path d="M 172 115 Q 175 115 175 112 Q 175 115 178 115 Q 175 115 175 118 Q 175 115 172 115 Z" />
+      </g>
+      {/* ノート */}
+      <g className="ri-float">
+        <path d="M 38 118 C 68 118 93 123 98 128" className="ri-s" opacity="0.4" />
+        <path d="M 98 128 C 108 123 133 121 162 121 L 162 40" className="ri-s" opacity="0.4" />
+        <path d="M 40 35 C 70 35 95 40 100 45 L 100 125 C 95 120 70 115 40 115 Z" fill="#FAF8F5" className="ri-m" />
+        <path d="M 100 45 C 105 40 130 35 160 35 L 160 105 C 150 105 145 110 145 120 C 130 118 110 120 100 125 Z" fill="#FAF8F5" className="ri-m" />
+        <path d="M 160 105 C 150 105 145 110 145 120 C 148 112 155 108 160 105 Z" fill="#FAF8F5" className="ri-m" />
+        <line x1="100" y1="45" x2="100" y2="125" className="ri-s" opacity="0.6" />
+        <line x1="98" y1="44" x2="98" y2="124" className="ri-s" opacity="0.2" />
+        <line x1="102" y1="46" x2="102" y2="126" className="ri-s" opacity="0.2" />
+        {/* 手書き風ライン左 */}
+        <path d="M 55 60 Q 70 58 85 62" className="ri-s ri-dl ri-d1" />
+        <path d="M 50 75 Q 65 73 85 77" className="ri-s ri-dl ri-d2" />
+        <path d="M 55 90 Q 70 88 80 92" className="ri-s ri-dl ri-d3" />
+        <path d="M 50 105 Q 60 103 70 106" className="ri-s ri-dl ri-d1" opacity="0.6" />
+        {/* 手書き風ライン右 */}
+        <path d="M 115 62 Q 130 58 145 60" className="ri-s ri-dl ri-d2" />
+        <path d="M 115 77 Q 135 73 145 75" className="ri-s ri-dl ri-d3" />
+        <path d="M 115 92 Q 125 88 135 90" className="ri-s ri-dl ri-d1" />
+      </g>
+      {/* ペン */}
+      <g className="ri-float-d">
+        <path d="M 143 133 L 170 50 L 174 52 L 147 135 Z" fill="#FAF8F5" className="ri-m" />
+        <path d="M 140 140 L 143 133 L 147 135 Z" fill="#C4956A" className="ri-m" />
+        <line x1="145" y1="134" x2="172" y2="51" className="ri-s" opacity="0.5" />
+        <path d="M 168 60 Q 172 55 178 55" className="ri-m" />
+      </g>
+      {/* ハーブ */}
+      <g className="ri-sway">
+        <path d="M 20 140 Q 30 110 60 85" className="ri-m" />
+        <path d="M 30 120 Q 20 115 25 105 Q 35 110 30 120" fill="#FAF8F5" className="ri-m" />
+        <path d="M 40 100 Q 30 95 35 85 Q 45 90 40 100" fill="#FAF8F5" className="ri-m" />
+        <path d="M 50 90 Q 45 80 55 75 Q 60 85 50 90" fill="#FAF8F5" className="ri-m" />
+        <path d="M 60 85 Q 65 75 75 80 Q 70 90 60 85" fill="#FAF8F5" className="ri-m" />
+        <circle cx="28" cy="102" r="0.8" fill="#8B7B6B" />
+        <circle cx="38" cy="82" r="0.8" fill="#8B7B6B" />
+        <circle cx="58" cy="72" r="0.8" fill="#8B7B6B" />
+      </g>
     </svg>
   );
 }
@@ -171,8 +229,8 @@ type Props = {
 /** イラスト表示コンポーネント（EmptyStateから呼ばれる） */
 export function EmptyStateIllustration({ type, size = "sm" }: Props) {
   const Component = illustrations[type];
-  // Gemini版（customer）はビューポートが大きいため別サイズ
-  const isRich = type === "customer";
+  // Gemini版はビューポートが大きいため別サイズ
+  const isRich = type === "customer" || type === "record";
   const sizeClass = isRich
     ? (size === "md" ? "w-40 h-auto" : "w-28 h-auto")
     : (size === "md" ? "w-16 h-16" : "w-12 h-12");
