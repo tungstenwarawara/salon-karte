@@ -252,14 +252,102 @@ function CalendarIllustration({ className }: IllustrationProps) {
   );
 }
 
-/** ショッピングバッグ — 物販、在庫、商品、棚卸し */
+/** 在庫管理 — ボトル＋チェックリスト＋棚＋ボタニカル（Gemini生成） */
 function ProductIllustration({ className }: IllustrationProps) {
   return (
-    <svg viewBox="0 0 48 48" fill="none" className={className}>
-      <circle cx="24" cy="24" r="22" fill="currentColor" opacity="0.06" />
-      <path d="M14 18h20l-2 18H16L14 18z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      <path d="M18 18v-3a6 6 0 0112 0v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M20 26c1.5 2 6.5 2 8 0" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.4" />
+    <svg viewBox="0 0 200 160" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>{`
+          .pi-m{stroke:#C4956A;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;fill:none}
+          .pi-s{stroke:#8B7B6B;stroke-width:.8;stroke-linecap:round;stroke-linejoin:round;fill:none}
+          .pi-fm{fill:#C4956A}.pi-fs{fill:#8B7B6B}.pi-fb{fill:#FAF8F5}
+          .pi-float{animation:piFloat 6s ease-in-out infinite}
+          .pi-tw{animation:piTw 4s ease-in-out infinite}
+          .pi-sl{animation:piSwL 7s ease-in-out infinite;transform-origin:25px 140px}
+          .pi-sr{animation:piSwR 8s ease-in-out infinite;transform-origin:175px 140px}
+          .pi-chk{stroke-dasharray:20;stroke-dashoffset:20;animation:piChk 6s ease-in-out infinite}
+          @keyframes piFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+          @keyframes piTw{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+          @keyframes piSwL{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
+          @keyframes piSwR{0%,100%{transform:rotate(0)}50%{transform:rotate(-3deg)}}
+          @keyframes piChk{0%,15%{stroke-dashoffset:20;opacity:0}30%,85%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+        `}</style>
+        <path id="pi-star" d="M 0 -3 Q 0 0 3 0 Q 0 0 0 3 Q 0 0 -3 0 Q 0 0 0 -3 Z" className="pi-fm" />
+      </defs>
+      {/* 枝葉（左） */}
+      <g className="pi-sl">
+        <path d="M 25 140 Q 10 80 55 25" className="pi-s" opacity="0.6" />
+        <path d="M 22 110 Q 12 105 16 95 Q 25 100 22 110" className="pi-fb pi-s" />
+        <path d="M 30 85 Q 40 80 34 70 Q 26 75 30 85" className="pi-fb pi-s" />
+        <path d="M 42 55 Q 32 50 36 40 Q 46 45 42 55" className="pi-fb pi-s" />
+        <circle cx="18" cy="80" r="1" className="pi-fs" />
+        <circle cx="28" cy="50" r="1" className="pi-fs" />
+      </g>
+      {/* 枝葉（右） */}
+      <g className="pi-sr">
+        <path d="M 175 140 Q 190 80 145 25" className="pi-s" opacity="0.6" />
+        <path d="M 178 110 Q 188 105 184 95 Q 175 100 178 110" className="pi-fb pi-s" />
+        <path d="M 170 85 Q 160 80 166 70 Q 174 75 170 85" className="pi-fb pi-s" />
+        <path d="M 158 55 Q 168 50 164 40 Q 154 45 158 55" className="pi-fb pi-s" />
+        <circle cx="182" cy="80" r="1" className="pi-fs" />
+        <circle cx="172" cy="50" r="1" className="pi-fs" />
+      </g>
+      {/* チェックリスト */}
+      <g className="pi-float">
+        <g transform="translate(70, 67) rotate(-6) translate(-70, -67)">
+          <rect x="45" y="35" width="52" height="68" rx="4" className="pi-fb pi-m" />
+          <line x1="52" y1="45" x2="88" y2="45" className="pi-m" strokeWidth="1.5" opacity="0.5" />
+          <rect x="52" y="54" width="6" height="6" rx="1" className="pi-s" />
+          <line x1="64" y1="57" x2="86" y2="57" className="pi-s" />
+          <path d="M 50 56 L 54 60 L 61 51" className="pi-m pi-chk" />
+          <rect x="52" y="68" width="6" height="6" rx="1" className="pi-s" />
+          <line x1="64" y1="71" x2="80" y2="71" className="pi-s" />
+          <path d="M 50 70 L 54 74 L 61 65" className="pi-m pi-chk" style={{animationDelay:".8s"}} />
+          <rect x="52" y="82" width="6" height="6" rx="1" className="pi-s" />
+          <line x1="64" y1="85" x2="88" y2="85" className="pi-s" />
+          <path d="M 50 84 L 54 88 L 61 79" className="pi-m pi-chk" style={{animationDelay:"1.6s"}} />
+        </g>
+      </g>
+      {/* 棚 */}
+      <line x1="30" y1="125" x2="170" y2="125" className="pi-s" />
+      <line x1="40" y1="130" x2="160" y2="130" className="pi-s" opacity="0.3" />
+      {/* ボトル類 */}
+      <g>
+        <ellipse cx="90" cy="125" rx="16" ry="2" className="pi-fs" opacity="0.15" />
+        <ellipse cx="125" cy="125" rx="16" ry="2" className="pi-fs" opacity="0.15" />
+        <ellipse cx="156" cy="125" rx="12" ry="2" className="pi-fs" opacity="0.15" />
+        {/* ジャー（左） */}
+        <g>
+          <rect x="75" y="100" width="30" height="25" rx="6" className="pi-fb pi-m" />
+          <rect x="73" y="92" width="34" height="8" rx="3" className="pi-fm pi-m" />
+          <circle cx="90" cy="112" r="5" className="pi-s" opacity="0.6" />
+          <line x1="88" y1="112" x2="92" y2="112" className="pi-s" opacity="0.6" />
+        </g>
+        {/* ポンプボトル（中央） */}
+        <g>
+          <line x1="125" y1="55" x2="125" y2="120" className="pi-s" opacity="0.2" />
+          <rect x="110" y="55" width="30" height="70" rx="10" className="pi-fb pi-m" />
+          <rect x="116" y="75" width="18" height="28" rx="4" className="pi-s" opacity="0.6" />
+          <line x1="120" y1="82" x2="130" y2="82" className="pi-s" opacity="0.6" />
+          <line x1="120" y1="88" x2="128" y2="88" className="pi-s" opacity="0.6" />
+          <rect x="120" y="48" width="10" height="7" className="pi-fm pi-m" />
+          <rect x="116" y="40" width="18" height="8" rx="3" className="pi-fb pi-m" />
+          <path d="M 116 44 Q 105 44 105 48" className="pi-m" />
+        </g>
+        {/* ドロッパーボトル（右） */}
+        <g>
+          <rect x="145" y="85" width="22" height="40" rx="7" className="pi-fb pi-m" />
+          <rect x="149" y="75" width="14" height="10" rx="2" className="pi-fm pi-m" />
+          <path d="M 149 75 C 149 62, 163 62, 163 75 Z" className="pi-fb pi-m" />
+          <rect x="149" y="98" width="14" height="16" rx="3" className="pi-s" opacity="0.6" />
+          <circle cx="156" cy="106" r="2" className="pi-s" opacity="0.6" />
+        </g>
+      </g>
+      {/* スパークル */}
+      <use href="#pi-star" x="85" y="25" className="pi-tw" style={{transformOrigin:"85px 25px"}} />
+      <use href="#pi-star" x="145" y="30" className="pi-tw" style={{animationDelay:"1s",transformOrigin:"145px 30px"}} />
+      <use href="#pi-star" x="45" y="95" className="pi-tw" style={{animationDelay:"2s",transformOrigin:"45px 95px"}} />
+      <use href="#pi-star" x="170" y="75" className="pi-tw" style={{animationDelay:".5s",transformOrigin:"170px 75px"}} />
     </svg>
   );
 }
@@ -441,7 +529,7 @@ type Props = {
 export function EmptyStateIllustration({ type, size = "sm" }: Props) {
   const Component = illustrations[type];
   // Gemini版はビューポートが大きいため別サイズ
-  const isRich = type === "customer" || type === "record" || type === "calendar" || type === "chart" || type === "clipboard";
+  const isRich = type === "customer" || type === "record" || type === "calendar" || type === "product" || type === "chart" || type === "clipboard";
   const sizeClass = isRich
     ? (size === "md" ? "w-40 h-auto" : "w-28 h-auto")
     : (size === "md" ? "w-16 h-16" : "w-12 h-12");
