@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <g fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Clipboard (Karte) Silhouette -->
+    <g stroke="#8B7B6B">
+      <rect x="7" y="10" width="22" height="30" rx="2" />
+      <path d="M 14 10 L 14 8 C 14 6.9 14.9 6 16 6 L 20 6 C 21.1 6 22 6.9 22 8 L 22 10" />
+      <line x1="12" y1="10" x2="24" y2="10" />
+      <!-- Delicate Karte Lines -->
+      <line x1="11" y1="16" x2="25" y2="16" opacity="0.4" />
+      <line x1="11" y1="22" x2="21" y2="22" opacity="0.4" />
+      <line x1="11" y1="28" x2="23" y2="28" opacity="0.4" />
+      <!-- Tiny Heart Accent -->
+      <path d="M 18 36 C 16 34 15 33 16 32 C 17 31 18 32 18 33 C 18 32 19 31 20 32 C 21 33 20 34 18 36 Z" />
+    </g>
+    <!-- Botanical Accent (1 Rose Bloom) -->
+    <g stroke="#C4956A">
+      <!-- Stem -->
+      <path d="M 35 23.5 C 35 30 33 36 35 42" />
+      <!-- Rose Base -->
+      <path d="M 33 22 C 33 25 37 25 37 22" />
+      <!-- Rose Petals -->
+      <path d="M 33 22 C 31 14 35 12 35 16 C 35 12 39 14 37 22" />
+      <path d="M 32.5 18 C 35 15 37.5 18 37.5 18" />
+      <!-- Leaves -->
+      <path d="M 34.5 30 C 30 28 28 24 28 24 C 30 26 33 28 34.5 30 Z" />
+      <path d="M 34 36 C 38 38 40 42 40 42 C 38 40 35 38 34 36 Z" />
+    </g>
+  </g>
+  <!-- Elegant Sparkle -->
+  <path d="M 39 8 Q 39 11 42 11 Q 39 11 39 14 Q 39 11 36 11 Q 39 11 39 8 Z" fill="#C4956A" />
+</svg>
