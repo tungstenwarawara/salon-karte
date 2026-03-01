@@ -9,7 +9,7 @@ export default async function ExportPage() {
   if (!salon) redirect("/setup");
 
   // 件数のみ取得（head: true でデータ転送ゼロ）
-  const [customersRes, recordsRes, purchasesRes, appointmentsRes, ticketsRes, menusRes, productsRes] = await Promise.all([
+  const [customersRes, recordsRes, purchasesRes, appointmentsRes, ticketsRes, menusRes, productsRes, photosRes] = await Promise.all([
     supabase.from("customers").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
     supabase.from("treatment_records").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
     supabase.from("purchases").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
@@ -17,6 +17,7 @@ export default async function ExportPage() {
     supabase.from("course_tickets").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
     supabase.from("treatment_menus").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
     supabase.from("products").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
+    supabase.from("treatment_photos").select("id, treatment_records!inner(salon_id)", { count: "exact", head: true }).eq("treatment_records.salon_id", salon.id),
   ]);
 
   const counts = {
@@ -27,6 +28,7 @@ export default async function ExportPage() {
     courseTickets: ticketsRes.count ?? 0,
     treatmentMenus: menusRes.count ?? 0,
     products: productsRes.count ?? 0,
+    photos: photosRes.count ?? 0,
   };
 
   return (
@@ -40,7 +42,7 @@ export default async function ExportPage() {
       />
       <p className="text-sm text-text-light">各データをCSVファイルでダウンロードできます。</p>
 
-      <ExportPanel counts={counts} />
+      <ExportPanel counts={counts} salonId={salon.id} />
     </div>
   );
 }

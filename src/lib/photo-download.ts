@@ -2,7 +2,7 @@
 import JSZip from "jszip";
 import { createClient } from "@/lib/supabase/client";
 
-const PHOTO_TYPE_LABELS: Record<string, string> = {
+export const PHOTO_TYPE_LABELS: Record<string, string> = {
   before: "施術前",
   after: "施術後",
 };
