@@ -10,8 +10,13 @@ updates:
     labels:
       - "dependencies"
     groups:
-      # セキュリティ影響大: 個別PRで慎重に確認
-      # next, @supabase/*, react はグループ化しない
+      # React系: react と react-dom は常に同じバージョンにする必要がある
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
 
       # 開発ツール系: まとめて1PRにする
       dev-dependencies:
