@@ -3,11 +3,13 @@
 type Props = {
   lastName: string;
   firstName: string;
+  email: string;
   phone: string;
   memo: string;
   hp: string;
   onLastNameChange: (v: string) => void;
   onFirstNameChange: (v: string) => void;
+  onEmailChange: (v: string) => void;
   onPhoneChange: (v: string) => void;
   onMemoChange: (v: string) => void;
   onHpChange: (v: string) => void;
@@ -19,11 +21,13 @@ const INPUT_CLASS =
 export function BookingCustomerForm({
   lastName,
   firstName,
+  email,
   phone,
   memo,
   hp,
   onLastNameChange,
   onFirstNameChange,
+  onEmailChange,
   onPhoneChange,
   onMemoChange,
   onHpChange,
@@ -62,6 +66,22 @@ export function BookingCustomerForm({
             autoComplete="given-name"
           />
         </div>
+      </div>
+
+      {/* メールアドレス */}
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          メールアドレス <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => onEmailChange(e.target.value)}
+          placeholder="example@email.com"
+          className={INPUT_CLASS}
+          autoComplete="email"
+          inputMode="email"
+        />
       </div>
 
       {/* 電話番号 */}

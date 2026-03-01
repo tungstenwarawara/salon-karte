@@ -32,6 +32,7 @@ export function BookingPageClient({ slug }: Props) {
   const [selectedTime, setSelectedTime] = useState("");
   const [lastName, setLastName] = useState("");
   const [firstName, setFirstName] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [memo, setMemo] = useState("");
   const [hp, setHp] = useState("");
@@ -63,7 +64,7 @@ export function BookingPageClient({ slug }: Props) {
     switch (step) {
       case 1: return selectedMenuIds.length > 0;
       case 2: return !!selectedDate && !!selectedTime;
-      case 3: return !!lastName.trim() && !!firstName.trim() && !!phone.trim();
+      case 3: return !!lastName.trim() && !!firstName.trim() && !!email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) && !!phone.trim();
       default: return true;
     }
   };
@@ -78,7 +79,7 @@ export function BookingPageClient({ slug }: Props) {
         body: JSON.stringify({
           date: selectedDate, start_time: selectedTime, menu_ids: selectedMenuIds,
           last_name: lastName.trim(), first_name: firstName.trim(),
-          phone: phone.replace(/-/g, "").trim(),
+          email: email.trim(), phone: phone.replace(/-/g, "").trim(),
           memo: memo.trim() || undefined, _hp: hp || undefined,
         }),
       });
@@ -154,13 +155,13 @@ export function BookingPageClient({ slug }: Props) {
           businessHours={businessHours} salonHolidays={salonHolidays} />
       )}
       {step === 3 && (
-        <BookingCustomerForm lastName={lastName} firstName={firstName} phone={phone} memo={memo} hp={hp}
-          onLastNameChange={setLastName} onFirstNameChange={setFirstName} onPhoneChange={setPhone}
+        <BookingCustomerForm lastName={lastName} firstName={firstName} email={email} phone={phone} memo={memo} hp={hp}
+          onLastNameChange={setLastName} onFirstNameChange={setFirstName} onEmailChange={setEmail} onPhoneChange={setPhone}
           onMemoChange={setMemo} onHpChange={setHp} />
       )}
       {step === 4 && (
         <BookingConfirmation selectedMenus={selectedMenus} date={selectedDate} time={selectedTime}
-          totalDuration={totalDuration} lastName={lastName} firstName={firstName} phone={phone} memo={memo} />
+          totalDuration={totalDuration} lastName={lastName} firstName={firstName} email={email} phone={phone} memo={memo} />
       )}
 
       <div className="flex gap-3 pt-2">

@@ -14,6 +14,7 @@ type Props = {
   totalDuration: number;
   lastName: string;
   firstName: string;
+  email: string;
   phone: string;
   memo: string;
 };
@@ -33,6 +34,7 @@ export function BookingConfirmation({
   totalDuration,
   lastName,
   firstName,
+  email,
   phone,
   memo,
 }: Props) {
@@ -70,6 +72,7 @@ export function BookingConfirmation({
         <div className="p-4 space-y-1">
           <p className="text-xs text-text-light font-medium mb-1">お客様情報</p>
           <p className="text-sm">{lastName} {firstName}</p>
+          <p className="text-sm text-text-light">{email}</p>
           <p className="text-sm text-text-light">{phone}</p>
           {memo && <p className="text-sm text-text-light mt-1">{memo}</p>}
         </div>

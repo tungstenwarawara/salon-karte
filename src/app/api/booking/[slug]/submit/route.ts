@@ -9,6 +9,7 @@ type SubmitBody = {
   menu_ids: string[];
   last_name: string;
   first_name: string;
+  email: string;
   phone: string;
   memo?: string;
   _hp?: string; // ハニーポット
@@ -33,11 +34,14 @@ export async function POST(
     return NextResponse.json({ success: true }); // サイレント拒否
   }
 
-  const { date, start_time, menu_ids, last_name, first_name, phone, memo } = body;
+  const { date, start_time, menu_ids, last_name, first_name, email, phone, memo } = body;
 
   // --- 入力バリデーション ---
   if (!last_name?.trim() || !first_name?.trim()) {
     return NextResponse.json({ error: "お名前（姓・名）は必須です" }, { status: 400 });
+  }
+  if (!email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    return NextResponse.json({ error: "メールアドレスの形式が正しくありません" }, { status: 400 });
   }
   if (!phone?.trim() || !/^0\d{9,10}$/.test(phone.replace(/-/g, ""))) {
     return NextResponse.json({ error: "電話番号の形式が正しくありません" }, { status: 400 });
@@ -142,6 +146,12 @@ export async function POST(
 
   if (existingCustomer) {
     customerId = existingCustomer.id;
+    // 既存顧客のメールアドレスを更新（未設定の場合のみ）
+    await admin
+      .from("customers")
+      .update({ email: email.trim() })
+      .eq("id", existingCustomer.id)
+      .is("email", null);
   } else {
     // 新規顧客作成
     const { data: newCustomer, error: customerError } = await admin
@@ -150,6 +160,7 @@ export async function POST(
         salon_id: salon.id,
         last_name: last_name.trim(),
         first_name: first_name.trim(),
+        email: email.trim(),
         phone: normalizedPhone,
       })
       .select("id")
