@@ -109,7 +109,7 @@ export function CustomerDetailContent({
           />
         </div>
         <div className={activeTab === "counseling" ? "" : "hidden"}>
-          <CounselingSection customerId={customerId} sheets={counselingSheets} counselingTemplate={counselingTemplate} templates={counselingTemplates} />
+          <CounselingSection customerId={customerId} salonId={salonId} sheets={counselingSheets} counselingTemplate={counselingTemplate} templates={counselingTemplates} />
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { INPUT_CLASS, type PendingPurchase, type Product } from "./types";
+import { ProductCombobox } from "@/components/ui/product-combobox";
 
 type Props = {
   products: Product[];
@@ -74,18 +75,12 @@ export function PurchaseInlineForm({ products, onAdd }: Props) {
       )}
 
       {mode === "product" ? (
-        <select
-          value={productId}
-          onChange={(e) => handleProductChange(e.target.value)}
-          className={INPUT_CLASS}
-        >
-          <option value="">商品を選択</option>
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.name}{product.category ? ` (${product.category})` : ""} - ¥{product.base_sell_price.toLocaleString()}
-            </option>
-          ))}
-        </select>
+        <ProductCombobox
+          products={products}
+          selectedId={productId}
+          onSelect={handleProductChange}
+          showPrice="sell"
+        />
       ) : (
         <input
           type="text"

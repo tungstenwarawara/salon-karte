@@ -1,6 +1,7 @@
 "use client";
 
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
+import { ProductCombobox } from "@/components/ui/product-combobox";
 import type { Database } from "@/types/database";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
@@ -93,21 +94,13 @@ export function PurchaseFormFields({
           <label className="block text-sm font-medium mb-1.5">
             商品 <span className="text-error">*</span>
           </label>
-          <select
-            value={form.product_id}
-            onChange={(e) => onProductChange(e.target.value)}
+          <ProductCombobox
+            products={products}
+            selectedId={form.product_id}
+            onSelect={onProductChange}
+            showPrice="sell"
             required
-            className={inputClass}
-          >
-            <option value="">商品を選択</option>
-            {products.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.name}
-                {product.category ? ` (${product.category})` : ""}
-                {` - ¥${product.base_sell_price.toLocaleString()}`}
-              </option>
-            ))}
-          </select>
+          />
         </div>
       ) : (
         <div>

@@ -10,6 +10,7 @@ import { CustomerBasicInfo } from "@/components/customers/customer-basic-info";
 import { CustomerLineSection } from "@/components/customers/customer-line-section";
 import { CustomerDetailContent } from "@/components/customers/customer-detail-content";
 import { CustomerInsights } from "@/components/customers/customer-insights";
+import { GraduationToggle } from "@/components/customers/graduation-toggle";
 
 type CounselingSheet = Database["public"]["Tables"]["counseling_sheets"]["Row"];
 
@@ -36,7 +37,7 @@ export default async function CustomerDetailPage({
 
   const { data: customer } = await supabase
     .from("customers")
-    .select("id, salon_id, last_name, first_name, last_name_kana, first_name_kana, phone, email, birth_date, address, marital_status, has_children, dm_allowed, height_cm, weight_kg, allergies, treatment_goal, notes")
+    .select("id, salon_id, last_name, first_name, last_name_kana, first_name_kana, phone, email, birth_date, address, marital_status, has_children, dm_allowed, height_cm, weight_kg, allergies, treatment_goal, notes, graduated_at")
     .eq("id", id)
     .eq("salon_id", salon.id)
     .single<Customer>();
@@ -219,6 +220,8 @@ export default async function CustomerDetailPage({
       />
 
       <CustomerBasicInfo customer={customer} customerId={id} />
+
+      <GraduationToggle customerId={id} salonId={salon.id} graduatedAt={customer.graduated_at} />
 
       <CustomerLineSection lineLink={lineLink} />
 

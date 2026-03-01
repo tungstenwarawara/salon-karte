@@ -6,6 +6,7 @@ import type { Database } from "@/types/database";
 import type { CounselingTemplate } from "@/types/counseling-template";
 import { ResponseViewer } from "@/components/counseling/response-viewer";
 import { EmptyState } from "@/components/ui/empty-state";
+import { createClient } from "@/lib/supabase/client";
 
 type CounselingSheet = Database["public"]["Tables"]["counseling_sheets"]["Row"];
 
@@ -18,12 +19,14 @@ type TemplateItem = {
 
 type Props = {
   customerId: string;
+  salonId: string;
   sheets: CounselingSheet[];
   counselingTemplate: CounselingTemplate | null;
   templates: TemplateItem[];
 };
 
-export function CounselingSection({ customerId, sheets, counselingTemplate, templates }: Props) {
+export function CounselingSection({ customerId, salonId, sheets: initialSheets, counselingTemplate, templates }: Props) {
+  const [sheets, setSheets] = useState(initialSheets);
   const [creating, setCreating] = useState(false);
   const [showTemplateSelect, setShowTemplateSelect] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
@@ -34,6 +37,8 @@ export function CounselingSection({ customerId, sheets, counselingTemplate, temp
   const [showQr, setShowQr] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showAllSubmitted, setShowAllSubmitted] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const submitted = sheets.filter((s) => s.status === "submitted");
   const pending = sheets.filter((s) => s.status === "pending" && new Date(s.expires_at) > new Date());
@@ -41,7 +46,6 @@ export function CounselingSection({ customerId, sheets, counselingTemplate, temp
   const hasMoreSubmitted = submitted.length > 1;
 
   const handleCreateClick = () => {
-    // テンプレート数に関わらず選択UIを表示（チェックボックスがあるため）
     setSelectedTemplateId(templates.find((t) => t.is_default)?.id ?? templates[0]?.id ?? null);
     setShowTemplateSelect(true);
   };
@@ -62,7 +66,6 @@ export function CounselingSection({ customerId, sheets, counselingTemplate, temp
       if (res.ok) {
         const data = await res.json();
         setGeneratedToken(data.token);
-        // QRコードを自動生成
         const url = getUrl(data.token);
         const dataUrl = await QRCode.toDataURL(url, { width: 200, margin: 2 });
         setQrDataUrl(dataUrl);
@@ -71,6 +74,24 @@ export function CounselingSection({ customerId, sheets, counselingTemplate, temp
     } finally {
       setCreating(false);
     }
+  };
+
+  const handleDelete = async (sheetId: string) => {
+    setDeleting(true);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("counseling_sheets")
+      .delete()
+      .eq("id", sheetId)
+      .eq("salon_id", salonId);
+
+    if (!error) {
+      setSheets((prev) => prev.filter((s) => s.id !== sheetId));
+      setConfirmDeleteId(null);
+    } else {
+      console.error("シート削除エラー:", error);
+    }
+    setDeleting(false);
   };
 
   const getUrl = (token: string) => `${window.location.origin}/c/${token}`;
@@ -96,7 +117,6 @@ export function CounselingSection({ customerId, sheets, counselingTemplate, temp
 
   const hasContent = submitted.length > 0 || pending.length > 0 || generatedToken;
 
-  // シートに紐づくテンプレートを取得
   const getTemplateForSheet = (sheet: CounselingSheet): CounselingTemplate | null => {
     if (sheet.template_id) {
       const found = templates.find((t) => t.id === sheet.template_id);
@@ -176,13 +196,38 @@ export function CounselingSection({ customerId, sheets, counselingTemplate, temp
                 <span className="text-xs text-text-light">
                   {s.submitted_at ? formatDate(s.submitted_at) : ""} 回答済み
                 </span>
-                <button
-                  onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                  className="text-xs text-accent hover:underline min-h-[44px] px-2"
-                >
-                  {expandedId === s.id ? "閉じる" : "回答を見る"}
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
+                    className="text-xs text-accent hover:underline min-h-[44px] px-2"
+                  >
+                    {expandedId === s.id ? "閉じる" : "回答を見る"}
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteId(confirmDeleteId === s.id ? null : s.id)}
+                    className="text-xs text-error hover:bg-error/5 px-2 py-1.5 rounded-lg min-h-[44px]"
+                    aria-label="削除"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                  </button>
+                </div>
               </div>
+              {confirmDeleteId === s.id && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
+                  <p className="text-sm font-medium text-red-800">このシートを削除しますか？</p>
+                  <p className="text-xs text-red-700">回答内容も失われます</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => setConfirmDeleteId(null)} className="flex-1 text-xs border border-border rounded-xl py-2 min-h-[44px]">
+                      キャンセル
+                    </button>
+                    <button onClick={() => handleDelete(s.id)} disabled={deleting} className="flex-1 text-xs bg-error text-white rounded-xl py-2 min-h-[44px] disabled:opacity-50">
+                      {deleting ? "削除中..." : "削除する"}
+                    </button>
+                  </div>
+                </div>
+              )}
               {expandedId === s.id && <ResponseViewer responses={s.responses as Record<string, unknown> | null} template={getTemplateForSheet(s)} />}
             </div>
           ))}
@@ -199,8 +244,32 @@ export function CounselingSection({ customerId, sheets, counselingTemplate, temp
             <div key={s.id} className="bg-surface border border-border rounded-xl p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-text-light">{formatDate(s.expires_at)} まで有効</span>
-                <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">未回答</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">未回答</span>
+                  <button
+                    onClick={() => setConfirmDeleteId(confirmDeleteId === s.id ? null : s.id)}
+                    className="text-xs text-error hover:bg-error/5 px-2 py-1.5 rounded-lg min-h-[44px]"
+                    aria-label="削除"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                  </button>
+                </div>
               </div>
+              {confirmDeleteId === s.id && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
+                  <p className="text-sm font-medium text-red-800">このシートを削除しますか？</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => setConfirmDeleteId(null)} className="flex-1 text-xs border border-border rounded-xl py-2 min-h-[44px]">
+                      キャンセル
+                    </button>
+                    <button onClick={() => handleDelete(s.id)} disabled={deleting} className="flex-1 text-xs bg-error text-white rounded-xl py-2 min-h-[44px] disabled:opacity-50">
+                      {deleting ? "削除中..." : "削除する"}
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="flex gap-2">
                 <button onClick={() => handleCopy(s.token)} className="flex-1 text-xs border border-border rounded-xl py-2 min-h-[44px] hover:bg-background transition-colors">
                   {copied ? "コピーしました" : "URLをコピー"}

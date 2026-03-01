@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { ProductCombobox } from "@/components/ui/product-combobox";
 
 type Product = { id: string; name: string; category: string | null; base_cost_price: number };
 type SessionItem = { id: string; product_name: string; quantity: number; unit_cost_price: number };
@@ -108,20 +109,12 @@ export function BatchReceiveForm({ salonId, products, presetProductId }: Props) 
           <label className="block text-sm font-medium mb-1.5">
             商品 <span className="text-error">*</span>
           </label>
-          <select
-            value={form.product_id}
-            onChange={(e) => handleProductChange(e.target.value)}
+          <ProductCombobox
+            products={products}
+            selectedId={form.product_id}
+            onSelect={handleProductChange}
             required
-            className={inputClass}
-          >
-            <option value="">商品を選択</option>
-            {products.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.name}
-                {product.category ? ` (${product.category})` : ""}
-              </option>
-            ))}
-          </select>
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
