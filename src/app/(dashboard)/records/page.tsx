@@ -4,6 +4,7 @@ import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { PageHeader } from "@/components/layout/page-header";
 import { RecordListSearch } from "@/components/records/record-list-search";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FirstVisitHint } from "@/components/ui/first-visit-hint";
 
 export default async function RecordsPage() {
   const { user, salon, supabase } = await getAuthAndSalon();
@@ -37,6 +38,8 @@ export default async function RecordsPage() {
           + カルテを作成
         </Link>
       </PageHeader>
+
+      <FirstVisitHint pageKey="records" message="施術内容や写真をカルテに記録できます。予約なしでも直接作成できます" />
 
       <RecordListSearch records={allRecords} />
 

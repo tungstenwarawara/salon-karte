@@ -57,6 +57,8 @@ export default async function DashboardPage() {
     todayAppointmentsRes,
     customerCountRes,
     menuCountRes,
+    appointmentTotalRes,
+    recordTotalRes,
     lapsedCustomersRes,
     birthdayRes,
     inventoryRes,
@@ -79,6 +81,14 @@ export default async function DashboardPage() {
       .select("id", { count: "exact", head: true })
       .eq("salon_id", salon.id)
       .eq("is_active", true),
+    supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("salon_id", salon.id),
+    supabase
+      .from("treatment_records")
+      .select("id", { count: "exact", head: true })
+      .eq("salon_id", salon.id),
     supabase
       .rpc("get_lapsed_customers", { p_salon_id: salon.id, p_days_threshold: 60 })
       .returns<LapsedCustomer[]>(),
@@ -148,13 +158,17 @@ export default async function DashboardPage() {
   const hasBusinessHours = salon.business_hours !== null;
   const hasMenus = (menuCount ?? 0) > 0;
   const hasCustomers = (customerCount ?? 0) > 0;
-  const setupSteps = [
-    { done: hasBusinessHours, label: "営業時間を設定する", href: "/settings/business-hours" },
-    { done: hasMenus, label: "施術メニューを登録する", href: "/settings/menus" },
-    { done: hasCustomers, label: "最初のお客様を登録する", href: "/customers/new" },
+  const hasAppointments = (appointmentTotalRes.count ?? 0) > 0;
+  const hasRecords = (recordTotalRes.count ?? 0) > 0;
+  const setupSteps: { done: boolean; label: string; href: string; phase: 1 | 2 }[] = [
+    { done: true, label: "サロン登録", href: "/dashboard", phase: 1 },
+    { done: hasBusinessHours, label: "営業時間を設定する", href: "/settings/business-hours", phase: 1 },
+    { done: hasMenus, label: "施術メニューを登録する", href: "/settings/menus", phase: 1 },
+    { done: hasCustomers, label: "最初のお客様を登録する", href: "/customers/new", phase: 1 },
+    { done: hasAppointments, label: "予約を入れてみる", href: "/appointments/new", phase: 2 },
+    { done: hasRecords, label: "カルテを記録する", href: "/records/new", phase: 2 },
   ];
   const allSetupDone = setupSteps.every((s) => s.done);
-  const completedSteps = setupSteps.filter((s) => s.done).length;
 
   return (
     <div className="space-y-5">
@@ -169,7 +183,7 @@ export default async function DashboardPage() {
 
       {!allSetupDone && (
         <div className="animate-fade-in-up animation-delay-100">
-          <OnboardingChecklist setupSteps={setupSteps} completedSteps={completedSteps} />
+          <OnboardingChecklist setupSteps={setupSteps} />
         </div>
       )}
 

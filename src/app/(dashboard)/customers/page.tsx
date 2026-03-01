@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { CustomerList } from "@/components/customers/customer-list";
+import { FirstVisitHint } from "@/components/ui/first-visit-hint";
 
 export default async function CustomersPage() {
   const { user, salon, supabase } = await getAuthAndSalon();
@@ -43,6 +44,7 @@ export default async function CustomersPage() {
 
   return (
     <div className="space-y-4">
+      <FirstVisitHint pageKey="customers" message="まずはお客様を登録しましょう。登録後、予約やカルテの記録ができるようになります" />
       <CustomerList customers={customers} />
     </div>
   );

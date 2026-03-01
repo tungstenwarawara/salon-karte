@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { AppointmentsView } from "@/components/appointments/appointments-view";
 import type { AppointmentWithCustomer } from "@/components/appointments/appointment-card";
+import { FirstVisitHint } from "@/components/ui/first-visit-hint";
 
 export default async function AppointmentsPage() {
   const { user, salon, supabase } = await getAuthAndSalon();
@@ -27,11 +28,14 @@ export default async function AppointmentsPage() {
     .returns<AppointmentWithCustomer[]>();
 
   return (
-    <AppointmentsView
-      salonId={salon.id}
-      initialAppointments={appointments ?? []}
-      initialBusinessHours={salon.business_hours}
-      initialSalonHolidays={salon.salon_holidays}
-    />
+    <div className="space-y-4">
+      <FirstVisitHint pageKey="appointments" message="お客様を登録したら、予約を入れてみましょう。カレンダー形式でも確認できます" />
+      <AppointmentsView
+        salonId={salon.id}
+        initialAppointments={appointments ?? []}
+        initialBusinessHours={salon.business_hours}
+        initialSalonHolidays={salon.salon_holidays}
+      />
+    </div>
   );
 }

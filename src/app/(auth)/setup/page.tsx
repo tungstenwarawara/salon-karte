@@ -3,17 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { SetupWizard, type WizardData } from "@/components/setup/setup-wizard";
 
 export default function SetupPage() {
   const router = useRouter();
-  const [salonName, setSalonName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
 
-  // Check if salon already exists - redirect to dashboard if so
+  // 既存サロン確認 — あればダッシュボードへリダイレクト
   useEffect(() => {
     const checkExistingSalon = async () => {
       const supabase = createClient();
@@ -26,7 +24,6 @@ export default function SetupPage() {
         return;
       }
 
-      // staff テーブルで所属サロン確認
       const { data: staffRecord } = await supabase
         .from("staff")
         .select("salon_id")
@@ -39,7 +36,6 @@ export default function SetupPage() {
         return;
       }
 
-      // フォールバック: owner_id で確認
       const { data: salon } = await supabase
         .from("salons")
         .select("id")
@@ -56,8 +52,7 @@ export default function SetupPage() {
     checkExistingSalon();
   }, [router]);
 
-  const handleSetup = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleComplete = async (data: WizardData) => {
     setError("");
     setLoading(true);
 
@@ -72,24 +67,26 @@ export default function SetupPage() {
       return;
     }
 
-    const { data: newSalon, error } = await supabase
+    // 1. サロン作成（営業時間も同時保存）
+    const { data: newSalon, error: salonError } = await supabase
       .from("salons")
       .insert({
         owner_id: user.id,
-        name: salonName,
-        phone: phone || null,
-        address: address || null,
+        name: data.salonName,
+        phone: data.phone || null,
+        address: data.address || null,
+        business_hours: data.businessHours,
       })
       .select("id")
       .single();
 
-    if (error || !newSalon) {
-      setError(`サロン情報の登録に失敗しました: ${error?.message || "不明なエラー"}`);
+    if (salonError || !newSalon) {
+      setError(`サロン情報の登録に失敗しました: ${salonError?.message || "不明なエラー"}`);
       setLoading(false);
       return;
     }
 
-    // staff レコード（owner）を自動作成
+    // 2. staff レコード（owner）を自動作成
     const { error: staffError } = await supabase.from("staff").insert({
       salon_id: newSalon.id,
       auth_user_id: user.id,
@@ -102,84 +99,43 @@ export default function SetupPage() {
       console.error("staff レコード作成エラー:", staffError);
     }
 
+    // 3. メニュー登録（入力された場合のみ）
+    if (data.menuName) {
+      const { error: menuError } = await supabase.from("treatment_menus").insert({
+        salon_id: newSalon.id,
+        name: data.menuName,
+        duration_minutes: data.menuDuration,
+        price: data.menuPrice ?? 0,
+        is_active: true,
+      });
+
+      if (menuError) {
+        console.error("メニュー登録エラー:", menuError);
+      }
+    }
+
     router.push("/dashboard");
   };
 
-  if (checking) {
+  if (checking || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="text-text-light">読み込み中...</div>
+        <div className="text-center space-y-2">
+          <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-text-light text-sm">{loading ? "登録中..." : "読み込み中..."}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-primary">サロンカルテ</h1>
-          <p className="text-text-light mt-2">サロン情報を登録しましょう</p>
+    <>
+      {error && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-error/10 text-error text-sm rounded-lg p-3 max-w-sm w-full mx-4 animate-fade-in-up">
+          {error}
         </div>
-
-        <form onSubmit={handleSetup} className="bg-surface rounded-2xl shadow-sm border border-border p-6 space-y-5">
-          {error && (
-            <div className="bg-error/10 text-error text-sm rounded-lg p-3">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label htmlFor="salonName" className="block text-sm font-medium mb-1.5">
-              サロン名 <span className="text-error">*</span>
-            </label>
-            <input
-              id="salonName"
-              type="text"
-              value={salonName}
-              onChange={(e) => setSalonName(e.target.value)}
-              required
-              placeholder="例: Beauty Salon Hana"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium mb-1.5">
-              電話番号
-            </label>
-            <input
-              id="phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="例: 03-1234-5678"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="address" className="block text-sm font-medium mb-1.5">
-              住所
-            </label>
-            <input
-              id="address"
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="例: 東京都渋谷区..."
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]"
-          >
-            {loading ? "登録中..." : "はじめる"}
-          </button>
-        </form>
-      </div>
-    </div>
+      )}
+      <SetupWizard onComplete={handleComplete} />
+    </>
   );
 }
