@@ -22,7 +22,7 @@ export function ManagementTabs() {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`text-sm px-4 py-2 rounded-xl transition-colors min-h-[48px] flex items-center justify-center ${
+            className={`flex-1 text-sm px-4 py-2 rounded-xl transition-colors min-h-[48px] flex items-center justify-center ${
               isActive
                 ? "bg-accent text-white"
                 : "bg-surface border border-border text-text-light hover:text-text"

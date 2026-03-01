@@ -8,7 +8,7 @@ import { SalesBarChart } from "@/components/sales/sales-bar-chart";
 import { SalesDrilldown } from "@/components/sales/sales-drilldown";
 import { SalesMonthlyList } from "@/components/sales/sales-monthly-list";
 import { SalesYearlySummary } from "@/components/sales/sales-yearly-summary";
-import { getFilteredTotal, CATEGORY_OPTIONS } from "@/components/sales/sales-types";
+import { getFilteredTotal, CATEGORY_OPTIONS, categoryActiveClass } from "@/components/sales/sales-types";
 import type { MonthlySales, DailySales, CategoryFilter } from "@/components/sales/sales-types";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -167,7 +167,7 @@ export function SalesView({ salonId, initialData, initialYear, initialDeferredRe
           <div className="flex gap-1.5">
             {CATEGORY_OPTIONS.map(({ key, label }) => (
               <button key={key} onClick={() => setCategoryFilter(key)}
-                className={`text-xs px-3 py-1.5 rounded-full transition-colors min-h-[44px] ${categoryFilter === key ? "bg-accent text-white" : "bg-surface border border-border text-text-light"}`}>
+                className={`text-xs px-3 py-1.5 rounded-full transition-colors min-h-[44px] ${categoryFilter === key ? categoryActiveClass(key) : "bg-surface border border-border text-text-light"}`}>
                 {label}
               </button>
             ))}

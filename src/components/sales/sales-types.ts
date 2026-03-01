@@ -38,11 +38,39 @@ export function getFilteredTotal(m: MonthlySales, filter: CategoryFilter): numbe
   return m.treatment_sales + m.product_sales + m.ticket_sales;
 }
 
+/** カテゴリ別バー背景色（Tailwindクラス） */
 export function filterColor(filter: CategoryFilter): string {
-  if (filter === "treatment") return "bg-accent";
-  if (filter === "product") return "bg-blue-400";
-  if (filter === "ticket") return "bg-amber-400";
+  if (filter === "treatment") return "bg-category-treatment";
+  if (filter === "product") return "bg-category-product";
+  if (filter === "ticket") return "bg-category-ticket";
   return "bg-accent";
+}
+
+/** カテゴリフィルタピルのアクティブ色 */
+export function categoryActiveClass(filter: CategoryFilter): string {
+  if (filter === "treatment") return "bg-category-treatment text-white";
+  if (filter === "product") return "bg-category-product text-white";
+  if (filter === "ticket") return "bg-category-ticket text-white";
+  return "bg-accent text-white";
+}
+
+/** 凡例ドット色 */
+export function categoryDotColor(cat: "treatment" | "product" | "ticket"): string {
+  if (cat === "treatment") return "bg-category-treatment";
+  if (cat === "product") return "bg-category-product";
+  return "bg-category-ticket";
+}
+
+/** バーチャート用グラデーション */
+export function barGradient(filter: CategoryFilter, opacity: number): string {
+  const colors: Record<CategoryFilter, [string, string]> = {
+    treatment: [`rgba(228,168,158,${opacity})`, `rgba(238,190,182,${opacity})`],
+    product: [`rgba(139,191,168,${opacity})`, `rgba(165,208,190,${opacity})`],
+    ticket: [`rgba(196,160,184,${opacity})`, `rgba(212,182,202,${opacity})`],
+    all: [`rgba(228,168,158,${opacity})`, `rgba(238,190,182,${opacity})`],
+  };
+  const [from, to] = colors[filter];
+  return `linear-gradient(to top, ${from}, ${to})`;
 }
 
 export const CATEGORY_OPTIONS: { key: CategoryFilter; label: string }[] = [

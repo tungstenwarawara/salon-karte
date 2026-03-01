@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { StockItemRow } from "./stock-item-row";
 
@@ -25,11 +25,43 @@ type Props = {
   salonId: string;
 };
 
-const quickActions = [
-  { href: "/sales/inventory/receive", label: "仕入記録", icon: "📦" },
-  { href: "/sales/inventory/consume", label: "消費・廃棄", icon: "📋" },
-  { href: "/sales/inventory/stocktake", label: "棚卸し", icon: "📊" },
-  { href: "/sales/inventory/tax-report", label: "確定申告", icon: "📄" },
+const quickActions: { href: string; label: string; icon: ReactNode }[] = [
+  {
+    href: "/sales/inventory/receive",
+    label: "仕入記録",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-accent">
+        <path strokeLinecap="round" strokeLinejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0-3-3m3 3 3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+      </svg>
+    ),
+  },
+  {
+    href: "/sales/inventory/consume",
+    label: "消費・廃棄",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-accent">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15a2.25 2.25 0 0 1 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
+      </svg>
+    ),
+  },
+  {
+    href: "/sales/inventory/stocktake",
+    label: "棚卸し",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-accent">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+      </svg>
+    ),
+  },
+  {
+    href: "/sales/inventory/tax-report",
+    label: "確定申告",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-accent">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+      </svg>
+    ),
+  },
 ];
 
 export function InventoryDashboard({ items, monthlyPurchases, totalPurchases, salonId }: Props) {
@@ -60,7 +92,7 @@ export function InventoryDashboard({ items, monthlyPurchases, totalPurchases, sa
   });
 
   return (
-    <>
+    <div className="space-y-4">
       {/* 要発注アラート */}
       {lowStockItems.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
@@ -87,28 +119,28 @@ export function InventoryDashboard({ items, monthlyPurchases, totalPurchases, sa
 
       {/* サマリーカード */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-surface border border-border rounded-xl p-4 text-center">
+        <div className="bg-surface border border-border rounded-xl p-4 text-center shadow-card">
           <p className="text-xs text-text-light">商品数</p>
           <p className="text-xl font-bold mt-1">{items.length}</p>
         </div>
-        <div className={`bg-surface border rounded-xl p-4 text-center ${lowStockItems.length > 0 ? "border-amber-300 bg-amber-50" : "border-border"}`}>
+        <div className={`bg-surface border rounded-xl p-4 text-center shadow-card ${lowStockItems.length > 0 ? "border-amber-300 bg-amber-50" : "border-border"}`}>
           <p className="text-xs text-text-light">要発注</p>
           <p className={`text-xl font-bold mt-1 ${lowStockItems.length > 0 ? "text-amber-600" : ""}`}>
             {lowStockItems.length}
           </p>
         </div>
-        <div className="bg-surface border border-border rounded-xl p-4 text-center">
+        <div className="bg-surface border border-border rounded-xl p-4 text-center shadow-card">
           <p className="text-xs text-text-light">今月の仕入額</p>
           <p className="text-lg font-bold mt-1">¥{monthlyPurchases.toLocaleString()}</p>
         </div>
-        <div className="bg-surface border border-border rounded-xl p-4 text-center">
+        <div className="bg-surface border border-border rounded-xl p-4 text-center shadow-card">
           <p className="text-xs text-text-light">累計仕入額</p>
           <p className="text-lg font-bold mt-1">¥{totalPurchases.toLocaleString()}</p>
           <p className="text-[10px] text-text-light mt-1">仕入れに使った合計金額</p>
         </div>
-        <div className="col-span-2 bg-surface border border-border rounded-xl p-4 text-center">
+        <div className="col-span-2 bg-surface border border-accent/20 rounded-xl p-4 text-center shadow-card">
           <p className="text-xs text-text-light">在庫評価額</p>
-          <p className="text-lg font-bold mt-1">¥{totalStockValue.toLocaleString()}</p>
+          <p className="text-xl font-bold mt-1 text-accent">¥{totalStockValue.toLocaleString()}</p>
           <p className="text-[10px] text-text-light mt-1">今ある在庫の価値（確定申告用・商品マスタの仕入単価で計算）</p>
         </div>
       </div>
@@ -119,9 +151,11 @@ export function InventoryDashboard({ items, monthlyPurchases, totalPurchases, sa
           <Link
             key={action.href}
             href={action.href}
-            className="bg-surface border border-border rounded-xl p-4 flex items-center gap-3 hover:bg-background transition-colors min-h-[56px]"
+            className="bg-surface border border-border rounded-xl p-4 flex items-center gap-3 hover:bg-background hover:border-accent/30 transition-all min-h-[56px] shadow-card"
           >
-            <span className="text-xl">{action.icon}</span>
+            <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+              {action.icon}
+            </div>
             <span className="text-sm font-medium">{action.label}</span>
           </Link>
         ))}
@@ -198,6 +232,6 @@ export function InventoryDashboard({ items, monthlyPurchases, totalPurchases, sa
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }

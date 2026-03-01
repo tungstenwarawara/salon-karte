@@ -18,7 +18,7 @@ export function AnalyticsCards({ avgRevenuePerVisit, repeatRate, avgVisits, avgL
   return (
     <div className="grid grid-cols-2 gap-3">
       {cards.map((c) => (
-        <div key={c.label} className="bg-surface border border-border rounded-2xl p-4 text-center">
+        <div key={c.label} className="bg-surface border border-border rounded-2xl p-4 text-center shadow-card">
           <p className="text-xs text-text-light">{c.label}</p>
           <p className="text-xl font-bold mt-1">{c.value}</p>
           <p className="text-[10px] text-text-light mt-0.5">{c.sub}</p>

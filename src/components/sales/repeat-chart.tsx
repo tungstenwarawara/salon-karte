@@ -33,8 +33,8 @@ export function RepeatChart({ data, year, currentYear, currentMonth }: Props) {
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-bold text-text-light uppercase tracking-wide">新規/リピーター推移</h3>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-sm bg-blue-400" /><span className="text-[10px] text-text-light">新規</span></div>
-          <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-sm bg-accent" /><span className="text-[10px] text-text-light">リピーター</span></div>
+          <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-category-product" /><span className="text-[10px] text-text-light">新規</span></div>
+          <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-category-treatment" /><span className="text-[10px] text-text-light">リピーター</span></div>
         </div>
       </div>
 
@@ -51,12 +51,12 @@ export function RepeatChart({ data, year, currentYear, currentMonth }: Props) {
                 <span className="text-[9px] text-text-light mb-0.5">{total}</span>
               )}
               <div className="w-full flex flex-col" style={{ height: barHeight }}>
-                <div className="bg-accent rounded-t relative flex items-center justify-center" style={{ height: retH, minHeight: retH > 0 ? 2 : 0 }}>
+                <div className="bg-category-treatment rounded-t relative flex items-center justify-center" style={{ height: retH, minHeight: retH > 0 ? 2 : 0 }}>
                   {m.returning_customers > 0 && retH >= 16 && (
                     <span className="text-[9px] text-white font-medium">{m.returning_customers}</span>
                   )}
                 </div>
-                <div className="bg-blue-400 rounded-b relative flex items-center justify-center" style={{ height: newH, minHeight: newH > 0 ? 2 : 0 }}>
+                <div className="bg-category-product rounded-b relative flex items-center justify-center" style={{ height: newH, minHeight: newH > 0 ? 2 : 0 }}>
                   {m.new_customers > 0 && newH >= 16 && (
                     <span className="text-[9px] text-white font-medium">{m.new_customers}</span>
                   )}

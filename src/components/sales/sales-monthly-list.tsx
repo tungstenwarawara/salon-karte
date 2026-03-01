@@ -28,18 +28,20 @@ export function SalesMonthlyList({ visibleData, categoryFilter, maxMonthly, curr
         return (
           <button key={m.month} onClick={() => onDrillToggle(drillMonth === m.month ? null : m.month)}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${
-              drillMonth === m.month ? "bg-accent/5 border border-accent/20" : "hover:bg-background"
+              drillMonth === m.month ? "bg-accent/5 border border-accent/20"
+                : idx % 2 === 0 ? "hover:bg-background"
+                : "bg-background/50 hover:bg-background"
             }`}>
             <span className={`text-xs font-medium w-8 shrink-0 ${isCurrentMonth ? "text-accent font-bold" : ""}`}>{m.month}月</span>
-            <div className="flex-1 h-2 bg-background rounded-full overflow-hidden flex">
+            <div className="flex-1 h-3 bg-background rounded-full overflow-hidden flex">
               {categoryFilter === "all" ? (
                 <>
-                  {m.treatment_sales > 0 && <div className="bg-accent h-full" style={{ width: `${maxMonthly > 0 ? (m.treatment_sales / maxMonthly) * 100 : 0}%` }} />}
-                  {m.product_sales > 0 && <div className="bg-blue-400 h-full" style={{ width: `${maxMonthly > 0 ? (m.product_sales / maxMonthly) * 100 : 0}%` }} />}
-                  {m.ticket_sales > 0 && <div className="bg-amber-400 h-full" style={{ width: `${maxMonthly > 0 ? (m.ticket_sales / maxMonthly) * 100 : 0}%` }} />}
+                  {m.treatment_sales > 0 && <div className="bg-category-treatment h-full" style={{ width: `${maxMonthly > 0 ? (m.treatment_sales / maxMonthly) * 100 : 0}%` }} />}
+                  {m.product_sales > 0 && <div className="bg-category-product h-full" style={{ width: `${maxMonthly > 0 ? (m.product_sales / maxMonthly) * 100 : 0}%` }} />}
+                  {m.ticket_sales > 0 && <div className="bg-category-ticket h-full" style={{ width: `${maxMonthly > 0 ? (m.ticket_sales / maxMonthly) * 100 : 0}%` }} />}
                 </>
               ) : (
-                <div className={`h-full ${filterColor(categoryFilter)} opacity-60`}
+                <div className={`h-full rounded-full ${filterColor(categoryFilter)}`}
                   style={{ width: `${maxMonthly > 0 ? (total / maxMonthly) * 100 : 0}%` }} />
               )}
             </div>

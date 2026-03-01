@@ -1,4 +1,4 @@
-import { formatYen } from "@/components/sales/sales-types";
+import { formatYen, categoryDotColor } from "@/components/sales/sales-types";
 
 type YearTotal = {
   treatment: number;
@@ -23,10 +23,29 @@ export function SalesYearlySummary({ yearTotal, grandTotal, deferredRevenue }: P
         <span className="text-2xl font-bold">{formatYen(grandTotal)}</span>
       </div>
       <div className="flex gap-4 flex-wrap">
-        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-sm bg-accent" /><span className="text-xs text-text-light">施術</span><span className="text-xs font-medium">{formatYen(yearTotal.treatment)}</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-sm bg-blue-400" /><span className="text-xs text-text-light">物販</span><span className="text-xs font-medium">{formatYen(yearTotal.product)}</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-sm bg-amber-400" /><span className="text-xs text-text-light">回数券<span className="text-[9px]">※</span></span><span className="text-xs font-medium">{formatYen(yearTotal.ticket)}</span></div>
+        <div className="flex items-center gap-1.5"><div className={`w-3 h-3 rounded-sm ${categoryDotColor("treatment")}`} /><span className="text-xs text-text-light">施術</span><span className="text-xs font-medium">{formatYen(yearTotal.treatment)}</span></div>
+        <div className="flex items-center gap-1.5"><div className={`w-3 h-3 rounded-sm ${categoryDotColor("product")}`} /><span className="text-xs text-text-light">物販</span><span className="text-xs font-medium">{formatYen(yearTotal.product)}</span></div>
+        <div className="flex items-center gap-1.5"><div className={`w-3 h-3 rounded-sm ${categoryDotColor("ticket")}`} /><span className="text-xs text-text-light">回数券<span className="text-[9px]">※</span></span><span className="text-xs font-medium">{formatYen(yearTotal.ticket)}</span></div>
       </div>
+
+      {/* 構成比バー */}
+      {grandTotal > 0 && (
+        <div className="flex h-2.5 rounded-full overflow-hidden bg-background">
+          {yearTotal.treatment > 0 && (
+            <div className="bg-category-treatment h-full transition-all duration-500"
+              style={{ width: `${(yearTotal.treatment / grandTotal) * 100}%` }} />
+          )}
+          {yearTotal.product > 0 && (
+            <div className="bg-category-product h-full transition-all duration-500"
+              style={{ width: `${(yearTotal.product / grandTotal) * 100}%` }} />
+          )}
+          {yearTotal.ticket > 0 && (
+            <div className="bg-category-ticket h-full transition-all duration-500"
+              style={{ width: `${(yearTotal.ticket / grandTotal) * 100}%` }} />
+          )}
+        </div>
+      )}
+
       {yearTotal.ticket > 0 && <p className="text-[10px] text-text-light">※回数券は販売時の受取額</p>}
       {(yearTotal.ticketConsumption > 0 || yearTotal.service > 0 || deferredRevenue > 0) && (
         <div className="text-[10px] text-text-light space-y-0.5">

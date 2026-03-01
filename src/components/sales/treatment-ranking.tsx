@@ -44,7 +44,7 @@ export function RankingCard({ title, items, unit, emptyMessage }: RankingCardPro
                 <span className="text-xs text-text-light ml-2">{formatYen(m.revenue)}</span>
               </div>
             </div>
-            <div className="ml-7 h-1.5 bg-border/30 rounded-full overflow-hidden">
+            <div className="ml-7 h-2 bg-border/30 rounded-full overflow-hidden">
               <div
                 className="h-full bg-accent rounded-full transition-all"
                 style={{ width: `${(m.count / maxCount) * 100}%` }}

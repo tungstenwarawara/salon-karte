@@ -24,43 +24,43 @@ export function CustomerListFilters({
 }: Props) {
   return (
     <div className="space-y-2">
-      {/* 来店間隔フィルター */}
-      <div className="flex gap-2 flex-wrap">
+      {/* 来店間隔フィルター（横スクロール・ピル型） */}
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-0.5">
         {([
           ["all", "全員"],
-          ["30", "30日以上"],
-          ["60", "60日以上"],
-          ["90", "90日以上"],
+          ["30", "30日+"],
+          ["60", "60日+"],
+          ["90", "90日+"],
         ] as [VisitFilter, string][]).map(([key, label]) => (
           <button
             key={key}
             onClick={() => onVisitFilterChange(key)}
-            className={`text-xs px-3 py-1.5 rounded-lg transition-colors min-h-[44px] ${
+            className={`text-xs px-3.5 py-2 rounded-full transition-colors min-h-[44px] whitespace-nowrap shrink-0 ${
               visitFilter === key
                 ? "bg-accent text-white"
                 : "bg-surface border border-border text-text-light"
             }`}
           >
-            {key === "all" ? label : `${label}未来店`}
+            {label}
           </button>
         ))}
       </div>
 
-      {/* ソート + 卒業済み除外 */}
+      {/* ソート（セグメンテッドコントロール） + 卒業済み除外 */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex gap-2">
+        <div className="flex bg-background rounded-lg p-0.5">
           {([
             ["kana", "カナ順"],
-            ["last_visit", "来店日順"],
-            ["visit_count", "来店回数"],
+            ["last_visit", "来店日"],
+            ["visit_count", "回数"],
           ] as [SortKey, string][]).map(([key, label]) => (
             <button
               key={key}
               onClick={() => onSortChange(key)}
-              className={`text-xs px-3 py-1.5 rounded-lg transition-colors min-h-[44px] ${
+              className={`text-xs px-2.5 py-1.5 rounded-md transition-colors min-h-[40px] ${
                 sortBy === key
-                  ? "bg-accent text-white"
-                  : "bg-surface border border-border text-text-light"
+                  ? "bg-surface text-text font-medium shadow-sm"
+                  : "text-text-light"
               }`}
             >
               {label}
@@ -70,13 +70,13 @@ export function CustomerListFilters({
         {graduatedCount > 0 && (
           <button
             onClick={() => onHideGraduatedChange(!hideGraduated)}
-            className={`text-xs px-3 py-1.5 rounded-lg transition-colors min-h-[44px] whitespace-nowrap ${
+            className={`text-xs px-3 py-1.5 rounded-full transition-colors min-h-[44px] whitespace-nowrap shrink-0 ${
               hideGraduated
                 ? "bg-surface border border-border text-text-light"
                 : "bg-orange-100 border border-orange-300 text-orange-700"
             }`}
           >
-            {hideGraduated ? "卒業済みを表示" : `卒業済み含む(${graduatedCount})`}
+            {hideGraduated ? `卒業 ${graduatedCount}` : "卒業含む"}
           </button>
         )}
       </div>

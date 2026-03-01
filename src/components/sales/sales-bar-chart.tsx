@@ -1,6 +1,6 @@
 "use client";
 
-import { formatYen, getFilteredTotal, filterColor } from "@/components/sales/sales-types";
+import { formatYen, getFilteredTotal, barGradient } from "@/components/sales/sales-types";
 import type { MonthlySales, CategoryFilter } from "@/components/sales/sales-types";
 
 type Props = {
@@ -33,7 +33,7 @@ export function SalesBarChart({ visibleData, categoryFilter, maxMonthly, current
           ))}
         </div>
 
-        <div className="relative h-full flex items-end gap-1">
+        <div className="relative h-full flex items-end gap-[3px]">
           {visibleData.map((m) => {
             const total = getFilteredTotal(m, categoryFilter);
             const barHeight = maxMonthly > 0 ? Math.round((total / maxMonthly) * 148) : 0;
@@ -43,11 +43,18 @@ export function SalesBarChart({ visibleData, categoryFilter, maxMonthly, current
             return (
               <button key={m.month} onClick={() => onDrillToggle(drillMonth === m.month ? null : m.month)}
                 className="flex-1 relative group" style={{ height: "100%" }}>
-                <div className={`absolute bottom-0 left-0 right-0 rounded-t-md transition-all duration-500 ${
-                  isDrilling ? filterColor(categoryFilter)
-                    : isCurrentMonth ? `${filterColor(categoryFilter)} opacity-90`
-                    : `${filterColor(categoryFilter)} opacity-30 group-hover:opacity-60`
-                }`} style={{ height: `${barHeight}px`, minHeight: total > 0 ? "4px" : "0" }} />
+                <div
+                  className="absolute bottom-0 left-0.5 right-0.5 rounded-t-lg transition-all duration-500 group-hover:brightness-110"
+                  style={{
+                    height: `${barHeight}px`,
+                    minHeight: total > 0 ? "4px" : "0",
+                    background: isDrilling
+                      ? barGradient(categoryFilter, 1)
+                      : isCurrentMonth
+                        ? barGradient(categoryFilter, 0.85)
+                        : barGradient(categoryFilter, 0.35),
+                  }}
+                />
               </button>
             );
           })}
@@ -55,7 +62,7 @@ export function SalesBarChart({ visibleData, categoryFilter, maxMonthly, current
       </div>
 
       {/* 月ラベル */}
-      <div className="flex gap-1">
+      <div className="flex gap-[3px]">
         {visibleData.map((m) => {
           const isDrilling = drillMonth === m.month;
           const isCurrentMonth = m.month - 1 === currentMonth && year === currentYear;
