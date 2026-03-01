@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { BrandLogo } from "@/components/ui/brand-logo";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -15,7 +16,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
       <div className="text-center max-w-md">
-        <h1 className="text-3xl font-bold text-primary mb-3">サロンカルテ</h1>
+        <h1 className="flex justify-center mb-3"><BrandLogo size="lg" /></h1>
         <p className="text-text-light mb-8">
           エステサロン向け
           <br />
