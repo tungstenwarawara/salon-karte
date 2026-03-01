@@ -151,6 +151,11 @@ export default function LoginPage() {
               パスワードを忘れた方はこちら
             </Link>
           </p>
+          <div className="flex justify-center gap-4 pt-2 text-xs text-text-light/60">
+            <Link href="/terms" className="hover:underline">利用規約</Link>
+            <Link href="/privacy" className="hover:underline">プライバシーポリシー</Link>
+            <Link href="/tokusho" className="hover:underline">特定商取引法</Link>
+          </div>
         </div>
       </div>
     </div>

@@ -185,6 +185,16 @@ export default function SettingsPage() {
       </div>
       )}
 
+      {/* 法的情報 */}
+      <div className="bg-surface border border-border rounded-2xl p-5 space-y-2">
+        <h3 className="font-bold text-sm text-text-light">法的情報</h3>
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline">利用規約</a>
+          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline">プライバシーポリシー</a>
+          <a href="/tokusho" target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline">特定商取引法に基づく表記</a>
+        </div>
+      </div>
+
       {/* ログアウト */}
       <div className="pt-2">
         <button

@@ -124,7 +124,7 @@ export function PublicForm({ token, template, isAnonymous = false, showCustomerI
             入力いただいた内容（健康状態・アレルギー等の要配慮個人情報を含む）は、
             施術サービスの提供・向上を目的として当サロンが適切に管理・利用いたします。
             データはサロンカルテ（クラウドサービス）上に保管されます。
-            詳細は<a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-accent underline">プライバシーポリシー</a>をご確認ください。
+            詳細は<a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-accent underline">プライバシーポリシー</a>・<a href="/terms" target="_blank" rel="noopener noreferrer" className="text-accent underline">利用規約</a>をご確認ください。
           </span>
         </label>
       )}

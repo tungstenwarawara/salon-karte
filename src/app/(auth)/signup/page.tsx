@@ -31,7 +31,7 @@ export default function SignupPage() {
     }
 
     if (!agreed) {
-      setError("利用規約・プライバシーポリシーへの同意が必要です");
+      setError("利用規約・プライバシーポリシー・特定商取引法に基づく表記への同意が必要です");
       return;
     }
 
@@ -43,6 +43,10 @@ export default function SignupPage() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          agreed_terms_at: new Date().toISOString(),
+          terms_version: "2026-03-01",
+        },
       },
     });
 
@@ -161,8 +165,10 @@ export default function SignupPage() {
             />
             <span className="text-xs text-text-light leading-relaxed">
               <Link href="/terms" target="_blank" className="text-accent underline">利用規約</Link>
-              および
+              、
               <Link href="/privacy" target="_blank" className="text-accent underline">プライバシーポリシー</Link>
+              、
+              <Link href="/tokusho" target="_blank" className="text-accent underline">特定商取引法に基づく表記</Link>
               に同意します
             </span>
           </label>
