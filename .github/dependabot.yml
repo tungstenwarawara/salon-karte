@@ -1,0 +1,35 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    groups:
+      # セキュリティ影響大: 個別PRで慎重に確認
+      # next, @supabase/*, react はグループ化しない
+
+      # 開発ツール系: まとめて1PRにする
+      dev-dependencies:
+        dependency-type: "development"
+        patterns:
+          - "@types/*"
+          - "eslint*"
+          - "@eslint/*"
+          - "vitest"
+          - "@vitest/*"
+          - "tailwindcss"
+          - "@tailwindcss/*"
+          - "tsx"
+          - "typescript"
+          - "dotenv"
+
+      # モニタリング系: まとめて1PR
+      monitoring:
+        patterns:
+          - "@sentry/*"
+          - "@vercel/*"
