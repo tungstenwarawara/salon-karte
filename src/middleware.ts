@@ -9,8 +9,8 @@ export async function middleware(request: NextRequest) {
   if (
     host !== CANONICAL_HOST &&
     host !== `www.${CANONICAL_HOST}` &&
-    host !== "localhost:3000" &&
-    !host.startsWith("localhost")
+    !host.startsWith("localhost") &&
+    !host.startsWith("127.0.0.1")
   ) {
     const url = request.nextUrl.clone();
     url.host = CANONICAL_HOST;
