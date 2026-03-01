@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { BrandLogo } from "@/components/ui/brand-logo";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -62,7 +63,7 @@ export default function SignupPage() {
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="w-full max-w-md text-center">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-primary">サロンカルテ</h1>
+            <h1 className="flex justify-center"><BrandLogo size="lg" /></h1>
           </div>
           <div className="bg-surface rounded-2xl shadow-sm border border-border p-6 space-y-4">
             <h2 className="text-lg font-bold">確認メールを送信しました</h2>
@@ -89,7 +90,7 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-primary">サロンカルテ</h1>
+          <h1 className="flex justify-center"><BrandLogo size="lg" /></h1>
           <p className="text-text-light mt-2">新規アカウント登録</p>
         </div>
 

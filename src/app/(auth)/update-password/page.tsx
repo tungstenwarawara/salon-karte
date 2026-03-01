@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/supabase/auth-errors";
+import { BrandLogo } from "@/components/ui/brand-logo";
 
 function UpdatePasswordForm() {
   const router = useRouter();
@@ -88,7 +89,7 @@ function UpdatePasswordForm() {
 
   return (
     <div className="text-center mb-8">
-      <h1 className="text-2xl font-bold text-primary">サロンカルテ</h1>
+      <h1 className="flex justify-center"><BrandLogo size="lg" /></h1>
       {isInvite ? (
         <>
           <p className="text-text-light mt-2">招待ありがとうございます！</p>
@@ -170,7 +171,7 @@ export default function UpdatePasswordPage() {
       <div className="w-full max-w-md">
         <Suspense fallback={
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-primary">サロンカルテ</h1>
+            <h1 className="flex justify-center"><BrandLogo size="lg" /></h1>
             <p className="text-text-light mt-2">読み込み中...</p>
           </div>
         }>
