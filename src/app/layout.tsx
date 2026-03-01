@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Salon Karte - エステサロン向けカルテ管理",
+  title: "Salon Karte - 個人サロン向けカルテ管理",
   description:
-    "個人エステサロン向けのシンプルなカルテ管理システム。顧客管理、施術記録、写真管理をスマホで簡単に。",
+    "個人サロン向けのシンプルなカルテ管理システム。顧客管理、施術記録、写真管理をスマホで簡単に。",
 };
 
 export const viewport: Viewport = {

@@ -18,7 +18,7 @@ export default async function HomePage() {
       <div className="text-center max-w-md">
         <h1 className="flex justify-center mb-3"><BrandLogo size="lg" /></h1>
         <p className="text-text-light mb-8">
-          エステサロン向け
+          個人サロンのための
           <br />
           シンプルなカルテ管理
         </p>
@@ -36,7 +36,7 @@ export default async function HomePage() {
             新規登録
           </Link>
         </div>
-        <div className="flex gap-4 mt-8 text-xs text-text-light">
+        <div className="flex justify-center gap-4 mt-8 text-xs text-text-light">
           <Link href="/privacy" className="hover:underline">
             プライバシーポリシー
           </Link>

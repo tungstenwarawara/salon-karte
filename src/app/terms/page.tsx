@@ -30,7 +30,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-bold mb-2">第3条（サービス内容）</h2>
           <p className="text-sm leading-relaxed">
-            当サービスは、エステサロン向けのカルテ管理機能を提供します。
+            当サービスは、個人サロン向けのカルテ管理機能を提供します。
             具体的には、顧客管理、施術記録管理、写真管理等の機能を含みます。
             当サービスの内容は、予告なく変更・追加・廃止される場合があります。
           </p>
