@@ -43,7 +43,7 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 // 固定ID（テストデータ識別用）
 // ============================================================
 const TEST_SALON_ID = "00000000-0000-0000-0000-000000000001";
-const TEST_EMAIL = "test-salon@salon-karte.dev";
+const TEST_EMAIL = "test-salon@salonkarte.com";
 const TEST_PASSWORD = "TestSalon2026!";
 
 // スタッフ
@@ -364,7 +364,7 @@ async function insertStaff(authUserId: string) {
       salon_id: TEST_SALON_ID,
       auth_user_id: null,
       name: "テストスタッフ",
-      email: "test-staff@salon-karte.dev",
+      email: "test-staff@salonkarte.com",
       role: "staff",
       is_active: true,
       default_schedule: {

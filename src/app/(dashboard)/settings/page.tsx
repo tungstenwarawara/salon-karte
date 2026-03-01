@@ -107,8 +107,8 @@ export default function SettingsPage() {
         <p className="text-sm leading-relaxed">
           削除をご希望の場合は、下記メールアドレスまでご連絡ください。
         </p>
-        <a href="mailto:support@salon-karte.dev" className="inline-block text-sm text-accent font-medium hover:underline">
-          support@salon-karte.dev
+        <a href="mailto:support@salonkarte.com" className="inline-block text-sm text-accent font-medium hover:underline">
+          support@salonkarte.com
         </a>
       </div>
 

@@ -18,7 +18,7 @@ export default function PrivacyPolicyPage() {
             事業者の氏名・住所・電話番号については、請求があれば遅滞なく開示いたします。
           </p>
           <p className="text-sm leading-relaxed mt-1">
-            お問い合わせ先: <a href="mailto:support@salon-karte.dev" className="text-accent hover:underline">support@salon-karte.dev</a>
+            お問い合わせ先: <a href="mailto:support@salonkarte.com" className="text-accent hover:underline">support@salonkarte.com</a>
           </p>
         </section>
 
@@ -148,7 +148,7 @@ export default function PrivacyPolicyPage() {
             ご本人確認の上、合理的な期間内に対応いたします。
           </p>
           <p className="text-sm leading-relaxed mt-1">
-            お問い合わせ先: <a href="mailto:support@salon-karte.dev" className="text-accent hover:underline">support@salon-karte.dev</a>
+            お問い合わせ先: <a href="mailto:support@salonkarte.com" className="text-accent hover:underline">support@salonkarte.com</a>
           </p>
         </section>
 

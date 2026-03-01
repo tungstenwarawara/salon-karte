@@ -27,8 +27,8 @@ export default function TokushoPage() {
             <tr>
               <td className="px-4 py-3 font-medium bg-background">メールアドレス</td>
               <td className="px-4 py-3">
-                <a href="mailto:support@salon-karte.dev" className="text-accent hover:underline">
-                  support@salon-karte.dev
+                <a href="mailto:support@salonkarte.com" className="text-accent hover:underline">
+                  support@salonkarte.com
                 </a>
               </td>
             </tr>
