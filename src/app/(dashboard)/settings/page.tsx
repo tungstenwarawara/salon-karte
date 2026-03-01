@@ -100,6 +100,7 @@ export default function SettingsPage() {
       <SettingsLinkCard href="/settings/holidays" title="不定休設定" description="臨時休業日の設定" />
       <SettingsLinkCard href="/settings/menus" title="施術メニュー管理" description="施術メニューの追加・編集" />
       <SettingsLinkCard href="/settings/counseling-template" title="カウンセリングシート設定" description="質問項目・注意事項・同意書のカスタマイズ" />
+      <SettingsLinkCard href="/settings/web-booking" title="Web予約ページ" description="お客様向けのオンライン予約ページを公開" />
       <SettingsLinkCard href="/settings/line" title="LINE連携" description="LINE公式アカウントと連携して予約通知を自動送信" />
       <SettingsLinkCard href="/settings/import" title="データ取り込み" description="顧客・商品・施術履歴をCSVで一括登録" />
       <SettingsLinkCard href="/settings/export" title="データエクスポート" description="顧客・施術・物販・予約・回数券をCSVでダウンロード" />

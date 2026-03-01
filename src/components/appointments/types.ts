@@ -12,6 +12,7 @@ export type DayAppointment = {
 
 export const SOURCE_OPTIONS = [
   { value: "direct", label: "直接予約" },
+  { value: "web", label: "Web予約" },
   { value: "hotpepper", label: "ホットペッパー" },
   { value: "phone", label: "電話" },
   { value: "line", label: "LINE" },

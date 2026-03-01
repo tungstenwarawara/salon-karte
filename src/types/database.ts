@@ -36,6 +36,8 @@ export type Database = {
           business_hours: BusinessHours | null;
           salon_holidays: string[] | null;
           booking_settings: BookingSettings | null;
+          booking_slug: string | null;
+          booking_enabled: boolean;
           counseling_template: CounselingTemplate | null;
           created_at: string;
           updated_at: string;
@@ -49,6 +51,8 @@ export type Database = {
           business_hours?: BusinessHours | null;
           salon_holidays?: string[] | null;
           booking_settings?: BookingSettings | null;
+          booking_slug?: string | null;
+          booking_enabled?: boolean;
           counseling_template?: CounselingTemplate | null;
           created_at?: string;
           updated_at?: string;
@@ -62,6 +66,8 @@ export type Database = {
           business_hours?: BusinessHours | null;
           salon_holidays?: string[] | null;
           booking_settings?: BookingSettings | null;
+          booking_slug?: string | null;
+          booking_enabled?: boolean;
           counseling_template?: CounselingTemplate | null;
           created_at?: string;
           updated_at?: string;

@@ -1,0 +1,41 @@
+import Link from "next/link";
+
+type Props = {
+  params: Promise<{ slug: string }>;
+};
+
+export default async function BookingCompletePage({ params }: Props) {
+  const { slug } = await params;
+
+  return (
+    <div className="text-center py-12 space-y-6">
+      {/* チェックマーク */}
+      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+        <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        </svg>
+      </div>
+
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold">予約を受け付けました</h1>
+        <p className="text-text-light text-sm leading-relaxed">
+          ご予約ありがとうございます。<br />
+          サロンからの確認をお待ちください。
+        </p>
+      </div>
+
+      <div className="bg-surface border border-border rounded-xl p-4">
+        <p className="text-xs text-text-light">
+          キャンセル・変更はサロンへ直接ご連絡ください。
+        </p>
+      </div>
+
+      <Link
+        href={`/book/${slug}`}
+        className="inline-block text-sm text-accent hover:underline font-medium"
+      >
+        別の予約を取る
+      </Link>
+    </div>
+  );
+}
