@@ -14,6 +14,7 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +27,11 @@ export default function SignupPage() {
 
     if (password !== passwordConfirm) {
       setError("パスワードが一致しません");
+      return;
+    }
+
+    if (!agreed) {
+      setError("利用規約・プライバシーポリシーへの同意が必要です");
       return;
     }
 
@@ -146,9 +152,24 @@ export default function SignupPage() {
             />
           </div>
 
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 w-5 h-5 accent-accent flex-shrink-0"
+            />
+            <span className="text-xs text-text-light leading-relaxed">
+              <Link href="/terms" target="_blank" className="text-accent underline">利用規約</Link>
+              および
+              <Link href="/privacy" target="_blank" className="text-accent underline">プライバシーポリシー</Link>
+              に同意します
+            </span>
+          </label>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !agreed}
             className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]"
           >
             {loading ? "登録中..." : "アカウントを作成"}

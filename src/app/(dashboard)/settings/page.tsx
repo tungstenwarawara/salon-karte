@@ -98,6 +98,20 @@ export default function SettingsPage() {
       <SettingsLinkCard href="/settings/export" title="データエクスポート" description="顧客・施術・物販・予約・回数券をCSVでダウンロード" />
       <SettingsLinkCard href="/guide" title="使い方ガイド" description="基本的な操作方法・よくある質問" />
 
+      {/* アカウント削除 */}
+      <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
+        <h3 className="font-bold text-sm text-text-light">アカウント削除</h3>
+        <p className="text-sm text-text-light leading-relaxed">
+          アカウントを削除すると、サロンに紐づく全てのデータ（顧客情報・施術記録・写真・予約・売上データ等）が完全に削除され、復元できません。
+        </p>
+        <p className="text-sm leading-relaxed">
+          削除をご希望の場合は、下記メールアドレスまでご連絡ください。
+        </p>
+        <a href="mailto:support@salon-karte.dev" className="inline-block text-sm text-accent font-medium hover:underline">
+          support@salon-karte.dev
+        </a>
+      </div>
+
       {/* ログアウト */}
       <div className="pt-2">
         <button

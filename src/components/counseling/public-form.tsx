@@ -121,7 +121,10 @@ export function PublicForm({ token, template, isAnonymous = false, showCustomerI
             className="mt-0.5 w-5 h-5 accent-accent flex-shrink-0"
           />
           <span className="text-xs text-text-light leading-relaxed">
-            入力いただいた内容は、施術サービスの向上を目的として当サロンが適切に管理・利用いたします。
+            入力いただいた内容（健康状態・アレルギー等の要配慮個人情報を含む）は、
+            施術サービスの提供・向上を目的として当サロンが適切に管理・利用いたします。
+            データはサロンカルテ（クラウドサービス）上に保管されます。
+            詳細は<a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-accent underline">プライバシーポリシー</a>をご確認ください。
           </span>
         </label>
       )}

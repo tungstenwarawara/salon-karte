@@ -43,6 +43,9 @@ export default async function HomePage() {
           <Link href="/terms" className="hover:underline">
             利用規約
           </Link>
+          <Link href="/tokusho" className="hover:underline">
+            特定商取引法
+          </Link>
         </div>
       </div>
     </div>
