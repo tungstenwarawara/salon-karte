@@ -1,6 +1,6 @@
 "use client";
 
-export type PeriodFilter = "this_month" | "last_month" | "3months" | "all";
+export type PeriodFilter = "yesterday" | "today" | "tomorrow" | "all";
 
 type Props = {
   period: PeriodFilter;
@@ -11,9 +11,9 @@ export function RecordListFilters({ period, onPeriodChange }: Props) {
   return (
     <div className="flex gap-2 flex-wrap">
       {([
-        ["this_month", "今月"],
-        ["last_month", "先月"],
-        ["3months", "3ヶ月"],
+        ["yesterday", "昨日"],
+        ["today", "今日"],
+        ["tomorrow", "明日"],
         ["all", "全期間"],
       ] as [PeriodFilter, string][]).map(([key, label]) => (
         <button

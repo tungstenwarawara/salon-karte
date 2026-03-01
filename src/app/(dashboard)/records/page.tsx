@@ -11,22 +11,55 @@ export default async function RecordsPage() {
   if (!user) redirect("/login");
   if (!salon) redirect("/setup");
 
-  const { data: records } = await supabase
-    .from("treatment_records")
-    .select("id, treatment_date, menu_name_snapshot, customer_id, customers(id, last_name, first_name)")
-    .eq("salon_id", salon.id)
-    .order("treatment_date", { ascending: false })
-    .order("created_at", { ascending: false });
+  // 今日・明日の日付（JST）
+  const todayStr = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+  const tomorrowStr = new Date(Date.now() + 86400000).toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
 
-  const allRecords = (records ?? []).map((r) => {
+  // カルテ + 今日・明日の予約を並列取得
+  const [recordsResult, todayApptResult, tomorrowApptResult] = await Promise.all([
+    supabase
+      .from("treatment_records")
+      .select("id, treatment_date, menu_name_snapshot, customer_id, customers(id, last_name, first_name)")
+      .eq("salon_id", salon.id)
+      .order("treatment_date", { ascending: false })
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("appointments")
+      .select("id, customer_id, start_time, customers(id, last_name, first_name)")
+      .eq("salon_id", salon.id)
+      .eq("appointment_date", todayStr)
+      .neq("status", "cancelled")
+      .order("start_time", { ascending: true }),
+    supabase
+      .from("appointments")
+      .select("id, customer_id, start_time, customers(id, last_name, first_name)")
+      .eq("salon_id", salon.id)
+      .eq("appointment_date", tomorrowStr)
+      .neq("status", "cancelled")
+      .order("start_time", { ascending: true }),
+  ]);
+
+  const allRecords = (recordsResult.data ?? []).map((r) => {
     const c = r.customers as { id: string; last_name: string; first_name: string } | null;
     return {
       id: r.id,
       treatmentDate: r.treatment_date,
       menuName: r.menu_name_snapshot ?? "施術記録",
       customerName: c ? `${c.last_name} ${c.first_name}` : "不明",
+      customerId: r.customer_id,
     };
   });
+
+  const mapAppointments = (data: typeof todayApptResult.data) =>
+    (data ?? []).map((a) => {
+      const c = a.customers as { id: string; last_name: string; first_name: string } | null;
+      return {
+        id: a.id,
+        customerId: a.customer_id,
+        customerName: c ? `${c.last_name} ${c.first_name}` : "不明",
+        startTime: a.start_time,
+      };
+    });
 
   return (
     <div className="space-y-4">
@@ -41,7 +74,11 @@ export default async function RecordsPage() {
 
       <FirstVisitHint pageKey="records" message="施術内容や写真をカルテに記録できます。予約なしでも直接作成できます" />
 
-      <RecordListSearch records={allRecords} />
+      <RecordListSearch
+        records={allRecords}
+        todayAppointments={mapAppointments(todayApptResult.data)}
+        tomorrowAppointments={mapAppointments(tomorrowApptResult.data)}
+      />
 
       {allRecords.length === 0 && (
         <EmptyState
