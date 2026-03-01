@@ -10,6 +10,7 @@ import { ErrorAlert } from "@/components/ui/error-alert";
 import { Toast, useToast } from "@/components/ui/toast";
 import { inviteStaff, updateStaff, toggleStaffActive, resendInvite, deleteStaff } from "./actions";
 import { EmptyState } from "@/components/ui/empty-state";
+import { RolePermissionsTable } from "@/components/settings/role-permissions-table";
 
 type StaffMember = {
   id: string;
@@ -224,6 +225,9 @@ export default function StaffPage() {
           ))}
         </div>
       )}
+
+      {/* ロール権限一覧 */}
+      {!loading && <RolePermissionsTable />}
     </div>
   );
 }
