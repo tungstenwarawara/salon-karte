@@ -1,7 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { BrandLogo } from "@/components/ui/brand-logo";
+import { LpHeader } from "@/components/lp/lp-header";
+import { HeroSection } from "@/components/lp/hero-section";
+import { ProblemSection } from "@/components/lp/problem-section";
+import { FeaturesSection } from "@/components/lp/features-section";
+import { ScreenshotSection } from "@/components/lp/screenshot-section";
+import { PricingSection } from "@/components/lp/pricing-section";
+import { ComparisonSection } from "@/components/lp/comparison-section";
+import { StepsSection } from "@/components/lp/steps-section";
+import { FaqSection } from "@/components/lp/faq-section";
+import { FinalCtaSection } from "@/components/lp/final-cta-section";
+import { LpFooter } from "@/components/lp/lp-footer";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -14,40 +23,50 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      <div className="text-center max-w-md">
-        <h1 className="flex justify-center mb-3"><BrandLogo size="lg" /></h1>
-        <p className="text-text-light mb-8">
-          個人サロンのための
-          <br />
-          シンプルなカルテ管理
-        </p>
-        <div className="space-y-3">
-          <Link
-            href="/login"
-            className="block w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors text-center min-h-[48px] leading-[48px]"
-          >
-            ログイン
-          </Link>
-          <Link
-            href="/signup"
-            className="block w-full bg-surface border border-border hover:border-accent text-text font-medium rounded-xl py-3 transition-colors text-center min-h-[48px] leading-[48px]"
-          >
-            新規登録
-          </Link>
-        </div>
-        <div className="flex justify-center gap-4 mt-8 text-xs text-text-light">
-          <Link href="/privacy" className="hover:underline">
-            プライバシーポリシー
-          </Link>
-          <Link href="/terms" className="hover:underline">
-            利用規約
-          </Link>
-          <Link href="/tokusho" className="hover:underline">
-            特定商取引法
-          </Link>
-        </div>
-      </div>
-    </div>
+    <>
+      {/* JSON-LD 構造化データ */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            {
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              name: "Salon Karte（サロンカルテ）",
+              applicationCategory: "BusinessApplication",
+              operatingSystem: "Web",
+              description:
+                "個人サロン向けのカルテ管理・予約管理・LINE連携・売上分析・確定申告サポートが月額2,980円で利用できるサロン管理アプリ",
+              offers: {
+                "@type": "Offer",
+                price: "2980",
+                priceCurrency: "JPY",
+                priceValidUntil: "2027-12-31",
+              },
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Salon Karte",
+              url: "https://salonkarte.com",
+            },
+          ]),
+        }}
+      />
+
+      <LpHeader />
+      <main>
+        <HeroSection />
+        <ProblemSection />
+        <FeaturesSection />
+        <ScreenshotSection />
+        <PricingSection />
+        <ComparisonSection />
+        <StepsSection />
+        <FaqSection />
+        <FinalCtaSection />
+      </main>
+      <LpFooter />
+    </>
   );
 }
