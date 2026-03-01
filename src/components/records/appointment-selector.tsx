@@ -89,7 +89,7 @@ export function AppointmentSelector({ salonId, onSelect, onSkip }: Props) {
   return (
     <div className="space-y-3">
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
-        <h3 className="font-bold">予約からカルテを作成</h3>
+        <h3 className="font-bold">予約からカルテを登録</h3>
         <p className="text-sm text-text-light">カルテに紐づけたい予約を選んでください。日付・顧客・メニューが自動で入力されます。</p>
 
         {appointments.length === 0 ? (
@@ -126,7 +126,7 @@ export function AppointmentSelector({ salonId, onSelect, onSkip }: Props) {
         onClick={onSkip}
         className="w-full text-center text-sm text-accent hover:underline py-3 min-h-[48px]"
       >
-        予約に紐づけずにカルテを作成
+        予約に紐づけずにカルテを登録
       </button>
     </div>
   );

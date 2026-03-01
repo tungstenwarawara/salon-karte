@@ -147,7 +147,7 @@ export default async function DashboardPage() {
     .filter((c) => c.birth_date && c.birth_date.split("-")[1] === monthStr)
     .map((c) => ({
       ...c,
-      birth_day: parseInt(c.birth_date!.split("-")[2], 10),
+      birth_day: parseInt(c.birth_date!.split("-")[2], 10) || 1,
     }))
     .sort((a, b) => a.birth_day - b.birth_day);
 

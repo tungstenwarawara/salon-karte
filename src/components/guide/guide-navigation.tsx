@@ -26,7 +26,7 @@ export function GuideNavigation() {
         <button
           key={id}
           onClick={() => scrollTo(id)}
-          className="flex-shrink-0 text-sm px-4 py-2 rounded-full bg-surface border border-border text-text-light hover:bg-accent hover:text-white hover:border-accent transition-all min-h-[40px] font-medium active:scale-95"
+          className="flex-shrink-0 text-sm px-4 py-2 rounded-full bg-surface border border-border text-text-light hover:bg-accent hover:text-white hover:border-accent transition-all min-h-[44px] font-medium active:scale-95"
         >
           {label}
         </button>

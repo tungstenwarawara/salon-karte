@@ -68,7 +68,7 @@ export function AppointmentActions({ appointmentId, salonId, status, customerId,
           href={`/records/new?customer=${customerId}&appointment=${appointmentId}&date=${appointmentDate}`}
           className="block w-full text-center bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors min-h-[48px]"
         >
-          カルテを作成
+          カルテを登録
         </Link>
       )}
       {status === "completed" && hasKarte && treatmentRecordId && (

@@ -23,7 +23,7 @@ const STEPS = [
     title: "カルテを記入・写真を保存",
     desc: "使用した化粧品・施術前後の状態・会話メモ・注意事項・次回への申し送りを記録。写真もそのまま保存できます。",
     link: "/records/new",
-    linkLabel: "カルテを作成する",
+    linkLabel: "カルテを登録する",
     accent: "bg-[#E4A89E]",
   },
   {

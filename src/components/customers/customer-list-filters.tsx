@@ -57,7 +57,7 @@ export function CustomerListFilters({
             <button
               key={key}
               onClick={() => onSortChange(key)}
-              className={`text-xs px-2.5 py-1.5 rounded-md transition-colors min-h-[40px] ${
+              className={`text-xs px-2.5 py-1.5 rounded-md transition-colors min-h-[44px] ${
                 sortBy === key
                   ? "bg-surface text-text font-medium shadow-sm"
                   : "text-text-light"

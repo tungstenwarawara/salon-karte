@@ -61,9 +61,9 @@ export default function ProductsPage() {
     const payload = {
       name: form.name,
       category: form.category || null,
-      base_sell_price: form.base_sell_price ? parseInt(form.base_sell_price) : 0,
-      base_cost_price: form.base_cost_price ? parseInt(form.base_cost_price) : 0,
-      reorder_point: form.reorder_point ? parseInt(form.reorder_point) : 3,
+      base_sell_price: form.base_sell_price && !isNaN(parseInt(form.base_sell_price, 10)) ? parseInt(form.base_sell_price, 10) : 0,
+      base_cost_price: form.base_cost_price && !isNaN(parseInt(form.base_cost_price, 10)) ? parseInt(form.base_cost_price, 10) : 0,
+      reorder_point: form.reorder_point && !isNaN(parseInt(form.reorder_point, 10)) ? parseInt(form.reorder_point, 10) : 3,
       memo: form.memo || null,
     };
 

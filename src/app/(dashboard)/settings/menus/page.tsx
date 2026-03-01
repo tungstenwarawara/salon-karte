@@ -65,8 +65,8 @@ export default function MenusPage() {
     const payload = {
       name: form.name,
       category: form.category || null,
-      duration_minutes: form.duration_minutes ? parseInt(form.duration_minutes) : null,
-      price: form.price ? parseInt(form.price) : null,
+      duration_minutes: form.duration_minutes && !isNaN(parseInt(form.duration_minutes, 10)) ? parseInt(form.duration_minutes, 10) : null,
+      price: form.price && !isNaN(parseInt(form.price, 10)) ? parseInt(form.price, 10) : null,
     };
 
     let menuId = editingId;
