@@ -60,6 +60,13 @@ export default function LoginPage() {
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-72 h-72 rounded-full bg-accent/[0.04] blur-3xl -translate-y-1/3 translate-x-1/4" />
         <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full bg-warning/[0.04] blur-3xl translate-y-1/3 -translate-x-1/4" />
+        {/* 装飾ドットパターン */}
+        <div className="login-dot-float absolute top-[15%] left-[12%] w-1.5 h-1.5 rounded-full bg-accent/15" />
+        <div className="login-dot-float-slow absolute top-[25%] right-[18%] w-2 h-2 rounded-full bg-primary/10" />
+        <div className="login-dot-float absolute bottom-[30%] left-[22%] w-1 h-1 rounded-full bg-accent/20" />
+        <div className="login-dot-float-slow absolute top-[55%] right-[10%] w-1.5 h-1.5 rounded-full bg-warning/10" />
+        <div className="login-dot-float absolute bottom-[20%] right-[30%] w-1 h-1 rounded-full bg-accent/10" />
+        <div className="login-dot-float-slow absolute top-[40%] left-[8%] w-2.5 h-2.5 rounded-full bg-primary/[0.06]" />
       </div>
 
       <div className="w-full max-w-sm relative z-10">
@@ -71,8 +78,11 @@ export default function LoginPage() {
         {/* ログインフォーム */}
         <form
           onSubmit={handleLogin}
-          className="animate-fade-in-up animation-delay-200 bg-surface/80 backdrop-blur-sm rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-border/60 p-6 space-y-5"
+          className="animate-fade-in-up animation-delay-200 relative bg-surface/80 backdrop-blur-md rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-border/60 p-6 space-y-5 login-form-glow"
         >
+          {/* グラデーションアクセントライン */}
+          <div className="absolute -top-px left-6 right-6 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+
           {error && (
             <div className="bg-error/10 text-error text-sm rounded-xl p-3 animate-fade-in-up">
               {error}

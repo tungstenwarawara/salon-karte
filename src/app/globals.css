@@ -14,6 +14,10 @@
   --color-warning: #E8A87C;
   --color-error: #D4726A;
   --color-border: #E8E4E0;
+
+  /* カードシャドウ（暖色系） */
+  --shadow-card: 0 1px 3px rgba(139, 123, 107, 0.06), 0 4px 12px rgba(196, 149, 106, 0.04);
+  --shadow-card-hover: 0 2px 8px rgba(139, 123, 107, 0.08), 0 8px 24px rgba(196, 149, 106, 0.08);
 }
 
 body {
@@ -72,6 +76,8 @@ input, select, textarea {
 .animation-delay-200 { animation-delay: 0.2s; }
 .animation-delay-300 { animation-delay: 0.3s; }
 .animation-delay-400 { animation-delay: 0.4s; }
+.animation-delay-500 { animation-delay: 0.5s; }
+.animation-delay-600 { animation-delay: 0.6s; }
 
 /* ローディングイラスト パルスアニメーション */
 @keyframes loading-pulse {
@@ -90,6 +96,30 @@ input, select, textarea {
 
 .loading-pulse-text {
   animation: loading-pulse-text 2.5s ease-in-out infinite 0.3s;
+}
+
+/* ログイン装飾ドット浮遊 */
+@keyframes float-dots {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.login-dot-float {
+  animation: float-dots 8s ease-in-out infinite;
+}
+
+.login-dot-float-slow {
+  animation: float-dots 12s ease-in-out infinite 2s;
+}
+
+/* ログインフォーム微光 */
+@keyframes subtle-glow {
+  0%, 100% { box-shadow: 0 2px 20px rgba(196, 149, 106, 0.04); }
+  50% { box-shadow: 0 4px 24px rgba(196, 149, 106, 0.1); }
+}
+
+.login-form-glow {
+  animation: subtle-glow 6s ease-in-out infinite;
 }
 
 /* Details/Summary chevron rotation */

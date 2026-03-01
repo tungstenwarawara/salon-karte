@@ -112,8 +112,10 @@ export function SalesView({ salonId, initialData, initialYear, initialDeferredRe
 
   return (
     <div className="space-y-4">
-      <ManagementTabs />
-      <h2 className="text-xl font-bold">売上レポート</h2>
+      <div className="animate-fade-in-up">
+        <ManagementTabs />
+      </div>
+      <h2 className="text-xl font-bold animate-fade-in-up animation-delay-100">売上レポート</h2>
 
       {/* 年ナビゲーション */}
       <div className="flex items-center justify-between bg-surface border border-border rounded-xl px-4 py-3">

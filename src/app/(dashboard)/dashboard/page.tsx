@@ -159,7 +159,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-5">
       {/* 挨拶 + ビジュアル */}
-      <div>
+      <div className="animate-fade-in-up">
         <GreetingVisual />
         <div className="mt-2 text-center">
           <p className="text-text-light text-sm">{getGreeting()}</p>
@@ -168,28 +168,42 @@ export default async function DashboardPage() {
       </div>
 
       {!allSetupDone && (
-        <OnboardingChecklist setupSteps={setupSteps} completedSteps={completedSteps} />
+        <div className="animate-fade-in-up animation-delay-100">
+          <OnboardingChecklist setupSteps={setupSteps} completedSteps={completedSteps} />
+        </div>
       )}
 
-      <SummaryCards
-        appointmentCount={appointmentCount}
-        lapsedCount={lapsedCount}
-        customerCount={customerCount ?? 0}
-      />
+      <div className="animate-fade-in-up animation-delay-100">
+        <SummaryCards
+          appointmentCount={appointmentCount}
+          lapsedCount={lapsedCount}
+          customerCount={customerCount ?? 0}
+        />
+      </div>
 
-      <KpiTrendCards
-        currentRevenue={kpi.current_month_revenue}
-        previousRevenue={kpi.previous_month_revenue}
-        currentVisits={kpi.current_month_visits}
-        previousVisits={kpi.previous_month_visits}
-        staffRole={staff?.role ?? null}
-      />
+      <div className="animate-fade-in-up animation-delay-200">
+        <KpiTrendCards
+          currentRevenue={kpi.current_month_revenue}
+          previousRevenue={kpi.previous_month_revenue}
+          currentVisits={kpi.current_month_visits}
+          previousVisits={kpi.previous_month_visits}
+          staffRole={staff?.role ?? null}
+        />
+      </div>
 
-      <InventoryAlert items={lowStockItems} />
+      {lowStockItems.length > 0 && (
+        <div className="animate-fade-in-up animation-delay-300">
+          <InventoryAlert items={lowStockItems} />
+        </div>
+      )}
 
-      <TodayAppointments appointments={todayAppointments} lastVisitMap={lastVisitMap} />
+      <div className="animate-fade-in-up animation-delay-400">
+        <TodayAppointments appointments={todayAppointments} lastVisitMap={lastVisitMap} />
+      </div>
 
-      <BirthdayCustomers customers={birthdayCustomers} currentMonth={currentMonth} />
+      <div className="animate-fade-in-up animation-delay-500">
+        <BirthdayCustomers customers={birthdayCustomers} currentMonth={currentMonth} />
+      </div>
     </div>
   );
 }

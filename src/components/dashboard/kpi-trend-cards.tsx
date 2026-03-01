@@ -10,6 +10,29 @@ type Props = {
   staffRole: "owner" | "manager" | "staff" | null;
 };
 
+/** 今月 vs 先月のミニ比較バー */
+function MiniComparisonBar({ current, previous }: { current: number; previous: number }) {
+  const max = Math.max(current, previous, 1);
+  const currentPct = Math.round((current / max) * 100);
+  const previousPct = Math.round((previous / max) * 100);
+  return (
+    <div className="space-y-1 mt-2">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[10px] text-text-light w-6 shrink-0">今月</span>
+        <div className="flex-1 h-1.5 bg-border/40 rounded-full overflow-hidden">
+          <div className="h-full bg-accent rounded-full transition-all duration-700" style={{ width: `${currentPct}%` }} />
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="text-[10px] text-text-light w-6 shrink-0">先月</span>
+        <div className="flex-1 h-1.5 bg-border/40 rounded-full overflow-hidden">
+          <div className="h-full bg-primary/30 rounded-full transition-all duration-700" style={{ width: `${previousPct}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function KpiTrendCards({
   currentRevenue,
   previousRevenue,
@@ -28,7 +51,7 @@ export function KpiTrendCards({
       {canSeeRevenue && (
         <Link
           href="/sales"
-          className="bg-surface border border-border rounded-2xl p-4 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
+          className="bg-surface border border-border rounded-2xl p-4 shadow-card hover:shadow-card-hover hover:border-accent hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200"
         >
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -46,6 +69,7 @@ export function KpiTrendCards({
             </div>
             <p className="text-lg font-bold truncate">{formatYen(currentRevenue)}</p>
             <p className="text-xs text-text-light">今月の売上</p>
+            <MiniComparisonBar current={currentRevenue} previous={previousRevenue} />
           </div>
         </Link>
       )}
@@ -53,7 +77,7 @@ export function KpiTrendCards({
       {/* 今月の来店 */}
       <Link
         href="/records"
-        className={`bg-surface border border-border rounded-2xl p-4 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200${!canSeeRevenue ? " col-span-2" : ""}`}
+        className={`bg-surface border border-border rounded-2xl p-4 shadow-card hover:shadow-card-hover hover:border-accent hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200${!canSeeRevenue ? " col-span-2" : ""}`}
       >
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -74,6 +98,7 @@ export function KpiTrendCards({
             <span className="text-sm font-normal text-text-light ml-0.5">件</span>
           </p>
           <p className="text-xs text-text-light">今月の来店</p>
+          <MiniComparisonBar current={currentVisits} previous={previousVisits} />
         </div>
       </Link>
     </div>

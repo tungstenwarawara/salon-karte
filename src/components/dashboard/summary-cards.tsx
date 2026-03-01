@@ -13,7 +13,7 @@ export function SummaryCards({
     <div className="grid grid-cols-2 gap-3">
       <Link
         href="/appointments"
-        className="bg-surface border border-border rounded-2xl p-4 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
+        className="bg-surface border border-border rounded-2xl p-4 shadow-card hover:shadow-card-hover hover:border-accent hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200"
       >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
@@ -30,7 +30,7 @@ export function SummaryCards({
       {lapsedCount > 0 ? (
         <Link
           href="/customers"
-          className="bg-surface border border-orange-200 rounded-2xl p-4 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
+          className="bg-surface border border-orange-200 rounded-2xl p-4 shadow-card hover:shadow-card-hover hover:border-accent hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
@@ -47,7 +47,7 @@ export function SummaryCards({
       ) : (
         <Link
           href="/customers"
-          className="bg-surface border border-border rounded-2xl p-4 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
+          className="bg-surface border border-border rounded-2xl p-4 shadow-card hover:shadow-card-hover hover:border-accent hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">

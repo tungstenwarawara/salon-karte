@@ -56,21 +56,29 @@ export default async function InventoryPage() {
 
   return (
     <div className="space-y-4">
-      <ManagementTabs />
+      <div className="animate-fade-in-up">
+        <ManagementTabs />
+      </div>
 
-      {hasProducts && !hasStockSetup && <InventorySetupGuide />}
-
-      {!hasProducts ? (
-        <EmptyState
-          illustration="product"
-          message="在庫管理を始めましょう"
-          description="商品を登録すると、在庫数の管理や確定申告用のレポートが使えるようになります"
-          action={{ label: "商品を登録する", href: "/sales/inventory/products" }}
-          size="md"
-        />
-      ) : (
-        <InventoryDashboard items={items} monthlyPurchases={monthlyPurchases} totalPurchases={totalPurchases} salonId={salon.id} />
+      {hasProducts && !hasStockSetup && (
+        <div className="animate-fade-in-up animation-delay-100">
+          <InventorySetupGuide />
+        </div>
       )}
+
+      <div className="animate-fade-in-up animation-delay-100">
+        {!hasProducts ? (
+          <EmptyState
+            illustration="product"
+            message="在庫管理を始めましょう"
+            description="商品を登録すると、在庫数の管理や確定申告用のレポートが使えるようになります"
+            action={{ label: "商品を登録する", href: "/sales/inventory/products" }}
+            size="md"
+          />
+        ) : (
+          <InventoryDashboard items={items} monthlyPurchases={monthlyPurchases} totalPurchases={totalPurchases} salonId={salon.id} />
+        )}
+      </div>
     </div>
   );
 }
