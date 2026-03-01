@@ -105,7 +105,25 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-bold mb-2">5. データの保管・安全管理</h2>
+          <h2 className="text-lg font-bold mb-2">5. 外国への個人データの移転</h2>
+          <p className="text-sm leading-relaxed">
+            上記の外部サービスのうち、Vercel Inc. および Functional Software Inc.（Sentry）は
+            米国に所在する法人であり、データの一部が米国で処理される場合があります。
+          </p>
+          <p className="text-sm leading-relaxed mt-2">
+            米国には、個人情報の保護に関する連邦レベルの包括的な法律は存在しませんが、
+            各州法（カリフォルニア州消費者プライバシー法（CCPA）等）やFTC法による規制が行われています。
+            日本の個人情報保護法が求める水準と同等の保護が保証されているとは限りませんが、
+            当サービスは各委託先との間でデータ処理に関する契約を締結し、適切な安全管理措置を講じています。
+          </p>
+          <p className="text-sm leading-relaxed mt-2">
+            なお、Supabase のデータベースおよびストレージは日本国内（東京リージョン）で運用しており、
+            顧客の個人情報・施術記録・写真等の主要データは日本国内に保管されます。
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-bold mb-2">6. データの保管・安全管理</h2>
           <p className="text-sm leading-relaxed">
             ユーザーおよび顧客の個人情報は、日本国内（東京）のデータセンターに保管されます。
             当サービスは以下のセキュリティ対策を講じています。
@@ -119,7 +137,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-bold mb-2">6. Cookie等の利用</h2>
+          <h2 className="text-lg font-bold mb-2">7. Cookie等の利用</h2>
           <p className="text-sm leading-relaxed">
             当サービスは、以下の目的でCookieおよび類似技術を使用します。
           </p>
@@ -133,7 +151,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-bold mb-2">7. ユーザーの権利（開示・訂正・削除）</h2>
+          <h2 className="text-lg font-bold mb-2">8. ユーザーの権利（開示・訂正・削除）</h2>
           <p className="text-sm leading-relaxed">
             ユーザーは、当サービスが保有する自身の個人情報について、以下の権利を有します。
           </p>
@@ -153,7 +171,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-bold mb-2">8. サロンオーナーの責任</h2>
+          <h2 className="text-lg font-bold mb-2">9. サロンオーナーの責任</h2>
           <p className="text-sm leading-relaxed">
             サロンオーナー（ユーザー）が当サービスに登録する顧客の個人情報については、
             サロンオーナーが個人情報取扱事業者としての責任を負います。
@@ -163,7 +181,7 @@ export default function PrivacyPolicyPage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-bold mb-2">9. プライバシーポリシーの変更</h2>
+          <h2 className="text-lg font-bold mb-2">10. プライバシーポリシーの変更</h2>
           <p className="text-sm leading-relaxed">
             当サービスは、法令の改正やサービス内容の変更に伴い、本ポリシーを変更することがあります。
             重要な変更がある場合は、サービス内の通知またはメールにてお知らせします。

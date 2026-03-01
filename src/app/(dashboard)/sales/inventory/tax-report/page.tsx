@@ -64,6 +64,13 @@ export default function TaxReportPage() {
         </button>
       </div>
 
+      {/* 免責注記 */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+        <p className="text-xs text-amber-800 leading-relaxed">
+          本レポートはサロンカルテに記録されたデータを集計したものであり、税務上の助言・指導を目的としたものではありません。確定申告の際は税理士等の専門家にご相談ください。
+        </p>
+      </div>
+
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
