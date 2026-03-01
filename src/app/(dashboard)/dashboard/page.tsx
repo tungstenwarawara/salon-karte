@@ -96,7 +96,7 @@ export default async function DashboardPage() {
       .from("customers")
       .select("id, last_name, first_name, birth_date")
       .eq("salon_id", salon.id)
-      .like("birth_date", `%-${String(currentMonth).padStart(2, "0")}-%`),
+      .not("birth_date", "is", null),
     supabase
       .rpc("get_inventory_summary", { p_salon_id: salon.id })
       .returns<InventoryAlertItem[]>(),
@@ -141,9 +141,10 @@ export default async function DashboardPage() {
     (item) => item.current_stock <= item.reorder_point
   );
 
-  // 誕生日（DBで月フィルタ済み → 日ソートのみ）
+  // 誕生日（JS側で月フィルタ — date型にLIKEは使えないため）
+  const monthStr = String(currentMonth).padStart(2, "0");
   const birthdayCustomers = (birthdayRes.data ?? [])
-    .filter((c) => c.birth_date)
+    .filter((c) => c.birth_date && c.birth_date.split("-")[1] === monthStr)
     .map((c) => ({
       ...c,
       birth_day: parseInt(c.birth_date!.split("-")[2], 10),

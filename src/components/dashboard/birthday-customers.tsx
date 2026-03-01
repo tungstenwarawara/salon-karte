@@ -39,11 +39,8 @@ export function BirthdayCustomers({
               </span>
               {c.birth_date && (() => {
                 const birth = new Date(c.birth_date!);
-                const today = new Date();
-                let age = today.getFullYear() - birth.getFullYear();
-                const m = today.getMonth() - birth.getMonth();
-                if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-                return <span className="text-xs text-text-light">（{age}歳）</span>;
+                const turningAge = new Date().getFullYear() - birth.getFullYear();
+                return <span className="text-xs text-text-light">→ {turningAge}歳</span>;
               })()}
             </div>
             <span className="text-xs text-text-light tabular-nums">
