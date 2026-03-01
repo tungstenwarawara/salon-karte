@@ -63,8 +63,7 @@ export default async function CustomerDetailPage({
       .eq("status", "scheduled")
       .gte("appointment_date", today)
       .order("appointment_date", { ascending: true })
-      .limit(1)
-      .maybeSingle<Appointment>(),
+      .returns<Appointment[]>(),
     supabase
       .from("purchases")
       .select("id, item_name, purchase_date, unit_price, quantity, total_price, memo, product_id, treatment_record_id")
@@ -105,7 +104,7 @@ export default async function CustomerDetailPage({
   ]);
 
   const records = recordsResult.data ?? [];
-  const nextAppointment = appointmentResult.data;
+  const futureAppointments = appointmentResult.data ?? [];
   const purchases = purchasesResult.data ?? [];
   const courseTickets = courseTicketsResult.data ?? [];
   const counselingSheets = counselingResult.data ?? [];
@@ -172,6 +171,18 @@ export default async function CustomerDetailPage({
     .slice(0, 3)
     .map(([name, count]) => ({ name, count, unit: "個" }));
 
+  // 回数券の消化履歴を既存データから構築（追加クエリ不要）
+  const ticketConsumptionHistory = new Map<string, { date: string; menuName: string; recordId: string }[]>();
+  for (const r of records) {
+    for (const m of r.treatment_record_menus) {
+      if (m.payment_type === "ticket" && m.ticket_id) {
+        const entries = ticketConsumptionHistory.get(m.ticket_id) ?? [];
+        entries.push({ date: r.treatment_date, menuName: m.menu_name_snapshot, recordId: r.id });
+        ticketConsumptionHistory.set(m.ticket_id, entries);
+      }
+    }
+  }
+
   // 施術売上合計（cash/credit のみ = 実収入）
   const treatmentTotal = records.reduce((sum, r) =>
     sum + r.treatment_record_menus
@@ -208,7 +219,7 @@ export default async function CustomerDetailPage({
         visitCount={visitCount}
         daysSinceLastVisit={daysSinceLastVisit}
         avgInterval={avgInterval}
-        nextAppointment={nextAppointment}
+        futureAppointments={futureAppointments}
       />
 
       <CustomerInsights
@@ -238,6 +249,7 @@ export default async function CustomerDetailPage({
         counselingSheets={counselingSheets}
         counselingTemplate={counselingTemplate}
         counselingTemplates={counselingTemplates}
+        ticketConsumptionHistory={ticketConsumptionHistory}
       />
     </div>
   );

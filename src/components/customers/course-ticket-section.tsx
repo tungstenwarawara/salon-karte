@@ -8,6 +8,7 @@ import { useIncrementalList } from "@/hooks/use-incremental-list";
 import type { Database } from "@/types/database";
 import { CourseTicketCard } from "./course-ticket-card";
 import { EmptyState } from "@/components/ui/empty-state";
+import type { TicketConsumptionEntry } from "./customer-detail-content";
 
 type CourseTicket = Database["public"]["Tables"]["course_tickets"]["Row"];
 
@@ -15,10 +16,12 @@ export function CourseTicketSection({
   customerId,
   salonId,
   initialTickets,
+  consumptionHistory,
 }: {
   customerId: string;
   salonId: string;
   initialTickets: CourseTicket[];
+  consumptionHistory: Map<string, TicketConsumptionEntry[]>;
 }) {
   const [tickets, setTickets] = useState<CourseTicket[]>(initialTickets);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -113,6 +116,7 @@ export function CourseTicketSection({
     editValue,
     adjustError,
     confirmDeleteId,
+    consumptionEntries: consumptionHistory.get(ticket.id) ?? [],
     onUseSession: handleUseSession,
     onStartEdit: (id: string, used: number) => { setEditingId(id); setEditValue(used); setAdjustError(""); },
     onCancelEdit: () => { setEditingId(null); setAdjustError(""); },
@@ -136,6 +140,8 @@ export function CourseTicketSection({
       </div>
       <p className="text-xs text-text-light mb-3">
         施術と同時に登録する場合は、カルテ作成画面の「回数券を販売」から追加できます。
+        <br />
+        カルテで回数券支払いを選んだ場合は保存時に自動消化されるため、手動消化は不要です。
       </p>
 
       {tickets.length > 0 ? (

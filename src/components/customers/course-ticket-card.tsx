@@ -12,6 +12,8 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   cancelled: { label: "取消", color: "bg-gray-100 text-gray-500" },
 };
 
+type ConsumptionEntry = { date: string; menuName: string; recordId: string };
+
 type Props = {
   ticket: CourseTicket;
   processingId: string | null;
@@ -20,6 +22,7 @@ type Props = {
   editValue: number;
   adjustError: string;
   confirmDeleteId: string | null;
+  consumptionEntries: ConsumptionEntry[];
   onUseSession: (ticketId: string) => void;
   onStartEdit: (ticketId: string, currentUsed: number) => void;
   onCancelEdit: () => void;
@@ -32,7 +35,7 @@ type Props = {
 
 /** 個別回数券カード */
 export function CourseTicketCard({
-  ticket, processingId, deletingId, editingId, editValue, adjustError, confirmDeleteId,
+  ticket, processingId, deletingId, editingId, editValue, adjustError, confirmDeleteId, consumptionEntries,
   onUseSession, onStartEdit, onCancelEdit, onAdjust, onEditValueChange, onRequestDelete, onConfirmDelete, onCancelDelete,
 }: Props) {
   const remaining = ticket.total_sessions - ticket.used_sessions;
@@ -63,7 +66,7 @@ export function CourseTicketCard({
                 disabled={processingId !== null}
                 className="text-xs bg-accent/10 text-accent px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-colors min-h-[44px] disabled:opacity-50"
               >
-                {processingId === ticket.id ? "処理中..." : "1回使用"}
+                {processingId === ticket.id ? "処理中..." : "手動で1回消化"}
               </button>
             )}
             {canAdjust && (
@@ -144,6 +147,37 @@ export function CourseTicketCard({
         )}
       </div>
       {ticket.memo && <p className="text-xs text-text-light">{ticket.memo}</p>}
+
+      {/* 消化履歴 */}
+      {ticket.used_sessions > 0 && (
+        <div className="border-t border-border pt-2">
+          <p className="text-xs text-text-light font-medium mb-1">消化履歴</p>
+          {consumptionEntries.length > 0 && (
+            <div className="space-y-0.5">
+              {consumptionEntries
+                .sort((a, b) => b.date.localeCompare(a.date))
+                .map((entry, i) => {
+                  const d = new Date(entry.date);
+                  const formatted = `${d.getMonth() + 1}/${d.getDate()}`;
+                  return (
+                    <div key={i} className="flex items-center gap-2 text-xs">
+                      <span className="text-text-light w-10">{formatted}</span>
+                      <span className="truncate">{entry.menuName}</span>
+                      <Link href={`/records/${entry.recordId}`} className="text-accent hover:underline shrink-0">
+                        カルテ →
+                      </Link>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+          {ticket.used_sessions > consumptionEntries.length && (
+            <p className="text-xs text-text-light mt-1">
+              + 手動調整 {ticket.used_sessions - consumptionEntries.length}回
+            </p>
+          )}
+        </div>
+      )}
 
       {/* 削除確認パネル */}
       {confirmDeleteId === ticket.id && (

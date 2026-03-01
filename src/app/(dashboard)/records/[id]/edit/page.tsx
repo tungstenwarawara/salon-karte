@@ -17,8 +17,9 @@ import { TreatmentLinkedItems } from "@/components/records/treatment-linked-item
 import { TreatmentDeleteSection } from "@/components/records/treatment-delete-section";
 import { PhotoManageSection } from "@/components/records/photo-manage-section";
 import { updateTreatmentRecord, deleteTreatmentRecord } from "@/components/records/treatment-edit-submit";
+import { PurchaseInlineForm } from "@/components/records/purchase-inline-form";
 import { INPUT_CLASS } from "@/components/records/types";
-import type { Menu, CourseTicket, MenuPaymentInfo } from "@/components/records/types";
+import type { Menu, CourseTicket, Product, MenuPaymentInfo, PendingPurchase } from "@/components/records/types";
 import type { Database } from "@/types/database";
 
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
@@ -49,6 +50,8 @@ export default function EditRecordPage() {
   const [linkedTickets, setLinkedTickets] = useState<CourseTicket[]>([]);
   const [deletingPurchaseId, setDeletingPurchaseId] = useState<string | null>(null);
   const [deletingTicketId, setDeletingTicketId] = useState<string | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [pendingPurchases, setPendingPurchases] = useState<PendingPurchase[]>([]);
 
   const [form, setForm] = useState({
     treatment_date: "", treatment_area: "", products_used: "",
@@ -63,17 +66,19 @@ export default function EditRecordPage() {
       setSalonId(resolvedSalonId);
 
       const supabase = createClient();
-      const [menuRes, recordRes, recordMenusRes, purchasesRes, linkedTicketsRes, staffRes] = await Promise.all([
+      const [menuRes, recordRes, recordMenusRes, purchasesRes, linkedTicketsRes, staffRes, productsRes] = await Promise.all([
         supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).order("name").returns<Menu[]>(),
         supabase.from("treatment_records").select("id, customer_id, staff_id, treatment_date, menu_id, treatment_area, products_used, skin_condition_before, notes_after, next_visit_memo, conversation_notes, caution_notes").eq("id", id).eq("salon_id", resolvedSalonId).single<TreatmentRecord>(),
         supabase.from("treatment_record_menus").select("id, menu_id, menu_name_snapshot, price_snapshot, duration_minutes_snapshot, payment_type, ticket_id, sort_order").eq("treatment_record_id", id).order("sort_order").returns<TreatmentRecordMenu[]>(),
-        supabase.from("purchases").select("id, item_name, quantity, unit_price, total_price, memo, product_id").eq("treatment_record_id", id).eq("salon_id", resolvedSalonId).order("created_at").returns<Purchase[]>(),
+        supabase.from("purchases").select("id, item_name, quantity, unit_price, total_price, memo, product_id, purchase_date").eq("treatment_record_id", id).eq("salon_id", resolvedSalonId).order("created_at").returns<Purchase[]>(),
         supabase.from("course_tickets").select("id, ticket_name, total_sessions, used_sessions, price, status, memo").eq("treatment_record_id", id).eq("salon_id", resolvedSalonId).order("created_at").returns<CourseTicket[]>(),
         supabase.from("staff").select("id, name").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name"),
+        supabase.from("products").select("id, name, category, base_sell_price, base_cost_price").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name").returns<Product[]>(),
       ]);
 
       setMenus(menuRes.data ?? []);
       setLinkedPurchases(purchasesRes.data ?? []);
+      setProducts(productsRes.data ?? []);
       if (staffRes.data) setStaffList(staffRes.data);
       setLinkedTickets(linkedTicketsRes.data ?? []);
       const existingMenus = recordMenusRes.data ?? [];
@@ -168,6 +173,7 @@ export default function EditRecordPage() {
     setError(""); setLoading(true);
     const result = await updateTreatmentRecord({
       recordId: id, salonId, staffId, form, menus, selectedMenuIds, menuPayments, originalTicketPayments,
+      pendingPurchases, customerId,
     });
     if (!result.success) { setError(result.error); setLoading(false); return; }
     setFlashToast("施術記録を更新しました");
@@ -251,9 +257,28 @@ export default function EditRecordPage() {
 
         <TreatmentLinkedItems
           linkedTickets={linkedTickets} linkedPurchases={linkedPurchases}
+          salonId={salonId} recordId={id} customerId={customerId}
           deletingTicketId={deletingTicketId} deletingPurchaseId={deletingPurchaseId}
           onDeleteTicket={handleDeleteLinkedTicket} onDeletePurchase={handleDeletePurchase}
+          onPurchaseUpdated={(updated) => setLinkedPurchases((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
         />
+
+        <CollapsibleSection label={`物販を追加（任意）${pendingPurchases.length > 0 ? ` — ${pendingPurchases.length}件` : ""}`}>
+          {pendingPurchases.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {pendingPurchases.map((p, i) => (
+                <div key={i} className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{p.item_name}</p>
+                    <p className="text-xs text-text-light">{p.quantity}個 × {p.unit_price.toLocaleString()}円 = {(p.quantity * p.unit_price).toLocaleString()}円</p>
+                  </div>
+                  <button type="button" onClick={() => setPendingPurchases((prev) => prev.filter((_, idx) => idx !== i))} className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">削除</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <PurchaseInlineForm products={products} onAdd={(p) => setPendingPurchases((prev) => [...prev, p])} />
+        </CollapsibleSection>
 
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={() => router.back()} className="flex-1 bg-background border border-border text-text font-medium rounded-xl py-3 transition-colors min-h-[48px]">キャンセル</button>

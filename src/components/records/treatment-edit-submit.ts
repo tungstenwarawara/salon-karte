@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import type { Menu, MenuPaymentInfo } from "@/components/records/types";
+import type { Menu, MenuPaymentInfo, PendingPurchase } from "@/components/records/types";
 
 type EditFormData = {
   treatment_date: string;
@@ -21,6 +21,8 @@ type UpdateParams = {
   selectedMenuIds: string[];
   menuPayments: MenuPaymentInfo[];
   originalTicketPayments: Map<string, string>;
+  pendingPurchases?: PendingPurchase[];
+  customerId?: string;
 };
 
 type UpdateResult =
@@ -87,6 +89,27 @@ export async function updateTreatmentRecord(params: UpdateParams): Promise<Updat
       for (let i = 0; i < Math.abs(diff); i++) {
         const { error: undoError } = await supabase.rpc("undo_course_ticket_session", { p_ticket_id: ticketId });
         if (undoError) console.error("Ticket undo error:", undoError);
+      }
+    }
+  }
+
+  // 4. 新規物販の追加
+  if (params.pendingPurchases && params.pendingPurchases.length > 0 && params.customerId) {
+    for (const purchase of params.pendingPurchases) {
+      if (purchase.mode === "product" && purchase.product_id) {
+        const { error: rpcError } = await supabase.rpc("record_product_sale", {
+          p_salon_id: salonId, p_customer_id: params.customerId, p_product_id: purchase.product_id,
+          p_quantity: purchase.quantity, p_sell_price: purchase.unit_price,
+          p_purchase_date: form.treatment_date, p_memo: purchase.memo || null, p_treatment_record_id: recordId,
+        });
+        if (rpcError) console.error("Product sale RPC error:", rpcError);
+      } else {
+        const { error: purchaseError } = await supabase.from("purchases").insert({
+          salon_id: salonId, customer_id: params.customerId, purchase_date: form.treatment_date,
+          item_name: purchase.item_name, quantity: purchase.quantity, unit_price: purchase.unit_price,
+          total_price: purchase.quantity * purchase.unit_price, memo: purchase.memo || null, treatment_record_id: recordId,
+        });
+        if (purchaseError) console.error("Purchase insert error:", purchaseError);
       }
     }
   }

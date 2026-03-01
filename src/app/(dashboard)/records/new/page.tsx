@@ -178,12 +178,17 @@ function NewRecordForm() {
     setError(""); setLoading(true);
 
     const result = await submitTreatmentRecord({
-      customerId, salonId, staffId, form, menus, selectedMenuIds, menuPayments, pendingTickets, pendingPurchases, photos, appointmentId,
+      customerId, salonId, staffId, form, menus, selectedMenuIds, menuPayments, pendingTickets, pendingPurchases, photos, appointmentId, courseTickets,
     });
 
     if (!result.success) { setError(result.error); setLoading(false); return; }
     clearDraft();
-    setFlashToast("施術記録を保存しました");
+    if (result.ticketConsumptions && result.ticketConsumptions.length > 0) {
+      const info = result.ticketConsumptions.map((tc) => `${tc.ticketName} ${tc.consumed}回消化→残${tc.remaining}回`).join("、");
+      setFlashToast(`施術記録を保存しました（${info}）`);
+    } else {
+      setFlashToast("施術記録を保存しました");
+    }
     router.push(`/customers/${customerId}`);
   };
 

@@ -27,6 +27,8 @@ type CounselingTemplateItem = {
   is_default: boolean;
 };
 
+export type TicketConsumptionEntry = { date: string; menuName: string; recordId: string };
+
 type Props = {
   customerId: string;
   salonId: string;
@@ -40,6 +42,7 @@ type Props = {
   counselingSheets: CounselingSheet[];
   counselingTemplate: CounselingTemplate | null;
   counselingTemplates: CounselingTemplateItem[];
+  ticketConsumptionHistory: Map<string, TicketConsumptionEntry[]>;
 };
 
 type TabKey = "treatment" | "photos" | "tickets" | "purchases" | "counseling";
@@ -57,6 +60,7 @@ export function CustomerDetailContent({
   counselingSheets,
   counselingTemplate,
   counselingTemplates,
+  ticketConsumptionHistory,
 }: Props) {
   const [activeTab, setActiveTab] = useState<TabKey>("treatment");
 
@@ -98,7 +102,7 @@ export function CustomerDetailContent({
           </div>
         )}
         <div className={activeTab === "tickets" ? "" : "hidden"}>
-          <CourseTicketSection customerId={customerId} salonId={salonId} initialTickets={courseTickets} />
+          <CourseTicketSection customerId={customerId} salonId={salonId} initialTickets={courseTickets} consumptionHistory={ticketConsumptionHistory} />
         </div>
         <div className={activeTab === "purchases" ? "" : "hidden"}>
           <PurchaseHistory

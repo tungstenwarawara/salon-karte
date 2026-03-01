@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { uploadPhotos } from "@/lib/supabase/storage";
 import type { PhotoEntry } from "@/components/records/photo-upload";
-import type { Menu, MenuPaymentInfo, PendingTicket, PendingPurchase } from "@/components/records/types";
+import type { Menu, MenuPaymentInfo, PendingTicket, PendingPurchase, CourseTicket } from "@/components/records/types";
 
 type RecordFormData = {
   treatment_date: string;
@@ -26,10 +26,17 @@ type SubmitParams = {
   pendingPurchases: PendingPurchase[];
   photos: PhotoEntry[];
   appointmentId: string | null;
+  courseTickets?: CourseTicket[];
+};
+
+type TicketConsumptionInfo = {
+  ticketName: string;
+  consumed: number;
+  remaining: number;
 };
 
 type SubmitResult =
-  | { success: true; recordId: string }
+  | { success: true; recordId: string; ticketConsumptions?: TicketConsumptionInfo[] }
   | { success: false; error: string };
 
 /** カルテ新規作成のsubmit処理（メニュー・回数券・物販・写真の一括保存） */
@@ -57,6 +64,7 @@ export async function submitTreatmentRecord(params: SubmitParams): Promise<Submi
   if (insertError || !record) return { success: false, error: `登録に失敗しました: ${insertError?.message ?? "不明なエラー"}` };
 
   const warnings: string[] = [];
+  const ticketConsumptions: TicketConsumptionInfo[] = [];
 
   // 2. メニュー中間テーブル + 回数券消化
   if (selectedMenuIds.length > 0) {
@@ -79,9 +87,19 @@ export async function submitTreatmentRecord(params: SubmitParams): Promise<Submi
       if (mp.paymentType === "ticket" && mp.ticketId) ticketUseCounts.set(mp.ticketId, (ticketUseCounts.get(mp.ticketId) ?? 0) + 1);
     });
     for (const [ticketId, count] of ticketUseCounts) {
+      const ticket = params.courseTickets?.find((t) => t.id === ticketId);
+      let lastResult: { used_sessions: number; status: string } | null = null;
       for (let i = 0; i < count; i++) {
-        const { error: ticketError } = await supabase.rpc("use_course_ticket_session", { p_ticket_id: ticketId });
+        const { data, error: ticketError } = await supabase.rpc("use_course_ticket_session", { p_ticket_id: ticketId });
         if (ticketError) { console.error("Ticket consumption error:", ticketError); warnings.push(`回数券の消化に失敗しました: ${ticketError.message}`); }
+        else if (data) lastResult = data as unknown as { used_sessions: number; status: string };
+      }
+      if (lastResult && ticket) {
+        ticketConsumptions.push({
+          ticketName: ticket.ticket_name,
+          consumed: count,
+          remaining: ticket.total_sessions - lastResult.used_sessions,
+        });
       }
     }
   }
@@ -131,5 +149,5 @@ export async function submitTreatmentRecord(params: SubmitParams): Promise<Submi
     return { success: false, error: `施術記録は保存されましたが、以下の問題があります: ${warnings.join("、")}` };
   }
 
-  return { success: true, recordId: record.id };
+  return { success: true, recordId: record.id, ticketConsumptions: ticketConsumptions.length > 0 ? ticketConsumptions : undefined };
 }

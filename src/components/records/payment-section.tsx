@@ -140,6 +140,13 @@ export function PaymentSection({
                   {courseTickets[0].ticket_name}（残{courseTickets[0].total_sessions - courseTickets[0].used_sessions}回）
                 </p>
               )}
+
+              {/* 自動消化の説明 */}
+              {payment?.paymentType === "ticket" && (
+                <p className="text-xs text-text-light">
+                  保存時に自動で1回消化されます
+                </p>
+              )}
             </div>
           );
         })}

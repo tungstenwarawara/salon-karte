@@ -9,7 +9,7 @@ type Props = {
   visitCount: number;
   daysSinceLastVisit: number | null;
   avgInterval: number | null;
-  nextAppointment: Appointment | null;
+  futureAppointments: Appointment[];
 };
 
 export function VisitAnalytics({
@@ -17,7 +17,7 @@ export function VisitAnalytics({
   visitCount,
   daysSinceLastVisit,
   avgInterval,
-  nextAppointment,
+  futureAppointments,
 }: Props) {
   return (
     <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
@@ -51,14 +51,25 @@ export function VisitAnalytics({
             : "60日以上ご来店がありません。"}
         </div>
       )}
-      {nextAppointment && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
-          次回予約: {formatDateShort(nextAppointment.appointment_date)}{" "}
-          {(nextAppointment.start_time as string).slice(0, 5)}
-          {nextAppointment.menu_name_snapshot && ` / ${nextAppointment.menu_name_snapshot}`}
+      {futureAppointments.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-1.5">
+          <p className="text-xs font-medium text-blue-600">
+            予約予定（{futureAppointments.length}件）
+          </p>
+          {futureAppointments.map((appt) => (
+            <div key={appt.id} className="text-sm text-blue-700 flex items-center gap-2">
+              <span className="font-medium">
+                {formatDateShort(appt.appointment_date)}{" "}
+                {(appt.start_time as string).slice(0, 5)}
+              </span>
+              {appt.menu_name_snapshot && (
+                <span className="text-blue-600 truncate">{appt.menu_name_snapshot}</span>
+              )}
+            </div>
+          ))}
         </div>
       )}
-      {!nextAppointment && visitCount > 0 && (
+      {futureAppointments.length === 0 && visitCount > 0 && (
         <Link
           href={`/appointments/new?customer=${customerId}`}
           className="block text-center text-sm text-accent hover:underline"
