@@ -1,7 +1,24 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
+const CANONICAL_HOST = "salonkarte.com";
+
 export async function middleware(request: NextRequest) {
+  // 旧ドメインからカノニカルドメインへリダイレクト
+  const host = request.headers.get("host") ?? "";
+  if (
+    host !== CANONICAL_HOST &&
+    host !== `www.${CANONICAL_HOST}` &&
+    host !== "localhost:3000" &&
+    !host.startsWith("localhost")
+  ) {
+    const url = request.nextUrl.clone();
+    url.host = CANONICAL_HOST;
+    url.port = "";
+    url.protocol = "https";
+    return NextResponse.redirect(url, 301);
+  }
+
   return await updateSession(request);
 }
 
