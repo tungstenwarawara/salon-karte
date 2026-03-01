@@ -158,11 +158,11 @@ export default function PrivacyPolicyPage() {
           <ul className="list-disc list-inside text-sm space-y-1 mt-2">
             <li>開示の請求: ご自身の個人情報の開示を求めることができます</li>
             <li>訂正の請求: 登録情報は設定画面からいつでもご自身で訂正できます</li>
-            <li>削除の請求: アカウントおよび全関連データ（顧客情報、施術記録、写真等）の削除を求めることができます</li>
+            <li>削除の請求: 設定画面からいつでもアカウントおよび全関連データ（顧客情報、施術記録、写真等）を削除できます</li>
             <li>利用停止の請求: 個人情報の利用停止を求めることができます</li>
           </ul>
           <p className="text-sm leading-relaxed mt-2">
-            上記の請求は、下記のお問い合わせ先までメールにてご連絡ください。
+            削除以外の請求は、下記のお問い合わせ先までメールにてご連絡ください。
             ご本人確認の上、合理的な期間内に対応いたします。
           </p>
           <p className="text-sm leading-relaxed mt-1">

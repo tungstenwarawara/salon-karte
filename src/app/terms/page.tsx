@@ -145,10 +145,9 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-bold mb-2">第11条（アカウントの削除）</h2>
+          <h2 className="text-lg font-bold mb-2">第11条（退会）</h2>
           <p className="text-sm leading-relaxed">
-            ユーザーは、お問い合わせ先（support@salonkarte.com）に連絡することで、
-            いつでもアカウントの削除を請求できます。
+            ユーザーは、設定画面からいつでも退会できます。
             アカウントを削除した場合、当該サロンに紐づく全てのデータ（顧客情報、施術記録、写真、予約、売上データ等）が
             完全に削除され、復元はできません。
           </p>

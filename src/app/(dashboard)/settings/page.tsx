@@ -8,6 +8,7 @@ import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { SettingsLinkCard } from "@/components/settings/settings-link-card";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { deleteAccount } from "./actions";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -17,12 +18,18 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { toast, showToast, hideToast } = useToast();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      const { user, salonId: sid } = await getClientAuth();
+      const { user, salonId: sid, staff } = await getClientAuth();
       if (!user || !sid) return;
       setSalonId(sid);
+      setIsOwner(staff?.role === "owner" || !staff);
 
       const supabase = createClient();
       const [salonRes, staffRes] = await Promise.all([
@@ -98,19 +105,85 @@ export default function SettingsPage() {
       <SettingsLinkCard href="/settings/export" title="データエクスポート" description="顧客・施術・物販・予約・回数券をCSVでダウンロード" />
       <SettingsLinkCard href="/guide" title="使い方ガイド" description="基本的な操作方法・よくある質問" />
 
-      {/* アカウント削除 */}
+      {/* 退会（オーナーのみ表示） */}
+      {isOwner && (
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
-        <h3 className="font-bold text-sm text-text-light">アカウント削除</h3>
-        <p className="text-sm text-text-light leading-relaxed">
-          アカウントを削除すると、サロンに紐づく全てのデータ（顧客情報・施術記録・写真・予約・売上データ等）が完全に削除され、復元できません。
-        </p>
-        <p className="text-sm leading-relaxed">
-          削除をご希望の場合は、下記メールアドレスまでご連絡ください。
-        </p>
-        <a href="mailto:support@salonkarte.com" className="inline-block text-sm text-accent font-medium hover:underline">
-          support@salonkarte.com
-        </a>
+        <h3 className="font-bold text-sm text-text-light">退会</h3>
+        {!showDeleteConfirm ? (
+          <>
+            <p className="text-sm text-text-light leading-relaxed">
+              サロンカルテを退会すると、サロンに紐づく全てのデータが完全に削除され、復元できません。
+            </p>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="text-sm text-error font-medium hover:underline"
+            >
+              退会する
+            </button>
+          </>
+        ) : (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
+            <p className="text-sm font-medium text-red-800">
+              本当に削除しますか？
+            </p>
+            <p className="text-xs text-red-700 leading-relaxed">
+              顧客情報・施術記録・写真・予約・売上データなど、全てのデータが完全に削除されます。この操作は取り消せません。
+            </p>
+            {deleteError && <ErrorAlert message={deleteError} />}
+            <div>
+              <label className="block text-xs text-red-700 mb-1.5">
+                確認のため「削除」と入力してください
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="削除"
+                className="w-full rounded-xl border border-red-300 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400 transition-colors"
+                disabled={deleting}
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteConfirmText("");
+                  setDeleteError("");
+                }}
+                disabled={deleting}
+                className="flex-1 text-sm py-3 rounded-xl border border-border hover:bg-background transition-colors min-h-[48px]"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={async () => {
+                  if (deleteConfirmText !== "削除") {
+                    setDeleteError("「削除」と入力してください");
+                    return;
+                  }
+                  setDeleting(true);
+                  setDeleteError("");
+                  const result = await deleteAccount(deleteConfirmText);
+                  if (result.error) {
+                    setDeleteError(result.error);
+                    setDeleting(false);
+                  } else {
+                    const supabase = createClient();
+                    await supabase.auth.signOut();
+                    router.push("/login");
+                    router.refresh();
+                  }
+                }}
+                disabled={deleting || deleteConfirmText !== "削除"}
+                className="flex-1 text-sm py-3 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
+              >
+                {deleting ? "削除中..." : "完全に削除する"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+      )}
 
       {/* ログアウト */}
       <div className="pt-2">
