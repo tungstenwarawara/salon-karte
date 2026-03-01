@@ -1,5 +1,7 @@
 /** 導入3ステップ */
 
+import { ScrollFadeIn } from "./scroll-fade-in";
+
 const STEPS = [
   {
     num: "1",
@@ -25,32 +27,36 @@ export function StepsSection() {
   return (
     <section className="py-16 md:py-24 bg-[#F5F1ED]">
       <div className="max-w-4xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            かんたん3ステップで始められます
-          </h2>
-          <p className="text-text-light text-lg">
-            登録から利用開始まで、たったの5分。
-          </p>
-        </div>
+        <ScrollFadeIn>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              かんたん3ステップで始められます
+            </h2>
+            <p className="text-text-light text-lg">
+              登録から利用開始まで、たったの5分。
+            </p>
+          </div>
+        </ScrollFadeIn>
 
         <div className="space-y-6 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
           {STEPS.map((s, i) => (
-            <div key={s.num} className="relative text-center">
-              {/* 接続線（デスクトップ） */}
-              {i < STEPS.length - 1 && (
-                <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-px bg-border" />
-              )}
-              <div className="relative z-10">
-                <div className="w-16 h-16 rounded-full bg-accent text-white text-2xl font-bold flex items-center justify-center mx-auto mb-4 shadow-lg shadow-accent/20">
-                  {s.num}
+            <ScrollFadeIn key={s.num} delay={i * 150}>
+              <div className="relative text-center">
+                {/* 接続線（デスクトップ） */}
+                {i < STEPS.length - 1 && (
+                  <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-px bg-border" />
+                )}
+                <div className="relative z-10">
+                  <div className="w-16 h-16 rounded-full bg-accent text-white text-2xl font-bold flex items-center justify-center mx-auto mb-4 shadow-lg shadow-accent/20">
+                    {s.num}
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">{s.title}</h3>
+                  <p className="text-text-light text-sm leading-relaxed max-w-[240px] mx-auto">
+                    {s.description}
+                  </p>
                 </div>
-                <h3 className="text-lg font-bold mb-2">{s.title}</h3>
-                <p className="text-text-light text-sm leading-relaxed max-w-[240px] mx-auto">
-                  {s.description}
-                </p>
               </div>
-            </div>
+            </ScrollFadeIn>
           ))}
         </div>
       </div>

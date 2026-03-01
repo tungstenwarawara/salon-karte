@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { BrandLogo } from "@/components/ui/brand-logo";
+import { ScrollFadeIn } from "./scroll-fade-in";
 
 export function LpFooter() {
   return (
     <footer className="bg-[#3D3D3D] text-white/80 py-12">
-      <div className="max-w-5xl mx-auto px-4">
+      <ScrollFadeIn distance={16} className="max-w-5xl mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
           {/* ロゴ + 説明 */}
           <div className="text-center md:text-left">
@@ -33,7 +34,7 @@ export function LpFooter() {
         <div className="border-t border-white/10 mt-8 pt-6 text-center text-xs text-white/40">
           &copy; {new Date().getFullYear()} Salon Karte. All rights reserved.
         </div>
-      </div>
+      </ScrollFadeIn>
     </footer>
   );
 }

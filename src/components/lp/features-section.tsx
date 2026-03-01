@@ -1,5 +1,7 @@
 /** 機能ベネフィット 4 カード */
 
+import { ScrollFadeIn } from "./scroll-fade-in";
+
 const FEATURES = [
   {
     title: "カルテを3分で記録",
@@ -55,41 +57,42 @@ export function FeaturesSection() {
   return (
     <section className="py-16 md:py-24 bg-[#F5F1ED]">
       <div className="max-w-5xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            サロン運営に必要な機能が、
-            <br className="md:hidden" />
-            ぜんぶ入ってます
-          </h2>
-          <p className="text-text-light text-lg">
-            月額2,980円に全機能込み。追加費用は一切ありません。
-          </p>
-        </div>
+        <ScrollFadeIn>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              サロン運営に必要な機能が、
+              <br className="md:hidden" />
+              ぜんぶ入ってます
+            </h2>
+            <p className="text-text-light text-lg">
+              月額2,980円に全機能込み。追加費用は一切ありません。
+            </p>
+          </div>
+        </ScrollFadeIn>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {FEATURES.map((f) => (
-            <div
-              key={f.title}
-              className="bg-white rounded-2xl p-6 border border-border/50 hover:shadow-[var(--shadow-card-hover)] transition-shadow"
-            >
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent mb-4">
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d={f.iconPath} />
-                </svg>
+          {FEATURES.map((f, i) => (
+            <ScrollFadeIn key={f.title} delay={i * 100}>
+              <div className="bg-white rounded-2xl p-6 border border-border/50 hover:shadow-[var(--shadow-card-hover)] transition-shadow h-full">
+                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent mb-4">
+                  <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d={f.iconPath} />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold mb-2">{f.title}</h3>
+                <p className="text-text-light text-sm leading-relaxed mb-4">
+                  {f.description}
+                </p>
+                <ul className="space-y-1.5">
+                  {f.details.map((d) => (
+                    <li key={d} className="flex items-center gap-2 text-sm text-text-light">
+                      <CheckIcon />
+                      {d}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <h3 className="text-xl font-bold mb-2">{f.title}</h3>
-              <p className="text-text-light text-sm leading-relaxed mb-4">
-                {f.description}
-              </p>
-              <ul className="space-y-1.5">
-                {f.details.map((d) => (
-                  <li key={d} className="flex items-center gap-2 text-sm text-text-light">
-                    <CheckIcon />
-                    {d}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            </ScrollFadeIn>
           ))}
         </div>
       </div>

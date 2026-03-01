@@ -1,5 +1,7 @@
 /** 画面イメージセクション — アプリの使いやすさを視覚的に訴求 */
 
+import { ScrollFadeIn } from "./scroll-fade-in";
+
 const SCREENS = [
   {
     title: "ダッシュボード",
@@ -31,31 +33,32 @@ export function ScreenshotSection() {
   return (
     <section className="py-16 md:py-24 bg-white">
       <div className="max-w-5xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            スマホひとつで、すべてを管理
-          </h2>
-          <p className="text-text-light text-lg">
-            直感的な操作で、ITが苦手でもすぐに使いこなせます
-          </p>
-        </div>
+        <ScrollFadeIn>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              スマホひとつで、すべてを管理
+            </h2>
+            <p className="text-text-light text-lg">
+              直感的な操作で、ITが苦手でもすぐに使いこなせます
+            </p>
+          </div>
+        </ScrollFadeIn>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {SCREENS.map((s) => (
-            <div
-              key={s.title}
-              className="group bg-background rounded-2xl p-5 border border-border/50 hover:border-accent/30 transition-all text-center"
-            >
-              <div className={`w-14 h-14 rounded-2xl ${s.color} flex items-center justify-center mx-auto mb-4`}>
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d={s.iconPath} />
-                </svg>
+          {SCREENS.map((s, i) => (
+            <ScrollFadeIn key={s.title} delay={i * 100}>
+              <div className="group bg-background rounded-2xl p-5 border border-border/50 hover:border-accent/30 transition-all text-center h-full">
+                <div className={`w-14 h-14 rounded-2xl ${s.color} flex items-center justify-center mx-auto mb-4`}>
+                  <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d={s.iconPath} />
+                  </svg>
+                </div>
+                <h3 className="font-bold mb-1">{s.title}</h3>
+                <p className="text-text-light text-xs leading-relaxed">
+                  {s.description}
+                </p>
               </div>
-              <h3 className="font-bold mb-1">{s.title}</h3>
-              <p className="text-text-light text-xs leading-relaxed">
-                {s.description}
-              </p>
-            </div>
+            </ScrollFadeIn>
           ))}
         </div>
 

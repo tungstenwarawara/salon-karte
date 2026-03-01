@@ -1,6 +1,7 @@
 /** 料金セクション — スタンダード + おためし + 市場比較 */
 
 import Link from "next/link";
+import { ScrollFadeIn } from "./scroll-fade-in";
 
 const STANDARD_FEATURES = [
   "顧客管理（人数無制限）",
@@ -26,17 +27,20 @@ export function PricingSection() {
   return (
     <section id="pricing" className="py-16 md:py-24 bg-[#F5F1ED]">
       <div className="max-w-3xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            シンプルな料金プラン
-          </h2>
-          <p className="text-text-light text-lg">
-            必要な機能は、ぜんぶ入ってこの価格。
-          </p>
-        </div>
+        <ScrollFadeIn>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              シンプルな料金プラン
+            </h2>
+            <p className="text-text-light text-lg">
+              必要な機能は、ぜんぶ入ってこの価格。
+            </p>
+          </div>
+        </ScrollFadeIn>
 
         {/* スタンダードプラン */}
-        <div className="relative bg-white border-2 border-accent rounded-2xl p-6 md:p-8 mb-4 overflow-hidden">
+        <ScrollFadeIn delay={100}>
+          <div className="relative bg-white border-2 border-accent rounded-2xl p-6 md:p-8 mb-4 overflow-hidden">
           <div className="absolute top-0 right-0 bg-accent text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl">
             おすすめ
           </div>
@@ -70,9 +74,11 @@ export function PricingSection() {
           >
             無料ではじめる
           </Link>
-        </div>
+          </div>
+        </ScrollFadeIn>
 
         {/* おためしプラン */}
+        <ScrollFadeIn delay={200}>
         <div className="bg-white border border-border rounded-2xl p-6 mb-8">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-bold">おためしプラン</h3>
@@ -86,8 +92,10 @@ export function PricingSection() {
             写真保存・LINE連携・カウンセリングシート・売上分析は含まれません。
           </p>
         </div>
+        </ScrollFadeIn>
 
         {/* 市場価格との比較 */}
+        <ScrollFadeIn delay={300}>
         <div className="bg-white border border-border rounded-2xl p-6">
           <h3 className="font-bold mb-4">サロン管理ツールの一般的な価格帯</h3>
           {MARKET_PRICES.map(({ label, range }) => (
@@ -101,6 +109,7 @@ export function PricingSection() {
             <span className="font-bold text-accent">月額 2,980円</span>
           </div>
         </div>
+        </ScrollFadeIn>
       </div>
     </section>
   );

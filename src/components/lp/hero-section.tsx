@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/ui/brand-logo";
+import { ScrollFadeIn } from "./scroll-fade-in";
 
 export function HeroSection() {
   return (
     <section className="relative overflow-hidden">
       {/* 背景グラデーション + 装飾 */}
       <div className="absolute inset-0 bg-gradient-to-b from-background to-[#F0ECE8]" />
-      <div className="absolute top-20 left-[10%] w-72 h-72 rounded-full bg-accent/5 blur-3xl" />
-      <div className="absolute bottom-10 right-[10%] w-56 h-56 rounded-full bg-accent/8 blur-2xl" />
+      <div className="absolute top-20 left-[10%] w-72 h-72 rounded-full bg-accent/5 blur-3xl animate-orb-drift" />
+      <div className="absolute bottom-10 right-[10%] w-56 h-56 rounded-full bg-accent/8 blur-2xl animate-orb-drift-slow" />
 
       <div className="relative max-w-5xl mx-auto px-4 pt-24 pb-16 md:pt-32 md:pb-24">
         <div className="flex flex-col md:flex-row items-center gap-12 md:gap-16">
           {/* コピー */}
-          <div className="flex-1 text-center md:text-left animate-fade-in-up">
+          <ScrollFadeIn direction="down" className="flex-1 text-center md:text-left">
             <div className="mb-6">
               <BrandLogo size="lg" className="mx-auto md:mx-0" />
             </div>
@@ -31,7 +32,7 @@ export function HeroSection() {
             <div className="space-y-4">
               <Link
                 href="/signup"
-                className="inline-flex items-center justify-center bg-accent hover:bg-accent-light text-white font-bold rounded-2xl px-10 py-4 text-lg transition-all duration-300 hover:shadow-lg hover:shadow-accent/20 min-h-[56px]"
+                className="inline-flex items-center justify-center bg-accent hover:bg-accent-light text-white font-bold rounded-2xl px-10 py-4 text-lg transition-all duration-300 hover:shadow-lg hover:shadow-accent/20 min-h-[56px] animate-cta-pulse"
               >
                 無料ではじめる
               </Link>
@@ -50,12 +51,12 @@ export function HeroSection() {
                 </span>
               ))}
             </div>
-          </div>
+          </ScrollFadeIn>
 
           {/* スマホモックアップ */}
-          <div className="flex-shrink-0 animate-fade-in-up animation-delay-300">
+          <ScrollFadeIn direction="right" delay={300} className="flex-shrink-0">
             <PhoneMockup />
-          </div>
+          </ScrollFadeIn>
         </div>
       </div>
     </section>
@@ -65,7 +66,7 @@ export function HeroSection() {
 /** CSS製スマホフレーム — ダッシュボード画面 */
 function PhoneMockup() {
   return (
-    <div className="relative">
+    <div className="relative animate-float-phone">
       <div className="absolute inset-0 bg-accent/10 rounded-[44px] blur-2xl scale-105" />
       <div className="relative w-[260px] md:w-[280px] bg-white rounded-[36px] border-[6px] border-[#2D2D2D] shadow-2xl overflow-hidden">
         {/* ノッチ */}

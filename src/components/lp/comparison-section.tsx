@@ -1,5 +1,7 @@
 /** 競合比較テーブル */
 
+import { ScrollFadeIn } from "./scroll-fade-in";
+
 const COMPETITORS = [
   { name: "サロンカルテ", price: "2,980円", highlight: true },
   { name: "カルテ特化型A", price: "5,500円〜" },
@@ -29,15 +31,18 @@ export function ComparisonSection() {
   return (
     <section className="py-16 md:py-24 bg-white">
       <div className="max-w-5xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            他サービスとの比較
-          </h2>
-          <p className="text-text-light text-lg">
-            全機能込みで、この価格はサロンカルテだけ。
-          </p>
-        </div>
+        <ScrollFadeIn>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              他サービスとの比較
+            </h2>
+            <p className="text-text-light text-lg">
+              全機能込みで、この価格はサロンカルテだけ。
+            </p>
+          </div>
+        </ScrollFadeIn>
 
+        <ScrollFadeIn delay={100}>
         <div className="overflow-x-auto -mx-4 px-4">
           <table className="w-full min-w-[600px] border-collapse">
             <thead>
@@ -88,6 +93,7 @@ export function ComparisonSection() {
             </tbody>
           </table>
         </div>
+        </ScrollFadeIn>
 
         <p className="text-xs text-text-light mt-4 text-center">
           ※ 2026年3月時点の一般的な価格帯での比較です。

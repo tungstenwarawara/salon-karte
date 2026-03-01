@@ -1,5 +1,7 @@
 /** FAQ セクション — details/summary アコーディオン + JSON-LD */
 
+import { ScrollFadeIn } from "./scroll-fade-in";
+
 const FAQ_ITEMS = [
   {
     q: "スマホだけで使えますか？",
@@ -39,18 +41,19 @@ export function FaqSection() {
   return (
     <section className="py-16 md:py-24 bg-white">
       <div className="max-w-3xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            よくあるご質問
-          </h2>
-        </div>
+        <ScrollFadeIn>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              よくあるご質問
+            </h2>
+          </div>
+        </ScrollFadeIn>
 
         <div className="space-y-3">
-          {FAQ_ITEMS.map((item) => (
-            <details
-              key={item.q}
-              className="group bg-background rounded-2xl border border-border/50 overflow-hidden"
-            >
+          {FAQ_ITEMS.map((item, i) => (
+            <ScrollFadeIn key={item.q} delay={i * 50}>
+              <details className="group bg-background rounded-2xl border border-border/50 overflow-hidden">
+
               <summary className="flex items-center justify-between gap-4 cursor-pointer p-5 font-medium text-sm md:text-base list-none min-h-[56px] hover:bg-accent/5 transition-colors">
                 {item.q}
                 <svg
@@ -66,7 +69,8 @@ export function FaqSection() {
               <div className="px-5 pb-5 text-sm text-text-light leading-relaxed border-t border-border/50 pt-4">
                 {item.a}
               </div>
-            </details>
+              </details>
+            </ScrollFadeIn>
           ))}
         </div>
       </div>
