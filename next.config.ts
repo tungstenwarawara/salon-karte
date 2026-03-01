@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // App Router のページロードトレーシング用
+  experimental: {
+    clientTraceMetadata: ["sentry-trace", "baggage"],
+  },
+
   async headers() {
     return [
       {
@@ -51,14 +57,15 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               // Next.js は inline script / eval を使うため unsafe-inline, unsafe-eval が必要
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              // Vercel Analytics のスクリプト読み込み用に va.vercel-scripts.com を許可
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
               "style-src 'self' 'unsafe-inline'",
               // 画像: 自サイト + Supabase Storage (署名付きURL) + blob (プレビュー)
               "img-src 'self' blob: data: https://*.supabase.co https://*.line-scdn.net",
               // フォント: 自サイトのみ
               "font-src 'self'",
-              // API接続先: 自サイト + Supabase
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+              // API接続先: 自サイト + Supabase + Sentry エラー送信（US リージョン含む）
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
               // フレーム埋め込み禁止
               "frame-ancestors 'none'",
               // フォーム送信先: 自サイトのみ
@@ -73,4 +80,19 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // ソースマップ送信（Vercel ビルド時に SENTRY_AUTH_TOKEN 必要）
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+
+  // ビルドログを抑制
+  silent: true,
+
+  // ソースマップ: アップロード後に削除（クライアントに公開しない）
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+
+  // 本番バンドルからデバッグログを除去
+  disableLogger: true,
+});

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { after } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyLineSignature } from "@/lib/line/webhook-verify";
 import { decrypt } from "@/lib/line/crypto";
@@ -50,6 +51,7 @@ export async function POST(
       );
     } catch (err) {
       console.error("LINE Webhookイベント処理エラー:", err);
+      Sentry.captureException(err, { tags: { feature: "line-webhook" }, extra: { salon_id: config.salon_id } });
     }
   });
 

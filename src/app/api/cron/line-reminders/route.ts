@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { decrypt } from "@/lib/line/crypto";
 import { sendPushMessage } from "@/lib/line/api";
@@ -10,6 +11,7 @@ export async function POST(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
     console.error("CRON_SECRET が設定されていません");
+    Sentry.captureMessage("CRON_SECRET が設定されていません", { level: "error", tags: { feature: "cron" } });
     return NextResponse.json({ error: "サーバー設定エラー" }, { status: 500 });
   }
   const authHeader = request.headers.get("authorization");
@@ -128,6 +130,7 @@ export async function POST(request: Request) {
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "送信失敗";
         console.error(`LINE リマインド送信エラー (salon: ${config.salon_id}):`, errorMessage);
+        Sentry.captureException(err, { tags: { feature: "line-reminder" }, extra: { salon_id: config.salon_id } });
 
         await adminClient.from("line_message_logs").insert({
           salon_id: config.salon_id,

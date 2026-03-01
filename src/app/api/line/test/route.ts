@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { decrypt } from "@/lib/line/crypto";
 import { sendPushMessage } from "@/lib/line/api";
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "送信に失敗しました";
     console.error("LINE テスト送信エラー:", errorMessage);
+    Sentry.captureException(err, { tags: { feature: "line-test" } });
 
     await supabase.from("line_message_logs").insert({
       salon_id: salon.id,

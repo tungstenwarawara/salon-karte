@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 
 // POST: LINEユーザーと顧客を手動紐付け
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
 
   if (error) {
     console.error("LINE紐付けエラー:", error.message);
+    Sentry.captureException(new Error(`LINE紐付けエラー: ${error.message}`), { tags: { feature: "line-link" } });
     return NextResponse.json({ error: `紐付けに失敗しました: ${error.message}` }, { status: 500 });
   }
 

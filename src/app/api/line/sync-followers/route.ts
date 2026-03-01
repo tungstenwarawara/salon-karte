@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { decrypt } from "@/lib/line/crypto";
 import { getFollowerIds, getLineProfile } from "@/lib/line/api";
@@ -30,6 +31,7 @@ export async function POST() {
   } catch (err) {
     const message = err instanceof Error ? err.message : "不明なエラー";
     console.error("フォロワーID取得エラー:", message);
+    Sentry.captureException(err, { tags: { feature: "line-sync" } });
 
     // 無料アカウントではフォロワーID取得APIが利用不可
     if (message.includes("403")) {

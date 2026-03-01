@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { encrypt } from "@/lib/line/crypto";
 
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
 
   if (error) {
     console.error("LINE設定保存エラー:", error.message);
+    Sentry.captureException(new Error(`LINE設定保存エラー: ${error.message}`), { tags: { feature: "line-config" } });
     return NextResponse.json({ error: `保存に失敗しました: ${error.message}` }, { status: 500 });
   }
 
@@ -70,6 +72,7 @@ export async function PATCH(request: Request) {
 
   if (error) {
     console.error("LINE設定更新エラー:", error.message);
+    Sentry.captureException(new Error(`LINE設定更新エラー: ${error.message}`), { tags: { feature: "line-config" } });
     return NextResponse.json({ error: `更新に失敗しました: ${error.message}` }, { status: 500 });
   }
 
@@ -90,6 +93,7 @@ export async function DELETE() {
 
   if (error) {
     console.error("LINE設定削除エラー:", error.message);
+    Sentry.captureException(new Error(`LINE設定削除エラー: ${error.message}`), { tags: { feature: "line-config" } });
     return NextResponse.json({ error: `削除に失敗しました: ${error.message}` }, { status: 500 });
   }
 

@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 
@@ -44,6 +45,7 @@ export async function inviteStaff(
 
   if (inviteError || !invitedUser.user) {
     console.error("招待メール送信エラー:", inviteError);
+    Sentry.captureException(inviteError ?? new Error("招待メール送信失敗"), { tags: { feature: "staff-invite" } });
     return { error: `招待メールの送信に失敗しました: ${inviteError?.message || "不明なエラー"}` };
   }
 
@@ -58,6 +60,7 @@ export async function inviteStaff(
 
   if (insertError) {
     console.error("staff レコード作成エラー:", insertError);
+    Sentry.captureException(new Error(`staff作成エラー: ${insertError.message}`), { tags: { feature: "staff-invite" } });
     return { error: `スタッフの登録に失敗しました: ${insertError.message}` };
   }
 
@@ -111,6 +114,7 @@ export async function resendInvite(staffId: string) {
 
     if (updateError) {
       console.error("パスワードリセットエラー:", updateError);
+      Sentry.captureException(updateError, { tags: { feature: "staff-resend" } });
       return { error: `招待メールの再送に失敗しました: ${updateError.message}` };
     }
 
@@ -122,6 +126,7 @@ export async function resendInvite(staffId: string) {
 
     if (resetError) {
       console.error("招待メール再送エラー:", resetError);
+      Sentry.captureException(resetError, { tags: { feature: "staff-resend" } });
       return { error: `招待メールの再送に失敗しました: ${resetError.message}` };
     }
   } else {
@@ -133,6 +138,7 @@ export async function resendInvite(staffId: string) {
 
     if (inviteError) {
       console.error("招待メール再送エラー:", inviteError);
+      Sentry.captureException(inviteError, { tags: { feature: "staff-resend" } });
       return { error: `招待メールの再送に失敗しました: ${inviteError.message}` };
     }
 
@@ -189,6 +195,7 @@ export async function deleteStaff(staffId: string) {
 
     if (authDeleteError) {
       console.error("auth.users 削除エラー:", authDeleteError);
+      Sentry.captureException(authDeleteError, { tags: { feature: "staff-delete" } });
       return { error: `アカウント削除に失敗しました: ${authDeleteError.message}` };
     }
   }
@@ -209,6 +216,7 @@ export async function deleteStaff(staffId: string) {
 
   if (deleteError) {
     console.error("staff 削除エラー:", deleteError);
+    Sentry.captureException(new Error(`staff削除エラー: ${deleteError.message}`), { tags: { feature: "staff-delete" } });
     return { error: `削除に失敗しました: ${deleteError.message}` };
   }
 
@@ -263,6 +271,7 @@ export async function updateStaff(
 
   if (updateError) {
     console.error("staff 更新エラー:", updateError);
+    Sentry.captureException(new Error(`staff更新エラー: ${updateError.message}`), { tags: { feature: "staff-update" } });
     return { error: `更新に失敗しました: ${updateError.message}` };
   }
 
@@ -308,6 +317,7 @@ export async function toggleStaffActive(staffId: string, isActive: boolean) {
 
   if (updateError) {
     console.error("staff 状態更新エラー:", updateError);
+    Sentry.captureException(new Error(`staff状態更新エラー: ${updateError.message}`), { tags: { feature: "staff-toggle" } });
     return { error: `状態変更に失敗しました: ${updateError.message}` };
   }
 

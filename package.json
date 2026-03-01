@@ -12,9 +12,12 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.40.0",
+    "@supabase/sentry-js-integration": "^0.3.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.95.3",
     "@types/qrcode": "^1.5.6",
+    "@vercel/analytics": "^1.6.1",
     "jszip": "^3.10.1",
     "next": "15.5.12",
     "qrcode": "^1.5.4",
