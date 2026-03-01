@@ -9,12 +9,14 @@ export default async function ExportPage() {
   if (!salon) redirect("/setup");
 
   // 件数のみ取得（head: true でデータ転送ゼロ）
-  const [customersRes, recordsRes, purchasesRes, appointmentsRes, ticketsRes] = await Promise.all([
+  const [customersRes, recordsRes, purchasesRes, appointmentsRes, ticketsRes, menusRes, productsRes] = await Promise.all([
     supabase.from("customers").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
     supabase.from("treatment_records").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
     supabase.from("purchases").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
     supabase.from("appointments").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
     supabase.from("course_tickets").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
+    supabase.from("treatment_menus").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
+    supabase.from("products").select("id", { count: "exact", head: true }).eq("salon_id", salon.id),
   ]);
 
   const counts = {
@@ -23,6 +25,8 @@ export default async function ExportPage() {
     purchases: purchasesRes.count ?? 0,
     appointments: appointmentsRes.count ?? 0,
     courseTickets: ticketsRes.count ?? 0,
+    treatmentMenus: menusRes.count ?? 0,
+    products: productsRes.count ?? 0,
   };
 
   return (

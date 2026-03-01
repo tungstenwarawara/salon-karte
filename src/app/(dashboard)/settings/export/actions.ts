@@ -159,6 +159,45 @@ export async function exportAppointments(): Promise<string> {
   return generateCsv(headers, rows);
 }
 
+/** 施術メニューマスタCSV */
+export async function exportTreatmentMenus(): Promise<string> {
+  const { salon, supabase } = await getAuthAndSalon();
+  if (!salon) throw new Error("サロン未設定");
+
+  const { data } = await supabase
+    .from("treatment_menus")
+    .select("name, category, duration_minutes, price, is_active, created_at")
+    .eq("salon_id", salon.id)
+    .order("name");
+
+  const headers = ["メニュー名", "カテゴリー", "施術時間(分)", "金額", "ステータス", "登録日"];
+  const rows = (data ?? []).map((m) => [
+    m.name, m.category, m.duration_minutes ?? "", m.price ?? "",
+    m.is_active ? "有効" : "無効", m.created_at?.slice(0, 10),
+  ]);
+  return generateCsv(headers, rows);
+}
+
+/** 商品マスタCSV */
+export async function exportProducts(): Promise<string> {
+  const { salon, supabase } = await getAuthAndSalon();
+  if (!salon) throw new Error("サロン未設定");
+
+  const { data } = await supabase
+    .from("products")
+    .select("name, category, base_sell_price, base_cost_price, reorder_point, is_active, memo, created_at")
+    .eq("salon_id", salon.id)
+    .order("name");
+
+  const headers = ["商品名", "カテゴリー", "販売価格", "仕入価格", "発注点", "ステータス", "メモ", "登録日"];
+  const rows = (data ?? []).map((p) => [
+    p.name, p.category, p.base_sell_price, p.base_cost_price,
+    p.reorder_point, p.is_active ? "有効" : "無効",
+    p.memo, p.created_at?.slice(0, 10),
+  ]);
+  return generateCsv(headers, rows);
+}
+
 /** 回数券一覧CSV */
 export async function exportCourseTickets(): Promise<string> {
   const { salon, supabase } = await getAuthAndSalon();

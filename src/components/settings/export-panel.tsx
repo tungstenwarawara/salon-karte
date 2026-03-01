@@ -9,6 +9,8 @@ import {
   exportPurchases,
   exportAppointments,
   exportCourseTickets,
+  exportTreatmentMenus,
+  exportProducts,
 } from "@/app/(dashboard)/settings/export/actions";
 
 type Counts = {
@@ -17,6 +19,8 @@ type Counts = {
   purchases: number;
   appointments: number;
   courseTickets: number;
+  treatmentMenus: number;
+  products: number;
 };
 
 const EXPORT_ITEMS = [
@@ -25,6 +29,8 @@ const EXPORT_ITEMS = [
   { key: "purchases", label: "物販記録", action: exportPurchases, filePrefix: "物販記録" },
   { key: "appointments", label: "予約一覧", action: exportAppointments, filePrefix: "予約一覧" },
   { key: "courseTickets", label: "回数券", action: exportCourseTickets, filePrefix: "回数券一覧" },
+  { key: "treatmentMenus", label: "施術メニュー", action: exportTreatmentMenus, filePrefix: "施術メニュー" },
+  { key: "products", label: "商品マスタ", action: exportProducts, filePrefix: "商品マスタ" },
 ] as const;
 
 export function ExportPanel({ counts }: { counts: Counts }) {
