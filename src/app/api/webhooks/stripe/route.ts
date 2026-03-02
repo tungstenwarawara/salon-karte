@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type Stripe from "stripe";
 
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    event = getStripe().webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err) {
     console.error("Webhook署名検証失敗:", err);
     return NextResponse.json({ error: "署名検証失敗" }, { status: 400 });
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
           : session.subscription.id;
 
       // サブスクリプション詳細を取得（items展開で current_period_end を取得）
-      const sub = await stripe.subscriptions.retrieve(subscriptionId, {
+      const sub = await getStripe().subscriptions.retrieve(subscriptionId, {
         expand: ["items.data"],
       });
       const periodEnd = sub.items.data[0]?.current_period_end;

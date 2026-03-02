@@ -42,7 +42,7 @@ export default function BillingPage() {
           .from("subscriptions")
           .select("status, current_period_end")
           .eq("salon_id", salonId)
-          .single(),
+          .maybeSingle(),
       ]);
 
       if (salonRes.data) {

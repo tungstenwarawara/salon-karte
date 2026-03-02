@@ -1,10 +1,19 @@
 import Stripe from "stripe";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("STRIPE_SECRET_KEY が設定されていません");
-}
+// 遅延初期化: next build 時にはAPIルートのインポートだけで
+// STRIPE_SECRET_KEY が未設定でもビルドが通るようにする
+let _stripe: Stripe | null = null;
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2026-02-25.clover",
-  typescript: true,
-});
+export function getStripe(): Stripe {
+  if (!_stripe) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      throw new Error("STRIPE_SECRET_KEY が設定されていません");
+    }
+    _stripe = new Stripe(key, {
+      apiVersion: "2026-02-25.clover",
+      typescript: true,
+    });
+  }
+  return _stripe;
+}
