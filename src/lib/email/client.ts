@@ -13,5 +13,5 @@ export function getResendClient(): Resend | null {
 
 // 送信元アドレス（環境変数 or デフォルト）
 export function getFromAddress(): string {
-  return process.env.EMAIL_FROM ?? "サロンカルテ <noreply@salonkarte.com>";
+  return process.env.EMAIL_FROM ?? "サロンカルテ <support@salonkarte.com>";
 }
