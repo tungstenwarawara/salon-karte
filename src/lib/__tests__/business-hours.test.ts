@@ -4,13 +4,14 @@ import {
   minutesToTime,
   toDateString,
   isIrregularHoliday,
+  hasHourOverride,
   getScheduleForDate,
   isBusinessDay,
   isWithinBusinessHours,
   generateTimeOptions,
   DEFAULT_BUSINESS_HOURS,
 } from "@/lib/business-hours";
-import type { BusinessHours } from "@/types/database";
+import type { BusinessHours, HourOverrides } from "@/types/database";
 
 // テスト用カスタム営業時間
 const customHours: BusinessHours = {
@@ -169,6 +170,82 @@ describe("isWithinBusinessHours", () => {
 
   it("境界値: ちょうど営業開始〜終了", () => {
     expect(isWithinBusinessHours(customHours, "2025-01-13", "09:00", "18:00")).toBe(true);
+  });
+});
+
+// テスト用営業時間上書き
+const overrides: HourOverrides = {
+  "2025-01-13": { is_open: true, open_time: "09:00", close_time: "15:00" }, // 月曜を時短
+  "2025-01-19": { is_open: true, open_time: "10:00", close_time: "14:00" }, // 日曜（定休日）を臨時営業
+};
+
+describe("hasHourOverride", () => {
+  it("上書きがある日付はtrue", () => {
+    expect(hasHourOverride(overrides, "2025-01-13")).toBe(true);
+  });
+
+  it("上書きがない日付はfalse", () => {
+    expect(hasHourOverride(overrides, "2025-01-14")).toBe(false);
+  });
+
+  it("null/undefinedはfalse", () => {
+    expect(hasHourOverride(null, "2025-01-13")).toBe(false);
+    expect(hasHourOverride(undefined, "2025-01-13")).toBe(false);
+  });
+});
+
+describe("getScheduleForDate（営業時間上書き）", () => {
+  it("上書きがある日は上書きスケジュールを返す", () => {
+    const schedule = getScheduleForDate(customHours, "2025-01-13", null, overrides);
+    expect(schedule.is_open).toBe(true);
+    expect(schedule.open_time).toBe("09:00");
+    expect(schedule.close_time).toBe("15:00"); // 通常18:00 → 15:00に時短
+  });
+
+  it("定休日でも上書きがあれば営業扱い", () => {
+    // 2025-01-19 = 日曜（customHoursでは定休）
+    const schedule = getScheduleForDate(customHours, "2025-01-19", null, overrides);
+    expect(schedule.is_open).toBe(true);
+    expect(schedule.close_time).toBe("14:00");
+  });
+
+  it("上書きは不定休より優先される", () => {
+    const holidays = ["2025-01-13"]; // 不定休に設定
+    // 上書きもある → 上書きが優先
+    const schedule = getScheduleForDate(customHours, "2025-01-13", holidays, overrides);
+    expect(schedule.is_open).toBe(true);
+    expect(schedule.close_time).toBe("15:00");
+  });
+
+  it("上書きがない日は通常通り", () => {
+    const schedule = getScheduleForDate(customHours, "2025-01-14", null, overrides);
+    expect(schedule.is_open).toBe(true);
+    expect(schedule.open_time).toBe("09:00");
+    expect(schedule.close_time).toBe("18:00"); // 火曜の通常時間
+  });
+});
+
+describe("isBusinessDay（営業時間上書き）", () => {
+  it("定休日でも上書きで営業日にできる", () => {
+    expect(isBusinessDay(customHours, "2025-01-19", null, overrides)).toBe(true);
+  });
+
+  it("上書きでis_open=falseにすれば休業", () => {
+    const closedOverride: HourOverrides = {
+      "2025-01-13": { is_open: false, open_time: "09:00", close_time: "18:00" },
+    };
+    expect(isBusinessDay(customHours, "2025-01-13", null, closedOverride)).toBe(false);
+  });
+});
+
+describe("isWithinBusinessHours（営業時間上書き）", () => {
+  it("上書き時間内はtrue", () => {
+    expect(isWithinBusinessHours(customHours, "2025-01-13", "09:00", "15:00", null, overrides)).toBe(true);
+  });
+
+  it("上書き時間外はfalse", () => {
+    // 通常は18:00まで営業だが上書きで15:00閉店
+    expect(isWithinBusinessHours(customHours, "2025-01-13", "09:00", "16:00", null, overrides)).toBe(false);
   });
 });
 

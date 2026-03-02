@@ -36,7 +36,7 @@ export async function GET(
   // サロン情報取得（まずslugのみで検索し、存在するが無効な場合を区別）
   const { data: salon, error: salonError } = await admin
     .from("salons")
-    .select("id, name, booking_slug, booking_enabled, business_hours, salon_holidays, booking_settings")
+    .select("id, name, booking_slug, booking_enabled, business_hours, salon_holidays, hour_overrides, booking_settings")
     .eq("booking_slug", slug)
     .single();
 
@@ -68,6 +68,7 @@ export async function GET(
   const slots = calculateAvailableSlots({
     businessHours: salon.business_hours,
     salonHolidays: salon.salon_holidays,
+    hourOverrides: salon.hour_overrides,
     bookingSettings: salon.booking_settings,
     date,
     existingAppointments: appointments ?? [],
@@ -82,5 +83,6 @@ export async function GET(
     businessHours: salon.business_hours,
     bookingSettings: salon.booking_settings,
     salonHolidays: salon.salon_holidays,
+    hourOverrides: salon.hour_overrides,
   });
 }

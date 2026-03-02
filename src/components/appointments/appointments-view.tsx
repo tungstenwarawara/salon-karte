@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import type { BusinessHours } from "@/types/database";
-import { getScheduleForDate, isBusinessDay, isIrregularHoliday } from "@/lib/business-hours";
+import type { BusinessHours, HourOverrides } from "@/types/database";
+import { getScheduleForDate, isBusinessDay, isIrregularHoliday, hasHourOverride } from "@/lib/business-hours";
 import { AppointmentCard } from "@/components/appointments/appointment-card";
 import type { AppointmentWithCustomer } from "@/components/appointments/appointment-card";
 import { AppointmentsCalendar, toDateStr, DAY_NAMES } from "@/components/appointments/appointments-calendar";
@@ -18,10 +18,11 @@ type Props = {
   initialAppointments: AppointmentWithCustomer[];
   initialBusinessHours: BusinessHours | null;
   initialSalonHolidays: string[] | null;
+  initialHourOverrides: HourOverrides | null;
 };
 
 /** 予約管理のClient Component（初期データはServerから注入） */
-export function AppointmentsView({ salonId, initialAppointments, initialBusinessHours, initialSalonHolidays }: Props) {
+export function AppointmentsView({ salonId, initialAppointments, initialBusinessHours, initialSalonHolidays, initialHourOverrides }: Props) {
   const [appointments, setAppointments] = useState(initialAppointments);
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month");
@@ -29,6 +30,7 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
   const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
   const businessHours = initialBusinessHours;
   const salonHolidays = initialSalonHolidays;
+  const hourOverrides = initialHourOverrides;
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const loadAppointments = useCallback(async (date: Date, mode: "day" | "week" | "month") => {
@@ -94,14 +96,15 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
 
       {/* 営業時間表示（日別ビュー） */}
       {viewMode === "day" && businessHours && (() => {
-        const schedule = getScheduleForDate(businessHours, selectedDate, salonHolidays);
+        const schedule = getScheduleForDate(businessHours, selectedDate, salonHolidays, hourOverrides);
         if (!schedule.is_open) return <p className="text-xs text-text-light text-center">{isIrregularHoliday(salonHolidays, selectedDate) ? "臨時休業日" : "休業日"}</p>;
-        return <p className="text-xs text-text-light text-center">営業時間: {schedule.open_time} 〜 {schedule.close_time}</p>;
+        const isOverridden = hasHourOverride(hourOverrides, selectedDate);
+        return <p className="text-xs text-text-light text-center">営業時間: {schedule.open_time} 〜 {schedule.close_time}{isOverridden ? "（臨時変更）" : ""}</p>;
       })()}
 
       {/* コンテンツ */}
       {viewMode === "week" ? (
-        <WeekViewContainer salonId={salonId} selectedDate={selectedDate} businessHours={businessHours} salonHolidays={salonHolidays} />
+        <WeekViewContainer salonId={salonId} selectedDate={selectedDate} businessHours={businessHours} salonHolidays={salonHolidays} hourOverrides={hourOverrides} />
       ) : loading ? (
         <div className="text-center text-text-light py-8">読み込み中...</div>
       ) : viewMode === "day" ? (
@@ -113,7 +116,7 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
           </div>
         ) : (
           <div className="bg-surface border border-border rounded-xl p-6 text-center text-text-light">
-            {businessHours && !isBusinessDay(businessHours, selectedDate, salonHolidays) ? (
+            {businessHours && !isBusinessDay(businessHours, selectedDate, salonHolidays, hourOverrides) ? (
               <div className="space-y-1">
                 <p className="font-medium">{isIrregularHoliday(salonHolidays, selectedDate) ? "臨時休業日" : "休業日"}</p>
                 <p className="text-xs">{isIrregularHoliday(salonHolidays, selectedDate) ? "この日は臨時休業日に設定されています" : "この曜日は休業日に設定されています"}</p>
@@ -123,9 +126,9 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
         )
       ) : (
         <div className="space-y-3">
-          <AppointmentsCalendar selectedDate={selectedDate} appointments={appointments} businessHours={businessHours} salonHolidays={salonHolidays} selectedDay={selectedDay} onSelectDay={setSelectedDay} />
+          <AppointmentsCalendar selectedDate={selectedDate} appointments={appointments} businessHours={businessHours} salonHolidays={salonHolidays} hourOverrides={hourOverrides} selectedDay={selectedDay} onSelectDay={setSelectedDay} />
           {selectedDay !== null && selectedDay <= new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate() && (
-            <AppointmentsDayPanel selectedDate={selectedDate} selectedDay={selectedDay} appointments={appointments} businessHours={businessHours} salonHolidays={salonHolidays} />
+            <AppointmentsDayPanel selectedDate={selectedDate} selectedDay={selectedDay} appointments={appointments} businessHours={businessHours} salonHolidays={salonHolidays} hourOverrides={hourOverrides} />
           )}
         </div>
       )}

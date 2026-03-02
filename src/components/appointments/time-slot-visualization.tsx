@@ -5,12 +5,14 @@ import {
   getScheduleForDate,
   timeToMinutes,
 } from "@/lib/business-hours";
+import type { HourOverrides } from "@/types/database";
 import type { BusinessHours, DayAppointment, BookingSettings } from "./types";
 
 type Props = {
   appointmentDate: string;
   businessHours: BusinessHours;
   salonHolidays: string[] | null;
+  hourOverrides?: HourOverrides | null;
   dayAppointments: DayAppointment[];
   /** 選択中の開始時間（分） */
   selectedStartMin: number | null;
@@ -36,6 +38,7 @@ export function TimeSlotVisualization({
   appointmentDate,
   businessHours,
   salonHolidays,
+  hourOverrides,
   dayAppointments,
   selectedStartMin,
   menuDuration,
@@ -45,7 +48,7 @@ export function TimeSlotVisualization({
 }: Props) {
   const [interval, setInterval] = useState<30 | 15>(30);
 
-  const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays);
+  const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays, hourOverrides);
   if (!schedule.is_open) return null;
 
   const openMin = timeToMinutes(schedule.open_time);

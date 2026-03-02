@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { BusinessHours, BookingSettings } from "@/types/database";
+import type { BusinessHours, BookingSettings, HourOverrides } from "@/types/database";
 import { BookingMenuSelector } from "./booking-menu-selector";
 import { BookingDatePicker } from "./booking-date-picker";
 import { BookingCustomerForm } from "./booking-customer-form";
@@ -22,6 +22,7 @@ export function BookingPageClient({ slug }: Props) {
   const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
   const [bookingSettings, setBookingSettings] = useState<BookingSettings | null>(null);
   const [salonHolidays, setSalonHolidays] = useState<string[] | null>(null);
+  const [hourOverrides, setHourOverrides] = useState<HourOverrides | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [disabled, setDisabled] = useState(false);
@@ -57,6 +58,7 @@ export function BookingPageClient({ slug }: Props) {
         setBusinessHours(data.businessHours ?? null);
         setBookingSettings(data.bookingSettings ?? null);
         setSalonHolidays(data.salonHolidays ?? null);
+        setHourOverrides(data.hourOverrides ?? null);
       } catch { setNotFound(true); }
       setPageLoading(false);
     };
@@ -178,7 +180,7 @@ export function BookingPageClient({ slug }: Props) {
       {step === 2 && (
         <BookingDatePicker slug={slug} selectedDate={selectedDate} selectedTime={selectedTime} totalDuration={totalDuration}
           onDateChange={(d) => { setSelectedDate(d); setSelectedTime(""); }} onTimeChange={setSelectedTime}
-          businessHours={businessHours} salonHolidays={salonHolidays} />
+          businessHours={businessHours} salonHolidays={salonHolidays} hourOverrides={hourOverrides} />
       )}
       {step === 3 && (
         <BookingCustomerForm lastName={lastName} firstName={firstName} email={email} phone={phone} memo={memo} hp={hp}

@@ -97,7 +97,7 @@ export default function SettingsPage() {
       )}
       <SettingsLinkCard href="/settings/business-hours" title="営業時間設定" description="曜日ごとの営業時間・休業日の設定" />
       <SettingsLinkCard href="/settings/booking-rules" title="予約受付設定" description="当日予約の可否・予約締切時間の設定" />
-      <SettingsLinkCard href="/settings/holidays" title="不定休設定" description="臨時休業日の設定" />
+      <SettingsLinkCard href="/settings/holidays" title="不定休・営業時間変更" description="臨時休業日・日別の営業時間変更" />
       <SettingsLinkCard href="/settings/menus" title="施術メニュー管理" description="施術メニューの追加・編集" />
       <SettingsLinkCard href="/settings/counseling-template" title="カウンセリングシート設定" description="質問項目・注意事項・同意書のカスタマイズ" />
       <SettingsLinkCard href="/settings/web-booking" title="Web予約ページ" description="お客様向けのオンライン予約ページを公開" />

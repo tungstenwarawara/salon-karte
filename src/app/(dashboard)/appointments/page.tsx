@@ -35,6 +35,7 @@ export default async function AppointmentsPage() {
         initialAppointments={appointments ?? []}
         initialBusinessHours={salon.business_hours}
         initialSalonHolidays={salon.salon_holidays}
+        initialHourOverrides={salon.hour_overrides}
       />
     </div>
   );

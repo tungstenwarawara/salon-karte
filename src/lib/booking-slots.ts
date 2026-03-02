@@ -2,7 +2,7 @@
  * Web予約用: 空き時間スロット計算ユーティリティ
  * time-slot-visualization.tsx のロジックをサーバーサイドで再利用可能な形に抽出
  */
-import type { BusinessHours, BookingSettings } from "@/types/database";
+import type { BusinessHours, BookingSettings, HourOverrides } from "@/types/database";
 import { getScheduleForDate, timeToMinutes, minutesToTime } from "@/lib/business-hours";
 
 export type SlotUnavailableReason = "occupied" | "lead_time" | "exceeds_close" | "overlap_during";
@@ -33,6 +33,7 @@ export function calculateAvailableSlots({
   businessHours,
   salonHolidays,
   bookingSettings,
+  hourOverrides,
   date,
   existingAppointments,
   requestedDuration = 0,
@@ -41,12 +42,13 @@ export function calculateAvailableSlots({
   businessHours: BusinessHours | null;
   salonHolidays: string[] | null;
   bookingSettings: BookingSettings | null;
+  hourOverrides?: HourOverrides | null;
   date: string;
   existingAppointments: ExistingAppointment[];
   requestedDuration?: number;
   interval?: number;
 }): SlotInfo[] {
-  const schedule = getScheduleForDate(businessHours, date, salonHolidays);
+  const schedule = getScheduleForDate(businessHours, date, salonHolidays, hourOverrides);
   if (!schedule.is_open) return [];
 
   const openMin = timeToMinutes(schedule.open_time);

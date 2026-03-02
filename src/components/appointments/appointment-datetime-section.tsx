@@ -6,6 +6,7 @@ import { TimePicker } from "@/components/appointments/time-picker";
 import { MiniCalendar } from "@/components/appointments/mini-calendar";
 import { isBusinessDay, isIrregularHoliday, getScheduleForDate, timeToMinutes } from "@/lib/business-hours";
 import { getOutsideHoursWarning } from "@/components/appointments/business-hours-warning";
+import type { HourOverrides } from "@/types/database";
 import type { DayAppointment, BusinessHours, BookingSettings } from "@/components/appointments/types";
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
   onDateChange: (date: string) => void;
   businessHours: BusinessHours | null;
   salonHolidays: string[] | null;
+  hourOverrides?: HourOverrides | null;
   dayAppointments: DayAppointment[];
   startHour: string;
   startMinute: string;
@@ -41,7 +43,7 @@ type Props = {
 /** 予約フォームの日付・時間選択セクション（新規・編集共用） */
 export function AppointmentDateTimeSection({
   appointmentDate, onDateChange,
-  businessHours, salonHolidays, dayAppointments,
+  businessHours, salonHolidays, hourOverrides, dayAppointments,
   startHour, startMinute, endHour, endMinute,
   isEndTimeManual, selectedMenuIds, menuDuration,
   onSlotClick, onStartHourChange, onStartMinuteChange,
@@ -56,7 +58,7 @@ export function AppointmentDateTimeSection({
     : dayAppointments;
 
   const isClosedDay = businessHours
-    ? !isBusinessDay(businessHours, appointmentDate, salonHolidays)
+    ? !isBusinessDay(businessHours, appointmentDate, salonHolidays, hourOverrides)
     : false;
   const isIrregular = isIrregularHoliday(salonHolidays, appointmentDate);
 
@@ -67,7 +69,7 @@ export function AppointmentDateTimeSection({
   // 営業時間の範囲（TimePickerのグレーアウト用）
   const bhRange = (() => {
     if (!businessHours || isClosedDay) return null;
-    const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays);
+    const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays, hourOverrides);
     if (!schedule.is_open) return null;
     return {
       openHour: Math.floor(timeToMinutes(schedule.open_time) / 60),
@@ -78,7 +80,7 @@ export function AppointmentDateTimeSection({
   // 開始時間の営業時間外警告（手動入力時のみ）
   const startTimeWarning = (() => {
     if (!businessHours || isClosedDay) return null;
-    const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays);
+    const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays, hourOverrides);
     if (!schedule.is_open) return null;
     const startStr = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
     if (startStr < schedule.open_time) {
@@ -100,6 +102,7 @@ export function AppointmentDateTimeSection({
           onDateChange={onDateChange}
           businessHours={businessHours}
           salonHolidays={salonHolidays}
+          hourOverrides={hourOverrides}
           appointmentCounts={appointmentCounts}
           onMonthChange={onMonthChange}
           bookingSettings={bookingSettings}
@@ -145,6 +148,7 @@ export function AppointmentDateTimeSection({
             appointmentDate={appointmentDate}
             businessHours={businessHours}
             salonHolidays={salonHolidays}
+            hourOverrides={hourOverrides}
             dayAppointments={filteredAppointments}
             selectedStartMin={selectedStartMin}
             menuDuration={menuDuration}
@@ -169,7 +173,7 @@ export function AppointmentDateTimeSection({
                   onResetAuto: onResetAutoEndTime,
                 }}
                 warningMessage={getOutsideHoursWarning({
-                  appointmentDate, businessHours, salonHolidays,
+                  appointmentDate, businessHours, salonHolidays, hourOverrides,
                   startHour, startMinute, endHour, endMinute,
                 })}
                 businessHoursRange={bhRange}

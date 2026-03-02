@@ -1,6 +1,6 @@
 "use client";
 
-import type { BusinessHours } from "@/types/database";
+import type { BusinessHours, HourOverrides } from "@/types/database";
 import { isBusinessDay, isIrregularHoliday } from "@/lib/business-hours";
 import type { AppointmentWithCustomer } from "@/components/appointments/appointment-card";
 
@@ -15,12 +15,13 @@ type Props = {
   appointments: AppointmentWithCustomer[];
   businessHours: BusinessHours | null;
   salonHolidays: string[] | null;
+  hourOverrides?: HourOverrides | null;
   selectedDay: number | null;
   onSelectDay: (day: number | null) => void;
 };
 
 /** 月カレンダーグリッド */
-export function AppointmentsCalendar({ selectedDate, appointments, businessHours, salonHolidays, selectedDay, onSelectDay }: Props) {
+export function AppointmentsCalendar({ selectedDate, appointments, businessHours, salonHolidays, hourOverrides, selectedDay, onSelectDay }: Props) {
   const year = selectedDate.getFullYear();
   const month = selectedDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -61,7 +62,7 @@ export function AppointmentsCalendar({ selectedDate, appointments, businessHours
           const dayApts = appointmentsByDate[dateStr] ?? [];
           const activeCount = dayApts.filter((a) => a.status !== "cancelled").length;
           const dow = cellDate.getDay();
-          const isHoliday = businessHours && !isBusinessDay(businessHours, cellDate, salonHolidays);
+          const isHoliday = businessHours && !isBusinessDay(businessHours, cellDate, salonHolidays, hourOverrides);
           const isIrregular = isIrregularHoliday(salonHolidays, cellDate);
           const isSelected = selectedDay === day;
 
