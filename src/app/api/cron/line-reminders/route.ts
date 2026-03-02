@@ -4,8 +4,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { decrypt } from "@/lib/line/crypto";
 import { sendPushMessage } from "@/lib/line/api";
 import { buildReminderMessage } from "@/lib/line/messages";
+import { getResendClient, getFromAddress } from "@/lib/email/client";
+import { buildCustomerReminderEmail } from "@/lib/email/templates";
 
 // POST: 前日リマインド（Vercel Cron Job: 毎日 12:00 UTC = 21:00 JST）
+// LINE + メール の両チャネルで送信
 export async function POST(request: Request) {
   // CRON_SECRET検証（未設定時はリクエストを拒否）
   const cronSecret = process.env.CRON_SECRET;
@@ -27,124 +30,159 @@ export async function POST(request: Request) {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
 
-  // リマインドが有効なサロンを取得
-  const { data: configs } = await adminClient
-    .from("salon_line_configs")
-    .select("salon_id, channel_access_token_encrypted")
-    .eq("is_active", true)
-    .eq("reminder_enabled", true);
+  // 全サロンの明日の予約を取得（scheduled のみ）
+  const { data: appointments } = await adminClient
+    .from("appointments")
+    .select("id, salon_id, customer_id, appointment_date, start_time, staff_id, cancel_token")
+    .eq("appointment_date", tomorrowStr)
+    .eq("status", "scheduled");
 
-  if (!configs || configs.length === 0) {
-    return NextResponse.json({ sent: 0, failed: 0, message: "対象サロンなし" });
+  if (!appointments || appointments.length === 0) {
+    return NextResponse.json({ line: { sent: 0, failed: 0 }, email: { sent: 0, failed: 0 }, date: tomorrowStr });
   }
 
-  let totalSent = 0;
-  let totalFailed = 0;
+  // サロンIDリストを取得してサロン情報を一括取得
+  const salonIds = [...new Set(appointments.map((a) => a.salon_id))];
+  const { data: salons } = await adminClient
+    .from("salons")
+    .select("id, name, phone, booking_slug")
+    .in("id", salonIds);
 
-  for (const config of configs) {
-    // サロン名を取得
-    const { data: salon } = await adminClient
-      .from("salons")
-      .select("name")
-      .eq("id", config.salon_id)
-      .single();
+  const salonMap = new Map((salons ?? []).map((s) => [s.id, s]));
 
+  // LINE設定を一括取得
+  const { data: lineConfigs } = await adminClient
+    .from("salon_line_configs")
+    .select("salon_id, channel_access_token_encrypted, is_active, reminder_enabled")
+    .in("salon_id", salonIds);
+
+  const lineConfigMap = new Map((lineConfigs ?? []).map((c) => [c.salon_id, c]));
+
+  const stats = { line: { sent: 0, failed: 0 }, email: { sent: 0, failed: 0 } };
+
+  for (const apt of appointments) {
+    const salon = salonMap.get(apt.salon_id);
     if (!salon) continue;
 
-    // 明日の予約を取得（scheduled のみ）
-    const { data: appointments } = await adminClient
-      .from("appointments")
-      .select("id, customer_id, appointment_date, start_time, staff_id")
-      .eq("salon_id", config.salon_id)
-      .eq("appointment_date", tomorrowStr)
-      .eq("status", "scheduled");
+    // 顧客情報を取得
+    const { data: customer } = await adminClient
+      .from("customers")
+      .select("last_name, first_name, email")
+      .eq("id", apt.customer_id)
+      .eq("salon_id", apt.salon_id)
+      .single();
 
-    if (!appointments || appointments.length === 0) continue;
+    if (!customer) continue;
 
-    const accessToken = decrypt(config.channel_access_token_encrypted);
+    const customerName = `${customer.last_name}${customer.first_name}`;
 
-    for (const apt of appointments) {
-      // 顧客名を取得
-      const { data: customer } = await adminClient
-        .from("customers")
-        .select("last_name, first_name")
-        .eq("id", apt.customer_id)
-        .eq("salon_id", config.salon_id)
-        .single();
+    // メニュー名を取得
+    const { data: menus } = await adminClient
+      .from("appointment_menus")
+      .select("menu_name_snapshot")
+      .eq("appointment_id", apt.id)
+      .order("sort_order", { ascending: true });
 
-      if (!customer) continue;
+    const menuNames = (menus ?? []).map((m) => m.menu_name_snapshot);
 
-      // LINE紐付けを確認
+    // --- LINE リマインド ---
+    const lineConfig = lineConfigMap.get(apt.salon_id);
+    if (lineConfig?.is_active && lineConfig?.reminder_enabled) {
       const { data: lineLink } = await adminClient
         .from("customer_line_links")
         .select("id, line_user_id, is_following")
         .eq("customer_id", apt.customer_id)
-        .eq("salon_id", config.salon_id)
+        .eq("salon_id", apt.salon_id)
         .single();
 
-      if (!lineLink || !lineLink.is_following) continue;
+      if (lineLink?.is_following) {
+        // スタッフ名を取得
+        let staffName: string | null = null;
+        if (apt.staff_id) {
+          const { data: staffData } = await adminClient
+            .from("staff")
+            .select("name")
+            .eq("id", apt.staff_id)
+            .eq("salon_id", apt.salon_id)
+            .single();
+          staffName = staffData?.name ?? null;
+        }
 
-      // メニュー名を取得
-      const { data: menus } = await adminClient
-        .from("appointment_menus")
-        .select("menu_name_snapshot")
-        .eq("appointment_id", apt.id)
-        .order("sort_order", { ascending: true });
+        const message = buildReminderMessage({
+          customerName,
+          appointmentDate: apt.appointment_date,
+          startTime: apt.start_time,
+          menuNames,
+          salonName: salon.name,
+          staffName,
+        });
 
-      const menuNames = (menus ?? []).map((m) => m.menu_name_snapshot);
+        try {
+          const accessToken = decrypt(lineConfig.channel_access_token_encrypted);
+          await sendPushMessage(accessToken, lineLink.line_user_id, [message]);
 
-      // スタッフ名を取得
-      let staffName: string | null = null;
-      if (apt.staff_id) {
-        const { data: staffData } = await adminClient
-          .from("staff")
-          .select("name")
-          .eq("id", apt.staff_id)
-          .eq("salon_id", config.salon_id)
-          .single();
-        staffName = staffData?.name ?? null;
+          await adminClient.from("line_message_logs").insert({
+            salon_id: apt.salon_id,
+            customer_line_link_id: lineLink.id,
+            message_type: "reminder",
+            status: "sent",
+            related_appointment_id: apt.id,
+            sent_at: new Date().toISOString(),
+          });
+          stats.line.sent++;
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : "送信失敗";
+          console.error(`LINE リマインド送信エラー (salon: ${apt.salon_id}):`, errorMessage);
+          Sentry.captureException(err, { tags: { feature: "line-reminder" }, extra: { salon_id: apt.salon_id } });
+
+          await adminClient.from("line_message_logs").insert({
+            salon_id: apt.salon_id,
+            customer_line_link_id: lineLink.id,
+            message_type: "reminder",
+            status: "failed",
+            error_message: errorMessage,
+            related_appointment_id: apt.id,
+          });
+          stats.line.failed++;
+        }
       }
+    }
 
-      const message = buildReminderMessage({
-        customerName: `${customer.last_name}${customer.first_name}`,
-        appointmentDate: apt.appointment_date,
-        startTime: apt.start_time,
-        menuNames,
-        salonName: salon.name,
-        staffName,
-      });
+    // --- メール リマインド ---
+    if (customer.email) {
+      const resend = getResendClient();
+      if (resend) {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.salonkarte.com";
+        const cancelUrl = apt.cancel_token ? `${baseUrl}/book/cancel/${apt.cancel_token}` : undefined;
 
-      try {
-        await sendPushMessage(accessToken, lineLink.line_user_id, [message]);
-
-        await adminClient.from("line_message_logs").insert({
-          salon_id: config.salon_id,
-          customer_line_link_id: lineLink.id,
-          message_type: "reminder",
-          status: "sent",
-          related_appointment_id: apt.id,
-          sent_at: new Date().toISOString(),
+        const { subject, html } = buildCustomerReminderEmail({
+          customerName,
+          appointmentDate: apt.appointment_date,
+          startTime: apt.start_time,
+          menuNames,
+          salonName: salon.name,
+          salonPhone: salon.phone,
+          cancelUrl,
         });
 
-        totalSent++;
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "送信失敗";
-        console.error(`LINE リマインド送信エラー (salon: ${config.salon_id}):`, errorMessage);
-        Sentry.captureException(err, { tags: { feature: "line-reminder" }, extra: { salon_id: config.salon_id } });
-
-        await adminClient.from("line_message_logs").insert({
-          salon_id: config.salon_id,
-          customer_line_link_id: lineLink.id,
-          message_type: "reminder",
-          status: "failed",
-          error_message: errorMessage,
-          related_appointment_id: apt.id,
-        });
-
-        totalFailed++;
+        try {
+          const { error } = await resend.emails.send({
+            from: getFromAddress(),
+            to: customer.email,
+            subject,
+            html,
+          });
+          if (error) throw new Error(error.message);
+          stats.email.sent++;
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : "送信失敗";
+          console.error(`メール リマインド送信エラー (salon: ${apt.salon_id}):`, errorMessage);
+          Sentry.captureException(err, { tags: { feature: "email-reminder" }, extra: { salon_id: apt.salon_id } });
+          stats.email.failed++;
+        }
       }
     }
   }
 
-  return NextResponse.json({ sent: totalSent, failed: totalFailed, date: tomorrowStr });
+  return NextResponse.json({ ...stats, date: tomorrowStr });
 }

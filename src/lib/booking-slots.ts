@@ -55,6 +55,32 @@ export function calculateAvailableSlots({
 
   const maxConcurrent = bookingSettings?.max_concurrent_appointments ?? 1;
 
+  // min_advance_hours: 予約受付締切（X時間前まで受付可能）
+  // 例: min_advance_hours=2 → 予約の2時間前を過ぎたスロットはブロック
+  const minAdvanceHours = bookingSettings?.min_advance_hours ?? 0;
+  let advanceThresholdMin = -1;
+  if (minAdvanceHours > 0) {
+    const now = new Date();
+    const nowMs = now.getTime();
+    const [y, mo, d] = date.split("-").map(Number);
+    // 対象日のスロット時刻をJSTとして、現在時刻 + X時間 より前のスロットをブロック
+    // nowMs + advanceHours の時刻を対象日の分に変換
+    const slotDateStart = new Date(y, mo - 1, d, 0, 0, 0).getTime();
+    const thresholdMs = nowMs + minAdvanceHours * 60 * 60 * 1000;
+    // 閾値が対象日の範囲内の場合のみ適用
+    if (thresholdMs > slotDateStart) {
+      const thresholdDate = new Date(thresholdMs);
+      // 対象日と同じ日の場合のみスロット単位でブロック
+      const thresholdDateStr = `${thresholdDate.getFullYear()}-${String(thresholdDate.getMonth() + 1).padStart(2, "0")}-${String(thresholdDate.getDate()).padStart(2, "0")}`;
+      if (thresholdDateStr === date) {
+        advanceThresholdMin = thresholdDate.getHours() * 60 + thresholdDate.getMinutes();
+      } else if (thresholdMs > slotDateStart + 24 * 60 * 60 * 1000) {
+        // 閾値が対象日を完全に過ぎている場合、全スロット不可
+        return [];
+      }
+    }
+  }
+
   // リードタイム制限: 当日のみ、現在時刻+lead_time_minutes より前のスロットをブロック
   const leadMin = bookingSettings?.lead_time_minutes ?? 0;
   let leadTimeThreshold = -1;
@@ -89,8 +115,10 @@ export function calculateAvailableSlots({
     // 基本チェック: 同時予約上限に達しているか
     const isOccupied = countOverlapping(m) >= maxConcurrent;
 
-    // リードタイム制限
-    const isBeforeLeadTime = leadTimeThreshold > 0 && m < leadTimeThreshold;
+    // リードタイム制限（当日の lead_time_minutes + 全日の min_advance_hours）
+    const isBeforeLeadTime =
+      (leadTimeThreshold > 0 && m < leadTimeThreshold) ||
+      (advanceThresholdMin > 0 && m < advanceThresholdMin);
 
     // 施術時間が閉店までに収まるか + 途中に埋まった枠がないか
     let canFit = true;

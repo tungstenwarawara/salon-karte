@@ -25,6 +25,7 @@ type WebBookingNotificationParams = {
   customerPhone: string;
   isNewCustomer: boolean;
   memo?: string | null;
+  cancelUrl?: string;
 };
 
 // Web予約完了後の通知を一括送信（fire-and-forget）
@@ -66,6 +67,7 @@ async function sendCustomerEmail(
     totalDuration: params.totalDuration,
     salonName: params.salonName,
     salonPhone: params.salonPhone,
+    cancelUrl: params.cancelUrl,
   });
 
   const { error } = await resend.emails.send({

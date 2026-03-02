@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calculateAvailableSlots } from "@/lib/booking-slots";
 import { timeToMinutes, minutesToTime } from "@/lib/business-hours";
@@ -180,6 +181,7 @@ export async function POST(
   }
 
   // --- 予約作成 ---
+  const cancelToken = randomUUID();
   const menuNameSnapshot = menus.map((m) => m.name).join("、");
   const { data: appointment, error: aptError } = await admin
     .from("appointments")
@@ -195,6 +197,7 @@ export async function POST(
       memo: memo?.trim() || null,
       status: "scheduled",
       staff_id: null,
+      cancel_token: cancelToken,
     })
     .select("id")
     .single();
@@ -229,6 +232,7 @@ export async function POST(
 
   // --- 通知送信（fire-and-forget: 失敗しても予約は成功扱い） ---
   const customerName = `${last_name.trim()} ${first_name.trim()}`;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${request.headers.get("host")}`;
   sendWebBookingNotifications({
     salonId: salon.id,
     salonName: salon.name,
@@ -245,6 +249,7 @@ export async function POST(
     customerPhone: normalizedPhone,
     isNewCustomer,
     memo: memo?.trim() || null,
+    cancelUrl: `${baseUrl}/book/cancel/${cancelToken}`,
   }).catch(() => {});
 
   return NextResponse.json({ success: true, appointmentId: appointment.id });

@@ -21,6 +21,7 @@ export type BookingSettings = {
   same_day_enabled: boolean;
   lead_time_minutes: number; // 0 = 制限なし / 30 / 60 / 120 / 180
   max_concurrent_appointments: number; // 同時予約上限 1〜5, デフォルト1
+  min_advance_hours?: number; // 予約受付締切（X時間前まで）。0 = 制限なし
 };
 
 export type Database = {
@@ -337,6 +338,7 @@ export type Database = {
           memo: string | null;
           treatment_record_id: string | null;
           staff_id: string | null;
+          cancel_token: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -354,6 +356,7 @@ export type Database = {
           memo?: string | null;
           treatment_record_id?: string | null;
           staff_id?: string | null;
+          cancel_token?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -371,6 +374,7 @@ export type Database = {
           memo?: string | null;
           treatment_record_id?: string | null;
           staff_id?: string | null;
+          cancel_token?: string | null;
           created_at?: string;
           updated_at?: string;
         };
