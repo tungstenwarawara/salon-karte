@@ -70,7 +70,7 @@ export function GuidePricingSection() {
         </div>
         <p className="text-sm text-text-light leading-relaxed">
           まずは試してみたい方向け。顧客10件・カルテ1顧客あたり5件・予約月20件まで。
-          写真保存・LINE連携・カウンセリングシート・売上分析・カルテPDF出力は含まれません。
+          写真保存・LINE連携・カウンセリングシート・売上分析は含まれません。
         </p>
       </div>
 
