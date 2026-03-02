@@ -25,6 +25,17 @@ const CONCURRENT_OPTIONS = [
   { value: 5, label: "5" },
 ] as const;
 
+const ADVANCE_HOURS_OPTIONS = [
+  { value: 0, label: "制限なし" },
+  { value: 1, label: "1時間前まで" },
+  { value: 2, label: "2時間前まで" },
+  { value: 3, label: "3時間前まで" },
+  { value: 6, label: "6時間前まで" },
+  { value: 12, label: "12時間前まで" },
+  { value: 24, label: "24時間前（前日）まで" },
+  { value: 48, label: "48時間前（2日前）まで" },
+] as const;
+
 const DEFAULT_SETTINGS: BookingSettings = {
   same_day_enabled: true,
   lead_time_minutes: 0,
@@ -137,6 +148,25 @@ export default function BookingRulesPage() {
             </select>
           </div>
         )}
+
+        {/* 受付締切時間 */}
+        <div className="space-y-2">
+          <h3 className="font-bold text-sm">受付締切時間</h3>
+          <p className="text-xs text-text-light">
+            予約の何時間前まで受け付けるか（当日以外も適用）
+          </p>
+          <select
+            value={settings.min_advance_hours ?? 0}
+            onChange={(e) =>
+              setSettings({ ...settings, min_advance_hours: Number(e.target.value) })
+            }
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors min-h-[48px]"
+          >
+            {ADVANCE_HOURS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
 
         {/* 同時予約数の上限 */}
         <div className="space-y-2">

@@ -32,6 +32,19 @@ ${body}
 </html>`;
 }
 
+// 予約内容ブロック（各テンプレートで共通利用）
+function bookingDetailsBlock(date: string, time: string, menus: string, duration?: number): string {
+  const durationText = duration ? `（${duration}分）` : "";
+  return `
+  <table width="100%" style="background:#f9f7f5;border-radius:12px;padding:16px;" cellpadding="0" cellspacing="0">
+  <tr><td style="padding:16px;">
+    <p style="margin:0 0 12px;font-size:12px;color:#888;font-weight:bold;">予約内容</p>
+    <p style="margin:0 0 8px;font-size:14px;color:#333;"><strong>日時:</strong> ${date} ${time}〜${durationText}</p>
+    <p style="margin:0;font-size:14px;color:#333;"><strong>メニュー:</strong> ${menus}</p>
+  </td></tr>
+  </table>`;
+}
+
 type BookingInfo = {
   customerName: string;
   appointmentDate: string;
@@ -40,6 +53,7 @@ type BookingInfo = {
   totalDuration: number;
   salonName: string;
   salonPhone?: string | null;
+  cancelUrl?: string;
 };
 
 // 顧客向け: 予約確認メール
@@ -51,9 +65,16 @@ export function buildCustomerConfirmationEmail(info: BookingInfo): {
   const time = formatTime(info.startTime);
   const menus = info.menuNames.join("、");
 
-  const contactNote = info.salonPhone
-    ? `キャンセル・変更はサロンへ直接ご連絡ください。<br>電話番号: ${info.salonPhone}`
-    : "キャンセル・変更はサロンへ直接ご連絡ください。";
+  const cancelSection = info.cancelUrl
+    ? `<div style="margin:24px 0;text-align:center;">
+        <a href="${info.cancelUrl}" style="display:inline-block;background:#f5f5f5;color:#666;font-size:13px;padding:10px 24px;border-radius:8px;text-decoration:none;border:1px solid #ddd;">予約をキャンセルする</a>
+      </div>
+      <div style="padding:0 0 8px;"><p style="margin:0;font-size:11px;color:#999;text-align:center;">変更の場合はキャンセル後に再度ご予約ください</p></div>`
+    : `<div style="margin:24px 0;padding:16px;background:#fff8f0;border-radius:12px;border:1px solid #f0e6d8;">
+        <p style="margin:0;font-size:13px;color:#666;line-height:1.6;">
+          ${info.salonPhone ? `キャンセル・変更はサロンへ直接ご連絡ください。<br>電話番号: ${info.salonPhone}` : "キャンセル・変更はサロンへ直接ご連絡ください。"}
+        </p>
+      </div>`;
 
   const body = `
 <tr><td style="padding:32px 24px 0;text-align:center;">
@@ -64,18 +85,8 @@ export function buildCustomerConfirmationEmail(info: BookingInfo): {
   <p style="margin:0 0 24px;font-size:14px;color:#333;line-height:1.6;">
     ご予約ありがとうございます。<br>以下の内容で予約を受け付けました。
   </p>
-  <table width="100%" style="background:#f9f7f5;border-radius:12px;padding:16px;" cellpadding="0" cellspacing="0">
-  <tr><td style="padding:16px;">
-    <p style="margin:0 0 12px;font-size:12px;color:#888;font-weight:bold;">予約内容</p>
-    <p style="margin:0 0 8px;font-size:14px;color:#333;"><strong>日時:</strong> ${date} ${time}〜（${info.totalDuration}分）</p>
-    <p style="margin:0;font-size:14px;color:#333;"><strong>メニュー:</strong> ${menus}</p>
-  </td></tr>
-  </table>
-  <div style="margin:24px 0;padding:16px;background:#fff8f0;border-radius:12px;border:1px solid #f0e6d8;">
-    <p style="margin:0;font-size:13px;color:#666;line-height:1.6;">
-      ${contactNote}
-    </p>
-  </div>
+  ${bookingDetailsBlock(date, time, menus, info.totalDuration)}
+  ${cancelSection}
   <p style="margin:0;font-size:14px;color:#333;">ご来店をお待ちしております。</p>
   <p style="margin:8px 0 0;font-size:14px;color:#333;font-weight:bold;">${info.salonName}</p>
 </td></tr>`;
@@ -145,6 +156,147 @@ export function buildOwnerNotificationEmail(info: OwnerNotificationInfo): {
 
   return {
     subject: `【Web予約】${info.customerName}様（${date} ${time}）`,
+    html: wrapHtml(body),
+  };
+}
+
+type OwnerCancelNotificationInfo = {
+  customerName: string;
+  appointmentDate: string;
+  startTime: string;
+  menuNames: string[];
+  salonName: string;
+};
+
+// オーナー向け: 予約キャンセル通知メール
+export function buildOwnerCancelNotificationEmail(info: OwnerCancelNotificationInfo): {
+  subject: string;
+  html: string;
+} {
+  const date = formatDate(info.appointmentDate);
+  const time = formatTime(info.startTime);
+  const menus = info.menuNames.join("、");
+
+  const body = `
+<tr><td style="padding:32px 24px 0;text-align:center;">
+  <h1 style="margin:0;font-size:20px;color:#c62828;">予約がキャンセルされました</h1>
+</td></tr>
+<tr><td style="padding:24px;">
+  <p style="margin:0 0 16px;font-size:14px;color:#333;">
+    お客様がWeb予約をキャンセルしました。
+  </p>
+  <table width="100%" style="background:#fef2f2;border-radius:12px;" cellpadding="0" cellspacing="0">
+  <tr><td style="padding:16px;">
+    <p style="margin:0 0 12px;font-size:12px;color:#888;font-weight:bold;">キャンセル内容</p>
+    <p style="margin:0 0 8px;font-size:16px;color:#333;font-weight:bold;">${info.customerName}様</p>
+    <p style="margin:0 0 8px;font-size:14px;color:#333;"><strong>日時:</strong> ${date} ${time}〜</p>
+    <p style="margin:0;font-size:14px;color:#333;"><strong>メニュー:</strong> ${menus}</p>
+  </td></tr>
+  </table>
+  <p style="margin:24px 0 0;font-size:13px;color:#888;text-align:center;">
+    サロンカルテのダッシュボードで詳細を確認できます
+  </p>
+</td></tr>`;
+
+  return {
+    subject: `【キャンセル】${info.customerName}様（${date} ${time}）`,
+    html: wrapHtml(body),
+  };
+}
+
+type CustomerCancelConfirmationInfo = {
+  customerName: string;
+  appointmentDate: string;
+  startTime: string;
+  menuNames: string[];
+  salonName: string;
+  salonPhone?: string | null;
+  bookingUrl?: string;
+};
+
+// 顧客向け: キャンセル完了メール
+export function buildCustomerCancelConfirmationEmail(info: CustomerCancelConfirmationInfo): {
+  subject: string;
+  html: string;
+} {
+  const date = formatDate(info.appointmentDate);
+  const time = formatTime(info.startTime);
+  const menus = info.menuNames.join("、");
+
+  const rebookSection = info.bookingUrl
+    ? `<div style="margin:24px 0;text-align:center;">
+        <a href="${info.bookingUrl}" style="display:inline-block;background:#c4956a;color:#ffffff;font-size:14px;font-weight:bold;padding:12px 32px;border-radius:12px;text-decoration:none;">再度予約する</a>
+      </div>`
+    : "";
+
+  const body = `
+<tr><td style="padding:32px 24px 0;text-align:center;">
+  <h1 style="margin:0;font-size:20px;color:#333;">予約をキャンセルしました</h1>
+</td></tr>
+<tr><td style="padding:24px;">
+  <p style="margin:0 0 16px;font-size:14px;color:#333;">${info.customerName}様</p>
+  <p style="margin:0 0 24px;font-size:14px;color:#333;line-height:1.6;">
+    以下の予約をキャンセルいたしました。
+  </p>
+  <table width="100%" style="background:#f9f7f5;border-radius:12px;padding:16px;" cellpadding="0" cellspacing="0">
+  <tr><td style="padding:16px;">
+    <p style="margin:0 0 12px;font-size:12px;color:#888;font-weight:bold;">キャンセル済みの予約</p>
+    <p style="margin:0 0 8px;font-size:14px;color:#333;"><strong>日時:</strong> ${date} ${time}〜</p>
+    <p style="margin:0;font-size:14px;color:#333;"><strong>メニュー:</strong> ${menus}</p>
+  </td></tr>
+  </table>
+  ${rebookSection}
+  <p style="margin:16px 0 0;font-size:14px;color:#333;font-weight:bold;">${info.salonName}</p>
+</td></tr>`;
+
+  return {
+    subject: `【${info.salonName}】予約をキャンセルしました`,
+    html: wrapHtml(body),
+  };
+}
+
+type ReminderEmailInfo = {
+  customerName: string;
+  appointmentDate: string;
+  startTime: string;
+  menuNames: string[];
+  salonName: string;
+  salonPhone?: string | null;
+  cancelUrl?: string;
+};
+
+// 顧客向け: 予約リマインドメール（前日送信）
+export function buildCustomerReminderEmail(info: ReminderEmailInfo): {
+  subject: string;
+  html: string;
+} {
+  const date = formatDate(info.appointmentDate);
+  const time = formatTime(info.startTime);
+  const menus = info.menuNames.join("、");
+
+  const cancelSection = info.cancelUrl
+    ? `<div style="margin:16px 0;text-align:center;">
+        <a href="${info.cancelUrl}" style="font-size:12px;color:#999;text-decoration:underline;">キャンセルはこちら</a>
+      </div>`
+    : "";
+
+  const body = `
+<tr><td style="padding:32px 24px 0;text-align:center;">
+  <h1 style="margin:0;font-size:20px;color:#333;">明日のご予約のお知らせ</h1>
+</td></tr>
+<tr><td style="padding:24px;">
+  <p style="margin:0 0 16px;font-size:14px;color:#333;">${info.customerName}様</p>
+  <p style="margin:0 0 24px;font-size:14px;color:#333;line-height:1.6;">
+    明日のご予約をお知らせいたします。
+  </p>
+  ${bookingDetailsBlock(date, time, menus)}
+  ${cancelSection}
+  <p style="margin:16px 0 0;font-size:14px;color:#333;">ご来店をお待ちしております。</p>
+  <p style="margin:8px 0 0;font-size:14px;color:#333;font-weight:bold;">${info.salonName}</p>
+</td></tr>`;
+
+  return {
+    subject: `【${info.salonName}】明日のご予約のお知らせ`,
     html: wrapHtml(body),
   };
 }
