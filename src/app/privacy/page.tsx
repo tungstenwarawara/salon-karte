@@ -8,7 +8,7 @@ export default function PrivacyPolicyPage() {
       </Link>
 
       <h1 className="text-2xl font-bold mt-4 mb-6">プライバシーポリシー</h1>
-      <p className="text-xs text-text-light mb-6">制定日: 2026年3月1日 / 最終更新日: 2026年3月1日</p>
+      <p className="text-xs text-text-light mb-6">制定日: 2026年3月1日 / 最終更新日: 2026年3月2日</p>
 
       <div className="prose prose-sm space-y-6 text-text">
         <section>
@@ -58,6 +58,7 @@ export default function PrivacyPolicyPage() {
           <ul className="list-disc list-inside text-sm space-y-1 mt-2">
             <li>当サービスの提供・運営（顧客管理、カルテ管理、予約管理、売上管理等）</li>
             <li>ユーザー認証・アカウント管理</li>
+            <li>Web予約時の確認メール・サロンオーナーへの予約通知メールの送信</li>
             <li>LINE連携機能における予約通知・リマインドの送信</li>
             <li>サービスの改善・不具合の修正</li>
             <li>お問い合わせへの対応</li>
@@ -89,6 +90,16 @@ export default function PrivacyPolicyPage() {
               <p className="text-xs text-text-light">
                 用途: Webアプリケーションの配信、アクセス解析（Vercel Analytics）。
                 アクセス解析ではページビュー数等の統計情報を収集しますが、個人を特定する情報は含まれません。
+              </p>
+            </div>
+            <div className="bg-background rounded-lg p-3">
+              <p className="text-sm font-medium">Resend（メール送信）</p>
+              <p className="text-xs text-text-light mt-1">
+                提供元: Resend Inc.（米国）/ データ処理場所: 日本（東京リージョン: ap-northeast-1）
+              </p>
+              <p className="text-xs text-text-light">
+                用途: Web予約時の確認メール・予約通知メールの送信。
+                送信に必要な情報（メールアドレス、お名前、予約内容）のみを送信処理のために一時的に使用し、送信ログは30日で自動削除されます。
               </p>
             </div>
             <div className="bg-background rounded-lg p-3">
