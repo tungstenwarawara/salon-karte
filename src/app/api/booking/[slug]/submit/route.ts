@@ -73,11 +73,14 @@ export async function POST(
     .from("salons")
     .select("id, name, business_hours, salon_holidays, booking_settings, booking_enabled")
     .eq("booking_slug", slug)
-    .eq("booking_enabled", true)
     .single();
 
   if (salonError || !salon) {
     return NextResponse.json({ error: "予約ページが見つかりません" }, { status: 404 });
+  }
+
+  if (!salon.booking_enabled) {
+    return NextResponse.json({ error: "現在、Web予約の受付を停止しています。サロンへ直接お問い合わせください", code: "BOOKING_DISABLED" }, { status: 403 });
   }
 
   // --- スパム対策: 同一電話番号で1時間3件制限 ---

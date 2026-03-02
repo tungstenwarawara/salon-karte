@@ -5,9 +5,12 @@
 import type { BusinessHours, BookingSettings } from "@/types/database";
 import { getScheduleForDate, timeToMinutes, minutesToTime } from "@/lib/business-hours";
 
+export type SlotUnavailableReason = "occupied" | "lead_time" | "exceeds_close" | "overlap_during";
+
 export type SlotInfo = {
   time: string;       // "HH:MM"
   available: boolean;
+  reason?: SlotUnavailableReason;
 };
 
 type ExistingAppointment = {
@@ -91,24 +94,29 @@ export function calculateAvailableSlots({
 
     // 施術時間が閉店までに収まるか + 途中に埋まった枠がないか
     let canFit = true;
+    let fitReason: SlotUnavailableReason | undefined;
     if (!isOccupied && !isBeforeLeadTime && requestedDuration > 0) {
       if (m + requestedDuration > closeMin) {
         canFit = false;
+        fitReason = "exceeds_close";
       } else {
         // 施術時間内の全15分刻みで重複チェック
         for (let checkMin = m; checkMin < m + requestedDuration; checkMin += 15) {
           if (countOverlapping(checkMin) >= maxConcurrent) {
             canFit = false;
+            fitReason = "overlap_during";
             break;
           }
         }
       }
     }
 
-    slots.push({
-      time: minutesToTime(m),
-      available: !isOccupied && !isBeforeLeadTime && canFit,
-    });
+    const available = !isOccupied && !isBeforeLeadTime && canFit;
+    const reason: SlotUnavailableReason | undefined = !available
+      ? (isOccupied ? "occupied" : isBeforeLeadTime ? "lead_time" : fitReason)
+      : undefined;
+
+    slots.push({ time: minutesToTime(m), available, reason });
   }
 
   return slots;

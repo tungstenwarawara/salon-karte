@@ -24,6 +24,7 @@ export function BookingPageClient({ slug }: Props) {
   const [salonHolidays, setSalonHolidays] = useState<string[] | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [disabled, setDisabled] = useState(false);
 
   // フォーム状態
   const [step, setStep] = useState(1);
@@ -44,7 +45,11 @@ export function BookingPageClient({ slug }: Props) {
     const load = async () => {
       try {
         const res = await fetch(`/api/booking/${slug}`);
-        if (!res.ok) { setNotFound(true); setPageLoading(false); return; }
+        if (!res.ok) {
+          if (res.status === 403) { setDisabled(true); } else { setNotFound(true); }
+          setPageLoading(false);
+          return;
+        }
         const data = await res.json();
         setSalonName(data.salon?.name ?? "");
         setMenus(data.menus ?? []);
@@ -85,6 +90,8 @@ export function BookingPageClient({ slug }: Props) {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "予約に失敗しました"); setSubmitting(false); return; }
+      // 完了ページで検証できるようフラグを保存
+      try { sessionStorage.setItem("booking_completed", slug); } catch { /* SSR */ }
       router.push(`/book/${slug}/complete`);
     } catch {
       setError("通信エラーが発生しました。再度お試しください。");
@@ -101,6 +108,24 @@ export function BookingPageClient({ slug }: Props) {
         <div className="space-y-3">
           {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-border/30 rounded-xl" />)}
         </div>
+      </div>
+    );
+  }
+
+  // 受付停止中
+  if (disabled) {
+    return (
+      <div className="text-center py-16">
+        <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+        </div>
+        <h1 className="text-lg font-bold mb-2">現在、予約の受付を停止しています</h1>
+        <p className="text-sm text-text-light leading-relaxed">
+          ご不便をおかけして申し訳ございません。<br />
+          ご予約はサロンへ直接お問い合わせください。
+        </p>
       </div>
     );
   }

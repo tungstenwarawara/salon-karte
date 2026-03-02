@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getClientAuth } from "@/lib/supabase/client-auth";
@@ -15,10 +15,13 @@ export default function WebBookingSettingsPage() {
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [toggling, setToggling] = useState(false);
   const [error, setError] = useState("");
   const [slugError, setSlugError] = useState("");
   const [copied, setCopied] = useState(false);
   const { toast, showToast, hideToast } = useToast();
+  // DB上の値を追跡して保存ボタンの表示を制御
+  const savedSlugRef = useRef("");
 
   useEffect(() => {
     const load = async () => {
@@ -33,6 +36,7 @@ export default function WebBookingSettingsPage() {
         .single();
       if (data) {
         setSlug(data.booking_slug ?? "");
+        savedSlugRef.current = data.booking_slug ?? "";
         setEnabled(data.booking_enabled ?? false);
       }
       setLoading(false);
@@ -52,21 +56,51 @@ export default function WebBookingSettingsPage() {
   }, []);
 
   const handleSlugChange = (value: string) => {
-    // 入力を英小文字・数字・ハイフンに制限
     const sanitized = value.toLowerCase().replace(/[^a-z0-9-]/g, "");
     setSlug(sanitized);
     setSlugError(validateSlug(sanitized));
   };
 
+  // トグル変更時に即座にDBへ保存
+  const handleToggle = async () => {
+    if (!salonId) return;
+    setError("");
+    const newEnabled = !enabled;
+
+    // ONにする場合はslug必須
+    if (newEnabled && !slug.trim()) {
+      setSlugError("URLを設定してから公開してください");
+      return;
+    }
+    if (newEnabled && slug && validateSlug(slug)) {
+      setSlugError(validateSlug(slug));
+      return;
+    }
+
+    setToggling(true);
+    setEnabled(newEnabled);
+    const supabase = createClient();
+    const { error: updateError } = await supabase
+      .from("salons")
+      .update({ booking_enabled: newEnabled })
+      .eq("id", salonId);
+
+    if (updateError) {
+      // 失敗時は元に戻す
+      setEnabled(!newEnabled);
+      setError(`切り替えに失敗しました: ${updateError.message}`);
+      console.error("toggle booking error:", updateError);
+    } else {
+      showToast(newEnabled ? "予約ページを公開しました" : "予約ページを非公開にしました");
+    }
+    setToggling(false);
+  };
+
+  // slug保存（URLの変更のみ）
   const handleSave = async () => {
     setError("");
     if (!salonId) { setError("認証エラー"); return; }
 
-    // 公開ONの場合、slug 必須
-    if (enabled && !slug.trim()) {
-      setSlugError("URLを設定してください");
-      return;
-    }
     if (slug && validateSlug(slug)) {
       setSlugError(validateSlug(slug));
       return;
@@ -76,10 +110,7 @@ export default function WebBookingSettingsPage() {
     const supabase = createClient();
     const { error: updateError } = await supabase
       .from("salons")
-      .update({
-        booking_slug: slug.trim() || null,
-        booking_enabled: enabled,
-      })
+      .update({ booking_slug: slug.trim() || null })
       .eq("id", salonId);
 
     if (updateError) {
@@ -90,12 +121,14 @@ export default function WebBookingSettingsPage() {
       }
       console.error("web-booking settings error:", updateError);
     } else {
-      showToast("Web予約設定を保存しました");
+      savedSlugRef.current = slug.trim();
+      showToast("予約ページURLを保存しました");
     }
     setSaving(false);
   };
 
   const bookingUrl = slug ? `${typeof window !== "undefined" ? window.location.origin : ""}/book/${slug}` : "";
+  const slugChanged = slug.trim() !== savedSlugRef.current;
 
   const handleCopy = async () => {
     if (!bookingUrl) return;
@@ -125,23 +158,30 @@ export default function WebBookingSettingsPage() {
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-5">
         {error && <ErrorAlert message={error} />}
 
-        {/* 公開 ON/OFF */}
+        {/* 公開 ON/OFF（即時保存） */}
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-bold text-sm">予約ページを公開</h3>
             <p className="text-xs text-text-light mt-0.5">
-              ONにするとお客様がWebから予約できます
+              切り替えると即座に反映されます
             </p>
           </div>
           <button
             type="button"
             role="switch"
             aria-checked={enabled}
-            onClick={() => setEnabled(!enabled)}
-            className={`relative w-12 h-7 rounded-full transition-colors ${enabled ? "bg-accent" : "bg-border"}`}
+            onClick={handleToggle}
+            disabled={toggling}
+            className={`relative w-12 h-7 rounded-full transition-colors ${toggling ? "opacity-60" : ""} ${enabled ? "bg-accent" : "bg-border"}`}
           >
             <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-5" : ""}`} />
           </button>
+        </div>
+
+        {/* 状態表示 */}
+        <div className={`flex items-center gap-2 text-sm ${enabled && slug && !slugError ? "text-green-600" : "text-text-light"}`}>
+          <div className={`w-2 h-2 rounded-full ${enabled && slug && !slugError ? "bg-green-500 animate-pulse" : "bg-border"}`} />
+          {enabled && slug && !slugError ? "公開中 — お客様が予約できます" : "非公開"}
         </div>
 
         {/* 予約ページ URL */}
@@ -179,12 +219,6 @@ export default function WebBookingSettingsPage() {
             </div>
           </div>
         )}
-
-        {/* 状態表示 */}
-        <div className={`flex items-center gap-2 text-sm ${enabled && slug && !slugError ? "text-green-600" : "text-text-light"}`}>
-          <div className={`w-2 h-2 rounded-full ${enabled && slug && !slugError ? "bg-green-500" : "bg-border"}`} />
-          {enabled && slug && !slugError ? "公開中" : "非公開"}
-        </div>
       </div>
 
       {/* 関連設定へのリンク */}
@@ -199,7 +233,10 @@ export default function WebBookingSettingsPage() {
         </p>
       </div>
 
-      <SubmitButton type="button" onClick={handleSave} loading={saving} className="w-full" />
+      {/* URL変更時のみ保存ボタン表示 */}
+      {slugChanged && (
+        <SubmitButton type="button" onClick={handleSave} loading={saving} className="w-full" />
+      )}
     </div>
   );
 }

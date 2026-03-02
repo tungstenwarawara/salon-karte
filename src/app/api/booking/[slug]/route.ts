@@ -33,16 +33,19 @@ export async function GET(
 
   const admin = createAdminClient();
 
-  // サロン情報取得
+  // サロン情報取得（まずslugのみで検索し、存在するが無効な場合を区別）
   const { data: salon, error: salonError } = await admin
     .from("salons")
     .select("id, name, booking_slug, booking_enabled, business_hours, salon_holidays, booking_settings")
     .eq("booking_slug", slug)
-    .eq("booking_enabled", true)
     .single();
 
   if (salonError || !salon) {
     return NextResponse.json({ error: "予約ページが見つかりません" }, { status: 404 });
+  }
+
+  if (!salon.booking_enabled) {
+    return NextResponse.json({ error: "現在、Web予約の受付を停止しています", code: "BOOKING_DISABLED" }, { status: 403 });
   }
 
   // アクティブなメニュー取得
