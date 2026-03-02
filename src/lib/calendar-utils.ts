@@ -1,4 +1,4 @@
-import type { BusinessHours } from "@/types/database";
+import type { BusinessHours, HourOverrides } from "@/types/database";
 import { DAY_KEY_MAP, DEFAULT_BUSINESS_HOURS, toDateString } from "@/lib/business-hours";
 
 /** カレンダー用の日付情報 */
@@ -10,13 +10,14 @@ export type CalendarDay = {
   isPast: boolean;
   isWeeklyHoliday: boolean; // 曜日設定で定休日
   isIrregularHoliday: boolean; // 不定休設定済み
+  hasHourOverride: boolean; // 営業時間の上書きあり
 };
 
 /** 曜日ヘッダー（月曜始まり） */
 export const WEEKDAY_HEADERS = ["月", "火", "水", "木", "金", "土", "日"];
 
 /** 指定月のカレンダー日付配列を生成（月曜始まり、6行=42日） */
-export function buildCalendar(year: number, month: number, businessHours: BusinessHours, holidays: Set<string>): CalendarDay[] {
+export function buildCalendar(year: number, month: number, businessHours: BusinessHours, holidays: Set<string>, hourOverrides?: HourOverrides | null): CalendarDay[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayStr = toDateString(today);
@@ -37,6 +38,7 @@ export function buildCalendar(year: number, month: number, businessHours: Busine
       isPast: dateStr < todayStr,
       isWeeklyHoliday: !bh[dayKey].is_open,
       isIrregularHoliday: holidays.has(dateStr),
+      hasHourOverride: !!(hourOverrides && dateStr in hourOverrides),
     };
   };
 

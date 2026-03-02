@@ -6,18 +6,20 @@ import {
   getScheduleForDate,
   isWithinBusinessHours,
 } from "@/lib/business-hours";
+import type { HourOverrides } from "@/types/database";
 import type { BusinessHours } from "./types";
 
 type ClosedDayProps = {
   appointmentDate: string;
   businessHours: BusinessHours;
   salonHolidays: string[] | null;
+  hourOverrides?: HourOverrides | null;
 };
 
 /** 休業日警告 */
-export function ClosedDayWarning({ appointmentDate, businessHours, salonHolidays }: ClosedDayProps) {
+export function ClosedDayWarning({ appointmentDate, businessHours, salonHolidays, hourOverrides }: ClosedDayProps) {
   if (!appointmentDate || !businessHours) return null;
-  if (isBusinessDay(businessHours, appointmentDate, salonHolidays)) return null;
+  if (isBusinessDay(businessHours, appointmentDate, salonHolidays, hourOverrides)) return null;
 
   return (
     <div className="bg-warning/10 text-warning text-sm rounded-lg p-3">
@@ -32,6 +34,7 @@ type OutsideHoursProps = {
   appointmentDate: string;
   businessHours: BusinessHours;
   salonHolidays: string[] | null;
+  hourOverrides?: HourOverrides | null;
   startHour: string;
   startMinute: string;
   endHour: string;
@@ -43,22 +46,23 @@ export function getOutsideHoursWarning({
   appointmentDate,
   businessHours,
   salonHolidays,
+  hourOverrides,
   startHour,
   startMinute,
   endHour,
   endMinute,
 }: OutsideHoursProps): string | null {
   if (!businessHours || !appointmentDate) return null;
-  if (!isBusinessDay(businessHours, appointmentDate, salonHolidays)) return null;
+  if (!isBusinessDay(businessHours, appointmentDate, salonHolidays, hourOverrides)) return null;
 
   const startStr = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
   const endStr = `${endHour.padStart(2, "0")}:${endMinute.padStart(2, "0")}`;
 
-  if (isWithinBusinessHours(businessHours, appointmentDate, startStr, endStr, salonHolidays)) {
+  if (isWithinBusinessHours(businessHours, appointmentDate, startStr, endStr, salonHolidays, hourOverrides)) {
     return null;
   }
 
-  const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays);
+  const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays, hourOverrides);
   const isBefore = startStr < schedule.open_time;
   const isAfter = endStr > schedule.close_time;
 

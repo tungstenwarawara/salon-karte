@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { BusinessHours } from "@/types/database";
+import type { BusinessHours, HourOverrides } from "@/types/database";
 import { isBusinessDay, isIrregularHoliday } from "@/lib/business-hours";
 import { STATUS_LABELS, formatTime } from "@/components/appointments/appointment-card";
 import { toDateStr, DAY_NAMES } from "@/components/appointments/appointments-calendar";
@@ -13,10 +13,11 @@ type Props = {
   appointments: AppointmentWithCustomer[];
   businessHours: BusinessHours | null;
   salonHolidays: string[] | null;
+  hourOverrides?: HourOverrides | null;
 };
 
 /** 月カレンダーの日別ドリルダウンパネル */
-export function AppointmentsDayPanel({ selectedDate, selectedDay, appointments, businessHours, salonHolidays }: Props) {
+export function AppointmentsDayPanel({ selectedDate, selectedDay, appointments, businessHours, salonHolidays, hourOverrides }: Props) {
   const year = selectedDate.getFullYear();
   const month = selectedDate.getMonth();
   const dayDate = new Date(year, month, selectedDay);
@@ -24,7 +25,7 @@ export function AppointmentsDayPanel({ selectedDate, selectedDay, appointments, 
 
   const dayApts = appointments.filter((a) => a.appointment_date === dayStr);
   const activeApts = dayApts.filter((a) => a.status !== "cancelled");
-  const isHoliday = businessHours && !isBusinessDay(businessHours, dayDate, salonHolidays);
+  const isHoliday = businessHours && !isBusinessDay(businessHours, dayDate, salonHolidays, hourOverrides);
   const isIrregular = isIrregularHoliday(salonHolidays, dayDate);
 
   return (

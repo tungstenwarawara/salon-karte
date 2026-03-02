@@ -1,4 +1,4 @@
-import type { BusinessHours, DaySchedule } from "@/types/database";
+import type { BusinessHours, DaySchedule, HourOverrides } from "@/types/database";
 
 /** JS Date.getDay() (0=Sun, 1=Mon, ...) → BusinessHours キー変換 */
 export const DAY_KEY_MAP: Record<number, keyof BusinessHours> = {
@@ -98,18 +98,35 @@ export function isIrregularHoliday(
   return holidays.includes(toDateString(d));
 }
 
-/** 日付の曜日スケジュールを取得（不定休考慮） */
+/** 特定日に営業時間の上書きがあるか判定 */
+export function hasHourOverride(
+  hourOverrides: HourOverrides | null | undefined,
+  date: Date | string
+): boolean {
+  if (!hourOverrides) return false;
+  const d = toDate(date);
+  const dateStr = toDateString(d);
+  return dateStr in hourOverrides;
+}
+
+/** 日付の曜日スケジュールを取得（営業時間上書き → 不定休 → 曜日設定の優先順） */
 export function getScheduleForDate(
   businessHours: BusinessHours | null,
   date: Date | string,
-  holidays?: string[] | null
+  holidays?: string[] | null,
+  hourOverrides?: HourOverrides | null
 ): DaySchedule {
   const bh = businessHours ?? DEFAULT_BUSINESS_HOURS;
   const d = toDate(date);
+  const dateStr = toDateString(d);
+
+  // 営業時間上書きが最優先（臨時の時短営業・延長営業）
+  if (hourOverrides && hourOverrides[dateStr]) {
+    return hourOverrides[dateStr];
+  }
 
   // 不定休チェック: holidays に含まれる日付は休業扱い
   if (holidays && holidays.length > 0) {
-    const dateStr = toDateString(d);
     if (holidays.includes(dateStr)) {
       // 元の曜日スケジュールの時間は保持しつつ is_open を false に
       const dayKey = DAY_KEY_MAP[d.getDay()];
@@ -122,24 +139,26 @@ export function getScheduleForDate(
   return bh[dayKey];
 }
 
-/** 営業日かどうか（不定休考慮） */
+/** 営業日かどうか（営業時間上書き・不定休考慮） */
 export function isBusinessDay(
   businessHours: BusinessHours | null,
   date: Date | string,
-  holidays?: string[] | null
+  holidays?: string[] | null,
+  hourOverrides?: HourOverrides | null
 ): boolean {
-  return getScheduleForDate(businessHours, date, holidays).is_open;
+  return getScheduleForDate(businessHours, date, holidays, hourOverrides).is_open;
 }
 
-/** 時間帯が営業時間内かチェック（不定休考慮） */
+/** 時間帯が営業時間内かチェック（営業時間上書き・不定休考慮） */
 export function isWithinBusinessHours(
   businessHours: BusinessHours | null,
   date: Date | string,
   startTime: string,
   endTime: string,
-  holidays?: string[] | null
+  holidays?: string[] | null,
+  hourOverrides?: HourOverrides | null
 ): boolean {
-  const schedule = getScheduleForDate(businessHours, date, holidays);
+  const schedule = getScheduleForDate(businessHours, date, holidays, hourOverrides);
   if (!schedule.is_open) return false;
   const openMin = timeToMinutes(schedule.open_time);
   const closeMin = timeToMinutes(schedule.close_time);

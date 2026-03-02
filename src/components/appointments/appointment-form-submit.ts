@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { isWithinBusinessHours, getScheduleForDate } from "@/lib/business-hours";
+import type { HourOverrides } from "@/types/database";
 import type { TreatmentMenu, BusinessHours, BookingSettings } from "@/components/appointments/types";
 
 type SubmitParams = {
@@ -17,6 +18,7 @@ type SubmitParams = {
   memo: string;
   businessHours?: BusinessHours | null;
   salonHolidays?: string[] | null;
+  hourOverrides?: HourOverrides | null;
   bookingSettings?: BookingSettings | null;
 };
 
@@ -26,7 +28,7 @@ type SubmitResult =
 
 /** 予約新規作成のsubmit処理（バリデーション・重複チェック・中間テーブル挿入） */
 export async function submitAppointment(params: SubmitParams): Promise<SubmitResult> {
-  const { salonId, customerId, staffId, menus, selectedMenuIds, appointmentDate, startHour, startMinute, endHour, endMinute, source, memo, businessHours, salonHolidays, bookingSettings } = params;
+  const { salonId, customerId, staffId, menus, selectedMenuIds, appointmentDate, startHour, startMinute, endHour, endMinute, source, memo, businessHours, salonHolidays, hourOverrides, bookingSettings } = params;
   const supabase = createClient();
 
   const startTime = `${startHour.padStart(2, "0")}:${startMinute.padStart(2, "0")}`;
@@ -38,9 +40,9 @@ export async function submitAppointment(params: SubmitParams): Promise<SubmitRes
 
   // 営業時間チェック（警告として返す — 呼び出し元で確認ダイアログを表示）
   if (businessHours) {
-    const withinHours = isWithinBusinessHours(businessHours, appointmentDate, startTime, endTime, salonHolidays);
+    const withinHours = isWithinBusinessHours(businessHours, appointmentDate, startTime, endTime, salonHolidays, hourOverrides);
     if (!withinHours) {
-      const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays);
+      const schedule = getScheduleForDate(businessHours, appointmentDate, salonHolidays, hourOverrides);
       if (schedule.is_open) {
         return {
           success: false,

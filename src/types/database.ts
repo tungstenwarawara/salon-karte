@@ -24,6 +24,9 @@ export type BookingSettings = {
   min_advance_hours?: number; // 予約受付締切（X時間前まで）。0 = 制限なし
 };
 
+/** 特定日の営業時間上書き（臨時の時短営業・延長営業等） */
+export type HourOverrides = Record<string, DaySchedule>; // "YYYY-MM-DD" → DaySchedule
+
 export type Database = {
   public: {
     Tables: {
@@ -37,6 +40,7 @@ export type Database = {
           business_hours: BusinessHours | null;
           salon_holidays: string[] | null;
           booking_settings: BookingSettings | null;
+          hour_overrides: HourOverrides | null;
           booking_slug: string | null;
           booking_enabled: boolean;
           counseling_template: CounselingTemplate | null;
@@ -52,6 +56,7 @@ export type Database = {
           business_hours?: BusinessHours | null;
           salon_holidays?: string[] | null;
           booking_settings?: BookingSettings | null;
+          hour_overrides?: HourOverrides | null;
           booking_slug?: string | null;
           booking_enabled?: boolean;
           counseling_template?: CounselingTemplate | null;
@@ -67,6 +72,7 @@ export type Database = {
           business_hours?: BusinessHours | null;
           salon_holidays?: string[] | null;
           booking_settings?: BookingSettings | null;
+          hour_overrides?: HourOverrides | null;
           booking_slug?: string | null;
           booking_enabled?: boolean;
           counseling_template?: CounselingTemplate | null;

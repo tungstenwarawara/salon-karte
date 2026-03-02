@@ -8,7 +8,7 @@ import {
   type StaffScheduleOverride,
 } from "@/lib/staff-schedule";
 import { toDateString, timeToMinutes } from "@/lib/business-hours";
-import type { BusinessHours } from "@/types/database";
+import type { BusinessHours, HourOverrides } from "@/types/database";
 import Link from "next/link";
 import { WeekTimeGrid } from "./week-time-grid";
 import { WeekDayTabs } from "./week-day-tabs";
@@ -20,6 +20,7 @@ type Props = {
   selectedDate: Date;
   businessHours: BusinessHours | null;
   salonHolidays: string[] | null;
+  hourOverrides?: HourOverrides | null;
 };
 
 type StaffRow = { id: string; name: string; default_schedule: BusinessHours | null };
@@ -29,7 +30,7 @@ type FetchedAppointment = WeekAppointment & { appointment_date: string; staff_id
 const DAY_NAMES_SHORT = ["日", "月", "火", "水", "木", "金", "土"];
 
 /** 週間カレンダーのデータフェッチ + レイアウト判定 + グリッド組立 */
-export function WeekViewContainer({ salonId, selectedDate, businessHours, salonHolidays }: Props) {
+export function WeekViewContainer({ salonId, selectedDate, businessHours, salonHolidays, hourOverrides }: Props) {
   const [staffList, setStaffList] = useState<StaffRow[]>([]);
   const [appointments, setAppointments] = useState<FetchedAppointment[]>([]);
   const [overrides, setOverrides] = useState<OverrideRow[]>([]);

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { isBusinessDay, isIrregularHoliday } from "@/lib/business-hours";
+import type { HourOverrides } from "@/types/database";
 import type { BusinessHours, DayAppointment, BookingSettings } from "./types";
 
 type Props = {
@@ -9,6 +10,7 @@ type Props = {
   onDateChange: (date: string) => void;
   businessHours: BusinessHours | null;
   salonHolidays: string[] | null;
+  hourOverrides?: HourOverrides | null;
   dayAppointments?: DayAppointment[];
   /** 月が変わった時に予約数を取得するためのコールバック */
   onMonthChange?: (year: number, month: number) => void;
@@ -34,6 +36,7 @@ export function MiniCalendar({
   onDateChange,
   businessHours,
   salonHolidays,
+  hourOverrides,
   appointmentCounts,
   onMonthChange,
   bookingSettings,
@@ -94,7 +97,7 @@ export function MiniCalendar({
           const isCellToday = dateStr === todayStr;
           const isSelected = dateStr === selectedDate;
           const dow = cellDate.getDay();
-          const isHoliday = businessHours && !isBusinessDay(businessHours, cellDate, salonHolidays);
+          const isHoliday = businessHours && !isBusinessDay(businessHours, cellDate, salonHolidays, hourOverrides);
           const isIrregular = isIrregularHoliday(salonHolidays, cellDate);
           const count = appointmentCounts?.[dateStr] ?? 0;
           const isSameDayBlocked = isCellToday && bookingSettings?.same_day_enabled === false;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getScheduleForDate, toDateString } from "@/lib/business-hours";
-import type { BusinessHours } from "@/types/database";
+import type { BusinessHours, HourOverrides } from "@/types/database";
 
 type SlotInfo = {
   time: string;
@@ -19,6 +19,7 @@ type Props = {
   onTimeChange: (time: string) => void;
   businessHours: BusinessHours | null;
   salonHolidays: string[] | null;
+  hourOverrides?: HourOverrides | null;
 };
 
 const DAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
@@ -60,6 +61,7 @@ export function BookingDatePicker({
   onTimeChange,
   businessHours,
   salonHolidays,
+  hourOverrides,
 }: Props) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [slots, setSlots] = useState<SlotInfo[]>([]);
@@ -83,7 +85,7 @@ export function BookingDatePicker({
 
   useEffect(() => { if (selectedDate) fetchSlots(selectedDate); }, [selectedDate, fetchSlots]);
 
-  const isOpen = (d: Date) => getScheduleForDate(businessHours, d, salonHolidays).is_open;
+  const isOpen = (d: Date) => getScheduleForDate(businessHours, d, salonHolidays, hourOverrides).is_open;
   const isPast = (d: Date) => toDateString(d) < todayStr;
   const weekLabel = dates[0].getMonth() === dates[6].getMonth()
     ? `${dates[0].getFullYear()}年${dates[0].getMonth() + 1}月`
