@@ -43,7 +43,7 @@ export const getAuthAndSalon = cache(async () => {
   if (staffRecord) {
     const { data: salon } = await supabase
       .from("salons")
-      .select("id, name, phone, address, business_hours, salon_holidays")
+      .select("id, name, phone, address, business_hours, salon_holidays, plan_type")
       .eq("id", staffRecord.salon_id)
       .single<Salon>();
 
@@ -62,7 +62,7 @@ export const getAuthAndSalon = cache(async () => {
   // フォールバック: owner_id で検索（staff レコードがない移行期対応）
   const { data: salon } = await supabase
     .from("salons")
-    .select("id, name, phone, address, business_hours, salon_holidays")
+    .select("id, name, phone, address, business_hours, salon_holidays, plan_type")
     .eq("owner_id", user.id)
     .single<Salon>();
 

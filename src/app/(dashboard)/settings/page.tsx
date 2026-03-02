@@ -91,6 +91,7 @@ export default function SettingsPage() {
       </form>
 
       {/* 設定リンク */}
+      <SettingsLinkCard href="/settings/billing" title="料金プラン・請求" description="プランの確認・アップグレード・支払い管理" />
       <SettingsLinkCard href="/settings/staff" title="スタッフ管理" description="スタッフの追加・権限設定・招待" />
       {staffCount > 1 && (
         <SettingsLinkCard href="/settings/shifts" title="シフト管理" description="スタッフの勤務スケジュール・休日設定" />

@@ -45,6 +45,7 @@ export type Database = {
           booking_slug: string | null;
           booking_enabled: boolean;
           counseling_template: CounselingTemplate | null;
+          plan_type: "free" | "standard";
           created_at: string;
           updated_at: string;
         };
@@ -61,6 +62,7 @@ export type Database = {
           booking_slug?: string | null;
           booking_enabled?: boolean;
           counseling_template?: CounselingTemplate | null;
+          plan_type?: "free" | "standard";
           created_at?: string;
           updated_at?: string;
         };
@@ -77,10 +79,51 @@ export type Database = {
           booking_slug?: string | null;
           booking_enabled?: boolean;
           counseling_template?: CounselingTemplate | null;
+          plan_type?: "free" | "standard";
           created_at?: string;
           updated_at?: string;
         };
         Relationships: [];
+      };
+      subscriptions: {
+        Row: {
+          id: string;
+          salon_id: string;
+          stripe_customer_id: string;
+          stripe_subscription_id: string;
+          status: "active" | "past_due" | "canceled" | "incomplete";
+          current_period_end: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          salon_id: string;
+          stripe_customer_id: string;
+          stripe_subscription_id: string;
+          status?: "active" | "past_due" | "canceled" | "incomplete";
+          current_period_end?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          salon_id?: string;
+          stripe_customer_id?: string;
+          stripe_subscription_id?: string;
+          status?: "active" | "past_due" | "canceled" | "incomplete";
+          current_period_end?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_salon_id_fkey";
+            columns: ["salon_id"];
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       customers: {
         Row: {
