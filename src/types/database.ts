@@ -22,6 +22,7 @@ export type BookingSettings = {
   lead_time_minutes: number; // 0 = 制限なし / 30 / 60 / 120 / 180
   max_concurrent_appointments: number; // 同時予約上限 1〜5, デフォルト1
   min_advance_hours?: number; // 予約受付締切（X時間前まで）。0 = 制限なし
+  change_deadline_hours?: number; // キャンセル・変更締切（予約のX時間前まで）。0 = 制限なし
 };
 
 /** 特定日の営業時間上書き（臨時の時短営業・延長営業等） */

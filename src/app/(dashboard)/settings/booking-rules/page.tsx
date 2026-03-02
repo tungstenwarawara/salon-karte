@@ -36,6 +36,17 @@ const ADVANCE_HOURS_OPTIONS = [
   { value: 48, label: "48時間前（2日前）まで" },
 ] as const;
 
+const CHANGE_DEADLINE_OPTIONS = [
+  { value: 0, label: "制限なし（いつでも可）" },
+  { value: 1, label: "1時間前まで" },
+  { value: 2, label: "2時間前まで" },
+  { value: 3, label: "3時間前まで" },
+  { value: 6, label: "6時間前まで" },
+  { value: 12, label: "12時間前まで" },
+  { value: 24, label: "24時間前（前日）まで" },
+  { value: 48, label: "48時間前（2日前）まで" },
+] as const;
+
 const DEFAULT_SETTINGS: BookingSettings = {
   same_day_enabled: true,
   lead_time_minutes: 0,
@@ -182,6 +193,25 @@ export default function BookingRulesPage() {
             className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors min-h-[48px]"
           >
             {CONCURRENT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* キャンセル・変更締切 */}
+        <div className="space-y-2">
+          <h3 className="font-bold text-sm">キャンセル・変更締切</h3>
+          <p className="text-xs text-text-light">
+            お客様がWeb予約のキャンセル・変更をできる期限（予約の何時間前まで）
+          </p>
+          <select
+            value={settings.change_deadline_hours ?? 0}
+            onChange={(e) =>
+              setSettings({ ...settings, change_deadline_hours: Number(e.target.value) })
+            }
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors min-h-[48px]"
+          >
+            {CHANGE_DEADLINE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>

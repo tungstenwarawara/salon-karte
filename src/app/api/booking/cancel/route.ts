@@ -6,6 +6,7 @@ import {
   buildCustomerCancelConfirmationEmail,
   buildOwnerCancelNotificationEmail,
 } from "@/lib/email/templates";
+import { checkChangeDeadline } from "@/lib/booking/deadline";
 
 // POST: 予約キャンセル（公開API — cancel_tokenで認証）
 export async function POST(request: Request) {
@@ -49,6 +50,12 @@ export async function POST(request: Request) {
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   if (appointment.appointment_date < todayStr) {
     return NextResponse.json({ error: "過去の予約はキャンセルできません" }, { status: 400 });
+  }
+
+  // キャンセル・変更締切チェック
+  const deadlineError = await checkChangeDeadline(admin, appointment.salon_id, appointment.appointment_date, appointment.start_time);
+  if (deadlineError) {
+    return NextResponse.json({ error: deadlineError }, { status: 400 });
   }
 
   // ステータスをキャンセルに更新
@@ -103,6 +110,13 @@ export async function GET(request: Request) {
     .eq("id", appointment.salon_id)
     .single();
 
+  // 締切切れ判定
+  let deadlinePassed = false;
+  if (appointment.status === "scheduled") {
+    const err = await checkChangeDeadline(admin, appointment.salon_id, appointment.appointment_date, appointment.start_time);
+    deadlinePassed = !!err;
+  }
+
   return NextResponse.json({
     appointmentDate: appointment.appointment_date,
     startTime: appointment.start_time,
@@ -110,6 +124,7 @@ export async function GET(request: Request) {
     menuName: appointment.menu_name_snapshot,
     salonName: salon?.name ?? "",
     bookingSlug: salon?.booking_slug ?? null,
+    deadlinePassed,
   });
 }
 

@@ -20,6 +20,8 @@ type Props = {
   businessHours: BusinessHours | null;
   salonHolidays: string[] | null;
   hourOverrides?: HourOverrides | null;
+  /** 予約変更時: このトークンの予約を除外して空き枠を計算する */
+  changeToken?: string;
 };
 
 const DAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
@@ -62,6 +64,7 @@ export function BookingDatePicker({
   businessHours,
   salonHolidays,
   hourOverrides,
+  changeToken,
 }: Props) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [slots, setSlots] = useState<SlotInfo[]>([]);
@@ -77,11 +80,15 @@ export function BookingDatePicker({
     setLoadingSlots(true);
     setSlots([]);
     try {
-      const res = await fetch(`/api/booking/${slug}?date=${date}&duration=${totalDuration}`);
+      // 変更モード時は変更APIから空き枠を取得（自分の予約を除外）
+      const url = changeToken
+        ? `/api/booking/change?token=${changeToken}&date=${date}&duration=${totalDuration}`
+        : `/api/booking/${slug}?date=${date}&duration=${totalDuration}`;
+      const res = await fetch(url);
       if (res.ok) setSlots((await res.json()).slots ?? []);
     } catch { /* ネットワークエラー */ }
     finally { setLoadingSlots(false); }
-  }, [slug, totalDuration]);
+  }, [slug, totalDuration, changeToken]);
 
   useEffect(() => { if (selectedDate) fetchSlots(selectedDate); }, [selectedDate, fetchSlots]);
 

@@ -11,6 +11,7 @@ type AppointmentInfo = {
   menuName: string | null;
   salonName: string;
   bookingSlug: string | null;
+  deadlinePassed: boolean;
 };
 
 const DAY_NAMES = ["日", "月", "火", "水", "木", "金", "土"];
@@ -160,6 +161,23 @@ export default function CancelPage() {
     );
   }
 
+  // 締切切れの場合
+  if (info?.deadlinePassed) {
+    return (
+      <div className="text-center py-12 space-y-4">
+        <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto">
+          <svg className="w-10 h-10 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+        </div>
+        <h1 className="text-xl font-bold">キャンセル受付期限を過ぎています</h1>
+        <p className="text-text-light text-sm leading-relaxed">
+          キャンセル・変更はサロンへ直接ご連絡ください。
+        </p>
+      </div>
+    );
+  }
+
   // キャンセル確認画面
   return (
     <div className="py-8 space-y-6">
@@ -194,6 +212,13 @@ export default function CancelPage() {
       )}
 
       <div className="space-y-3">
+        <Link
+          href={`/book/change/${token}`}
+          className="block w-full text-center bg-accent hover:bg-accent-light text-white font-bold rounded-xl py-3 transition-colors min-h-[48px] leading-[24px]"
+        >
+          日時・メニューを変更する
+        </Link>
+
         <button
           onClick={handleCancel}
           disabled={cancelling}
