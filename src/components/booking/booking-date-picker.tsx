@@ -7,6 +7,7 @@ import type { BusinessHours } from "@/types/database";
 type SlotInfo = {
   time: string;
   available: boolean;
+  reason?: "occupied" | "lead_time" | "exceeds_close" | "overlap_during";
 };
 
 type Props = {
@@ -28,6 +29,16 @@ function NavBtn({ onClick, disabled, d }: { onClick: () => void; disabled: boole
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d={d} /></svg>
     </button>
   );
+}
+
+function slotReasonLabel(reason?: string): string {
+  switch (reason) {
+    case "occupied": return "予約済みです";
+    case "lead_time": return "受付締切を過ぎています";
+    case "exceeds_close": return "閉店までに施術が終わりません";
+    case "overlap_during": return "施術中の時間帯に予約が入っています";
+    default: return "予約できません";
+  }
 }
 
 function generateWeekDates(weekOffset: number): Date[] {
@@ -152,27 +163,42 @@ export function BookingDatePicker({
             </div>
           ) : availableSlots.length === 0 ? (
             <div className="text-center py-6 text-sm text-text-light bg-surface rounded-xl">
-              空きがありません。別の日をお選びください
+              {slots.some((s) => s.reason === "exceeds_close" || s.reason === "overlap_during")
+                ? "選択メニューの施術時間に合う空きがありません。別の日をお選びください"
+                : "空きがありません。別の日をお選びください"
+              }
             </div>
           ) : (
-            <div className="grid grid-cols-4 gap-2">
-              {slots.map((slot) => (
-                <button
-                  key={slot.time}
-                  type="button"
-                  onClick={() => slot.available && onTimeChange(slot.time)}
-                  disabled={!slot.available}
-                  className={`rounded-xl py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
-                    selectedTime === slot.time
-                      ? "bg-accent text-white"
-                      : slot.available
-                      ? "bg-surface border border-border hover:border-accent/30"
-                      : "bg-border/10 text-text-light/40 cursor-not-allowed"
-                  }`}
-                >
-                  {slot.time}
-                </button>
-              ))}
+            <div className="space-y-3">
+              <div className="grid grid-cols-4 gap-2">
+                {slots.map((slot) => (
+                  <button
+                    key={slot.time}
+                    type="button"
+                    onClick={() => slot.available && onTimeChange(slot.time)}
+                    disabled={!slot.available}
+                    title={!slot.available ? slotReasonLabel(slot.reason) : undefined}
+                    className={`rounded-xl py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
+                      selectedTime === slot.time
+                        ? "bg-accent text-white"
+                        : slot.available
+                        ? "bg-surface border border-border hover:border-accent/30"
+                        : "bg-border/10 text-text-light/40 cursor-not-allowed"
+                    }`}
+                  >
+                    {slot.time}
+                  </button>
+                ))}
+              </div>
+              {/* 不可理由の凡例 */}
+              {slots.some((s) => !s.available) && (
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-text-light">
+                  {slots.some((s) => s.reason === "occupied") && <span>グレー枠 = 予約済み</span>}
+                  {slots.some((s) => s.reason === "lead_time") && <span>グレー枠 = 受付締切済み</span>}
+                  {slots.some((s) => s.reason === "exceeds_close") && <span>グレー枠 = 閉店までに終わらない</span>}
+                  {slots.some((s) => s.reason === "overlap_during") && <span>グレー枠 = 施術中に空きなし</span>}
+                </div>
+              )}
             </div>
           )}
         </div>

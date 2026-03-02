@@ -1,11 +1,30 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 
-type Props = {
-  params: Promise<{ slug: string }>;
-};
+export default function BookingCompletePage() {
+  const { slug } = useParams<{ slug: string }>();
+  const router = useRouter();
+  const [verified, setVerified] = useState(false);
 
-export default async function BookingCompletePage({ params }: Props) {
-  const { slug } = await params;
+  useEffect(() => {
+    try {
+      const flag = sessionStorage.getItem("booking_completed");
+      if (flag === slug) {
+        setVerified(true);
+        sessionStorage.removeItem("booking_completed");
+      } else {
+        // 予約完了フラグがない場合は予約ページに戻す
+        router.replace(`/book/${slug}`);
+      }
+    } catch {
+      router.replace(`/book/${slug}`);
+    }
+  }, [slug, router]);
+
+  if (!verified) return null;
 
   return (
     <div className="text-center py-12 space-y-6">
