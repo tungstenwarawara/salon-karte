@@ -7,12 +7,14 @@ type Props = {
   phone: string;
   memo: string;
   hp: string;
+  agreedToPrivacy: boolean;
   onLastNameChange: (v: string) => void;
   onFirstNameChange: (v: string) => void;
   onEmailChange: (v: string) => void;
   onPhoneChange: (v: string) => void;
   onMemoChange: (v: string) => void;
   onHpChange: (v: string) => void;
+  onAgreedToPrivacyChange: (v: boolean) => void;
 };
 
 const INPUT_CLASS =
@@ -25,12 +27,14 @@ export function BookingCustomerForm({
   phone,
   memo,
   hp,
+  agreedToPrivacy,
   onLastNameChange,
   onFirstNameChange,
   onEmailChange,
   onPhoneChange,
   onMemoChange,
   onHpChange,
+  onAgreedToPrivacyChange,
 }: Props) {
   return (
     <div className="space-y-4">
@@ -122,6 +126,27 @@ export function BookingCustomerForm({
           </p>
         )}
       </div>
+
+      {/* プライバシーポリシー同意 */}
+      <label className="flex items-start gap-3 cursor-pointer pt-2">
+        <input
+          type="checkbox"
+          checked={agreedToPrivacy}
+          onChange={(e) => onAgreedToPrivacyChange(e.target.checked)}
+          className="mt-0.5 w-5 h-5 rounded border-border accent-accent flex-shrink-0"
+        />
+        <span className="text-sm text-text-light leading-relaxed">
+          <a
+            href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent underline"
+          >
+            プライバシーポリシー
+          </a>
+          に同意の上、予約を進めてください
+        </span>
+      </label>
 
       {/* ハニーポット（非表示） */}
       <div className="absolute -left-[9999px] opacity-0 h-0 overflow-hidden" aria-hidden="true">

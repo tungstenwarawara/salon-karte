@@ -37,6 +37,7 @@ export function BookingPageClient({ slug }: Props) {
   const [phone, setPhone] = useState("");
   const [memo, setMemo] = useState("");
   const [hp, setHp] = useState("");
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -69,7 +70,7 @@ export function BookingPageClient({ slug }: Props) {
     switch (step) {
       case 1: return selectedMenuIds.length > 0;
       case 2: return !!selectedDate && !!selectedTime;
-      case 3: return !!lastName.trim() && !!firstName.trim() && !!email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) && !!phone.trim();
+      case 3: return !!lastName.trim() && !!firstName.trim() && !!email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) && !!phone.trim() && agreedToPrivacy;
       default: return true;
     }
   };
@@ -181,8 +182,8 @@ export function BookingPageClient({ slug }: Props) {
       )}
       {step === 3 && (
         <BookingCustomerForm lastName={lastName} firstName={firstName} email={email} phone={phone} memo={memo} hp={hp}
-          onLastNameChange={setLastName} onFirstNameChange={setFirstName} onEmailChange={setEmail} onPhoneChange={setPhone}
-          onMemoChange={setMemo} onHpChange={setHp} />
+          agreedToPrivacy={agreedToPrivacy} onLastNameChange={setLastName} onFirstNameChange={setFirstName} onEmailChange={setEmail}
+          onPhoneChange={setPhone} onMemoChange={setMemo} onHpChange={setHp} onAgreedToPrivacyChange={setAgreedToPrivacy} />
       )}
       {step === 4 && (
         <BookingConfirmation selectedMenus={selectedMenus} date={selectedDate} time={selectedTime}
