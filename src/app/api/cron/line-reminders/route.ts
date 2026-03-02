@@ -154,6 +154,7 @@ export async function POST(request: Request) {
       if (resend) {
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.salonkarte.com";
         const cancelUrl = apt.cancel_token ? `${baseUrl}/book/cancel/${apt.cancel_token}` : undefined;
+        const changeUrl = apt.cancel_token ? `${baseUrl}/book/change/${apt.cancel_token}` : undefined;
 
         const { subject, html } = buildCustomerReminderEmail({
           customerName,
@@ -163,6 +164,7 @@ export async function POST(request: Request) {
           salonName: salon.name,
           salonPhone: salon.phone,
           cancelUrl,
+          changeUrl,
         });
 
         try {

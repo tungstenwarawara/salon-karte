@@ -251,6 +251,7 @@ export async function POST(
     isNewCustomer,
     memo: memo?.trim() || null,
     cancelUrl: `${baseUrl}/book/cancel/${cancelToken}`,
+    changeUrl: `${baseUrl}/book/change/${cancelToken}`,
   }).catch(() => {});
 
   return NextResponse.json({ success: true, appointmentId: appointment.id });
