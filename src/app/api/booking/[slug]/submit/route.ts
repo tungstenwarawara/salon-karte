@@ -73,7 +73,7 @@ export async function POST(
   // --- サロン検索 ---
   const { data: salon, error: salonError } = await admin
     .from("salons")
-    .select("id, name, phone, owner_id, business_hours, salon_holidays, booking_settings, booking_enabled")
+    .select("id, name, phone, owner_id, business_hours, salon_holidays, hour_overrides, booking_settings, booking_enabled")
     .eq("booking_slug", slug)
     .single();
 
@@ -128,6 +128,7 @@ export async function POST(
   const slots = calculateAvailableSlots({
     businessHours: salon.business_hours,
     salonHolidays: salon.salon_holidays,
+    hourOverrides: salon.hour_overrides,
     bookingSettings: salon.booking_settings,
     date,
     existingAppointments: existingApts ?? [],
