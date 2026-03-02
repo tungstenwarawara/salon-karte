@@ -39,11 +39,14 @@ export default function BookingCompletePage() {
         <h1 className="text-2xl font-bold">予約を受け付けました</h1>
         <p className="text-text-light text-sm leading-relaxed">
           ご予約ありがとうございます。<br />
-          サロンからの確認をお待ちください。
+          確認メールをお送りしましたのでご確認ください。
         </p>
       </div>
 
-      <div className="bg-surface border border-border rounded-xl p-4">
+      <div className="bg-surface border border-border rounded-xl p-4 space-y-2">
+        <p className="text-xs text-text-light">
+          メールが届かない場合は、迷惑メールフォルダをご確認ください。
+        </p>
         <p className="text-xs text-text-light">
           キャンセル・変更はサロンへ直接ご連絡ください。
         </p>

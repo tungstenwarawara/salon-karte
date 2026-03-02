@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calculateAvailableSlots } from "@/lib/booking-slots";
 import { timeToMinutes, minutesToTime } from "@/lib/business-hours";
+import { sendWebBookingNotifications } from "@/lib/booking/notifications";
 
 type SubmitBody = {
   date: string;
@@ -71,7 +72,7 @@ export async function POST(
   // --- サロン検索 ---
   const { data: salon, error: salonError } = await admin
     .from("salons")
-    .select("id, name, business_hours, salon_holidays, booking_settings, booking_enabled")
+    .select("id, name, phone, owner_id, business_hours, salon_holidays, booking_settings, booking_enabled")
     .eq("booking_slug", slug)
     .single();
 
@@ -139,6 +140,7 @@ export async function POST(
 
   // --- 顧客マッチング ---
   let customerId: string;
+  let isNewCustomer = false;
   const { data: existingCustomer } = await admin
     .from("customers")
     .select("id")
@@ -174,6 +176,7 @@ export async function POST(
       return NextResponse.json({ error: "予約処理に失敗しました" }, { status: 500 });
     }
     customerId = newCustomer.id;
+    isNewCustomer = true;
   }
 
   // --- 予約作成 ---
@@ -223,6 +226,26 @@ export async function POST(
     console.error("予約メニュー作成エラー:", menuInsertError);
     // 予約自体は作成済みなので、メニューの紐付けだけ失敗した旨をログに残す
   }
+
+  // --- 通知送信（fire-and-forget: 失敗しても予約は成功扱い） ---
+  const customerName = `${last_name.trim()} ${first_name.trim()}`;
+  sendWebBookingNotifications({
+    salonId: salon.id,
+    salonName: salon.name,
+    salonPhone: salon.phone,
+    ownerId: salon.owner_id,
+    appointmentId: appointment.id,
+    appointmentDate: date,
+    startTime: start_time + ":00",
+    menuNames: menus.map((m) => m.name),
+    totalDuration,
+    customerId,
+    customerName,
+    customerEmail: email.trim(),
+    customerPhone: normalizedPhone,
+    isNewCustomer,
+    memo: memo?.trim() || null,
+  }).catch(() => {});
 
   return NextResponse.json({ success: true, appointmentId: appointment.id });
 }
