@@ -262,6 +262,7 @@ export default function ChangePage() {
           businessHours={salon.businessHours}
           salonHolidays={salon.salonHolidays}
           hourOverrides={salon.hourOverrides}
+          changeToken={token}
         />
       )}
 
