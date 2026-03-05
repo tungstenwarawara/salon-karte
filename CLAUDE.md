@@ -109,3 +109,4 @@
 - @.claude/rules/performance.md — パフォーマンス最適化
 - @.claude/rules/lessons-learned.md — 過去の障害・教訓
 - @.claude/rules/test-salon.md — テストサロン運用ルール
+- @.claude/rules/external-services.md — 外部サービス一元管理・障害対応
