@@ -15,6 +15,7 @@ export function TicketInlineForm({ menus = [], onAdd }: Props) {
   const [sessions, setSessions] = useState("2");
   const [price, setPrice] = useState("");
   const [memo, setMemo] = useState("");
+  const [paymentType, setPaymentType] = useState<"cash" | "credit">("cash");
 
   // メニュー選択時にチケット名と参考金額を自動入力
   const handleMenuChange = (menuId: string) => {
@@ -49,6 +50,7 @@ export function TicketInlineForm({ menus = [], onAdd }: Props) {
       total_sessions: Math.max(1, parseInt(sessions, 10) || 1),
       price: price ? parseInt(price, 10) || null : null,
       memo,
+      payment_type: paymentType,
     });
     // フォームリセット
     setSelectedMenuId("");
@@ -56,6 +58,7 @@ export function TicketInlineForm({ menus = [], onAdd }: Props) {
     setSessions("2");
     setPrice("");
     setMemo("");
+    setPaymentType("cash");
   };
 
   // メニュー選択モード時の定価参考表示
@@ -161,6 +164,24 @@ export function TicketInlineForm({ menus = [], onAdd }: Props) {
           </span>
         </div>
       )}
+
+      {/* 支払方法 */}
+      <div className="space-y-1">
+        <label className="block text-xs text-text-light">支払方法</label>
+        <div className="flex gap-1 bg-background rounded-xl p-0.5">
+          <button type="button" onClick={() => setPaymentType("cash")}
+            className={`flex-1 text-center text-xs font-medium py-1.5 rounded-lg transition-colors min-h-[36px] ${paymentType === "cash" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"}`}>
+            現金
+          </button>
+          <button type="button" onClick={() => setPaymentType("credit")}
+            className={`flex-1 text-center text-xs font-medium py-1.5 rounded-lg transition-colors min-h-[36px] ${paymentType === "credit" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"}`}>
+            クレジット
+          </button>
+        </div>
+        <p className="text-[10px] text-text-light">
+          {paymentType === "cash" ? "現金 / 前受金 として記録" : "売掛金 / 前受金 として記録（入金は後日）"}
+        </p>
+      </div>
 
       <input
         type="text"

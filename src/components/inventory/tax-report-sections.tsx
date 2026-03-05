@@ -1,7 +1,7 @@
 "use client";
 
+import Link from "next/link";
 import type { CsvTaxReport, CsvMonthlySales } from "@/lib/csv-generators";
-import { downloadCsv } from "@/lib/csv-generators";
 
 function formatYen(amount: number): string {
   return `¥${amount.toLocaleString()}`;
@@ -13,7 +13,7 @@ type Props = {
   year: number;
 };
 
-/** 確定申告レポートの各セクション表示 */
+/** 年間収支サマリーの各セクション表示 */
 export function TaxReportSections({ report, monthlySales, year }: Props) {
   const totalTreatmentSales = monthlySales.reduce((s, m) => s + m.treatment_sales, 0);
   const totalProductSales = monthlySales.reduce((s, m) => s + m.product_sales, 0);
@@ -22,42 +22,74 @@ export function TaxReportSections({ report, monthlySales, year }: Props) {
 
   return (
     <>
-      {/* 注意書き */}
+      {/* 免責注記 */}
       <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
         <p className="text-xs text-amber-800 font-medium">このレポートは売上・仕入の参考資料です</p>
         <p className="text-[10px] text-amber-700 mt-0.5">確定申告には税理士や会計ソフトでの確認をお勧めします。金額は本アプリへの入力値に基づくため、実際の入出金とは異なる場合があります。</p>
       </div>
 
+      {/* 粗利サマリー */}
+      <div className="bg-accent/5 border border-accent/20 rounded-2xl p-5 space-y-2">
+        <h3 className="font-bold text-sm">年間の利益</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div><p className="text-xs text-text-light">年間売上合計</p><p className="text-lg font-bold tabular-nums">{formatYen(totalSales)}</p></div>
+          <div><p className="text-xs text-text-light">仕入にかかった費用</p><p className="text-lg font-bold tabular-nums">{formatYen(report.cost_of_goods_sold)}</p></div>
+        </div>
+        <div className="border-t border-accent/20 pt-2">
+          <p className="text-xs text-text-light">粗利（売上 − 仕入費用）</p>
+          <p className="text-xl font-bold text-accent tabular-nums">{formatYen(totalSales - report.cost_of_goods_sold)}</p>
+        </div>
+        <p className="text-[10px] text-text-light leading-relaxed">
+          粗利とは、売上から商品の仕入費用を引いた金額です。ここから家賃・光熱費などの経費を引くと最終的な利益になります。
+        </p>
+      </div>
+
       {/* 売上原価計算 */}
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
-        <h3 className="font-bold text-sm">売上原価の計算</h3>
+        <div>
+          <h3 className="font-bold text-sm">仕入費用の内訳</h3>
+          <p className="text-[10px] text-text-light mt-0.5">
+            商品の仕入にいくらかかったかの計算です。確定申告で「売上原価」の欄に記入する金額になります。
+          </p>
+        </div>
         <div className="space-y-2">
-          <div className="flex justify-between text-sm"><span className="text-text-light">期首棚卸高</span><span className="font-medium tabular-nums">{formatYen(report.opening_stock_value)}</span></div>
-          <div className="flex justify-between text-sm"><span className="text-text-light">＋ 当期仕入高</span><span className="font-medium tabular-nums">{formatYen(report.total_purchases)}</span></div>
-          <div className="flex justify-between text-sm"><span className="text-text-light">− 期末棚卸高</span><span className="font-medium tabular-nums">{formatYen(report.closing_stock_value)}</span></div>
+          <div className="flex justify-between text-sm">
+            <div>
+              <span className="text-text-light">年初の在庫金額</span>
+              <p className="text-[10px] text-text-light">（{year}年1月1日時点の在庫の価値）</p>
+            </div>
+            <span className="font-medium tabular-nums">{formatYen(report.opening_stock_value)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <div>
+              <span className="text-text-light">＋ 今年の仕入金額</span>
+              <p className="text-[10px] text-text-light">（今年新たに仕入れた合計）</p>
+            </div>
+            <span className="font-medium tabular-nums">{formatYen(report.total_purchases)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <div>
+              <span className="text-text-light">− 年末の在庫金額</span>
+              <p className="text-[10px] text-text-light">（{year}年12月31日時点でまだ残っている在庫の価値）</p>
+            </div>
+            <span className="font-medium tabular-nums">{formatYen(report.closing_stock_value)}</span>
+          </div>
           <div className="border-t border-border pt-2 flex justify-between">
-            <span className="font-bold text-sm">＝ 売上原価</span>
+            <div>
+              <span className="font-bold text-sm">＝ 仕入費用（売上原価）</span>
+              <p className="text-[10px] text-text-light">実際に売れた分の仕入コスト</p>
+            </div>
             <span className="font-bold text-lg text-accent tabular-nums">{formatYen(report.cost_of_goods_sold)}</span>
           </div>
         </div>
       </div>
 
-      {/* 粗利サマリー */}
-      <div className="bg-accent/5 border border-accent/20 rounded-2xl p-5 space-y-2">
-        <h3 className="font-bold text-sm">粗利サマリー</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div><p className="text-xs text-text-light">年間売上合計</p><p className="text-lg font-bold tabular-nums">{formatYen(totalSales)}</p></div>
-          <div><p className="text-xs text-text-light">売上原価</p><p className="text-lg font-bold tabular-nums">{formatYen(report.cost_of_goods_sold)}</p></div>
-        </div>
-        <div className="border-t border-accent/20 pt-2">
-          <p className="text-xs text-text-light">粗利</p>
-          <p className="text-xl font-bold text-accent tabular-nums">{formatYen(totalSales - report.cost_of_goods_sold)}</p>
-        </div>
-      </div>
-
       {/* 月別売上 */}
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
-        <h3 className="font-bold text-sm">月別売上</h3>
+        <div>
+          <h3 className="font-bold text-sm">月別売上</h3>
+          <p className="text-[10px] text-text-light mt-0.5">施術・物販・回数券の月ごとの売上金額です。</p>
+        </div>
         {monthlySales.length === 0 ? (
           <p className="text-sm text-text-light text-center py-2">データなし</p>
         ) : (
@@ -109,7 +141,10 @@ export function TaxReportSections({ report, monthlySales, year }: Props) {
       {/* 期末棚卸明細 */}
       {report.closing_stock_details.length > 0 && (
         <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
-          <h3 className="font-bold text-sm">期末棚卸明細</h3>
+          <div>
+            <h3 className="font-bold text-sm">年末在庫の明細</h3>
+            <p className="text-[10px] text-text-light mt-0.5">{year}年末時点で残っている商品の一覧です。確定申告の「期末棚卸高」の資料になります。</p>
+          </div>
           <div className="space-y-1">
             <div className="grid grid-cols-[1fr_50px_70px_80px] gap-1 text-[10px] text-text-light font-medium pb-1 border-b border-border">
               <span>商品名</span><span className="text-right">在庫</span><span className="text-right">単価</span><span className="text-right">金額</span>
@@ -123,32 +158,24 @@ export function TaxReportSections({ report, monthlySales, year }: Props) {
               </div>
             ))}
             <div className="flex justify-between text-sm border-t border-border pt-1 font-bold">
-              <span>期末棚卸高 合計</span><span className="tabular-nums">{formatYen(report.closing_stock_value)}</span>
+              <span>年末在庫 合計</span><span className="tabular-nums">{formatYen(report.closing_stock_value)}</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* CSV出力 */}
+      {/* 会計ソフト連携への誘導 */}
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
-        <h3 className="font-bold text-sm">CSV出力</h3>
-        <p className="text-xs text-text-light">売上・仕入の内訳データをCSV形式でダウンロードできます。税理士への共有や会計ソフトへの取り込みにご活用ください。</p>
-        <div className="space-y-2">
-          <button onClick={() => downloadCsv("generic", report, monthlySales, year)}
-            className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors min-h-[48px] text-sm">
-            汎用CSV ダウンロード
-          </button>
-          <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => downloadCsv("freee", report, monthlySales, year)}
-              className="bg-background border border-border text-text font-medium rounded-xl py-2.5 transition-colors min-h-[44px] text-sm hover:bg-border/30">
-              freee形式
-            </button>
-            <button onClick={() => downloadCsv("yayoi", report, monthlySales, year)}
-              className="bg-background border border-border text-text font-medium rounded-xl py-2.5 transition-colors min-h-[44px] text-sm hover:bg-border/30">
-              弥生形式
-            </button>
-          </div>
-        </div>
+        <h3 className="font-bold text-sm">会計ソフトに取り込むには</h3>
+        <p className="text-xs text-text-light leading-relaxed">
+          freee・マネーフォワード・弥生会計に取り込める仕訳CSVは、設定画面のデータエクスポートからダウンロードできます。
+        </p>
+        <Link
+          href="/settings/export"
+          className="block w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors min-h-[48px] text-sm text-center"
+        >
+          データエクスポートへ →
+        </Link>
       </div>
     </>
   );

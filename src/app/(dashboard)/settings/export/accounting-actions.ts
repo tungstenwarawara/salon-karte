@@ -24,6 +24,7 @@ type PurchaseRow = {
   purchase_date: string;
   item_name: string;
   total_price: number;
+  payment_type: string;
   customers: { last_name: string; first_name: string } | null;
 };
 
@@ -31,6 +32,7 @@ type TicketRow = {
   purchase_date: string;
   ticket_name: string;
   price: number | null;
+  payment_type: string;
   customers: { last_name: string; first_name: string } | null;
 };
 
@@ -66,7 +68,7 @@ export async function exportAccountingCsv(
     // 物販
     supabase
       .from("purchases")
-      .select("purchase_date, item_name, total_price, customers(last_name, first_name)")
+      .select("purchase_date, item_name, total_price, payment_type, customers(last_name, first_name)")
       .eq("salon_id", salon.id)
       .gte("purchase_date", startDate)
       .lte("purchase_date", endDate)
@@ -76,7 +78,7 @@ export async function exportAccountingCsv(
     // 回数券販売
     supabase
       .from("course_tickets")
-      .select("purchase_date, ticket_name, price, customers(last_name, first_name)")
+      .select("purchase_date, ticket_name, price, payment_type, customers(last_name, first_name)")
       .eq("salon_id", salon.id)
       .gte("purchase_date", startDate)
       .lte("purchase_date", endDate)
@@ -100,6 +102,7 @@ export async function exportAccountingCsv(
     customerName: customerName(p.customers),
     itemName: p.item_name,
     totalPrice: p.total_price,
+    paymentType: p.payment_type ?? "cash",
   }));
 
   const ticketSales = (ticketsRes.data ?? [])
@@ -109,6 +112,7 @@ export async function exportAccountingCsv(
       customerName: customerName(t.customers),
       ticketName: t.ticket_name,
       price: t.price!,
+      paymentType: t.payment_type ?? "cash",
     }));
 
   const entries = buildJournalEntries({ treatments, purchases, ticketSales });

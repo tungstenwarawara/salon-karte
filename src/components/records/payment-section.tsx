@@ -156,6 +156,35 @@ export function PaymentSection({
           当日お支払い: {cashTotal.toLocaleString()}円
         </p>
       )}
+
+      {/* 会計処理のヒント */}
+      <AccountingHint menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments} />
+    </div>
+  );
+}
+
+function AccountingHint({ menus, selectedMenuIds, menuPayments }: { menus: Menu[]; selectedMenuIds: string[]; menuPayments: MenuPaymentInfo[] }) {
+  if (selectedMenuIds.length === 0) return null;
+
+  const getSum = (type: string) => selectedMenuIds.reduce((sum, id) => {
+    const payment = menuPayments.find((mp) => mp.menuId === id);
+    if (payment?.paymentType !== type) return sum;
+    const menu = menus.find((m) => m.id === id);
+    return sum + (payment?.priceOverride ?? menu?.price ?? 0);
+  }, 0);
+
+  const cashSum = getSum("cash");
+  const creditSum = getSum("credit");
+  const ticketSum = getSum("ticket");
+
+  if (cashSum === 0 && creditSum === 0 && ticketSum === 0) return null;
+
+  return (
+    <div className="mt-2 bg-background rounded-xl px-3 py-2 space-y-0.5">
+      <p className="text-[10px] text-text-light font-medium">会計ソフトへの反映:</p>
+      {cashSum > 0 && <p className="text-[10px] text-text-light">現金 {cashSum.toLocaleString()}円 → 売上高</p>}
+      {creditSum > 0 && <p className="text-[10px] text-text-light">売掛金 {creditSum.toLocaleString()}円 → 売上高（入金は後日）</p>}
+      {ticketSum > 0 && <p className="text-[10px] text-text-light">前受金 {ticketSum.toLocaleString()}円 → 売上高に振替</p>}
     </div>
   );
 }

@@ -94,6 +94,20 @@ export function CourseTicketSection({
     setProcessingId(null);
   };
 
+  const handleSavePaymentType = async (ticketId: string, paymentType: "cash" | "credit") => {
+    setProcessingId(ticketId);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("course_tickets")
+      .update({ payment_type: paymentType })
+      .eq("id", ticketId)
+      .eq("salon_id", salonId);
+    if (!error) {
+      setTickets((prev) => prev.map((t) => t.id === ticketId ? { ...t, payment_type: paymentType } : t));
+    }
+    setProcessingId(null);
+  };
+
   const handleDelete = async (ticketId: string) => {
     setConfirmDeleteId(null);
     setDeletingId(ticketId);
@@ -125,6 +139,7 @@ export function CourseTicketSection({
     onRequestDelete: (id: string) => setConfirmDeleteId(id),
     onConfirmDelete: handleDelete,
     onCancelDelete: () => setConfirmDeleteId(null),
+    onSavePaymentType: handleSavePaymentType,
   });
 
   return (

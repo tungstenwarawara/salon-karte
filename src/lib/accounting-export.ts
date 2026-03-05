@@ -46,12 +46,14 @@ export function buildJournalEntries(data: {
     customerName: string;
     itemName: string;
     totalPrice: number;
+    paymentType?: string;
   }[];
   ticketSales: {
     date: string;
     customerName: string;
     ticketName: string;
     price: number;
+    paymentType?: string;
   }[];
 }): JournalEntry[] {
   const entries: JournalEntry[] = [];
@@ -73,11 +75,12 @@ export function buildJournalEntries(data: {
     });
   }
 
-  // 物販売上（現金扱い — 物販テーブルに決済手段がないためデフォルト現金）
+  // 物販売上
   for (const p of data.purchases) {
+    const debit = p.paymentType === "credit" ? "売掛金" : "現金";
     entries.push({
       date: p.date,
-      debitAccount: "現金",
+      debitAccount: debit,
       debitAmount: p.totalPrice,
       creditAccount: "売上高",
       creditAmount: p.totalPrice,
@@ -86,11 +89,12 @@ export function buildJournalEntries(data: {
     });
   }
 
-  // 回数券販売（前受金計上 — 決済手段がないためデフォルト現金）
+  // 回数券販売（前受金計上）
   for (const ts of data.ticketSales) {
+    const debit = ts.paymentType === "credit" ? "売掛金" : "現金";
     entries.push({
       date: ts.date,
-      debitAccount: "現金",
+      debitAccount: debit,
       debitAmount: ts.price,
       creditAccount: "前受金",
       creditAmount: ts.price,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import type { Database } from "@/types/database";
 
@@ -13,6 +14,28 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 type ConsumptionEntry = { date: string; menuName: string; recordId: string };
+
+function ConsumptionHistory({ entries, usedSessions }: { entries: ConsumptionEntry[]; usedSessions: number }) {
+  if (usedSessions <= 0) return null;
+  const sorted = entries.sort((a, b) => b.date.localeCompare(a.date));
+  const manualCount = usedSessions - entries.length;
+  return (
+    <div className="border-t border-border pt-2">
+      <p className="text-xs text-text-light font-medium mb-1">消化履歴</p>
+      {sorted.map((e, i) => {
+        const d = new Date(e.date);
+        return (
+          <div key={i} className="flex items-center gap-2 text-xs">
+            <span className="text-text-light w-10">{d.getMonth() + 1}/{d.getDate()}</span>
+            <span className="truncate">{e.menuName}</span>
+            <Link href={`/records/${e.recordId}`} className="text-accent hover:underline shrink-0">カルテ →</Link>
+          </div>
+        );
+      })}
+      {manualCount > 0 && <p className="text-xs text-text-light mt-1">+ 手動調整 {manualCount}回</p>}
+    </div>
+  );
+}
 
 type Props = {
   ticket: CourseTicket;
@@ -31,18 +54,22 @@ type Props = {
   onRequestDelete: (ticketId: string) => void;
   onConfirmDelete: (ticketId: string) => void;
   onCancelDelete: () => void;
+  onSavePaymentType: (ticketId: string, paymentType: "cash" | "credit") => void;
 };
 
 /** 個別回数券カード */
 export function CourseTicketCard({
   ticket, processingId, deletingId, editingId, editValue, adjustError, confirmDeleteId, consumptionEntries,
   onUseSession, onStartEdit, onCancelEdit, onAdjust, onEditValueChange, onRequestDelete, onConfirmDelete, onCancelDelete,
+  onSavePaymentType,
 }: Props) {
   const remaining = ticket.total_sessions - ticket.used_sessions;
   const statusInfo = STATUS_LABELS[ticket.status] ?? STATUS_LABELS.active;
   const isActive = ticket.status === "active";
   const isEditing = editingId === ticket.id;
   const canAdjust = ticket.status === "active" || ticket.status === "completed";
+  const [editingPayment, setEditingPayment] = useState(false);
+  const currentPaymentType = (ticket.payment_type as "cash" | "credit") ?? "cash";
 
   return (
     <div className="bg-surface border border-border rounded-xl p-3 space-y-2">
@@ -145,39 +172,36 @@ export function CourseTicketCard({
         {ticket.price !== null && ticket.price > 0 && (
           <span>{ticket.price.toLocaleString()}円</span>
         )}
+        {ticket.payment_type === "credit" && (
+          <span className="inline-block text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">クレジット</span>
+        )}
+        {!editingPayment && (
+          <button onClick={() => setEditingPayment(true)}
+            className="text-[10px] text-accent hover:underline ml-1">
+            支払方法変更
+          </button>
+        )}
       </div>
-      {ticket.memo && <p className="text-xs text-text-light">{ticket.memo}</p>}
 
-      {/* 消化履歴 */}
-      {ticket.used_sessions > 0 && (
-        <div className="border-t border-border pt-2">
-          <p className="text-xs text-text-light font-medium mb-1">消化履歴</p>
-          {consumptionEntries.length > 0 && (
-            <div className="space-y-0.5">
-              {consumptionEntries
-                .sort((a, b) => b.date.localeCompare(a.date))
-                .map((entry, i) => {
-                  const d = new Date(entry.date);
-                  const formatted = `${d.getMonth() + 1}/${d.getDate()}`;
-                  return (
-                    <div key={i} className="flex items-center gap-2 text-xs">
-                      <span className="text-text-light w-10">{formatted}</span>
-                      <span className="truncate">{entry.menuName}</span>
-                      <Link href={`/records/${entry.recordId}`} className="text-accent hover:underline shrink-0">
-                        カルテ →
-                      </Link>
-                    </div>
-                  );
-                })}
-            </div>
-          )}
-          {ticket.used_sessions > consumptionEntries.length && (
-            <p className="text-xs text-text-light mt-1">
-              + 手動調整 {ticket.used_sessions - consumptionEntries.length}回
-            </p>
-          )}
+      {editingPayment && (
+        <div className="bg-background rounded-xl p-3 space-y-2">
+          <p className="text-xs text-text-light">支払方法を変更</p>
+          <div className="flex gap-2">
+            {(["cash", "credit"] as const).map((pt) => (
+              <button key={pt} type="button"
+                onClick={() => { onSavePaymentType(ticket.id, pt); setEditingPayment(false); }}
+                className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors min-h-[44px] ${currentPaymentType === pt ? (pt === "cash" ? "bg-accent text-white border-accent" : "bg-blue-600 text-white border-blue-600") : "bg-surface border-border text-text-light hover:bg-background"}`}>
+                {pt === "cash" ? "現金 → 前受金" : "クレジット → 売掛金"}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setEditingPayment(false)} className="text-xs text-text-light hover:underline">キャンセル</button>
         </div>
       )}
+
+      {ticket.memo && <p className="text-xs text-text-light">{ticket.memo}</p>}
+
+      <ConsumptionHistory entries={consumptionEntries} usedSessions={ticket.used_sessions} />
 
       {/* 削除確認パネル */}
       {confirmDeleteId === ticket.id && (

@@ -19,7 +19,7 @@ export type CsvMonthlySales = {
 /** 汎用CSV */
 function generateGenericCsv(report: CsvTaxReport, monthlySales: CsvMonthlySales[], year: number): string {
   const lines: string[] = [];
-  lines.push(`${year}年 確定申告レポート`, "");
+  lines.push(`${year}年 年間収支サマリー`, "");
 
   lines.push("【売上原価】", "項目,金額");
   lines.push(`期首棚卸高,${report.opening_stock_value}`);
