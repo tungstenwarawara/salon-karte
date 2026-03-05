@@ -19,6 +19,9 @@ export function LpFooter() {
 
           {/* リンク */}
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
+            <Link href="/blog" className="hover:text-white transition-colors">
+              ブログ
+            </Link>
             <Link href="/contact" className="hover:text-white transition-colors">
               お問い合わせ
             </Link>
