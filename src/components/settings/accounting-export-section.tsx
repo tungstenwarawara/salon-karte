@@ -60,7 +60,7 @@ export function AccountingExportSection() {
         <div>
           <h3 className="font-bold">会計ソフト連携</h3>
           <p className="text-xs text-text-light mt-1">
-            施術・物販・回数券の売上データを仕訳形式でエクスポートします。
+            施術・物販・回数券の売上データと商品仕入データを仕訳形式でエクスポートします。
             会計ソフトにCSV取込すると帳簿づけの手間を大幅に削減できます。
           </p>
         </div>
@@ -169,6 +169,14 @@ export function AccountingExportSection() {
                 現金の場合は「現金 / 売上高」、クレジットの場合は「売掛金 / 売上高」として出力されます。
               </p>
             </div>
+            {/* 商品仕入 */}
+            <div className="space-y-1">
+              <p className="text-xs font-medium">商品仕入</p>
+              <p className="text-[10px] text-text-light leading-relaxed">
+                在庫管理で記録した仕入データが自動で含まれます。
+                CSVでは「仕入高 / 現金」として出力されます。
+              </p>
+            </div>
           </div>
         </details>
 
@@ -176,9 +184,8 @@ export function AccountingExportSection() {
         <div className="bg-background rounded-xl p-3">
           <p className="text-xs text-text-light leading-relaxed">
             <span className="font-medium">ご注意:</span>{" "}
-            出力される仕訳は売上データ（施術・物販・回数券）のみです。
-            経費（家賃・光熱費・消耗品等）や仕入は会計ソフト側で入力してください。
-            仕入金額の確認は「経営 → 在庫管理 → 年間収支サマリー」で行えます。
+            出力される仕訳は売上データ（施術・物販・回数券）と商品仕入データです。
+            経費（家賃・光熱費・消耗品等）は会計ソフト側で入力してください。
             取込後は会計ソフト上で内容をご確認ください。
           </p>
         </div>

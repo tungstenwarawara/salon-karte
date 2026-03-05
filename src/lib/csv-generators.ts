@@ -5,6 +5,7 @@ export type CsvTaxReport = {
   closing_stock_value: number;
   total_purchases: number;
   cost_of_goods_sold: number;
+  cogs_adjusted?: boolean;
   monthly_purchases: { month: number; amount: number }[];
   closing_stock_details: { product_name: string; stock: number; unit_price: number; total_value: number }[];
 };

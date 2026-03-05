@@ -36,6 +36,13 @@ type TicketRow = {
   customers: { last_name: string; first_name: string } | null;
 };
 
+type InventoryPurchaseRow = {
+  logged_at: string;
+  quantity: number;
+  unit_cost_price: number | null;
+  products: { name: string } | null;
+};
+
 function customerName(c: { last_name: string; first_name: string } | null): string {
   return c ? `${c.last_name} ${c.first_name}`.trim() : "";
 }
@@ -52,7 +59,7 @@ export async function exportAccountingCsv(
   if (!salon) throw new Error("サロン未設定");
 
   // 並列でデータ取得
-  const [treatmentsRes, purchasesRes, ticketsRes] = await Promise.all([
+  const [treatmentsRes, purchasesRes, ticketsRes, inventoryRes] = await Promise.all([
     // 施術カルテ（メニュー単位で売上）
     supabase
       .from("treatment_records")
@@ -84,6 +91,17 @@ export async function exportAccountingCsv(
       .lte("purchase_date", endDate)
       .order("purchase_date")
       .returns<TicketRow[]>(),
+
+    // 商品仕入（inventory_logs）
+    supabase
+      .from("inventory_logs")
+      .select("logged_at, quantity, unit_cost_price, products(name)")
+      .eq("salon_id", salon.id)
+      .eq("log_type", "purchase_in")
+      .gte("logged_at", startDate)
+      .lte("logged_at", endDate)
+      .order("logged_at")
+      .returns<InventoryPurchaseRow[]>(),
   ]);
 
   // 仕訳データに変換
@@ -115,7 +133,13 @@ export async function exportAccountingCsv(
       paymentType: t.payment_type ?? "cash",
     }));
 
-  const entries = buildJournalEntries({ treatments, purchases, ticketSales });
+  const inventoryPurchases = (inventoryRes.data ?? []).map((r) => ({
+    date: r.logged_at,
+    productName: r.products?.name ?? "商品",
+    amount: r.quantity * (r.unit_cost_price ?? 0),
+  }));
+
+  const entries = buildJournalEntries({ treatments, purchases, ticketSales, inventoryPurchases });
 
   if (entries.length === 0) {
     throw new Error("指定期間にデータがありません");

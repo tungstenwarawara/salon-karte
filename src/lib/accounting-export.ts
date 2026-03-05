@@ -1,6 +1,6 @@
 /**
  * 会計ソフト連携CSV出力
- * 施術・物販・回数券の売上データを仕訳形式で出力する
+ * 施術・物販・回数券の売上データ + 仕入データを仕訳形式で出力する
  *
  * 対応ソフト: freee / マネーフォワード / 弥生会計
  */
@@ -31,7 +31,7 @@ const TAX_CATEGORY_MAP: Record<string, string> = {
 };
 
 /**
- * 施術・物販・回数券販売のデータから仕訳エントリを生成する
+ * 施術・物販・回数券販売・仕入のデータから仕訳エントリを生成する
  */
 export function buildJournalEntries(data: {
   treatments: {
@@ -55,6 +55,11 @@ export function buildJournalEntries(data: {
     price: number;
     paymentType?: string;
   }[];
+  inventoryPurchases?: {
+    date: string;
+    productName: string;
+    amount: number;
+  }[];
 }): JournalEntry[] {
   const entries: JournalEntry[] = [];
 
@@ -68,7 +73,7 @@ export function buildJournalEntries(data: {
       date: t.date,
       debitAccount: debit,
       debitAmount: t.price,
-      creditAccount: t.paymentType === "ticket" ? "売上高" : "売上高",
+      creditAccount: "売上高",
       creditAmount: t.price,
       taxCategory: TAX_CATEGORY_MAP[t.paymentType] ?? "",
       description: `施術 ${t.menuName}${t.customerName ? ` (${t.customerName})` : ""}`,
@@ -103,6 +108,20 @@ export function buildJournalEntries(data: {
     });
   }
 
+  // 商品仕入（仕入高 / 現金）
+  for (const ip of data.inventoryPurchases ?? []) {
+    if (ip.amount <= 0) continue;
+    entries.push({
+      date: ip.date,
+      debitAccount: "仕入高",
+      debitAmount: ip.amount,
+      creditAccount: "現金",
+      creditAmount: ip.amount,
+      taxCategory: "課対仕入10%",
+      description: `商品仕入 ${ip.productName}`,
+    });
+  }
+
   // 日付順にソート
   entries.sort((a, b) => a.date.localeCompare(b.date));
   return entries;
@@ -125,16 +144,19 @@ export function toFreeeCsv(entries: JournalEntry[]): string {
 
   for (const e of entries) {
     // freeeは収支区分で借方/貸方を表現
-    // 売上 = 「収入」、前受金 = 「収入」
-    const type = "収入";
+    // 仕入 = 「支出」（借方が仕入高）、それ以外 = 「収入」
+    const isExpense = e.debitAccount === "仕入高";
+    const type = isExpense ? "支出" : "収入";
+    const account = isExpense ? e.debitAccount : e.creditAccount;
+    const amount = isExpense ? e.debitAmount : e.creditAmount;
     lines.push(
       [
         type,
         "", // 管理番号（空）
         e.date,
-        e.creditAccount,
+        account,
         e.taxCategory,
-        e.creditAmount,
+        amount,
         e.description,
       ]
         .map(escapeCsv)
@@ -218,6 +240,7 @@ export function toYayoiCsv(entries: JournalEntry[]): string {
   // 弥生の税区分マッピング
   const yayoiTax = (cat: string) => {
     if (cat === "課対売上10%") return "課税売上込 10%";
+    if (cat === "課対仕入10%") return "課税仕入込 10%";
     if (cat === "対象外") return "対象外";
     return "";
   };

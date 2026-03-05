@@ -82,6 +82,14 @@ export function TaxReportSections({ report, monthlySales, year }: Props) {
             <span className="font-bold text-lg text-accent tabular-nums">{formatYen(report.cost_of_goods_sold)}</span>
           </div>
         </div>
+        {report.cogs_adjusted && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <p className="text-[10px] text-amber-800 leading-relaxed">
+              棚卸調整で登録した在庫は仕入額に含まれないため、計算上マイナスになる場合は0円に補正しています。
+              正確な売上原価を出すには、商品の仕入時に「在庫管理 → 仕入入庫」から記録してください。
+            </p>
+          </div>
+        )}
       </div>
 
       {/* 月別売上 */}

@@ -52,7 +52,7 @@ export function BatchReceiveForm({ salonId, products, presetProductId }: Props) 
     setLoading(true);
 
     const supabase = createClient();
-    const quantity = parseInt(form.quantity) || 1;
+    const quantity = Math.max(1, parseInt(form.quantity) || 1);
     const unitCostPrice = form.unit_cost_price ? parseInt(form.unit_cost_price) : 0;
 
     const { data, error: insertError } = await supabase
