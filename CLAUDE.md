@@ -4,9 +4,14 @@
 
 ## 技術スタック
 - Next.js 15 (App Router) / React 19 / TypeScript 5.9
-- Supabase (Auth + PostgreSQL + Storage + Edge Functions)
+- Supabase (Auth + PostgreSQL + Storage)
+- Stripe (サブスクリプション決済)
+- Resend (トランザクションメール)
+- LINE Messaging API (予約通知・リマインド)
+- Sentry (エラー監視)
 - Tailwind CSS 4
-- Vercel デプロイ
+- Vercel デプロイ + Analytics + Speed Insights
+- Google Analytics 4
 
 ## コマンド
 - `npm run dev` — 開発サーバー
@@ -30,6 +35,13 @@
 - `feat:` 新機能 / `fix:` バグ修正 / `refactor:` リファクタ / `docs:` ドキュメント
 - 日本語で記述
 - Co-Authored-By 行を付与
+
+## ドキュメント同期ルール（必須）
+機能追加・DB変更時に `docs/` の計画ドキュメントも更新すること。
+- `docs/competitive-analysis-and-plan.md` — 実装済み機能一覧・ロードマップ
+- `docs/pricing-plan-spec.md` — 料金プラン・Stripe連携の実装状況
+- **SessionStart hook** が起動時に docs/ の最終更新日を表示。7日以上古い場合は警告
+- **PreToolUse hook** が git commit 時にマイグレーション/プラン変更があれば docs/ 更新を促す
 
 ## コミット後の検証（3段階）
 変更の種類に応じてテストレベルを選択する。**毎回フルE2Eは不要。**
@@ -71,13 +83,22 @@
 | 複数領域にまたがるロジック変更 | 3 |
 
 ## ディレクトリ構成
-- `src/app/(dashboard)/` — 各ページ（App Router）
+- `src/app/(dashboard)/` — 管理画面ページ（App Router）
+- `src/app/(booking)/` — Web予約ページ（公開）
+- `src/app/(public)/` — カウンセリング回答ページ（公開）
+- `src/app/api/` — API エンドポイント（Stripe / LINE / Booking / Cron）
 - `src/components/` — 共有コンポーネント
+- `src/components/lp/` — LP専用コンポーネント
 - `src/lib/` — ユーティリティ・Supabase クライアント
+- `src/lib/email/` — Resend メール送信
+- `src/lib/line/` — LINE API・暗号化・Webhook
+- `src/lib/stripe.ts` — Stripe クライアント
+- `src/lib/plan.ts` — プラン定義・制限チェック
 - `src/lib/__tests__/` — ユニットテスト（Vitest）
 - `src/types/database.ts` — DB型定義（唯一の真実）
 - `supabase/migrations/` — マイグレーションSQL
 - `scripts/` — チェックスクリプト
+- `docs/` — 計画ドキュメント（実装状況と同期必須）
 
 ## ルール詳細
 プロジェクト固有ルールは `.claude/rules/` を参照:
@@ -88,3 +109,4 @@
 - @.claude/rules/performance.md — パフォーマンス最適化
 - @.claude/rules/lessons-learned.md — 過去の障害・教訓
 - @.claude/rules/test-salon.md — テストサロン運用ルール
+- @.claude/rules/external-services.md — 外部サービス一元管理・障害対応

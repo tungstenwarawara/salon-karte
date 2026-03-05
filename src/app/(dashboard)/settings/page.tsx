@@ -8,6 +8,7 @@ import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { SettingsLinkCard } from "@/components/settings/settings-link-card";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { ReferralSection } from "@/components/settings/referral-section";
 import { deleteAccount } from "./actions";
 
 export default function SettingsPage() {
@@ -106,6 +107,9 @@ export default function SettingsPage() {
       <SettingsLinkCard href="/settings/import" title="データ取り込み" description="顧客・商品・施術履歴をCSVで一括登録" />
       <SettingsLinkCard href="/settings/export" title="データエクスポート" description="顧客・施術・物販・予約・回数券をCSVでダウンロード" />
       <SettingsLinkCard href="/guide" title="使い方ガイド" description="基本的な操作方法・よくある質問" />
+
+      {/* 友だちに紹介する */}
+      <ReferralSection />
 
       {/* 退会（オーナーのみ表示） */}
       {isOwner && (

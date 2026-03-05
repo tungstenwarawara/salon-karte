@@ -187,31 +187,26 @@ Supabase Free → Pro へのアップグレードが必要になるタイミン�
 
 ### 3.3 機能比較マトリクス
 
-| 機能 | おためし（0円） | スタンダード（2,980円） | テスター |
-|------|--------------|---------------------|---------|
-| **顧客管理** | 10件まで | **無制限** | 無制限 |
-| **施術カルテ** | 1顧客あたり5件まで | **無制限** | 無制限 |
-| **予約管理** | 月20件まで | **無制限** | 無制限 |
-| **写真保存** | なし | **5GB**（+500円で20GB） | 5GB |
-| **カルテPDF出力** | — | **○** | ○ |
-| **物販・回数券** | ○ | ○ | ○ |
-| **売上レポート** | 当月のみ | **全期間** | 全期間 |
-| **在庫管理** | ○ | ○ | ○ |
-| **確定申告レポート** | ○ | ○ | ○ |
-| **CSVエクスポート** | ○ | ○ | ○ |
-| **CSVインポート** | プラン制限内の件数まで | **無制限** | 無制限 |
-| **離脱アラート** | ○ | ○ | ○ |
-| **LINE連携** | — | **○** | ○ |
-| **カウンセリングシート** | — | **○** | ○ |
-| **詳細分析レポート** | — | **○** | ○ |
+| 機能 | おためし（0円） | スタンダード（2,980円） |
+|------|--------------|---------------------|
+| **顧客管理** | 10件まで | **無制限** |
+| **施術カルテ** | 1顧客あたり5件まで | **無制限** |
+| **予約管理** | 月20件まで | **無制限** |
+| **写真保存** | なし | **5GB**（+500円で20GB） |
+| **物販・回数券** | ○ | ○ |
+| **売上レポート** | 当月のみ | **全期間** |
+| **在庫管理** | ○ | ○ |
+| **確定申告レポート** | ○ | ○ |
+| **CSVエクスポート** | ○ | ○ |
+| **CSVインポート** | プラン制限内の件数まで | **無制限** |
+| **離脱アラート** | ○ | ○ |
+| **LINE連携** | — | **○** |
+| **カウンセリングシート** | — | **○** |
+| **詳細分析レポート** | — | **○** |
+| **Web予約** | ○ | ○ |
+| **スタッフ管理** | ○ | ○ |
 
-> **v3 変更点**:
-> - 施術カルテ: 無制限 → 1顧客あたり5件まで（「カルテだけ使う」パターンへの転換圧力）
-> - 予約: 月10件 → 月20件に緩和（月10件は厳しすぎ。週1営業でも超える）
-> - カルテPDF出力: 実装済みのためスタンダード機能に追加
-> - CSVインポート: プラン制限を適用（サイクル攻撃防止）
-> - 写真容量オプション: +500円/月で5GB→20GB（唯一のオプション。「量」の課金）
-> - テスター: DB内部のみ。ガイド等のユーザー向け表示には含めない
+> テスター列は廃止（tester プラン削除のため）。テスターは standard と同等の扱い。
 
 ### 3.4 この設計の根拠
 
@@ -306,21 +301,21 @@ Supabase Free → Pro へのアップグレードが必要になるタイミン�
 ### salons テーブルへのカラム追加
 
 ```sql
--- 00023_plan_type.sql（商用化時に適用）
+-- 00055_add_plan_type_and_subscriptions.sql（適用済み）
 
-ALTER TABLE salons ADD COLUMN plan_type TEXT NOT NULL DEFAULT 'tester'
-  CHECK (plan_type IN ('tester', 'free', 'standard'));
+ALTER TABLE salons ADD COLUMN plan_type TEXT NOT NULL DEFAULT 'free'
+  CHECK (plan_type IN ('free', 'standard'));
 
--- v3: plan_started_at は不要（リバーストライアル廃止のため）
+-- subscriptions テーブルも同時に作成（§10参照）
 ```
 
-- デフォルト値 `'tester'` → 既存サロンは全機能開放のまま
+- デフォルト値 `'free'` → 新規サロンはおためしプラン
+- `tester` プランは廃止 → テスターへの対応は個別に plan_type を 'standard' に設定
 
-### database.ts 型追加（商用化時）
+### database.ts 型（実装済み）
 
 ```typescript
-// salons.Row に追加
-plan_type: 'tester' | 'free' | 'standard';
+plan_type: 'free' | 'standard';
 ```
 
 ---
@@ -329,68 +324,36 @@ plan_type: 'tester' | 'free' | 'standard';
 
 ### 7.1 プラン定義ファイル（src/lib/plan.ts）
 
+実装済みのコード（`src/lib/plan.ts`）:
+
 ```typescript
-export type PlanType = 'tester' | 'free' | 'standard';
+export type PlanType = "free" | "standard";
 
-export type PlanLimits = {
-  maxCustomers: number;              // Infinity = 無制限
-  maxRecordsPerCustomer: number;     // Infinity = 無制限
-  maxAppointmentsPerMonth: number;   // Infinity = 無制限
-  photosEnabled: boolean;
-  pdfEnabled: boolean;
-  salesReportFullHistory: boolean;    // false = 当月のみ
-  lineEnabled: boolean;
-  counselingSheetEnabled: boolean;
-  advancedAnalyticsEnabled: boolean;
-  maxPhotoStorageMB: number;
-};
-
-const PLAN_DEFINITIONS: Record<PlanType, PlanLimits> = {
-  tester: {
-    maxCustomers: Infinity,
-    maxRecordsPerCustomer: Infinity,
-    maxAppointmentsPerMonth: Infinity,
-    photosEnabled: true,
-    pdfEnabled: true,
-    salesReportFullHistory: true,
-    lineEnabled: true,
-    counselingSheetEnabled: true,
-    advancedAnalyticsEnabled: true,
-    maxPhotoStorageMB: 5120,
-  },
+export const PLAN_LIMITS = {
   free: {
+    label: "おためしプラン",
     maxCustomers: 10,
     maxRecordsPerCustomer: 5,
     maxAppointmentsPerMonth: 20,
-    photosEnabled: false,
-    pdfEnabled: false,
-    salesReportFullHistory: false,
-    lineEnabled: false,
-    counselingSheetEnabled: false,
-    advancedAnalyticsEnabled: false,
-    maxPhotoStorageMB: 0,
+    photoStorage: false,
+    lineIntegration: false,
+    counselingSheet: false,
+    salesAnalytics: false,
   },
   standard: {
+    label: "スタンダードプラン",
     maxCustomers: Infinity,
     maxRecordsPerCustomer: Infinity,
     maxAppointmentsPerMonth: Infinity,
-    photosEnabled: true,
-    pdfEnabled: true,
-    salesReportFullHistory: true,
-    lineEnabled: true,
-    counselingSheetEnabled: true,
-    advancedAnalyticsEnabled: true,
-    maxPhotoStorageMB: 5120,  // +500円/月で20480に拡張
+    photoStorage: true,
+    lineIntegration: true,
+    counselingSheet: true,
+    salesAnalytics: true,
   },
-};
+} as const;
 ```
 
-> **変更点（v2→v3）**:
-> - `maxRecordsPerCustomer` 追加 → カルテの量制限（1顧客あたり5件）
-> - `maxAppointmentsPerMonth` を10→20に緩和
-> - `pdfEnabled` 追加 → カルテPDF出力（実装済み）
-> - LINE連携・カウンセリングシート・売上分析・カルテPDFは全て実装済み
-> - 商用化フェーズでプラン制限を有効にするだけで機能ゲートが動作する
+> `tester` プランは実装時に廃止。テスターには個別に `plan_type = 'standard'` を設定する運用に変更。
 
 ### 7.2 Client hook / FeatureGate（v1と同様）
 
@@ -451,29 +414,46 @@ function getEffectivePlan(salon: Salon): PlanType {
 
 ---
 
-## 9. 実装しないこと（商用化フェーズまで保留）
+## 9. 実装状況（2026-03-05 更新）
 
-- Stripe Checkout / Customer Portal 連携
-- Webhook による plan_type 自動更新
-- RLS ポリシーでの顧客件数ハードリミット
-- middleware.ts でのルートレベルブロック
-- subscriptions テーブル
+### 実装済み
+- ✅ Stripe Checkout / Customer Portal 連携
+- ✅ Webhook による plan_type 自動更新
+- ✅ subscriptions テーブル（RLS付き）
+- ✅ `src/lib/plan.ts` プラン定義
+- ✅ `/settings/billing` 料金プラン管理画面
+
+### 未実装（商用リリースまでに必要）
+- 各ページでの機能ゲート適用（plan_type に基づく制限チェック）
+- RLS ポリシーでの顧客件数ハードリミット（オプション）
+- middleware.ts でのルートレベルブロック（オプション）
+- 新規登録時の plan_type = 'free' 設定
 
 ---
 
-## 10. Stripe連携の方針（商用化フェーズで実装）
+## 10. Stripe連携（実装済み）
 
 ### フロー
 
 ```
 1. 新規登録 → plan_type = 'free'
-2. おためしプランの上限に達した時にアップグレード案内
-3. ユーザーが「スタンダードにする」→ Stripe Checkout
+2. /settings/billing でアップグレード案内を表示
+3. ユーザーが「スタンダードにアップグレード」→ Stripe Checkout
 4. 決済完了 → Webhook で plan_type = 'standard' に更新
 5. 解約/失敗 → plan_type = 'free' に戻す
 ```
 
-### 必要なテーブル（商用化フェーズで追加）
+### 実装済みコンポーネント
+
+| コンポーネント | 場所 |
+|-------------|------|
+| Checkout セッション生成 | `/api/stripe/checkout/route.ts` |
+| Customer Portal リンク | `/api/stripe/portal/route.ts` |
+| Webhook 受信 | `/api/webhooks/stripe/route.ts` |
+| Stripe クライアント | `src/lib/stripe.ts` |
+| 料金プラン管理UI | `/settings/billing/page.tsx` |
+
+### subscriptions テーブル（00055 で作成済み）
 
 ```sql
 CREATE TABLE subscriptions (
@@ -481,21 +461,24 @@ CREATE TABLE subscriptions (
   salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
   stripe_customer_id TEXT NOT NULL,
   stripe_subscription_id TEXT NOT NULL,
-  status TEXT NOT NULL, -- 'active' | 'trialing' | 'past_due' | 'canceled'
+  status TEXT NOT NULL DEFAULT 'active'
+    CHECK (status IN ('active', 'past_due', 'canceled', 'incomplete')),
   current_period_end TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT now()
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(salon_id),
+  UNIQUE(stripe_customer_id)
 );
 ```
 
 ---
 
-## 11. テスター全機能開放の仕組み
+## 11. テスター運用（testerプラン廃止後）
 
-- `plan_type = 'tester'` がデフォルト値（既存サロンはそのまま）
-- tester は全機能無制限
-- テスター期間終了時に plan_type を 'free' or 'standard' に更新
-- **ガイド等のユーザー向け表示にはテスターを含めない**（おためし/スタンダードの2択のみ表示）
-- テスターへの優遇は個別連絡で対応
+- `tester` プランは DB スキーマから廃止済み（`free`/`standard` の2択）
+- テスターには `plan_type = 'standard'` を個別に設定
+- 商用リリース時にテスター全員に連絡、正式プラン選択を依頼
+- テスト用サロンは `test-salon.md` 参照
 
 ---
 
@@ -653,8 +636,8 @@ CREATE TABLE subscriptions (
 
 | 対応 | 目的 | 状態 |
 |------|------|------|
-| CSVエクスポート（全データ対応） | 撤退時にも通常機能としても有用 | 計画済み（スタンダードに含む） |
-| 写真一括ダウンロード | ユーザーの写真資産を保護 | 未実装 |
+| CSVエクスポート（全データ対応） | 撤退時にも通常機能としても有用 | **✅ 実装済み** |
+| 写真一括ダウンロード | ユーザーの写真資産を保護 | **✅ 実装済み**（200枚以下は1ZIP、超は顧客分割） |
 | 利用規約にサービス終了条項 | 3ヶ月前告知義務を法的に明確化 | **未作成（要対応）** |
 | データポータビリティの明記 | 「あなたのデータはいつでも持ち出せます」 | **未作成（要対応）** |
 | 年間契約を避ける | 月額のみにすれば返金問題が発生しない | 月額のみの設計済み |
@@ -675,4 +658,4 @@ CREATE TABLE subscriptions (
 | 予約制限 | なし | 月10件 | **月20件** | 月10件は厳しすぎ |
 | カルテPDF | 未実装 | 未実装 | **実装済み** | スタンダード機能 |
 | テスターの表示 | ガイドに記載 | ガイドに記載 | **ガイドから削除** | 内部管理のみ |
-| 写真エクスポート | なし | 撤退時対応 | **今後対応予定** | データポータビリティ |
+| 写真エクスポート | なし | 撤退時対応 | **✅ 実装済み** | データポータビリティ |

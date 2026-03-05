@@ -46,6 +46,7 @@ export type Database = {
           booking_enabled: boolean;
           counseling_template: CounselingTemplate | null;
           plan_type: "free" | "standard";
+          referral_code: string;
           created_at: string;
           updated_at: string;
         };
@@ -63,6 +64,7 @@ export type Database = {
           booking_enabled?: boolean;
           counseling_template?: CounselingTemplate | null;
           plan_type?: "free" | "standard";
+          referral_code?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -80,10 +82,59 @@ export type Database = {
           booking_enabled?: boolean;
           counseling_template?: CounselingTemplate | null;
           plan_type?: "free" | "standard";
+          referral_code?: string;
           created_at?: string;
           updated_at?: string;
         };
         Relationships: [];
+      };
+      referrals: {
+        Row: {
+          id: string;
+          referrer_salon_id: string;
+          referred_salon_id: string;
+          referral_code: string;
+          status: "pending" | "rewarded";
+          referrer_reward_applied_at: string | null;
+          referred_reward_applied_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          referrer_salon_id: string;
+          referred_salon_id: string;
+          referral_code: string;
+          status?: "pending" | "rewarded";
+          referrer_reward_applied_at?: string | null;
+          referred_reward_applied_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          referrer_salon_id?: string;
+          referred_salon_id?: string;
+          referral_code?: string;
+          status?: "pending" | "rewarded";
+          referrer_reward_applied_at?: string | null;
+          referred_reward_applied_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referrer_salon_id_fkey";
+            columns: ["referrer_salon_id"];
+            isOneToOne: false;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referrals_referred_salon_id_fkey";
+            columns: ["referred_salon_id"];
+            isOneToOne: true;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       subscriptions: {
         Row: {

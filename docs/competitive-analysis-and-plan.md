@@ -1,6 +1,6 @@
 # salon-karte エコシステム計画書
 
-> 更新日: 2026-02-22（v4 — Phase 6完了・LINE連携・カウンセリングシート・売上分析を反映）
+> 更新日: 2026-03-05（v5 — LP・Web予約・Stripe決済基盤・スタッフ管理・プラン機能制限を反映）
 
 ---
 
@@ -71,28 +71,59 @@
 | | 休業日管理（祝日・臨時休業） | ✅ 実装済み |
 | データ管理 | CSVエクスポート（顧客・カルテ・予約・売上） | ✅ 実装済み |
 | | CSVインポート（顧客・カルテ・商品） | ✅ 実装済み |
+| Web予約 | 公開予約ページ（スラッグURL） | ✅ 実装済み |
+| | 予約変更・キャンセル（トークン認証） | ✅ 実装済み |
+| | 受付締切・営業時間制限 | ✅ 実装済み |
+| | 予約確認メール + LINE通知 | ✅ 実装済み |
+| | カウンセリングシート事前送信 | ✅ 実装済み |
+| スタッフ管理 | スタッフ登録・シフト管理 | ✅ 実装済み |
+| | スタッフ別予約・カルテ紐付け | ✅ 実装済み |
+| | スタッフ別メニュー設定 | ✅ 実装済み |
+| 料金・課金 | Stripe Checkout（月額サブスク） | ✅ 実装済み |
+| | カスタマーポータル（支払い管理） | ✅ 実装済み |
+| | Webhook（plan_type自動更新） | ✅ 実装済み |
+| | 料金プラン管理画面 | ✅ 実装済み |
+| LP | ランディングページ（12セクション） | ✅ 実装済み |
+| | JSON-LD構造化データ + OGP動的生成 | ✅ 実装済み |
+| | スクロールアニメーション | ✅ 実装済み |
+| 監視・分析 | Sentry（エラー監視 + PII除去） | ✅ 実装済み |
+| | Google Analytics 4 | ✅ 実装済み |
+| | Vercel Analytics + Speed Insights | ✅ 実装済み |
 | その他 | 離脱顧客アラート（60日/90日） | ✅ 実装済み |
 | | スケルトンスクリーン | ✅ 実装済み |
 | | キャッシュヘッダー最適化 | ✅ 実装済み |
 | | セキュリティヘッダー（CSP等） | ✅ 実装済み |
 | | 使い方ガイド | ✅ 実装済み |
+| | 特定日の営業時間変更 | ✅ 実装済み |
 
-### 画面一覧（33ルート）
+### 画面一覧
 
+> 正確なルート数はセッション開始時に `find src/app -name 'page.tsx' | wc -l` で実測すること。
+> 以下は主要カテゴリのみ列挙。
+
+#### ダッシュボード
 - `/dashboard` - ダッシュボード
+
+#### 顧客管理
 - `/customers` - 顧客一覧
 - `/customers/new` - 顧客新規登録
 - `/customers/[id]` - 顧客詳細
 - `/customers/[id]/edit` - 顧客編集
 - `/customers/[id]/purchases/new` - 物販購入記録
 - `/customers/[id]/tickets/new` - コースチケット登録
+
+#### 予約管理
 - `/appointments` - 予約一覧
 - `/appointments/new` - 予約新規登録
 - `/appointments/[id]` - 予約詳細
 - `/appointments/[id]/edit` - 予約編集
+
+#### 施術カルテ
 - `/records/new` - 施術記録作成
 - `/records/[id]` - 施術記録詳細
 - `/records/[id]/edit` - 施術記録編集
+
+#### 売上・在庫
 - `/sales` - 売上レポート
 - `/sales/analytics` - 売上分析（グラフ・LTV）
 - `/sales/inventory` - 在庫一覧
@@ -101,16 +132,41 @@
 - `/sales/inventory/consume` - サンプル/廃棄
 - `/sales/inventory/stocktake` - 棚卸し
 - `/sales/inventory/tax-report` - 確定申告レポート
-- `/settings` - 設定
+
+#### 設定
+- `/settings` - 設定トップ
 - `/settings/menus` - メニュー管理
 - `/settings/business-hours` - 営業時間設定
 - `/settings/holidays` - 休業日管理
 - `/settings/line` - LINE連携設定
 - `/settings/export` - CSVエクスポート
-- `/settings/import` - CSVインポート
-- `/settings/import-customers` - 顧客インポート
-- `/settings/import-records` - カルテインポート
-- `/settings/import-products` - 商品インポート
+- `/settings/import` / `import-customers` / `import-records` / `import-products` - CSVインポート
+- `/settings/import-history` - インポート履歴
+- `/settings/staff` - スタッフ管理
+- `/settings/shifts` / `shifts/[staffId]` - シフト管理
+- `/settings/web-booking` - Web予約設定
+- `/settings/booking-rules` - 予約ルール設定
+- `/settings/counseling-template` / `[templateId]` - カウンセリングテンプレート
+- `/settings/billing` - 料金プラン管理
+
+#### Web予約（公開ページ）
+- `/book/[slug]` - 予約フォーム
+- `/book/[slug]/complete` - 予約完了
+- `/book/change/[token]` - 予約変更
+- `/book/cancel/[token]` - 予約キャンセル
+
+#### カウンセリング（公開ページ）
+- `/c/[token]` - カウンセリング回答
+- `/c/[token]/complete` - 回答完了
+- `/c/[token]/expired` - 期限切れ
+
+#### LP・法務
+- `/` - ランディングページ
+- `/privacy` - プライバシーポリシー
+- `/terms` - 利用規約
+- `/tokusho` - 特定商取引法に基づく表記
+
+#### その他
 - `/guide` - 使い方ガイド
 
 ---
@@ -144,16 +200,27 @@
 
 ---
 
-## 3. 料金プラン設計（v2 — 2026-02-21改訂）
+## 3. 料金プラン設計（v3 — フリーミアム方式）
 
 > 詳細な技術設計・損益分析は `docs/pricing-plan-spec.md` を参照
 
 ### 設計コンセプト: 「選ばなくていい。使うだけ。」
 
-v1ではオプション7個のアラカルト方式だったが、調査の結果以下の理由で廃止:
 - サロン業務は機能間連携が密 → 単独課金に向かない
 - ターゲットのITリテラシーが低い → 5個超の選択肢で判断放棄
 - 確定申告・CSV出力への課金 → 「データ人質」感で口コミリスク
+
+### 実装状況
+
+| 項目 | 状態 |
+|------|------|
+| `plan_type` カラム（`free`/`standard`） | ✅ DB適用済み |
+| `subscriptions` テーブル | ✅ DB適用済み |
+| `src/lib/plan.ts`（プラン定義） | ✅ 実装済み |
+| Stripe Checkout / Customer Portal | ✅ 実装済み |
+| Stripe Webhook → plan_type 自動更新 | ✅ 実装済み |
+| 料金プラン管理画面 `/settings/billing` | ✅ 実装済み |
+| **各ページでの機能ゲート適用** | **未実装（次の課題）** |
 
 ### スタンダードプラン: 2,980円/月（税込・全機能込み）
 
@@ -163,6 +230,8 @@ v1ではオプション7個のアラカルト方式だったが、調査の結�
 | ビフォーアフター写真（5GB） | エステ特化の差別化ポイント |
 | 顧客管理（人数無制限） | Bionly FREEはスタッフ1名制限 |
 | 予約管理（無制限） | KaruteKunと同等 |
+| Web予約（公開ページ） | **ホットペッパー代替の独自予約ページ** |
+| スタッフ管理・シフト | **小規模複数スタッフ対応** |
 | 施術メニュー管理 | 複数メニュー選択対応 |
 | 物販購入履歴 | **競合の大半が未対応** |
 | 回数券・コース管理 | **エステの売上の柱。ほぼ全競合が未対応** |
@@ -176,17 +245,19 @@ v1ではオプション7個のアラカルト方式だったが、調査の結�
 | 売上分析（LTV・新規/リピーター推移） | **Bionly有料(9,800円~)と同等** |
 | CSVインポート/エクスポート | **データ移行の敷居を下げる** |
 
-### おためしプラン: 0円
+### おためしプラン: 0円（フリーミアム）
 
 | 機能 | 制限 |
 |------|------|
 | 顧客管理 | 10件まで |
-| 予約管理 | 月10件まで |
+| カルテ | 1顧客あたり5件まで |
+| 予約管理 | 月20件まで |
 | 写真保存 | なし |
+| LINE連携・カウンセリング・売上分析 | 利用不可 |
 | 売上レポート | 当月のみ |
-| その他（カルテ・物販・在庫・確定申告・CSV） | 制限なし |
+| その他（物販・在庫・確定申告・CSV） | 制限なし |
 
-> リバーストライアル方式: 新規登録後30日間はスタンダード全機能開放 → 31日目に縮退
+> リバーストライアルは廃止。純粋なフリーミアム方式（pricing-plan-spec.md §8参照）
 
 ### 別プロダクト料金（将来）
 
@@ -730,19 +801,59 @@ ALTER TABLE purchases ADD COLUMN sell_price INTEGER;       -- この取引の売
 | 6-6 | CSVエクスポート + CSVインポート（顧客・カルテ・商品） | ✅ 実装済み |
 | 6-7 | 売上分析（新規/リピーター推移・LTVサマリー） | ✅ 実装済み |
 
-### Phase 7.0: salon-site（HP+Web予約 — 別アプリ）
+### LP + Web予約（salon-karte内で実装）✅ 完了
+
+当初 Phase 7 salon-site（別アプリ）として計画していたが、Web予約は salon-karte 内で実装済み。
+独立した salon-site の必要性は現時点では低い。
+
+| # | 施策 | 状態 |
+|---|------|------|
+| — | LP（12セクション + JSON-LD + OGP + アニメーション） | ✅ 実装済み |
+| — | Web予約フォーム（空き枠連動 + メール/LINE通知） | ✅ 実装済み |
+| — | 予約変更・キャンセル | ✅ 実装済み |
+| — | 受付締切・営業時間制限・特定日時間変更 | ✅ 実装済み |
+| — | SEO（JSON-LD + sitemap + robots + OGP動的生成） | ✅ 実装済み |
+
+### Phase 6.5: LP・Web予約・Stripe・スタッフ管理 ✅ 完了
+
+Phase 6完了後に追加された機能群:
+
+| # | 施策 | 状態 |
+|---|------|------|
+| — | LP Stage 1 & 2（ランディングページ + アニメーション） | ✅ 実装済み |
+| — | Web予約（公開ページ + メール/LINE通知 + 変更/キャンセル） | ✅ 実装済み |
+| — | 特定日の営業時間変更 | ✅ 実装済み |
+| — | スタッフ管理・シフト管理 | ✅ 実装済み |
+| — | Stripe決済基盤（Checkout + Portal + Webhook） | ✅ 実装済み |
+| — | plan_type + subscriptions DB設計 | ✅ 実装済み |
+| — | 料金プラン管理画面 | ✅ 実装済み |
+| — | Sentry エラー監視 | ✅ 実装済み |
+| — | Google Analytics 4 | ✅ 実装済み |
+
+### 未実装（商用リリースに必要）
+
+| # | タスク | 優先度 | 備考 |
+|---|--------|--------|------|
+| 1 | **各ページでの機能ゲート適用** | 必須 | `plan.ts` 定義済み → 各ページで制限チェック |
+| 2 | **利用規約にサービス終了条項** | 必須 | 法的保護 |
+| 3 | **データポータビリティの明記** | 必須 | LP・利用規約に記載 |
+| 4 | **新規登録時の初期プラン = free** | 必須 | signup フローで plan_type 設定 |
+| 5 | **SEOブログ機能** | 必須 | `/blog` + 記事管理。SNS不採用、SEO記事で集客 |
+| 6 | **紹介特典システム** | 必須 | 紹介コード発行・紹介者/被紹介者に1ヶ月無料特典 |
+
+### Phase 7.0: salon-site（HP+Web予約 — 別アプリ、優先度下がった）
+
+Web予約は salon-karte 内で実装済みのため、残りはHP機能のみ。
 
 | # | 施策 | 工数目安 |
 |---|------|---------|
 | 7-1 | プロジェクトセットアップ（Next.js + Supabase共有） | 0.5日 |
 | 7-2 | テンプレートエンジン（サロン情報からHP自動生成） | 2日 |
-| 7-3 | SEO最適化（構造化データ・メタ・sitemap・OGP） | 1日 |
-| 7-4 | Web予約フォーム（空き枠連動） | 2日 |
 | 7-5 | Google ビジネスプロフィール連携（MEO対策） | 1日 |
 | 7-6 | カスタムドメイン対応 | 0.5日 |
 | 7-7 | デザインカスタマイズ（カラー・写真・テキスト） | 1日 |
 | 7-8 | お知らせ・ブログ機能（コンテンツSEO） | 1.5日 |
-| | **小計** | **9.5日** |
+| | **小計** | **6.5日** |
 
 ### Phase 8.0: salon-ec（ECサイト — 別アプリ）
 
@@ -843,11 +954,11 @@ MEO対策:
 
 | プロダクト | 工数 | 月額収益/サロン | 優先順位 |
 |-----------|------|---------------|---------|
-| salon-karte 強化（UI/UX + 在庫 + 確定申告） | — | 2,980円 | ✅ 完了 |
-| salon-karte 追加機能（Phase 6） | — | 2,980円 | ✅ 完了 |
-| salon-site（HP+Web予約） | 約9.5日 | 3,980円 | ★★★ 次に着手 |
-| salon-ec（ECサイト） | 約8.5日 | 2,980円 | ★★ その次 |
-| **残り合計** | **約18日** | **最大 9,940円/サロン** | |
+| salon-karte コア（Phase 1-6） | — | 2,980円 | ✅ 完了 |
+| LP + Web予約 + Stripe + スタッフ（Phase 6.5） | — | 2,980円 | ✅ 完了 |
+| **機能ゲート適用（商用化の前提）** | **1-2日** | — | **★★★ 次に着手** |
+| salon-site（HP機能のみ） | 約6.5日 | 3,980円 | ★★ 将来 |
+| salon-ec（ECサイト） | 約8.5日 | 2,980円 | ★ 将来 |
 
 ```
 実績タイムライン:
@@ -855,15 +966,11 @@ MEO対策:
   2月中旬:     Phase 4（UI/UX改善）            ✅ 完了
   2月中旬:     Phase 5（在庫管理+確定申告）     ✅ 完了
   2月下旬:     Phase 6（カルテ追加機能）        ✅ 完了
-    - カルテ複数メニュー・支払方法・予約引き継ぎ
-    - カウンセリングシート（QRコード問診票）
-    - LINE連携（予約確認・リマインド・友だち管理）
-    - CSVインポート/エクスポート
-    - 売上分析（LTV・新規/リピーター推移）
+  2月末〜3月:  Phase 6.5（LP・Web予約・Stripe・スタッフ） ✅ 完了
 
-想定:
-  次に着手:    Phase 7（salon-site）           9.5日
-  その後:      Phase 8（salon-ec）             8.5日
+次のマイルストーン:
+  → 機能ゲート適用（plan_type による制限チェック）
+  → 商用リリース
 ```
 
 ---
@@ -874,12 +981,18 @@ MEO対策:
 
 | レイヤー | 技術 |
 |---------|------|
-| フロントエンド | Next.js 15 (App Router) + TypeScript + Tailwind CSS 4 |
-| バックエンド | Supabase (PostgreSQL + Auth + Storage + Realtime) |
+| フロントエンド | Next.js 15 (App Router) + TypeScript 5.9 + Tailwind CSS 4 |
+| バックエンド | Supabase (PostgreSQL + Auth + Storage) |
+| 決済 | Stripe（Checkout + Customer Portal + Webhooks） |
+| メール | Resend（予約確認・リマインド） |
+| 通知 | LINE Messaging API（Webhook + Push Message） |
+| 監視 | Sentry（エラー追跡 + PII除去） |
+| 分析 | Google Analytics 4 + Vercel Analytics + Speed Insights |
 | ホスティング | Vercel |
-| DB | 27マイグレーション、16テーブル、13 RPC関数 |
 | Cron | Vercel Cron Jobs（LINE前日リマインド 21:00 JST） |
-| 外部API | LINE Messaging API（Webhook + Push Message） |
+| DB | 55マイグレーション、17テーブル、13 RPC関数 |
+
+> 正確なDB統計はセッション開始時に `ls supabase/migrations/ | wc -l` で実測すること。
 
 ### salon-site 追加技術
 

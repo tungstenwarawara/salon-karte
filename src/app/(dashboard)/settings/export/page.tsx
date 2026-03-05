@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { PageHeader } from "@/components/layout/page-header";
 import { ExportPanel } from "@/components/settings/export-panel";
+import { AccountingExportSection } from "@/components/settings/accounting-export-section";
 
 export default async function ExportPage() {
   const { user, salon, supabase } = await getAuthAndSalon();
@@ -42,6 +43,9 @@ export default async function ExportPage() {
       />
       <p className="text-sm text-text-light">各データをCSVファイルでダウンロードできます。</p>
 
+      <AccountingExportSection />
+
+      <h3 className="font-bold text-sm text-text-light mt-6">データ別エクスポート</h3>
       <ExportPanel counts={counts} salonId={salon.id} />
     </div>
   );

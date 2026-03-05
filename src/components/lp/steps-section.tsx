@@ -1,5 +1,6 @@
 /** 導入3ステップ */
 
+import Link from "next/link";
 import { ScrollFadeIn } from "./scroll-fade-in";
 
 const STEPS = [
@@ -59,6 +60,20 @@ export function StepsSection() {
             </ScrollFadeIn>
           ))}
         </div>
+
+        <ScrollFadeIn delay={500}>
+          <div className="text-center mt-12">
+            <Link
+              href="/signup"
+              className="inline-flex items-center justify-center bg-accent hover:bg-accent-light text-white font-bold rounded-2xl px-10 py-4 text-lg transition-colors min-h-[56px]"
+            >
+              無料ではじめる
+            </Link>
+            <p className="text-sm text-text-light mt-3">
+              クレジットカード不要 ・ 5分で登録完了
+            </p>
+          </div>
+        </ScrollFadeIn>
       </div>
     </section>
   );

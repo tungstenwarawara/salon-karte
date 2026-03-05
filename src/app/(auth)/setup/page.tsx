@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SetupWizard, type WizardData } from "@/components/setup/setup-wizard";
 
-export default function SetupPage() {
+function SetupContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get("ref") || "";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -99,7 +101,27 @@ export default function SetupPage() {
       console.error("staff レコード作成エラー:", staffError);
     }
 
-    // 3. メニュー登録（入力された場合のみ）
+    // 3. 紹介コード処理（ref パラメータがある場合）
+    if (refCode) {
+      const { data: referrerSalon } = await supabase
+        .from("salons")
+        .select("id")
+        .eq("referral_code", refCode.toUpperCase())
+        .single();
+
+      if (referrerSalon) {
+        const { error: refError } = await supabase.from("referrals").insert({
+          referrer_salon_id: referrerSalon.id,
+          referred_salon_id: newSalon.id,
+          referral_code: refCode.toUpperCase(),
+        });
+        if (refError) {
+          console.error("紹介レコード作成エラー:", refError);
+        }
+      }
+    }
+
+    // 4. メニュー登録（入力された場合のみ）
     if (data.menuName) {
       const { error: menuError } = await supabase.from("treatment_menus").insert({
         salon_id: newSalon.id,
@@ -137,5 +159,13 @@ export default function SetupPage() {
       )}
       <SetupWizard onComplete={handleComplete} />
     </>
+  );
+}
+
+export default function SetupPage() {
+  return (
+    <Suspense>
+      <SetupContent />
+    </Suspense>
   );
 }
