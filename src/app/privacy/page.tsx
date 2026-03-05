@@ -8,7 +8,7 @@ export default function PrivacyPolicyPage() {
       </Link>
 
       <h1 className="text-2xl font-bold mt-4 mb-6">プライバシーポリシー</h1>
-      <p className="text-xs text-text-light mb-6">制定日: 2026年3月1日 / 最終更新日: 2026年3月2日</p>
+      <p className="text-xs text-text-light mb-6">制定日: 2026年3月1日 / 最終更新日: 2026年3月5日</p>
 
       <div className="prose prose-sm space-y-6 text-text">
         <section>
@@ -145,19 +145,68 @@ export default function PrivacyPolicyPage() {
             <li>LINE連携のAPIキー等の機密情報はAES-256-GCMで暗号化して保存</li>
             <li>施術写真は非公開ストレージに保存され、時間制限付きURLでのみアクセス可能</li>
           </ul>
+
+          <h3 className="text-base font-bold mt-4 mb-1">6-1. データの保持期間</h3>
+          <ul className="list-disc list-inside text-sm space-y-1 mt-2">
+            <li>利用中: ユーザーがアカウントを保持している間、登録データ（顧客情報、施術記録、予約、売上等）を保持します</li>
+            <li>退会時: アカウント削除により、ユーザーに紐づく全てのデータ（顧客情報、施術記録、写真、予約、売上データ等）を直ちに削除します</li>
+            <li>バックアップ: データベースの自動バックアップに含まれるデータは、バックアップの保持期間（最大30日間）経過後に自動的に削除されます</li>
+            <li>エラーログ: Sentryに送信されたエラーデータは30日間保持された後、自動削除されます</li>
+            <li>メール送信ログ: Resendの送信ログは30日間保持された後、自動削除されます</li>
+          </ul>
         </section>
 
         <section>
-          <h2 className="text-lg font-bold mb-2">7. Cookie等の利用</h2>
+          <h2 className="text-lg font-bold mb-2">7. Cookie等の利用・アクセス解析</h2>
           <p className="text-sm leading-relaxed">
             当サービスは、以下の目的でCookieおよび類似技術を使用します。
           </p>
+
+          <h3 className="text-base font-bold mt-3 mb-1">7-1. 必須Cookie</h3>
           <ul className="list-disc list-inside text-sm space-y-1 mt-2">
-            <li>認証状態の維持（ログインセッション管理）</li>
-            <li>アクセス解析（Vercel Analytics）— 個人を特定しない統計情報の収集</li>
+            <li>認証状態の維持（ログインセッション管理）— サービスの利用に必須</li>
           </ul>
-          <p className="text-sm leading-relaxed mt-2">
-            ユーザーはブラウザの設定によりCookieを拒否できますが、その場合サービスの一部が利用できなくなる場合があります。
+
+          <h3 className="text-base font-bold mt-3 mb-1">7-2. アクセス解析</h3>
+          <p className="text-sm leading-relaxed">
+            当サービスでは、サービスの改善を目的として以下のアクセス解析ツールを使用しています。
+          </p>
+          <div className="mt-2 space-y-3">
+            <div className="bg-background rounded-lg p-3">
+              <p className="text-sm font-medium">Google Analytics 4（GA4）</p>
+              <p className="text-xs text-text-light mt-1">
+                提供元: Google LLC（米国）
+              </p>
+              <p className="text-xs text-text-light">
+                収集データ: ページビュー数、セッション時間、参照元URL、使用デバイス・ブラウザ情報等の匿名化された統計データ。
+                個人を特定する情報は収集しません。
+              </p>
+              <p className="text-xs text-text-light">
+                Cookieの種類: _ga（有効期限: 2年）、_ga_*（有効期限: 2年）
+              </p>
+              <p className="text-xs text-text-light">
+                Googleのプライバシーポリシー:{" "}
+                <a href="https://policies.google.com/privacy" className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">
+                  https://policies.google.com/privacy
+                </a>
+              </p>
+            </div>
+            <div className="bg-background rounded-lg p-3">
+              <p className="text-sm font-medium">Vercel Analytics</p>
+              <p className="text-xs text-text-light mt-1">
+                提供元: Vercel Inc.（米国）
+              </p>
+              <p className="text-xs text-text-light">
+                収集データ: ページビュー数、パフォーマンス指標等の統計情報。個人を特定する情報は含まれません。
+              </p>
+            </div>
+          </div>
+
+          <h3 className="text-base font-bold mt-3 mb-1">7-3. Cookieの管理</h3>
+          <p className="text-sm leading-relaxed">
+            ユーザーはブラウザの設定によりCookieを拒否できますが、
+            必須Cookie（認証用）を拒否した場合はサービスにログインできなくなります。
+            アクセス解析用のCookieを拒否した場合でも、サービスの利用には影響ありません。
           </p>
         </section>
 

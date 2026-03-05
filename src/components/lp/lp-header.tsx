@@ -30,7 +30,7 @@ export function LpHeader() {
           </a>
           <Link
             href="/signup"
-            className="bg-accent hover:bg-accent-light text-white text-sm font-bold rounded-xl px-5 py-2 transition-colors min-h-[40px] flex items-center"
+            className="bg-accent hover:bg-accent-light text-white text-sm font-bold rounded-xl px-5 py-2 transition-colors min-h-[44px] flex items-center"
           >
             無料ではじめる
           </Link>

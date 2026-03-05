@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ScrollFadeIn } from "./scroll-fade-in";
 
 /** 紙カルテ — ファイル + 虫眼鏡 */
@@ -89,10 +90,18 @@ export function ProblemSection() {
         </div>
 
         <ScrollFadeIn delay={400}>
-          <div className="text-center mt-12">
+          <div className="text-center mt-12 space-y-4">
             <div className="inline-flex items-center gap-2 bg-accent/5 rounded-full px-6 py-3 border border-accent/20">
               <span className="text-accent font-bold">サロンカルテ</span>
               <span className="text-text-light">が、すべて解決します</span>
+            </div>
+            <div>
+              <Link
+                href="/signup"
+                className="inline-flex items-center justify-center text-accent font-bold hover:underline text-sm min-h-[44px]"
+              >
+                無料で試してみる &rarr;
+              </Link>
             </div>
           </div>
         </ScrollFadeIn>
