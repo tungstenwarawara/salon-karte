@@ -39,11 +39,11 @@ export default function TaxReportPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="確定申告レポート"
+        title="年間収支サマリー"
         breadcrumbs={[
           { label: "経営", href: "/sales" },
           { label: "在庫管理", href: "/sales/inventory" },
-          { label: "確定申告レポート" },
+          { label: "年間収支サマリー" },
         ]}
       />
 
@@ -64,10 +64,12 @@ export default function TaxReportPage() {
         </button>
       </div>
 
-      {/* 免責注記 */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-        <p className="text-xs text-amber-800 leading-relaxed">
-          本レポートはサロンカルテに記録されたデータを集計したものであり、税務上の助言・指導を目的としたものではありません。確定申告の際は税理士等の専門家にご相談ください。
+      {/* ページ説明 */}
+      <div className="bg-accent/5 border border-accent/20 rounded-xl px-4 py-3">
+        <p className="text-sm text-text font-medium">1年間の売上と仕入を一覧で確認できます</p>
+        <p className="text-xs text-text-light mt-1 leading-relaxed">
+          会計ソフトへの入力や、確定申告の準備にお役立てください。
+          仕訳データのCSVダウンロードは「設定 → データエクスポート」から行えます。
         </p>
       </div>
 
