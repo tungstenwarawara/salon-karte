@@ -11,6 +11,7 @@ type EditData = {
   unit_price: number;
   quantity: number;
   memo: string;
+  payment_type: "cash" | "credit";
 };
 
 type Props = {
@@ -39,6 +40,7 @@ export function PurchaseCard({
     unit_price: purchase.unit_price,
     quantity: purchase.quantity,
     memo: purchase.memo ?? "",
+    payment_type: (purchase.payment_type as "cash" | "credit") ?? "cash",
   });
 
   const handleStartEdit = () => {
@@ -47,6 +49,7 @@ export function PurchaseCard({
       unit_price: purchase.unit_price,
       quantity: purchase.quantity,
       memo: purchase.memo ?? "",
+      payment_type: (purchase.payment_type as "cash" | "credit") ?? "cash",
     });
     onStartEdit(purchase.id);
   };
@@ -93,6 +96,26 @@ export function PurchaseCard({
       {/* 編集モード */}
       {isEditing && (
         <div className="bg-background rounded-xl p-3 space-y-3">
+          {/* 支払方法（共通） */}
+          <div>
+            <label className="text-xs text-text-light">支払方法</label>
+            <div className="flex gap-2 mt-1">
+              <button type="button"
+                onClick={() => setEditForm({ ...editForm, payment_type: "cash" })}
+                className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors min-h-[44px] ${editForm.payment_type === "cash" ? "bg-accent text-white border-accent" : "bg-surface border-border text-text-light hover:bg-background"}`}>
+                現金
+              </button>
+              <button type="button"
+                onClick={() => setEditForm({ ...editForm, payment_type: "credit" })}
+                className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors min-h-[44px] ${editForm.payment_type === "credit" ? "bg-blue-600 text-white border-blue-600" : "bg-surface border-border text-text-light hover:bg-background"}`}>
+                クレジット
+              </button>
+            </div>
+            <p className="text-[10px] text-text-light mt-1">
+              {editForm.payment_type === "cash" ? "現金 → 売上高" : "クレジット → 売掛金（入金は後日）"}
+            </p>
+          </div>
+
           {isProductLinked ? (
             <>
               <p className="text-xs text-text-light">商品連動の購入記録のため、メモのみ編集できます</p>

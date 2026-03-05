@@ -17,6 +17,7 @@ type EditData = {
   unit_price: number;
   quantity: number;
   memo: string;
+  payment_type: "cash" | "credit";
 };
 
 type Props = {
@@ -78,13 +79,14 @@ export function PurchaseHistory({ customerId, purchases: initialPurchases, salon
         quantity: data.quantity,
         total_price,
         memo: data.memo || null,
+        payment_type: data.payment_type,
       })
       .eq("id", id)
       .eq("salon_id", salonId);
 
     setProcessingId(null);
     if (!error) {
-      setPurchases((prev) => prev.map((p) => p.id === id ? { ...p, ...data, total_price, memo: data.memo || null } : p));
+      setPurchases((prev) => prev.map((p) => p.id === id ? { ...p, ...data, total_price, memo: data.memo || null, payment_type: data.payment_type } : p));
       setEditingId(null);
       showToast("購入記録を更新しました");
       router.refresh();
