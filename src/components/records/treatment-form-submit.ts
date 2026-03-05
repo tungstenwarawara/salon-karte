@@ -110,6 +110,7 @@ export async function submitTreatmentRecord(params: SubmitParams): Promise<Submi
       salon_id: salonId, customer_id: customerId, ticket_name: t.ticket_name,
       total_sessions: t.total_sessions, purchase_date: form.treatment_date,
       price: t.price, memo: t.memo || null, treatment_record_id: record.id,
+      payment_type: t.payment_type,
     }));
     const { error: ticketInsertError } = await supabase.from("course_tickets").insert(ticketRows);
     if (ticketInsertError) { console.error("Ticket insert error:", ticketInsertError); warnings.push("回数券の登録に失敗しました"); }
@@ -122,6 +123,7 @@ export async function submitTreatmentRecord(params: SubmitParams): Promise<Submi
         p_salon_id: salonId, p_customer_id: customerId, p_product_id: purchase.product_id,
         p_quantity: purchase.quantity, p_sell_price: purchase.unit_price,
         p_purchase_date: form.treatment_date, p_memo: purchase.memo || null, p_treatment_record_id: record.id,
+        p_payment_type: purchase.payment_type,
       });
       if (rpcError) { console.error("Product sale RPC error:", rpcError); warnings.push("物販の在庫連動に失敗しました"); }
     } else {
@@ -129,6 +131,7 @@ export async function submitTreatmentRecord(params: SubmitParams): Promise<Submi
         salon_id: salonId, customer_id: customerId, purchase_date: form.treatment_date,
         item_name: purchase.item_name, quantity: purchase.quantity, unit_price: purchase.unit_price,
         total_price: purchase.quantity * purchase.unit_price, memo: purchase.memo || null, treatment_record_id: record.id,
+        payment_type: purchase.payment_type,
       });
       if (purchaseError) { console.error("Purchase insert error:", purchaseError); warnings.push("物販の登録に失敗しました"); }
     }

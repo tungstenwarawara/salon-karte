@@ -144,11 +144,19 @@ export function AccountingExportSection() {
                 <p className="mt-0.5">※ カード手数料がある場合は差額を「支払手数料」にします</p>
               </div>
             </div>
-            {/* 回数券 */}
+            {/* 回数券販売 */}
+            <div className="space-y-1">
+              <p className="text-xs font-medium">回数券の販売</p>
+              <p className="text-[10px] text-text-light leading-relaxed">
+                回数券を販売した時に「前受金」として記録されます（お金はもらったが、まだ施術していない状態）。
+                現金で購入された場合は「現金 / 前受金」、クレジットの場合は「売掛金 / 前受金」として出力されます。
+                登録時に選択した支払方法がそのまま反映されます。
+              </p>
+            </div>
+            {/* 回数券消化 */}
             <div className="space-y-1">
               <p className="text-xs font-medium">回数券で施術</p>
               <p className="text-[10px] text-text-light leading-relaxed">
-                回数券を販売した時に「前受金」として記録されます（お金はもらったが、まだ施術していない状態）。
                 回数券で施術した時は「前受金 → 売上高」に振り替わります。
                 この処理はCSVに自動で反映されるため、会計ソフト側での追加作業は不要です。
               </p>
@@ -157,8 +165,8 @@ export function AccountingExportSection() {
             <div className="space-y-1">
               <p className="text-xs font-medium">物販</p>
               <p className="text-[10px] text-text-light leading-relaxed">
-                物販はCSVでは「現金 / 売上高」として出力されます。
-                クレジットカードで物販を受け付けた場合は、会計ソフト側で借方を「売掛金」に修正してください。
+                物販の支払方法は登録時に選択した内容がそのまま反映されます。
+                現金の場合は「現金 / 売上高」、クレジットの場合は「売掛金 / 売上高」として出力されます。
               </p>
             </div>
           </div>

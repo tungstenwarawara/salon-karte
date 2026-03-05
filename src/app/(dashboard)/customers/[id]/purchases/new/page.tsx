@@ -9,6 +9,7 @@ import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { PurchaseFormFields } from "@/components/customers/purchase-form-fields";
+import { PaymentTypeSelect } from "@/components/ui/payment-type-select";
 import type { Database } from "@/types/database";
 
 type Product = Database["public"]["Tables"]["products"]["Row"];
@@ -22,6 +23,7 @@ export default function NewPurchasePage() {
   const [salonId, setSalonId] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
+  const [paymentType, setPaymentType] = useState<"cash" | "credit">("cash");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [inputMode, setInputMode] = useState<InputMode>("product");
@@ -124,6 +126,7 @@ export default function NewPurchasePage() {
         p_sell_price: unitPriceNum,
         p_purchase_date: form.purchase_date,
         p_memo: form.memo || null,
+        p_payment_type: paymentType,
       });
 
       if (rpcError) {
@@ -152,6 +155,7 @@ export default function NewPurchasePage() {
         unit_price: unitPriceNum,
         total_price: totalPrice,
         memo: form.memo || null,
+        payment_type: paymentType,
       });
 
       if (insertError) {
@@ -203,6 +207,13 @@ export default function NewPurchasePage() {
           onProductChange={handleProductChange}
           onInputModeChange={setInputMode}
           inputClass={inputClass}
+        />
+
+        <PaymentTypeSelect
+          value={paymentType}
+          onChange={setPaymentType}
+          context="sale"
+          amount={totalPrice}
         />
 
         <div className="flex gap-3 pt-2">

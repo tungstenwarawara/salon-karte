@@ -61,6 +61,9 @@ export function PurchaseCard({
               <p className="text-sm font-medium truncate">{purchase.item_name}</p>
               <p className="text-xs text-text-light">
                 {purchase.purchase_date} ・ {purchase.unit_price.toLocaleString()}円 × {purchase.quantity}個
+                {purchase.payment_type === "credit" && (
+                  <span className="ml-1 inline-block text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">クレジット</span>
+                )}
                 {purchase.treatment_record_id && (
                   <>
                     {" ・ "}

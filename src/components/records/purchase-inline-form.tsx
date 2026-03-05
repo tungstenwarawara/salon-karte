@@ -16,6 +16,7 @@ export function PurchaseInlineForm({ products, onAdd }: Props) {
   const [quantity, setQuantity] = useState("1");
   const [unitPrice, setUnitPrice] = useState("");
   const [memo, setMemo] = useState("");
+  const [paymentType, setPaymentType] = useState<"cash" | "credit">("cash");
 
   const handleProductChange = (pid: string) => {
     const product = products.find((p) => p.id === pid);
@@ -38,12 +39,14 @@ export function PurchaseInlineForm({ products, onAdd }: Props) {
       quantity: q,
       unit_price: up,
       memo,
+      payment_type: paymentType,
     });
     setProductId("");
     setItemName("");
     setQuantity("1");
     setUnitPrice("");
     setMemo("");
+    setPaymentType("cash");
   };
 
   const canAdd = mode === "product" ? !!productId : !!itemName.trim();
@@ -123,6 +126,24 @@ export function PurchaseInlineForm({ products, onAdd }: Props) {
           </span>
         </div>
       )}
+
+      {/* 支払方法 */}
+      <div className="space-y-1">
+        <label className="block text-xs text-text-light">支払方法</label>
+        <div className="flex gap-1 bg-background rounded-xl p-0.5">
+          <button type="button" onClick={() => setPaymentType("cash")}
+            className={`flex-1 text-center text-xs font-medium py-1.5 rounded-lg transition-colors min-h-[36px] ${paymentType === "cash" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"}`}>
+            現金
+          </button>
+          <button type="button" onClick={() => setPaymentType("credit")}
+            className={`flex-1 text-center text-xs font-medium py-1.5 rounded-lg transition-colors min-h-[36px] ${paymentType === "credit" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"}`}>
+            クレジット
+          </button>
+        </div>
+        <p className="text-[10px] text-text-light">
+          {paymentType === "cash" ? "現金 / 売上高 として記録" : "売掛金 / 売上高 として記録（入金は後日）"}
+        </p>
+      </div>
 
       <input
         type="text"

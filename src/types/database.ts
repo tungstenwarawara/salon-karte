@@ -579,6 +579,7 @@ export type Database = {
           product_id: string | null;
           cost_price: number | null;
           sell_price: number | null;
+          payment_type: string;
           treatment_record_id: string | null;
           created_at: string;
           updated_at: string;
@@ -596,6 +597,7 @@ export type Database = {
           product_id?: string | null;
           cost_price?: number | null;
           sell_price?: number | null;
+          payment_type?: string;
           treatment_record_id?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -613,6 +615,7 @@ export type Database = {
           product_id?: string | null;
           cost_price?: number | null;
           sell_price?: number | null;
+          payment_type?: string;
           treatment_record_id?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -836,6 +839,7 @@ export type Database = {
           price: number | null;
           memo: string | null;
           status: string;
+          payment_type: string;
           treatment_record_id: string | null;
           created_at: string;
           updated_at: string;
@@ -852,6 +856,7 @@ export type Database = {
           price?: number | null;
           memo?: string | null;
           status?: string;
+          payment_type?: string;
           treatment_record_id?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -868,6 +873,7 @@ export type Database = {
           price?: number | null;
           memo?: string | null;
           status?: string;
+          payment_type?: string;
           treatment_record_id?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -1462,6 +1468,7 @@ export type Database = {
           p_purchase_date?: string;
           p_memo?: string | null;
           p_treatment_record_id?: string | null;
+          p_payment_type?: string;
         };
         Returns: {
           purchase_id: string;

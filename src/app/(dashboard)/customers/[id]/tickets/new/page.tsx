@@ -9,6 +9,7 @@ import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { TicketFormFields } from "@/components/customers/ticket-form-fields";
+import { PaymentTypeSelect } from "@/components/ui/payment-type-select";
 import type { Database } from "@/types/database";
 
 type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
@@ -23,6 +24,7 @@ export default function NewTicketPage() {
   const [menus, setMenus] = useState<Menu[]>([]);
   const [mode, setMode] = useState<"menu" | "free">("menu");
   const [selectedMenuId, setSelectedMenuId] = useState("");
+  const [paymentType, setPaymentType] = useState<"cash" | "credit">("cash");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -144,6 +146,7 @@ export default function NewTicketPage() {
         expiry_date: form.expiry_date || null,
         price: priceNum || null,
         memo: form.memo || null,
+        payment_type: paymentType,
       });
 
     if (insertError) {
@@ -193,6 +196,13 @@ export default function NewTicketPage() {
           onSessionsChange={handleSessionsChange}
           onModeChange={setMode}
           inputClass={inputClass}
+        />
+
+        <PaymentTypeSelect
+          value={paymentType}
+          onChange={setPaymentType}
+          context="ticket"
+          amount={priceNum}
         />
 
         <div className="flex gap-3 pt-2">

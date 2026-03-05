@@ -66,14 +66,14 @@ export default async function CustomerDetailPage({
       .returns<Appointment[]>(),
     supabase
       .from("purchases")
-      .select("id, item_name, purchase_date, unit_price, quantity, total_price, memo, product_id, treatment_record_id")
+      .select("id, item_name, purchase_date, unit_price, quantity, total_price, memo, product_id, treatment_record_id, payment_type")
       .eq("customer_id", id)
       .eq("salon_id", salon.id)
       .order("purchase_date", { ascending: false })
       .returns<Purchase[]>(),
     supabase
       .from("course_tickets")
-      .select("id, ticket_name, total_sessions, used_sessions, price, status, expiry_date, created_at, memo, customer_id, treatment_record_id, purchase_date")
+      .select("id, ticket_name, total_sessions, used_sessions, price, status, expiry_date, created_at, memo, customer_id, treatment_record_id, purchase_date, payment_type")
       .eq("customer_id", id)
       .eq("salon_id", salon.id)
       .order("created_at", { ascending: false })

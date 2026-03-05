@@ -145,6 +145,9 @@ export function CourseTicketCard({
         {ticket.price !== null && ticket.price > 0 && (
           <span>{ticket.price.toLocaleString()}円</span>
         )}
+        {ticket.payment_type === "credit" && (
+          <span className="inline-block text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">クレジット</span>
+        )}
       </div>
       {ticket.memo && <p className="text-xs text-text-light">{ticket.memo}</p>}
 

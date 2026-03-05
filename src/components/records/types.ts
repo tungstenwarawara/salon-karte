@@ -25,6 +25,7 @@ export type PendingTicket = {
   total_sessions: number;
   price: number | null;
   memo: string;
+  payment_type: "cash" | "credit";
 };
 
 // カルテ内の物販記録（保存前の仮データ）
@@ -35,6 +36,7 @@ export type PendingPurchase = {
   quantity: number;
   unit_price: number;
   memo: string;
+  payment_type: "cash" | "credit";
 };
 
 export const INPUT_CLASS =
