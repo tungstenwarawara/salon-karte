@@ -234,6 +234,16 @@ input, select, textarea {
   animation: cta-pulse 2.5s ease-in-out infinite;
 }
 
+/* LP: ショーケース画面切替アニメーション */
+@keyframes screen-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-screen-fade-in {
+  animation: screen-fade-in 0.35s ease-out;
+}
+
 /* Details/Summary chevron rotation */
 details[open] .details-open-rotate {
   transform: rotate(180deg);
