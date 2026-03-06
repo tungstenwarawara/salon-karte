@@ -15,7 +15,7 @@ export function HelpTip({ children }: Props) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-5 h-5 rounded-full bg-border/60 text-text-light text-[11px] font-bold inline-flex items-center justify-center hover:bg-border transition-colors"
+        className="w-5 h-5 rounded-full bg-border/60 text-text-light text-[11px] font-bold inline-flex items-center justify-center hover:bg-border transition-colors before:absolute before:inset-[-12px] before:content-['']"
         aria-label="ヘルプ"
       >
         ?
