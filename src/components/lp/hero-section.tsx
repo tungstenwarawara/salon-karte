@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/ui/brand-logo";
 import { ScrollFadeIn } from "./scroll-fade-in";
+import { PhoneFrame } from "./phone-frame";
 
 export function HeroSection() {
   return (
@@ -55,7 +56,11 @@ export function HeroSection() {
 
           {/* スマホモックアップ */}
           <ScrollFadeIn direction="right" delay={300} className="flex-shrink-0">
-            <PhoneMockup />
+            <div className="animate-float-phone">
+              <PhoneFrame>
+                <HeroDashboard />
+              </PhoneFrame>
+            </div>
           </ScrollFadeIn>
         </div>
       </div>
@@ -63,53 +68,39 @@ export function HeroSection() {
   );
 }
 
-/** CSS製スマホフレーム — ダッシュボード画面 */
-function PhoneMockup() {
+/** ヒーロー用ダッシュボード画面 */
+function HeroDashboard() {
   return (
-    <div className="relative animate-float-phone">
-      <div className="absolute inset-0 bg-accent/10 rounded-[44px] blur-2xl scale-105" />
-      <div className="relative w-[260px] md:w-[280px] bg-white rounded-[36px] border-[6px] border-[#2D2D2D] shadow-2xl overflow-hidden">
-        {/* ノッチ */}
-        <div className="bg-[#2D2D2D] h-7 flex items-center justify-center">
-          <div className="w-20 h-4 bg-[#1a1a1a] rounded-full" />
-        </div>
-        {/* ダッシュボード */}
-        <div className="bg-background p-3 space-y-3" style={{ minHeight: 460 }}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-text">ダッシュボード</span>
-            <div className="w-6 h-6 rounded-full bg-accent/20" />
+    <div className="p-3 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-bold text-text">ダッシュボード</span>
+        <div className="w-6 h-6 rounded-full bg-accent/20" />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <MockCard label="今日の予約" value="3件" accent />
+        <MockCard label="今月の売上" value="¥248,500" />
+      </div>
+      <div className="bg-white rounded-xl p-2.5 border border-border space-y-2">
+        <span className="text-[10px] font-bold text-text-light">本日の予約</span>
+        {[
+          { t: "10:00", n: "田中 様", m: "カット+カラー" },
+          { t: "13:00", n: "佐藤 様", m: "トリートメント" },
+          { t: "15:30", n: "鈴木 様", m: "パーマ" },
+        ].map((a) => (
+          <div key={a.t} className="flex items-center gap-2 py-1 border-b border-border/50 last:border-0">
+            <span className="text-[10px] font-medium text-accent w-8">{a.t}</span>
+            <span className="text-[10px] font-medium flex-1">{a.n}</span>
+            <span className="text-[9px] text-text-light">{a.m}</span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <MockCard label="今日の予約" value="3件" accent />
-            <MockCard label="今月の売上" value="¥248,500" />
+        ))}
+      </div>
+      <div className="grid grid-cols-4 gap-1.5">
+        {["カルテ", "予約", "顧客", "売上"].map((l) => (
+          <div key={l} className="bg-white rounded-lg p-2 text-center border border-border">
+            <div className="w-5 h-5 rounded-full bg-accent/10 mx-auto mb-1" />
+            <span className="text-[9px] text-text-light">{l}</span>
           </div>
-          <div className="bg-white rounded-xl p-2.5 border border-border space-y-2">
-            <span className="text-[10px] font-bold text-text-light">本日の予約</span>
-            {[
-              { t: "10:00", n: "田中 様", m: "カット+カラー" },
-              { t: "13:00", n: "佐藤 様", m: "トリートメント" },
-              { t: "15:30", n: "鈴木 様", m: "パーマ" },
-            ].map((a) => (
-              <div key={a.t} className="flex items-center gap-2 py-1 border-b border-border/50 last:border-0">
-                <span className="text-[10px] font-medium text-accent w-8">{a.t}</span>
-                <span className="text-[10px] font-medium flex-1">{a.n}</span>
-                <span className="text-[9px] text-text-light">{a.m}</span>
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-4 gap-1.5">
-            {["カルテ", "予約", "顧客", "売上"].map((l) => (
-              <div key={l} className="bg-white rounded-lg p-2 text-center border border-border">
-                <div className="w-5 h-5 rounded-full bg-accent/10 mx-auto mb-1" />
-                <span className="text-[9px] text-text-light">{l}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* ホームバー */}
-        <div className="bg-white border-t border-border h-5 flex items-center justify-center">
-          <div className="w-24 h-1 bg-border rounded-full" />
-        </div>
+        ))}
       </div>
     </div>
   );

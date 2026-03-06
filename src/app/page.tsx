@@ -4,7 +4,7 @@ import { LpHeader } from "@/components/lp/lp-header";
 import { HeroSection } from "@/components/lp/hero-section";
 import { ProblemSection } from "@/components/lp/problem-section";
 import { FeaturesSection } from "@/components/lp/features-section";
-import { ScreenshotSection } from "@/components/lp/screenshot-section";
+import { AppShowcaseSection } from "@/components/lp/app-showcase-section";
 import { PricingSection } from "@/components/lp/pricing-section";
 import { ComparisonSection } from "@/components/lp/comparison-section";
 import { StepsSection } from "@/components/lp/steps-section";
@@ -59,7 +59,7 @@ export default async function HomePage() {
         <HeroSection />
         <ProblemSection />
         <FeaturesSection />
-        <ScreenshotSection />
+        <AppShowcaseSection />
         <PricingSection />
         <ComparisonSection />
         <StepsSection />
