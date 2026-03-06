@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import QRCode from "qrcode";
 import type { Database } from "@/types/database";
 import type { CounselingTemplate } from "@/types/counseling-template";
 import { ResponseViewer } from "@/components/counseling/response-viewer";
@@ -67,6 +66,7 @@ export function CounselingSection({ customerId, salonId, sheets: initialSheets, 
         const data = await res.json();
         setGeneratedToken(data.token);
         const url = getUrl(data.token);
+        const QRCode = await import("qrcode");
         const dataUrl = await QRCode.toDataURL(url, { width: 200, margin: 2 });
         setQrDataUrl(dataUrl);
         setShowQr(true);
@@ -105,6 +105,7 @@ export function CounselingSection({ customerId, salonId, sheets: initialSheets, 
   const handleShowQr = async (token: string) => {
     if (showQr) { setShowQr(false); return; }
     const url = getUrl(token);
+    const QRCode = await import("qrcode");
     const dataUrl = await QRCode.toDataURL(url, { width: 200, margin: 2 });
     setQrDataUrl(dataUrl);
     setShowQr(true);
