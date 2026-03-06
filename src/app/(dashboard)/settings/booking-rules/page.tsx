@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { HelpTip } from "@/components/ui/help-tip";
 import type { BookingSettings } from "@/types/database";
 
 const LEAD_TIME_OPTIONS = [
@@ -162,7 +163,10 @@ export default function BookingRulesPage() {
 
         {/* 受付締切時間 */}
         <div className="space-y-2">
-          <h3 className="font-bold text-sm">受付締切時間</h3>
+          <h3 className="font-bold text-sm">
+            受付締切時間
+            <HelpTip>例えば「2時間前まで」に設定すると、14時の予約は12時までしか受け付けません。準備時間が必要な場合に設定してください。</HelpTip>
+          </h3>
           <p className="text-xs text-text-light">
             予約の何時間前まで受け付けるか（当日以外も適用）
           </p>
@@ -181,9 +185,12 @@ export default function BookingRulesPage() {
 
         {/* 同時予約数の上限 */}
         <div className="space-y-2">
-          <h3 className="font-bold text-sm">同時予約数の上限</h3>
+          <h3 className="font-bold text-sm">
+            同時予約数の上限
+            <HelpTip>お一人で運営されている場合は「1」のままで大丈夫です。スタッフが複数いる場合やベッドが複数ある場合に数を増やしてください。</HelpTip>
+          </h3>
           <p className="text-xs text-text-light">
-            同じ時間帯に受けられる予約の最大数（ベッド・部屋の数に合わせて設定）
+            同じ時間帯に受けられる予約の最大数
           </p>
           <select
             value={settings.max_concurrent_appointments}
@@ -200,9 +207,12 @@ export default function BookingRulesPage() {
 
         {/* キャンセル・変更締切 */}
         <div className="space-y-2">
-          <h3 className="font-bold text-sm">キャンセル・変更締切</h3>
+          <h3 className="font-bold text-sm">
+            キャンセル・変更締切
+            <HelpTip>お客様がWeb予約ページからキャンセル・変更できる期限です。「制限なし」だと直前でも変更可能です。ドタキャンを防ぎたい場合は「24時間前」などに設定してください。</HelpTip>
+          </h3>
           <p className="text-xs text-text-light">
-            お客様がWeb予約のキャンセル・変更をできる期限（予約の何時間前まで）
+            お客様がWeb予約のキャンセル・変更をできる期限
           </p>
           <select
             value={settings.change_deadline_hours ?? 0}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ToggleRow } from "@/components/ui/toggle-row";
+import { HelpTip } from "@/components/ui/help-tip";
 
 type LineConfig = {
   id: string;
@@ -89,20 +90,23 @@ export function LineStatus({ config, onUpdate, onDisconnect }: Props) {
 
         {error && <ErrorAlert message={error} />}
 
-        {/* Webhook URL */}
+        {/* Webhook URL（受信用アドレス） */}
         <div>
-          <label className="block text-sm font-medium mb-1.5">Webhook URL</label>
+          <label className="block text-sm font-medium mb-1.5">
+            受信用アドレス（Webhook URL）
+            <HelpTip>LINEからのメッセージ（友だち追加・ブロックなど）をsalon-karteが受け取るためのアドレスです。LINE側にこのアドレスを登録する必要があります。</HelpTip>
+          </label>
           <div className="text-xs text-text-light mb-2 space-y-1">
             <p>
               <a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline font-medium">
-                LINE Developers Console
+                LINE Developers（開発者向け管理画面）
               </a>
               で以下を設定してください：
             </p>
             <ol className="list-decimal list-inside space-y-0.5 ml-1">
               <li>「Messaging API設定」タブを開く</li>
-              <li>「Webhook URL」に下のURLを貼り付けて「更新」</li>
-              <li>「検証」ボタンを押して「成功」と表示されることを確認</li>
+              <li>「Webhook URL」に下のアドレスを貼り付けて「更新」</li>
+              <li>「検証」ボタンを押して「成功」と出ればOK</li>
               <li>「Webhookの利用」をONにする</li>
             </ol>
           </div>
