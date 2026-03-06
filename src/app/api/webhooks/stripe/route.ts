@@ -27,6 +27,20 @@ export async function POST(request: Request) {
 
   const supabase = createAdminClient();
 
+  // 冪等性チェック: 同じイベントが再送されても二重処理しない
+  const { error: idempotencyError } = await supabase
+    .from("stripe_processed_events")
+    .insert({ event_id: event.id, event_type: event.type });
+
+  if (idempotencyError) {
+    // unique violation = 既に処理済み → 200を返して終了
+    if (idempotencyError.code === "23505") {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    console.error("冪等性チェックエラー:", idempotencyError);
+    // テーブルアクセスエラーでも処理は続行（安全側に倒す）
+  }
+
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;

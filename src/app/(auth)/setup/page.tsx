@@ -78,6 +78,7 @@ function SetupContent() {
         phone: data.phone || null,
         address: data.address || null,
         business_hours: data.businessHours,
+        plan_type: "free",
       })
       .select("id")
       .single();
