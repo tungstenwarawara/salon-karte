@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { HelpTip } from "@/components/ui/help-tip";
 
 export default function WebBookingSettingsPage() {
   const [salonId, setSalonId] = useState("");
@@ -161,7 +162,10 @@ export default function WebBookingSettingsPage() {
         {/* 公開 ON/OFF（即時保存） */}
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-sm">予約ページを公開</h3>
+            <h3 className="font-bold text-sm">
+              予約ページを公開
+              <HelpTip>ONにするとお客様がURLから直接予約できるようになります。OFFにしても既存の予約には影響ありません。</HelpTip>
+            </h3>
             <p className="text-xs text-text-light mt-0.5">
               切り替えると即座に反映されます
             </p>
@@ -186,7 +190,10 @@ export default function WebBookingSettingsPage() {
 
         {/* 予約ページ URL */}
         <div className="space-y-2">
-          <h3 className="font-bold text-sm">予約ページURL</h3>
+          <h3 className="font-bold text-sm">
+            予約ページURL
+            <HelpTip>お客様に共有するURLです。サロン名やブランド名をローマ字で入力してください。例: my-salon, beauty-room など。</HelpTip>
+          </h3>
           <div className="flex items-center gap-1 text-sm text-text-light">
             <span className="shrink-0">/book/</span>
             <input
