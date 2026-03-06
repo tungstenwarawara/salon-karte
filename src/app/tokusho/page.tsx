@@ -46,6 +46,12 @@ export default function TokushoPage() {
               </td>
             </tr>
             <tr>
+              <td className="px-4 py-3 font-medium bg-background">販売価格以外の必要料金</td>
+              <td className="px-4 py-3">
+                インターネット接続に必要な通信費用はお客様のご負担となります。
+              </td>
+            </tr>
+            <tr>
               <td className="px-4 py-3 font-medium bg-background">支払方法</td>
               <td className="px-4 py-3">クレジットカード決済</td>
             </tr>

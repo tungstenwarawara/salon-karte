@@ -8,7 +8,7 @@ export default function TermsPage() {
       </Link>
 
       <h1 className="text-2xl font-bold mt-4 mb-6">利用規約</h1>
-      <p className="text-xs text-text-light mb-6">制定日: 2026年3月1日 / 最終更新日: 2026年3月1日</p>
+      <p className="text-xs text-text-light mb-6">制定日: 2026年3月1日 / 最終更新日: 2026年3月6日</p>
 
       <div className="prose prose-sm space-y-6 text-text">
         <section>
@@ -82,6 +82,23 @@ export default function TermsPage() {
             <li>当サービスはデータの定期的なバックアップに努めますが、データの完全な保全を保証するものではありません</li>
             <li>重要なデータは、CSVエクスポート機能を利用してユーザー自身でもバックアップを行うことを推奨します</li>
           </ul>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-bold mb-2">第6条の2（データポータビリティ）</h2>
+          <p className="text-sm leading-relaxed">
+            ユーザーが当サービスに登録したデータ（顧客情報・施術記録・予約・売上・物販・在庫・回数券等）は、
+            すべてユーザーに帰属します。ユーザーはいつでも以下の方法でデータを取得できます。
+          </p>
+          <ul className="list-disc list-inside text-sm space-y-1 mt-2">
+            <li>CSVエクスポート機能による一括ダウンロード（顧客・カルテ・予約・売上）</li>
+            <li>会計ソフト連携CSV出力（freee・マネーフォワード・弥生形式対応）</li>
+            <li>確定申告レポートのダウンロード</li>
+          </ul>
+          <p className="text-sm leading-relaxed mt-2">
+            解約後もデータ取得期間（最低30日間）を設け、その間CSVエクスポートをご利用いただけます。
+            当サービスは、ユーザーのデータを囲い込む（ロックイン）ことを目的としません。
+          </p>
         </section>
 
         <section>
