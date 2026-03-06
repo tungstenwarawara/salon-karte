@@ -234,7 +234,7 @@ export default async function CustomerDetailPage({
 
       <GraduationToggle customerId={id} salonId={salon.id} graduatedAt={customer.graduated_at} />
 
-      <CustomerLineSection lineLink={lineLink} />
+      <CustomerLineSection lineLink={lineLink} customerId={id} salonId={salon.id} />
 
       <CustomerDetailContent
         customerId={id}

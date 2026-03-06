@@ -11,11 +11,21 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { ReferralSection } from "@/components/settings/referral-section";
 import { deleteAccount } from "./actions";
 
+function SettingsCategory({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-bold text-text-light">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const [salon, setSalon] = useState<{ name: string; phone: string; address: string }>({ name: "", phone: "", address: "" });
   const [salonId, setSalonId] = useState("");
   const [staffCount, setStaffCount] = useState(0);
+  const [unlinkedLineCount, setUnlinkedLineCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { toast, showToast, hideToast } = useToast();
@@ -33,15 +43,17 @@ export default function SettingsPage() {
       setIsOwner(staff?.role === "owner" || !staff);
 
       const supabase = createClient();
-      const [salonRes, staffRes] = await Promise.all([
+      const [salonRes, staffRes, unlinkedRes] = await Promise.all([
         supabase.from("salons").select("id, name, phone, address").eq("id", sid).single(),
         supabase.from("staff").select("id", { count: "exact", head: true }).eq("salon_id", sid).eq("is_active", true),
+        supabase.from("customer_line_links").select("id", { count: "exact", head: true }).eq("salon_id", sid).is("customer_id", null),
       ]);
 
       if (salonRes.data) {
         setSalon({ name: salonRes.data.name, phone: salonRes.data.phone ?? "", address: salonRes.data.address ?? "" });
       }
       setStaffCount(staffRes.count ?? 0);
+      setUnlinkedLineCount(unlinkedRes.count ?? 0);
     };
     load();
   }, []);
@@ -91,22 +103,46 @@ export default function SettingsPage() {
         <SubmitButton loading={loading} className="w-full" />
       </form>
 
-      {/* 設定リンク */}
-      <SettingsLinkCard href="/settings/billing" title="料金プラン・請求" description="プランの確認・アップグレード・支払い管理" />
-      <SettingsLinkCard href="/settings/staff" title="スタッフ管理" description="スタッフの追加・権限設定・招待" />
-      {staffCount > 1 && (
-        <SettingsLinkCard href="/settings/shifts" title="シフト管理" description="スタッフの勤務スケジュール・休日設定" />
+      {/* 基本設定 */}
+      <SettingsCategory title="基本設定">
+        <SettingsLinkCard href="/settings/business-hours" title="営業時間設定" description="曜日ごとの営業時間・休業日の設定" />
+        <SettingsLinkCard href="/settings/holidays" title="不定休・営業時間変更" description="臨時休業日・日別の営業時間変更" />
+        <SettingsLinkCard href="/settings/menus" title="施術メニュー管理" description="施術メニューの追加・編集" />
+      </SettingsCategory>
+
+      {/* 予約・集客 */}
+      <SettingsCategory title="予約・集客">
+        <SettingsLinkCard href="/settings/booking-rules" title="予約受付設定" description="当日予約の可否・予約締切時間の設定" />
+        <SettingsLinkCard href="/settings/web-booking" title="Web予約ページ" description="お客様向けのオンライン予約ページを公開" />
+        <SettingsLinkCard href="/settings/counseling-template" title="カウンセリングシート設定" description="質問項目・注意事項・同意書のカスタマイズ" />
+      </SettingsCategory>
+
+      {/* 連携・通知 */}
+      <SettingsCategory title="連携・通知">
+        <SettingsLinkCard href="/settings/line" title="LINE連携" description="LINE公式アカウントと連携して予約通知を自動送信" badge={unlinkedLineCount > 0 ? `未紐付け ${unlinkedLineCount}件` : undefined} />
+      </SettingsCategory>
+
+      {/* スタッフ */}
+      {(staffCount > 0) && (
+        <SettingsCategory title="スタッフ">
+          <SettingsLinkCard href="/settings/staff" title="スタッフ管理" description="スタッフの追加・権限設定・招待" />
+          {staffCount > 1 && (
+            <SettingsLinkCard href="/settings/shifts" title="シフト管理" description="スタッフの勤務スケジュール・休日設定" />
+          )}
+        </SettingsCategory>
       )}
-      <SettingsLinkCard href="/settings/business-hours" title="営業時間設定" description="曜日ごとの営業時間・休業日の設定" />
-      <SettingsLinkCard href="/settings/booking-rules" title="予約受付設定" description="当日予約の可否・予約締切時間の設定" />
-      <SettingsLinkCard href="/settings/holidays" title="不定休・営業時間変更" description="臨時休業日・日別の営業時間変更" />
-      <SettingsLinkCard href="/settings/menus" title="施術メニュー管理" description="施術メニューの追加・編集" />
-      <SettingsLinkCard href="/settings/counseling-template" title="カウンセリングシート設定" description="質問項目・注意事項・同意書のカスタマイズ" />
-      <SettingsLinkCard href="/settings/web-booking" title="Web予約ページ" description="お客様向けのオンライン予約ページを公開" />
-      <SettingsLinkCard href="/settings/line" title="LINE連携" description="LINE公式アカウントと連携して予約通知を自動送信" />
-      <SettingsLinkCard href="/settings/import" title="データ取り込み" description="顧客・商品・施術履歴をCSVで一括登録" />
-      <SettingsLinkCard href="/settings/export" title="データエクスポート" description="顧客・施術・物販・予約・回数券をCSVでダウンロード" />
-      <SettingsLinkCard href="/guide" title="使い方ガイド" description="基本的な操作方法・よくある質問" />
+
+      {/* データ管理 */}
+      <SettingsCategory title="データ管理">
+        <SettingsLinkCard href="/settings/import" title="データ取り込み" description="顧客・商品・施術履歴をCSVで一括登録" />
+        <SettingsLinkCard href="/settings/export" title="データエクスポート" description="顧客・施術・物販・予約・回数券をCSVでダウンロード" />
+      </SettingsCategory>
+
+      {/* アカウント */}
+      <SettingsCategory title="アカウント">
+        <SettingsLinkCard href="/settings/billing" title="料金プラン・請求" description="プランの確認・アップグレード・支払い管理" />
+        <SettingsLinkCard href="/guide" title="使い方ガイド" description="基本的な操作方法・よくある質問" />
+      </SettingsCategory>
 
       {/* 友だちに紹介する */}
       <ReferralSection />

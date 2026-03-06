@@ -4,10 +4,11 @@ type SettingsLinkCardProps = {
   href: string;
   title: string;
   description: string;
+  badge?: string;
 };
 
 /** 設定ページのリンクカード */
-export function SettingsLinkCard({ href, title, description }: SettingsLinkCardProps) {
+export function SettingsLinkCard({ href, title, description, badge }: SettingsLinkCardProps) {
   return (
     <Link
       href={href}
@@ -15,7 +16,14 @@ export function SettingsLinkCard({ href, title, description }: SettingsLinkCardP
     >
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="font-bold">{title}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold">{title}</h3>
+            {badge && (
+              <span className="text-[11px] bg-accent/10 text-accent font-medium px-2 py-0.5 rounded-full">
+                {badge}
+              </span>
+            )}
+          </div>
           <p className="text-sm text-text-light mt-1">{description}</p>
         </div>
         <span className="text-text-light">→</span>
