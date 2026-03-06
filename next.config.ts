@@ -58,14 +58,14 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               // Next.js は inline script / eval を使うため unsafe-inline, unsafe-eval が必要
               // Vercel Analytics のスクリプト読み込み用に va.vercel-scripts.com を許可
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://www.googletagmanager.com",
               "style-src 'self' 'unsafe-inline'",
               // 画像: 自サイト + Supabase Storage (署名付きURL) + blob (プレビュー)
               "img-src 'self' blob: data: https://*.supabase.co https://*.line-scdn.net",
               // フォント: 自サイトのみ
               "font-src 'self'",
               // API接続先: 自サイト + Supabase + Sentry エラー送信（US リージョン含む）
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com",
               // フレーム埋め込み禁止
               "frame-ancestors 'none'",
               // フォーム送信先: 自サイトのみ
