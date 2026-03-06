@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/ui/brand-logo";
 import { ScrollFadeIn } from "./scroll-fade-in";
 import { PhoneFrame } from "./phone-frame";
+import { MockDashboardScreen } from "./mockup-screens";
 
 export function HeroSection() {
   return (
@@ -58,7 +59,7 @@ export function HeroSection() {
           <ScrollFadeIn direction="right" delay={300} className="flex-shrink-0">
             <div className="animate-float-phone">
               <PhoneFrame>
-                <HeroDashboard />
+                <MockDashboardScreen />
               </PhoneFrame>
             </div>
           </ScrollFadeIn>
@@ -68,49 +69,3 @@ export function HeroSection() {
   );
 }
 
-/** ヒーロー用ダッシュボード画面 */
-function HeroDashboard() {
-  return (
-    <div className="p-3 space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-text">ダッシュボード</span>
-        <div className="w-6 h-6 rounded-full bg-accent/20" />
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <MockCard label="今日の予約" value="3件" accent />
-        <MockCard label="今月の売上" value="¥248,500" />
-      </div>
-      <div className="bg-white rounded-xl p-2.5 border border-border space-y-2">
-        <span className="text-[10px] font-bold text-text-light">本日の予約</span>
-        {[
-          { t: "10:00", n: "田中 様", m: "カット+カラー" },
-          { t: "13:00", n: "佐藤 様", m: "トリートメント" },
-          { t: "15:30", n: "鈴木 様", m: "パーマ" },
-        ].map((a) => (
-          <div key={a.t} className="flex items-center gap-2 py-1 border-b border-border/50 last:border-0">
-            <span className="text-[10px] font-medium text-accent w-8">{a.t}</span>
-            <span className="text-[10px] font-medium flex-1">{a.n}</span>
-            <span className="text-[9px] text-text-light">{a.m}</span>
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-4 gap-1.5">
-        {["カルテ", "予約", "顧客", "売上"].map((l) => (
-          <div key={l} className="bg-white rounded-lg p-2 text-center border border-border">
-            <div className="w-5 h-5 rounded-full bg-accent/10 mx-auto mb-1" />
-            <span className="text-[9px] text-text-light">{l}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function MockCard({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
-  return (
-    <div className="bg-white rounded-xl p-2.5 border border-border">
-      <div className="text-[10px] text-text-light">{label}</div>
-      <div className={`text-lg font-bold ${accent ? "text-accent" : "text-text"}`}>{value}</div>
-    </div>
-  );
-}

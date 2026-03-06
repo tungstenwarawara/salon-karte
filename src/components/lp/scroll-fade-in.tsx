@@ -44,6 +44,12 @@ export function ScrollFadeIn({
         if (entry.isIntersecting) {
           el.style.opacity = "1";
           el.style.transform = "translate(0, 0)";
+          // アニメーション完了後に willChange を解放（GPU メモリ節約）
+          const cleanup = () => {
+            el.style.willChange = "auto";
+            el.removeEventListener("transitionend", cleanup);
+          };
+          el.addEventListener("transitionend", cleanup);
           observer.unobserve(el);
         }
       },

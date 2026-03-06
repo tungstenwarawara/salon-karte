@@ -14,11 +14,13 @@ import { LpFooter } from "@/components/lp/lp-footer";
 
 export default async function HomePage() {
   const supabase = await createClient();
+  // getSession() はローカルcookieのみ検証（Supabase API往復不要 → TTFB改善）
+  // LP訪問者の大半は未ログインのため getUser() の毎回API呼び出しは過剰
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (user) {
+  if (session) {
     redirect("/dashboard");
   }
 
