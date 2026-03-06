@@ -43,7 +43,7 @@ const FAQ_ITEMS = [
 
 export function FaqSection() {
   return (
-    <section className="py-16 md:py-24 bg-white">
+    <section className="py-16 md:py-24 bg-[#F5F1ED]">
       <div className="max-w-3xl mx-auto px-4">
         <ScrollFadeIn>
           <div className="text-center mb-12">
