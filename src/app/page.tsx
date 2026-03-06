@@ -7,6 +7,7 @@ import { FeaturesSection } from "@/components/lp/features-section";
 import { AppShowcaseSection } from "@/components/lp/app-showcase-section";
 import { PricingSection } from "@/components/lp/pricing-section";
 import { ComparisonSection } from "@/components/lp/comparison-section";
+import { AllInOneSection } from "@/components/lp/all-in-one-section";
 import { StepsSection } from "@/components/lp/steps-section";
 import { FaqSection } from "@/components/lp/faq-section";
 import { FinalCtaSection } from "@/components/lp/final-cta-section";
@@ -64,6 +65,7 @@ export default async function HomePage() {
         <AppShowcaseSection />
         <PricingSection />
         <ComparisonSection />
+        <AllInOneSection />
         <StepsSection />
         <FaqSection />
         <FinalCtaSection />

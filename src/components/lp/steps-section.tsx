@@ -26,7 +26,7 @@ const STEPS = [
 
 export function StepsSection() {
   return (
-    <section className="py-16 md:py-24 bg-[#F5F1ED]">
+    <section className="py-16 md:py-24 bg-white">
       <div className="max-w-4xl mx-auto px-4">
         <ScrollFadeIn>
           <div className="text-center mb-12">
