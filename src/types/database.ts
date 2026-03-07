@@ -1500,10 +1500,8 @@ export type Database = {
         };
         Returns: {
           year: number;
-          opening_stock_value: number;
-          closing_stock_value: number;
           total_purchases: number;
-          cost_of_goods_sold: number;
+          closing_stock_value: number;
           monthly_purchases: { month: number; amount: number }[];
           closing_stock_details: {
             product_name: string;

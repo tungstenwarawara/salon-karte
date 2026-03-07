@@ -39,7 +39,7 @@ export default async function HomePage() {
               applicationCategory: "BusinessApplication",
               operatingSystem: "Web",
               description:
-                "個人サロン向けのカルテ管理・予約管理・LINE連携・売上分析・確定申告サポートが月額2,980円で利用できるサロン管理アプリ",
+                "個人サロン向けのカルテ管理・予約管理・LINE連携・売上分析・会計ソフト連携が月額2,980円で利用できるサロン管理アプリ",
               offers: {
                 "@type": "Offer",
                 price: "2980",

@@ -1,11 +1,8 @@
-/** 確定申告用CSV生成ユーティリティ（freee / 弥生 / 汎用の3形式） */
+/** 売上・仕入レポートCSV生成ユーティリティ（freee / 弥生 / 汎用の3形式） */
 
 export type CsvTaxReport = {
-  opening_stock_value: number;
   closing_stock_value: number;
   total_purchases: number;
-  cost_of_goods_sold: number;
-  cogs_adjusted?: boolean;
   monthly_purchases: { month: number; amount: number }[];
   closing_stock_details: { product_name: string; stock: number; unit_price: number; total_value: number }[];
 };
@@ -20,13 +17,10 @@ export type CsvMonthlySales = {
 /** 汎用CSV */
 function generateGenericCsv(report: CsvTaxReport, monthlySales: CsvMonthlySales[], year: number): string {
   const lines: string[] = [];
-  lines.push(`${year}年 年間収支サマリー`, "");
+  lines.push(`${year}年 売上・仕入レポート`, "");
 
-  lines.push("【売上原価】", "項目,金額");
-  lines.push(`期首棚卸高,${report.opening_stock_value}`);
-  lines.push(`当期仕入高,${report.total_purchases}`);
-  lines.push(`期末棚卸高,${report.closing_stock_value}`);
-  lines.push(`売上原価,${report.cost_of_goods_sold}`, "");
+  lines.push("【年間仕入合計】", "項目,金額");
+  lines.push(`当期仕入高（実額）,${report.total_purchases}`, "");
 
   lines.push("【月別売上】", "月,施術,物販,回数券,合計");
   for (const m of monthlySales) {
@@ -42,7 +36,8 @@ function generateGenericCsv(report: CsvTaxReport, monthlySales: CsvMonthlySales[
   }
 
   if (report.closing_stock_details.length > 0) {
-    lines.push("【期末棚卸明細】", "商品名,在庫数,仕入単価,金額");
+    lines.push("【期末在庫明細】", "商品名,在庫数,参考単価,参考金額");
+    lines.push("※参考単価は商品マスタの仕入単価です。正式な棚卸評価額は会計ソフトで確認してください。");
     for (const item of report.closing_stock_details) {
       lines.push(`"${item.product_name}",${item.stock},${item.unit_price},${item.total_value}`);
     }
@@ -88,7 +83,7 @@ function generateYayoiCsv(report: CsvTaxReport, monthlySales: CsvMonthlySales[],
   }
 
   if (report.closing_stock_value > 0) {
-    lines.push(`${year}/12/31,商品,${report.closing_stock_value},期末商品棚卸高,${report.closing_stock_value},期末棚卸`);
+    lines.push(`${year}/12/31,商品,${report.closing_stock_value},期末商品棚卸高,${report.closing_stock_value},期末棚卸（参考値・商品マスタ仕入単価基準）`);
   }
 
   return lines.join("\n");
@@ -106,7 +101,7 @@ export function downloadCsv(format: "generic" | "freee" | "yayoi", report: CsvTa
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `確定申告_${year}年_${format}.csv`;
+  a.download = `売上仕入レポート_${year}年_${format}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }

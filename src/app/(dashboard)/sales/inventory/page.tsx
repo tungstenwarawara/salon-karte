@@ -71,7 +71,7 @@ export default async function InventoryPage() {
           <EmptyState
             illustration="product"
             message="在庫管理を始めましょう"
-            description="商品を登録すると、在庫数の管理や確定申告用のレポートが使えるようになります"
+            description="商品を登録すると、在庫数の管理や売上・仕入レポートが使えるようになります"
             action={{ label: "商品を登録する", href: "/sales/inventory/products" }}
             size="md"
           />

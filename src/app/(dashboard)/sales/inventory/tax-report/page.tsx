@@ -39,11 +39,11 @@ export default function TaxReportPage() {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="年間収支サマリー"
+        title="売上・仕入レポート"
         breadcrumbs={[
           { label: "経営", href: "/sales" },
           { label: "在庫管理", href: "/sales/inventory" },
-          { label: "年間収支サマリー" },
+          { label: "売上・仕入レポート" },
         ]}
       />
 

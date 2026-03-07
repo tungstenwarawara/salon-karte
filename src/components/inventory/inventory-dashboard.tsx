@@ -55,7 +55,7 @@ const quickActions: { href: string; label: string; icon: ReactNode }[] = [
   },
   {
     href: "/sales/inventory/tax-report",
-    label: "年間収支",
+    label: "売上・仕入",
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-accent">
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
@@ -141,7 +141,7 @@ export function InventoryDashboard({ items, monthlyPurchases, totalPurchases, sa
         <div className="col-span-2 bg-surface border border-accent/20 rounded-xl p-4 text-center shadow-card">
           <p className="text-xs text-text-light">在庫評価額</p>
           <p className="text-xl font-bold mt-1 text-accent">¥{totalStockValue.toLocaleString()}</p>
-          <p className="text-[10px] text-text-light mt-1">今ある在庫の価値（確定申告用・商品マスタの仕入単価で計算）</p>
+          <p className="text-[10px] text-text-light mt-1">在庫の参考金額（商品マスタの仕入単価で算出した概算です）</p>
         </div>
       </div>
 

@@ -44,13 +44,13 @@ const FEATURES = [
     Screen: MockCustomerScreen,
   },
   {
-    title: "売上も在庫も確定申告もラクに",
+    title: "売上も在庫も数字の管理がラクに",
     description:
-      "売上レポート・在庫管理・確定申告サポートが全部入り。数字の管理をアプリにおまかせ。",
+      "売上レポート・在庫管理・会計ソフト連携が全部入り。数字の管理をアプリにおまかせ。",
     details: [
       "月次・年次売上レポート",
       "商品在庫の自動管理",
-      "確定申告用CSV出力",
+      "会計ソフト連携CSV出力",
     ],
     Screen: MockSalesScreen,
   },

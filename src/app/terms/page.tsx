@@ -51,7 +51,7 @@ export default function TermsPage() {
             <li>カウンセリングシート（Web問診票）</li>
             <li>LINE連携（予約通知・リマインド送信）</li>
             <li>データのCSVエクスポート・インポート</li>
-            <li>年間収支サマリー・会計ソフト連携CSV出力</li>
+            <li>売上・仕入レポート・会計ソフト連携CSV出力</li>
           </ul>
           <p className="text-sm leading-relaxed mt-2">
             当サービスの内容は、予告なく変更・追加・廃止される場合があります。

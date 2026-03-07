@@ -22,7 +22,7 @@ const FEATURES: Feature[] = [
   { label: "LINE連携", values: [true, true, false, false] },
   { label: "売上レポート", values: [true, true, false, true] },
   { label: "在庫管理", values: [true, false, false, false] },
-  { label: "確定申告サポート", values: [true, false, false, false] },
+  { label: "会計ソフト連携", values: [true, false, false, false] },
   { label: "カウンセリングシート", values: [true, false, false, false] },
   { label: "スタッフ管理", values: [true, true, true, true] },
 ];
