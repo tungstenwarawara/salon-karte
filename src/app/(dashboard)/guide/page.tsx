@@ -7,7 +7,7 @@ import { GuideFeatureGrid } from "@/components/guide/guide-feature-grid";
 import { GuideSecuritySection } from "@/components/guide/guide-security-section";
 import { GuideFaqSection } from "@/components/guide/guide-faq-section";
 import { GuidePricingSection } from "@/components/guide/guide-pricing-section";
-import { GuideFutureFeatures } from "@/components/guide/guide-future-features";
+
 
 function SectionHeader({ id, title }: { id: string; title: string }) {
   return (
@@ -58,12 +58,6 @@ export default function GuidePage() {
       <div id="pricing" className="scroll-mt-20">
         <h3 className="font-bold text-base mb-4">料金プラン</h3>
         <GuidePricingSection />
-      </div>
-
-      {/* 今後追加予定の機能 */}
-      <div>
-        <h3 className="font-bold text-base mb-4">今後追加予定の機能</h3>
-        <GuideFutureFeatures />
       </div>
 
       {/* サポートCTA */}
