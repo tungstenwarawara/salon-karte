@@ -497,5 +497,5 @@ GitHub Actions で自動実行される週次レポートをベースに PDCA �
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase URL | △（DB メトリクス用） |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase サービスロールキー | △（DB メトリクス用） |
 
-> GA4 未設定の場合は Supabase のサインアップ数 + ブログ記事数のみでレポートが生成される。
-> まずは設定なしで始めて、GA4 Data API の設定は余裕がある時に追加する。
+> GA4 は Vercel 環境変数（`NEXT_PUBLIC_GA4_ID`）に設定済み。LP のページビュー・カスタムイベント（CTA クリック等）を計測中。
+> GA4 Data API（`GA4_PROPERTY_ID` + `GA4_CREDENTIALS_JSON`）を GitHub Secrets に追加すれば、週次レポートに PV/UU が自動反映される。

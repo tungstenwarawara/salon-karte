@@ -201,9 +201,9 @@ CRON_SECRET                       # Cron 認証キー
 
 ### オプション
 ```
+NEXT_PUBLIC_GA4_ID                # Google Analytics 4 測定ID（設定済み）
 RESEND_API_KEY                    # Resend APIキー（未設定時はメール送信スキップ）
 EMAIL_FROM                        # メール送信元アドレス
-NEXT_PUBLIC_GA4_ID                # Google Analytics 4 測定ID
 NEXT_PUBLIC_APP_URL               # アプリURL（OGP・SEO用）
 NEXT_PUBLIC_BASE_URL              # ベースURL（開発用）
 ```
@@ -252,5 +252,6 @@ NEXT_PUBLIC_BASE_URL              # ベースURL（開発用）
 - [ ] 環境変数の本番キー設定
 - [ ] Webhook エンドポイントの本番 URL 登録
 - [ ] ドメイン DNS 設定確認（Resend SPF/DKIM/DMARC）
-- [ ] プライバシーポリシーへの GA4/Cookie 記載
-- [ ] LINE 設定画面にプラン制限の説明UI追加
+- [x] プライバシーポリシーへの GA4/Cookie 記載（完了済み）
+- [x] GA4 測定ID 設定（Vercel 環境変数に設定済み）
+- [x] LINE 設定画面にプラン制限の説明UI追加（完了済み）
