@@ -26,7 +26,14 @@ import * as path from "path";
 const PERIOD = process.argv.includes("--period=monthly") ? "monthly" : "weekly";
 const DAYS = PERIOD === "monthly" ? 30 : 7;
 
-const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID;
+// GA4_PROPERTY_ID は "properties/123456789" 形式が必要。
+// 数字のみ（例: "123456789"）が渡された場合は自動で補完する。
+const rawGA4PropertyId = process.env.GA4_PROPERTY_ID;
+const GA4_PROPERTY_ID = rawGA4PropertyId
+  ? rawGA4PropertyId.startsWith("properties/")
+    ? rawGA4PropertyId
+    : `properties/${rawGA4PropertyId}`
+  : undefined;
 const GA4_CREDENTIALS_JSON = process.env.GA4_CREDENTIALS_JSON;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
