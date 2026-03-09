@@ -1,7 +1,7 @@
 /** 最終CTAセクション */
 
-import Link from "next/link";
 import { ScrollFadeIn } from "./scroll-fade-in";
+import { CtaLink } from "./cta-link";
 
 export function FinalCtaSection() {
   return (
@@ -21,12 +21,14 @@ export function FinalCtaSection() {
           今日からサロン管理をもっとラクに。
         </p>
 
-        <Link
+        <CtaLink
           href="/signup"
+          trackingLocation="final_cta"
+          trackingLabel="無料ではじめる"
           className="inline-flex items-center justify-center bg-accent hover:bg-accent-light text-white font-bold rounded-2xl px-12 py-5 text-xl transition-all duration-300 hover:shadow-xl hover:shadow-accent/25 min-h-[64px] animate-cta-pulse"
         >
           無料ではじめる
-        </Link>
+        </CtaLink>
 
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-6 text-sm text-text-light">
           <span>初期費用0円</span>

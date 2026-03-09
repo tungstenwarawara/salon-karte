@@ -2,9 +2,9 @@
 
 /** 固定CTAヘッダー — スクロール600px以降で表示 */
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/ui/brand-logo";
+import { CtaLink } from "./cta-link";
 
 export function LpHeader() {
   const [visible, setVisible] = useState(false);
@@ -28,12 +28,14 @@ export function LpHeader() {
           <a href="#" aria-label="トップに戻る">
             <BrandLogo size="sm" />
           </a>
-          <Link
+          <CtaLink
             href="/signup"
+            trackingLocation="sticky_header"
+            trackingLabel="無料ではじめる"
             className="bg-accent hover:bg-accent-light text-white text-sm font-bold rounded-xl px-5 py-2 transition-colors min-h-[44px] flex items-center"
           >
             無料ではじめる
-          </Link>
+          </CtaLink>
         </div>
       </div>
     </header>

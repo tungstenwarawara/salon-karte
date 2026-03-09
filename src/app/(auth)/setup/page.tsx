@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SetupWizard, type WizardData } from "@/components/setup/setup-wizard";
+import { trackEvent } from "@/lib/analytics";
 
 function SetupContent() {
   const router = useRouter();
@@ -137,6 +138,7 @@ function SetupContent() {
       }
     }
 
+    trackEvent({ name: "onboarding_complete" });
     router.push("/dashboard");
   };
 

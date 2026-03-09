@@ -8,6 +8,7 @@ import { PhotoUpload, type PhotoEntry } from "@/components/records/photo-upload"
 import { PageHeader } from "@/components/layout/page-header";
 import { setFlashToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { trackEvent } from "@/lib/analytics";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { useFormDraft } from "@/lib/hooks/use-form-draft";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -182,6 +183,7 @@ function NewRecordForm() {
     });
 
     if (!result.success) { setError(result.error); setLoading(false); return; }
+    trackEvent({ name: "first_record" });
     clearDraft();
     if (result.ticketConsumptions && result.ticketConsumptions.length > 0) {
       const info = result.ticketConsumptions.map((tc) => `${tc.ticketName} ${tc.consumed}回消化→残${tc.remaining}回`).join("、");
