@@ -24,6 +24,7 @@ export default function EditCustomerPage() {
   const [salonId, setSalonId] = useState("");
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState<CustomerFormValues>({
     last_name: "",
@@ -125,9 +126,6 @@ export default function EditCustomerPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm("この顧客情報を削除しますか？施術記録も全て削除されます。")) {
-      return;
-    }
     setDeleting(true);
 
     const supabase = createClient();
@@ -216,16 +214,28 @@ export default function EditCustomerPage() {
       {/* 削除 */}
       <div className="bg-surface border border-error/20 rounded-2xl p-5">
         <h3 className="font-bold text-sm text-error mb-2">危険な操作</h3>
-        <p className="text-sm text-text-light mb-3">
-          顧客情報と関連する全ての施術記録が削除されます。この操作は取り消せません。
-        </p>
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className="bg-error/10 text-error text-sm font-medium rounded-xl px-4 py-2 hover:bg-error/20 transition-colors disabled:opacity-50 min-h-[48px]"
-        >
-          {deleting ? "削除中..." : "この顧客を削除"}
-        </button>
+        {showDeleteConfirm ? (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
+            <p className="text-sm font-medium text-red-800">この顧客を削除しますか？</p>
+            <p className="text-xs text-red-700">顧客情報と関連する全ての施術記録・写真が削除されます。この操作は取り消せません。</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting} className="flex-1 text-sm py-2.5 rounded-xl border border-border hover:bg-background transition-colors min-h-[44px]">キャンセル</button>
+              <button onClick={handleDelete} disabled={deleting} className="flex-1 text-sm py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50 min-h-[44px]">{deleting ? "削除中..." : "削除する"}</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-text-light mb-3">
+              顧客情報と関連する全ての施術記録が削除されます。この操作は取り消せません。
+            </p>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="bg-error/10 text-error text-sm font-medium rounded-xl px-4 py-2 hover:bg-error/20 transition-colors min-h-[48px]"
+            >
+              この顧客を削除
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

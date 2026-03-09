@@ -4,13 +4,28 @@ type Product = Database["public"]["Tables"]["products"]["Row"];
 
 type ProductCardProps = {
   product: Product;
+  showConfirmDelete?: boolean;
   onEdit: (product: Product) => void;
   onToggleActive: (productId: string, currentActive: boolean) => void;
-  onDelete: (productId: string) => void;
+  onRequestDelete: (productId: string) => void;
+  onConfirmDelete: (productId: string) => void;
+  onCancelDelete: () => void;
 };
 
 /** 商品マスタ一覧のカード表示 */
-export function ProductCard({ product, onEdit, onToggleActive, onDelete }: ProductCardProps) {
+export function ProductCard({ product, showConfirmDelete, onEdit, onToggleActive, onRequestDelete, onConfirmDelete, onCancelDelete }: ProductCardProps) {
+  if (showConfirmDelete) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
+        <p className="text-sm font-medium text-red-800">「{product.name}」を削除しますか？</p>
+        <p className="text-xs text-red-700">在庫ログも削除されます。</p>
+        <div className="flex gap-3">
+          <button onClick={onCancelDelete} className="flex-1 text-sm py-2.5 rounded-xl border border-border hover:bg-background transition-colors min-h-[44px]">キャンセル</button>
+          <button onClick={() => onConfirmDelete(product.id)} className="flex-1 text-sm py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors min-h-[44px]">削除する</button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div
       className={`bg-surface border rounded-xl p-4 ${product.is_active ? "border-border" : "border-border opacity-60"}`}
@@ -53,7 +68,7 @@ export function ProductCard({ product, onEdit, onToggleActive, onDelete }: Produ
             編集
           </button>
           <button
-            onClick={() => onDelete(product.id)}
+            onClick={() => onRequestDelete(product.id)}
             className="text-sm text-error hover:underline min-h-[48px] flex items-center"
           >
             削除

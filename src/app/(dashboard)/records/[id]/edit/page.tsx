@@ -181,7 +181,6 @@ export default function EditRecordPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm("この施術記録を削除しますか？")) return;
     setDeleting(true);
     const result = await deleteTreatmentRecord(id, salonId);
     if (!result.success) { setError(result.error ?? "削除に失敗しました"); setDeleting(false); return; }
@@ -189,7 +188,6 @@ export default function EditRecordPage() {
   };
 
   const handleDeletePurchase = async (purchaseId: string) => {
-    if (!confirm("この物販記録を削除しますか？")) return;
     setDeletingPurchaseId(purchaseId);
     const supabase = createClient();
     const purchase = linkedPurchases.find((p) => p.id === purchaseId);
@@ -206,7 +204,6 @@ export default function EditRecordPage() {
   };
 
   const handleDeleteLinkedTicket = async (ticketId: string) => {
-    if (!confirm("この回数券を削除しますか？")) return;
     setDeletingTicketId(ticketId);
     const supabase = createClient();
     const { error: delError } = await supabase.from("course_tickets").delete().eq("id", ticketId).eq("salon_id", salonId);

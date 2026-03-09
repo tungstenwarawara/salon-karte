@@ -22,6 +22,7 @@ export default function ProductsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const { toast, showToast, hideToast } = useToast();
   const [form, setForm] = useState(INITIAL_FORM);
@@ -127,7 +128,7 @@ export default function ProductsPage() {
   };
 
   const handleDelete = async (productId: string) => {
-    if (!confirm("この商品を削除しますか？在庫ログも削除されます。")) return;
+    setConfirmDeleteId(null);
     setError("");
     const supabase = createClient();
     const { error } = await supabase.from("products").delete().eq("id", productId).eq("salon_id", salonId);
@@ -247,9 +248,12 @@ export default function ProductsPage() {
             <ProductCard
               key={product.id}
               product={product}
+              showConfirmDelete={confirmDeleteId === product.id}
               onEdit={startEdit}
               onToggleActive={handleToggleActive}
-              onDelete={handleDelete}
+              onRequestDelete={setConfirmDeleteId}
+              onConfirmDelete={handleDelete}
+              onCancelDelete={() => setConfirmDeleteId(null)}
             />
           ))}
         </div>

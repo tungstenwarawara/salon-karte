@@ -30,6 +30,8 @@ export function TreatmentLinkedItems({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ item_name: "", quantity: 1, unit_price: 0, memo: "" });
   const [saving, setSaving] = useState(false);
+  const [confirmDeleteTicket, setConfirmDeleteTicket] = useState<string | null>(null);
+  const [confirmDeletePurchase, setConfirmDeletePurchase] = useState<string | null>(null);
 
   const startEdit = (p: Purchase) => {
     setEditingId(p.id);
@@ -85,15 +87,27 @@ export function TreatmentLinkedItems({
           <h3 className="text-sm font-bold mb-2">回数券販売</h3>
           <div className="space-y-2">
             {linkedTickets.map((ticket) => (
-              <div key={ticket.id} className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{ticket.ticket_name}</p>
-                  <p className="text-xs text-text-light">{ticket.total_sessions}回{ticket.price != null ? ` / ${ticket.price.toLocaleString()}円` : ""}</p>
-                </div>
-                <button type="button" onClick={() => onDeleteTicket(ticket.id)} disabled={deletingTicketId === ticket.id}
-                  className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50">
-                  {deletingTicketId === ticket.id ? "削除中..." : "削除"}
-                </button>
+              <div key={ticket.id}>
+                {confirmDeleteTicket === ticket.id ? (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
+                    <p className="text-xs text-red-800">この回数券を削除しますか？</p>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setConfirmDeleteTicket(null)} className="flex-1 text-xs py-2 rounded-lg border border-border hover:bg-background min-h-[44px]">キャンセル</button>
+                      <button type="button" onClick={() => { setConfirmDeleteTicket(null); onDeleteTicket(ticket.id); }} disabled={deletingTicketId === ticket.id} className="flex-1 text-xs py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 min-h-[44px]">{deletingTicketId === ticket.id ? "削除中..." : "削除する"}</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{ticket.ticket_name}</p>
+                      <p className="text-xs text-text-light">{ticket.total_sessions}回{ticket.price != null ? ` / ${ticket.price.toLocaleString()}円` : ""}</p>
+                    </div>
+                    <button type="button" onClick={() => setConfirmDeleteTicket(ticket.id)} disabled={deletingTicketId === ticket.id}
+                      className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50">
+                      {deletingTicketId === ticket.id ? "削除中..." : "削除"}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -107,7 +121,15 @@ export function TreatmentLinkedItems({
           <div className="space-y-2">
             {linkedPurchases.map((purchase) => (
               <div key={purchase.id}>
-                {editingId === purchase.id ? (
+                {confirmDeletePurchase === purchase.id ? (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
+                    <p className="text-xs text-red-800">この物販記録を削除しますか？</p>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setConfirmDeletePurchase(null)} className="flex-1 text-xs py-2 rounded-lg border border-border hover:bg-background min-h-[44px]">キャンセル</button>
+                      <button type="button" onClick={() => { setConfirmDeletePurchase(null); onDeletePurchase(purchase.id); }} disabled={deletingPurchaseId === purchase.id} className="flex-1 text-xs py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 min-h-[44px]">{deletingPurchaseId === purchase.id ? "削除中..." : "削除する"}</button>
+                    </div>
+                  </div>
+                ) : editingId === purchase.id ? (
                   <PurchaseEditForm
                     purchase={purchase}
                     editForm={editForm}
@@ -130,7 +152,7 @@ export function TreatmentLinkedItems({
                         className="text-accent text-xs px-2 py-1.5 rounded-lg hover:bg-accent/5 min-h-[44px]">
                         編集
                       </button>
-                      <button type="button" onClick={() => onDeletePurchase(purchase.id)} disabled={deletingPurchaseId === purchase.id}
+                      <button type="button" onClick={() => setConfirmDeletePurchase(purchase.id)} disabled={deletingPurchaseId === purchase.id}
                         className="text-error text-xs px-2 py-1.5 rounded-lg hover:bg-error/5 min-h-[44px] disabled:opacity-50">
                         {deletingPurchaseId === purchase.id ? "削除中..." : "削除"}
                       </button>

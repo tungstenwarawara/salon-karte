@@ -5,13 +5,28 @@ type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
 type MenuCardProps = {
   menu: Menu;
   staffNames?: string[];
+  showConfirmDelete?: boolean;
   onEdit: (menu: Menu) => void;
   onToggleActive: (menuId: string, currentActive: boolean) => void;
-  onDelete: (menuId: string) => void;
+  onRequestDelete: (menuId: string) => void;
+  onConfirmDelete: (menuId: string) => void;
+  onCancelDelete: () => void;
 };
 
 /** 施術メニュー一覧のカード表示 */
-export function MenuCard({ menu, staffNames, onEdit, onToggleActive, onDelete }: MenuCardProps) {
+export function MenuCard({ menu, staffNames, showConfirmDelete, onEdit, onToggleActive, onRequestDelete, onConfirmDelete, onCancelDelete }: MenuCardProps) {
+  if (showConfirmDelete) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
+        <p className="text-sm font-medium text-red-800">「{menu.name}」を削除しますか？</p>
+        <div className="flex gap-3">
+          <button onClick={onCancelDelete} className="flex-1 text-sm py-2.5 rounded-xl border border-border hover:bg-background transition-colors min-h-[44px]">キャンセル</button>
+          <button onClick={() => onConfirmDelete(menu.id)} className="flex-1 text-sm py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors min-h-[44px]">削除する</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`bg-surface border rounded-xl p-4 ${menu.is_active ? "border-border" : "border-border opacity-60"}`}
@@ -52,12 +67,7 @@ export function MenuCard({ menu, staffNames, onEdit, onToggleActive, onDelete }:
           >
             編集
           </button>
-          <button
-            onClick={() => onDelete(menu.id)}
-            className="text-sm text-error hover:underline min-h-[48px] flex items-center"
-          >
-            削除
-          </button>
+          <button onClick={() => onRequestDelete(menu.id)} className="text-sm text-error hover:underline min-h-[48px] flex items-center">削除</button>
         </div>
       </div>
     </div>
