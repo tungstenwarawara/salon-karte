@@ -5,6 +5,8 @@ import { getAllPosts, getPostBySlug, BLOG_CATEGORIES } from "@/lib/blog";
 import { BlogHeader } from "@/components/blog/blog-header";
 import { TableOfContents } from "@/components/blog/table-of-contents";
 import { LpFooter } from "@/components/lp/lp-footer";
+import { CtaLink } from "@/components/lp/cta-link";
+import { BlogScrollTracker } from "@/components/blog/blog-scroll-tracker";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -58,6 +60,7 @@ export default async function BlogPostPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <BlogScrollTracker slug={post.slug} title={post.title} />
       <BlogHeader />
 
       <main className="flex-1 max-w-3xl mx-auto px-4 py-8 md:py-12 w-full">
@@ -131,12 +134,14 @@ export default async function BlogPostPage({ params }: Props) {
             <p className="text-sm text-text-light mb-6">
               Salon Karte は個人サロン専用の管理アプリです
             </p>
-            <Link
+            <CtaLink
               href="/signup"
+              trackingLocation="blog_article"
+              trackingLabel="無料ではじめる"
               className="inline-flex items-center bg-accent hover:bg-accent-light text-white font-bold rounded-2xl px-8 py-4 text-lg transition-colors min-h-[48px]"
             >
               無料ではじめる
-            </Link>
+            </CtaLink>
             <p className="text-xs text-text-light mt-3">
               初期費用0円 / クレジットカード不要 / いつでも解約OK
             </p>

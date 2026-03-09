@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { BrandLogo } from "@/components/ui/brand-logo";
 import { ScrollFadeIn } from "./scroll-fade-in";
 import { PhoneFrame } from "./phone-frame";
 import { MockDashboardScreen } from "./mockup-screens";
+import { CtaLink } from "./cta-link";
 
 export function HeroSection() {
   return (
@@ -32,12 +32,14 @@ export function HeroSection() {
               個人サロンのための、やさしいサロン管理アプリ
             </p>
             <div className="space-y-4">
-              <Link
+              <CtaLink
                 href="/signup"
+                trackingLocation="hero"
+                trackingLabel="無料ではじめる"
                 className="inline-flex items-center justify-center bg-accent hover:bg-accent-light text-white font-bold rounded-2xl px-10 py-4 text-lg transition-all duration-300 hover:shadow-lg hover:shadow-accent/20 min-h-[56px] animate-cta-pulse"
               >
                 無料ではじめる
-              </Link>
+              </CtaLink>
               <p className="text-sm text-text-light">
                 初期費用0円 ・ クレジットカード不要 ・ いつでも解約OK
               </p>

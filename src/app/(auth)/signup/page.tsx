@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BrandLogo } from "@/components/ui/brand-logo";
+import { trackEvent } from "@/lib/analytics";
 
 function SignupForm() {
   const router = useRouter();
@@ -17,6 +18,11 @@ function SignupForm() {
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [agreed, setAgreed] = useState(false);
+
+  // ページ表示時に signup_start を送信
+  useEffect(() => {
+    trackEvent({ name: "signup_start" });
+  }, []);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +64,9 @@ function SignupForm() {
       setLoading(false);
       return;
     }
+
+    // サインアップ成功
+    trackEvent({ name: "signup_complete", params: { method: "email" } });
 
     // If session exists immediately (email confirmation disabled), go to setup
     if (data.session) {

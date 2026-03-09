@@ -1,7 +1,7 @@
 /** 料金セクション — スタンダード + おためし + 市場比較 */
 
-import Link from "next/link";
 import { ScrollFadeIn } from "./scroll-fade-in";
+import { CtaLink } from "./cta-link";
 
 const STANDARD_FEATURES = [
   "顧客管理（人数無制限）",
@@ -69,12 +69,14 @@ export function PricingSection() {
               <strong className="text-text ml-1">+500円/月</strong>
             </p>
           </div>
-          <Link
+          <CtaLink
             href="/signup"
+            trackingLocation="pricing_standard"
+            trackingLabel="無料ではじめる"
             className="block w-full bg-accent hover:bg-accent-light text-white font-bold rounded-2xl py-4 text-center text-lg transition-colors min-h-[56px]"
           >
             無料ではじめる
-          </Link>
+          </CtaLink>
           </div>
         </ScrollFadeIn>
 
@@ -92,12 +94,14 @@ export function PricingSection() {
             まずは試してみたい方向け。顧客10件・カルテ1顧客あたり5件・予約月20件まで。
             写真保存・LINE連携・カウンセリングシート・売上分析は含まれません。
           </p>
-          <Link
+          <CtaLink
             href="/signup"
+            trackingLocation="pricing_trial"
+            trackingLabel="おためしプランで始める"
             className="block w-full text-center text-accent font-bold border border-accent rounded-2xl py-3 hover:bg-accent/5 transition-colors min-h-[48px]"
           >
             おためしプランで始める
-          </Link>
+          </CtaLink>
         </div>
         </ScrollFadeIn>
 

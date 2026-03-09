@@ -433,3 +433,69 @@ GoogleのAI Overview（検索結果の上に出るAI要約）やChatGPT/Gemini�
 ### 最も重要な1つ
 **今日、SEO記事の第1本目を書き始めること。** SEOは効果が出るまで3〜6ヶ月かかる。
 1日遅れるごとに、3サロン到達が1日遅れる。
+
+---
+
+## 6. PDCA 運用体制（2026-03-09 追加）
+
+### 6.1 データ収集（GA4 カスタムイベント）
+
+集客ファネルの各段階を GA4 カスタムイベントで計測する。
+
+| イベント名 | 発火タイミング | 計測内容 |
+|-----------|-------------|---------|
+| `cta_click` | LP/ブログの CTA クリック | どの CTA が効いているか（location パラメータで区別） |
+| `signup_start` | /signup ページ表示 | サインアップページへの到達数 |
+| `signup_complete` | アカウント作成成功 | 実際の登録完了数 |
+| `onboarding_complete` | サロン初期設定完了 | 定着率 |
+| `first_record` | カルテ保存成功 | アクティベーション率 |
+| `blog_read` | ブログ記事スクロール 75% | 記事の質・エンゲージメント |
+
+**実装箇所:**
+- `src/lib/analytics.ts` — イベント送信ユーティリティ（型安全）
+- `src/components/lp/cta-link.tsx` — CTA リンクコンポーネント
+- `src/components/blog/blog-scroll-tracker.tsx` — ブログスクロール計測
+
+### 6.2 週次レビューサイクル（毎週土曜 9:00 JST）
+
+GitHub Actions で自動実行される週次レポートをベースに PDCA を回す。
+
+```
+毎週土曜 9:00 JST
+  → GitHub Actions 起動
+  → scripts/acquisition-report.ts 実行
+  → GA4 Data API + Supabase DB からデータ取得
+  → Markdown レポート生成（docs/reports/）
+  → GitHub Issue を自動起票（ラベル: acquisition, pdca-review）
+  → その Issue をベースに Claude Code と一緒にレビュー
+```
+
+**レポート内容:**
+- KPI サマリー（PV、ユーザー数、サインアップ数 vs 目標）
+- 集客ファネル（CTA → signup → onboarding → first_record）
+- ページ別 PV ランキング
+- 流入元ランキング
+- プロダクト利用状況（サロン数、カルテ数、アクティブ数）
+- 自動アクション提案
+
+**ワークフロー:** `.github/workflows/weekly-acquisition-review.yml`
+
+### 6.3 レビューの進め方
+
+1. GitHub Issue のレポートを確認する
+2. 前週のアクション実施状況を振り返る
+3. 数値の変化と要因を分析する
+4. 次週の具体的アクション（最大3つ）を決める
+5. Issue にコメントで記録する
+
+### 6.4 必要な GitHub Secrets 設定
+
+| シークレット名 | 用途 | 必須 |
+|-------------|------|------|
+| `GA4_PROPERTY_ID` | GA4 プロパティ ID | △（なくても DB レポートは出る） |
+| `GA4_CREDENTIALS_JSON` | Google サービスアカウント JSON | △（GA4 API 用） |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase URL | △（DB メトリクス用） |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase サービスロールキー | △（DB メトリクス用） |
+
+> GA4 未設定の場合は Supabase のサインアップ数 + ブログ記事数のみでレポートが生成される。
+> まずは設定なしで始めて、GA4 Data API の設定は余裕がある時に追加する。

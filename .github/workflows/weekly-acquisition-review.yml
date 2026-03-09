@@ -1,0 +1,70 @@
+# 集客 PDCA 週次レビュー
+# 毎週土曜 9:00 JST (= 金曜 0:00 UTC) に自動実行
+# レポートを生成し、GitHub Issue を起票する
+
+name: Weekly Acquisition Review
+
+on:
+  schedule:
+    # 土曜 9:00 JST = 土曜 0:00 UTC
+    - cron: "0 0 * * 6"
+  workflow_dispatch: # 手動実行も可能
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate acquisition report
+        id: report
+        env:
+          GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
+          GA4_CREDENTIALS_JSON: ${{ secrets.GA4_CREDENTIALS_JSON }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          npx tsx scripts/acquisition-report.ts 2>&1 | tee /tmp/report-output.txt
+          # レポートファイルのパスを取得
+          REPORT_FILE=$(ls -t docs/reports/acquisition-weekly-*.md 2>/dev/null | head -1)
+          if [ -n "$REPORT_FILE" ]; then
+            echo "report_path=$REPORT_FILE" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Issue
+        if: steps.report.outputs.report_path != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          WEEK_START=$(date -d "7 days ago" +%m/%d)
+          WEEK_END=$(date +%m/%d)
+
+          BODY=$(cat "${{ steps.report.outputs.report_path }}")
+
+          gh issue create \
+            --title "📊 週次集客レビュー ${WEEK_START}〜${WEEK_END}" \
+            --body "${BODY}" \
+            --label "acquisition,pdca-review"
+
+      - name: Create labels if not exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "acquisition" --color "0E8A16" --description "集客関連" --force || true
+          gh label create "pdca-review" --color "5319E7" --description "PDCA週次レビュー" --force || true

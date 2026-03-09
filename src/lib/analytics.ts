@@ -1,0 +1,32 @@
+/**
+ * GA4 カスタムイベント送信ユーティリティ
+ *
+ * 集客ファネル計測用。GA4が読み込まれていない場合は何もしない（安全）。
+ */
+
+// gtag のグローバル型宣言
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
+type AcquisitionEvent =
+  | { name: "cta_click"; params: { location: string; label: string } }
+  | { name: "signup_start" }
+  | { name: "signup_complete"; params: { method: "email" } }
+  | { name: "onboarding_complete" }
+  | { name: "first_record" }
+  | { name: "blog_read"; params: { slug: string; title: string } };
+
+/**
+ * GA4 カスタムイベントを送信する。
+ * GA4 が未読み込み（Cookie 拒否時やテスト環境）なら何もしない。
+ */
+export function trackEvent(event: AcquisitionEvent): void {
+  if (typeof window === "undefined" || !window.gtag) return;
+
+  const { name, ...rest } = event;
+  const params = "params" in rest ? rest.params : undefined;
+  window.gtag("event", name, params);
+}
