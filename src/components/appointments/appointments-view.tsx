@@ -121,7 +121,14 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
                 <p className="font-medium">{isIrregularHoliday(salonHolidays, selectedDate) ? "臨時休業日" : "休業日"}</p>
                 <p className="text-xs">{isIrregularHoliday(salonHolidays, selectedDate) ? "この日は臨時休業日に設定されています" : "この曜日は休業日に設定されています"}</p>
               </div>
-            ) : <p>この日の予約はありません</p>}
+            ) : (
+              <div className="space-y-2">
+                <p>この日の予約はありません</p>
+                <Link href={`/appointments/new?date=${toDateStr(selectedDate)}`} className="inline-block text-sm text-accent hover:underline font-medium">
+                  予約を登録する →
+                </Link>
+              </div>
+            )}
           </div>
         )
       ) : (

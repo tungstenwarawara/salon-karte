@@ -23,6 +23,8 @@ export default function CounselingTemplateEditPage() {
   const [isPreview, setIsPreview] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [error, setError] = useState("");
   const { toast, showToast, hideToast } = useToast();
 
@@ -98,7 +100,7 @@ export default function CounselingTemplateEditPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm("このテンプレートを削除しますか？")) return;
+    setShowDeleteConfirm(false);
     setDeleting(true);
 
     const supabase = createClient();
@@ -118,7 +120,7 @@ export default function CounselingTemplateEditPage() {
   };
 
   const handleReset = () => {
-    if (!confirm("デフォルトテンプレートに戻しますか？現在の編集内容は失われます。")) return;
+    setShowResetConfirm(false);
     setTemplate(structuredClone(DEFAULT_COUNSELING_TEMPLATE));
   };
 
@@ -129,9 +131,10 @@ export default function CounselingTemplateEditPage() {
     setTemplate({ ...template, sections: newSections });
   };
 
+  const [confirmDeleteSectionIdx, setConfirmDeleteSectionIdx] = useState<number | null>(null);
   const deleteSection = (idx: number) => {
     if (!template) return;
-    if (!confirm("このセクションを削除しますか？")) return;
+    setConfirmDeleteSectionIdx(null);
     setTemplate({ ...template, sections: template.sections.filter((_, i) => i !== idx) });
   };
 
@@ -217,17 +220,27 @@ export default function CounselingTemplateEditPage() {
         <>
           <div className="space-y-3">
             {template.sections.map((section, i) => (
-              <SectionEditor
-                key={section.id}
-                section={section}
-                index={i}
-                onChange={(s) => updateSection(i, s)}
-                onDelete={() => deleteSection(i)}
-                onMoveUp={() => moveSection(i, i - 1)}
-                onMoveDown={() => moveSection(i, i + 1)}
-                isFirst={i === 0}
-                isLast={i === template.sections.length - 1}
-              />
+              <div key={section.id}>
+                <SectionEditor
+                  section={section}
+                  index={i}
+                  onChange={(s) => updateSection(i, s)}
+                  onDelete={() => setConfirmDeleteSectionIdx(i)}
+                  onMoveUp={() => moveSection(i, i - 1)}
+                  onMoveDown={() => moveSection(i, i + 1)}
+                  isFirst={i === 0}
+                  isLast={i === template.sections.length - 1}
+                />
+                {confirmDeleteSectionIdx === i && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2 mt-2">
+                    <p className="text-xs text-red-800">「{section.title || "無題のセクション"}」を削除しますか？</p>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setConfirmDeleteSectionIdx(null)} className="flex-1 text-xs py-2 rounded-lg border border-border hover:bg-background min-h-[44px]">キャンセル</button>
+                      <button type="button" onClick={() => deleteSection(i)} className="flex-1 text-xs py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 min-h-[44px]">削除する</button>
+                    </div>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
 
@@ -240,24 +253,43 @@ export default function CounselingTemplateEditPage() {
           </button>
 
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleReset}
-              className="flex-1 bg-background border border-border text-sm font-medium rounded-xl py-3 transition-colors min-h-[48px]"
-            >
-              デフォルトに戻す
-            </button>
+            {showResetConfirm ? (
+              <div className="flex-1 bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
+                <p className="text-xs text-red-800">デフォルトに戻しますか？編集内容は失われます。</p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setShowResetConfirm(false)} className="flex-1 text-xs py-2 rounded-lg border border-border hover:bg-background min-h-[44px]">キャンセル</button>
+                  <button type="button" onClick={handleReset} className="flex-1 text-xs py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 min-h-[44px]">戻す</button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(true)}
+                className="flex-1 bg-background border border-border text-sm font-medium rounded-xl py-3 transition-colors min-h-[48px]"
+              >
+                デフォルトに戻す
+              </button>
+            )}
             <SubmitButton type="button" onClick={handleSave} loading={saving} className="flex-1 text-sm" />
           </div>
 
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={deleting}
-            className="w-full text-sm text-error hover:bg-error/5 rounded-xl py-3 transition-colors min-h-[48px] disabled:opacity-50"
-          >
-            {deleting ? "削除中..." : "このテンプレートを削除"}
-          </button>
+          {showDeleteConfirm ? (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
+              <p className="text-sm font-medium text-red-800">このテンプレートを削除しますか？</p>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setShowDeleteConfirm(false)} disabled={deleting} className="flex-1 text-sm py-2.5 rounded-xl border border-border hover:bg-background transition-colors min-h-[44px]">キャンセル</button>
+                <button type="button" onClick={handleDelete} disabled={deleting} className="flex-1 text-sm py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50 min-h-[44px]">{deleting ? "削除中..." : "削除する"}</button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="w-full text-sm text-error hover:bg-error/5 rounded-xl py-3 transition-colors min-h-[48px]"
+            >
+              このテンプレートを削除
+            </button>
+          )}
         </>
       )}
     </div>

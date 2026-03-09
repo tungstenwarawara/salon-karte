@@ -25,6 +25,7 @@ export default function MenusPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const { toast, showToast, hideToast } = useToast();
   const [form, setForm] = useState({ name: "", category: "", duration_minutes: "", price: "" });
@@ -119,7 +120,7 @@ export default function MenusPage() {
   };
 
   const handleDelete = async (menuId: string) => {
-    if (!confirm("このメニューを削除しますか？")) return;
+    setConfirmDeleteId(null);
     setError("");
     const supabase = createClient();
     const { error } = await supabase.from("treatment_menus").delete().eq("id", menuId).eq("salon_id", salonId);
@@ -189,7 +190,7 @@ export default function MenusPage() {
       {menus.length > 0 ? (
         <div className="space-y-2">
           {menus.map((menu) => (
-            <MenuCard key={menu.id} menu={menu} staffNames={getStaffNames(menu.id)} onEdit={startEdit} onToggleActive={handleToggleActive} onDelete={handleDelete} />
+            <MenuCard key={menu.id} menu={menu} staffNames={getStaffNames(menu.id)} showConfirmDelete={confirmDeleteId === menu.id} onEdit={startEdit} onToggleActive={handleToggleActive} onRequestDelete={setConfirmDeleteId} onConfirmDelete={handleDelete} onCancelDelete={() => setConfirmDeleteId(null)} />
           ))}
         </div>
       ) : (

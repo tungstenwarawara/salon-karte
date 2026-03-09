@@ -158,7 +158,7 @@ export default function SettingsPage() {
             </p>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="text-sm text-error font-medium hover:underline"
+              className="text-sm text-error font-medium hover:underline min-h-[44px]"
             >
               退会する
             </button>

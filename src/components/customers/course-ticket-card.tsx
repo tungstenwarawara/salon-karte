@@ -45,11 +45,14 @@ type Props = {
   editValue: number;
   adjustError: string;
   confirmDeleteId: string | null;
+  confirmAdjustId: string | null;
   consumptionEntries: ConsumptionEntry[];
   onUseSession: (ticketId: string) => void;
   onStartEdit: (ticketId: string, currentUsed: number) => void;
   onCancelEdit: () => void;
-  onAdjust: (ticketId: string) => void;
+  onRequestAdjust: (ticketId: string) => void;
+  onConfirmAdjust: (ticketId: string) => void;
+  onCancelAdjust: () => void;
   onEditValueChange: (value: number) => void;
   onRequestDelete: (ticketId: string) => void;
   onConfirmDelete: (ticketId: string) => void;
@@ -59,8 +62,8 @@ type Props = {
 
 /** 個別回数券カード */
 export function CourseTicketCard({
-  ticket, processingId, deletingId, editingId, editValue, adjustError, confirmDeleteId, consumptionEntries,
-  onUseSession, onStartEdit, onCancelEdit, onAdjust, onEditValueChange, onRequestDelete, onConfirmDelete, onCancelDelete,
+  ticket, processingId, deletingId, editingId, editValue, adjustError, confirmDeleteId, confirmAdjustId, consumptionEntries,
+  onUseSession, onStartEdit, onCancelEdit, onRequestAdjust, onConfirmAdjust, onCancelAdjust, onEditValueChange, onRequestDelete, onConfirmDelete, onCancelDelete,
   onSavePaymentType,
 }: Props) {
   const remaining = ticket.total_sessions - ticket.used_sessions;
@@ -138,21 +141,20 @@ export function CourseTicketCard({
               （残 {ticket.total_sessions - editValue}回）
             </span>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={onCancelEdit}
-              className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-surface transition-colors min-h-[44px]"
-            >
-              キャンセル
-            </button>
-            <button
-              onClick={() => onAdjust(ticket.id)}
-              disabled={processingId !== null}
-              className="text-xs bg-accent text-white px-4 py-1.5 rounded-lg hover:bg-accent-light transition-colors min-h-[44px] disabled:opacity-50"
-            >
-              {processingId === ticket.id ? "保存中..." : "保存"}
-            </button>
-          </div>
+          {confirmAdjustId === ticket.id ? (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-2 space-y-2">
+              <p className="text-xs text-red-800">消化回数を {ticket.used_sessions} → {editValue} に変更しますか？（残り{ticket.total_sessions - editValue}回）</p>
+              <div className="flex gap-2">
+                <button onClick={onCancelAdjust} className="flex-1 text-xs py-2 rounded-lg border border-border hover:bg-background min-h-[44px]">キャンセル</button>
+                <button onClick={() => onConfirmAdjust(ticket.id)} disabled={processingId !== null} className="flex-1 text-xs py-2 rounded-lg bg-accent text-white hover:bg-accent-light disabled:opacity-50 min-h-[44px]">{processingId === ticket.id ? "保存中..." : "変更する"}</button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button onClick={onCancelEdit} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-surface transition-colors min-h-[44px]">キャンセル</button>
+              <button onClick={() => onRequestAdjust(ticket.id)} disabled={processingId !== null} className="text-xs bg-accent text-white px-4 py-1.5 rounded-lg hover:bg-accent-light transition-colors min-h-[44px] disabled:opacity-50">{processingId === ticket.id ? "保存中..." : "保存"}</button>
+            </div>
+          )}
         </div>
       )}
 

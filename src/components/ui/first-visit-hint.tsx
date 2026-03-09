@@ -12,7 +12,7 @@ type FirstVisitHintProps = {
 export function FirstVisitHint({
   pageKey,
   message,
-  autoFadeMs = 10000,
+  autoFadeMs = 20000,
 }: FirstVisitHintProps) {
   const { isFirstVisit, markVisited } = useFirstVisit(`hint_${pageKey}`);
   const [fading, setFading] = useState(false);

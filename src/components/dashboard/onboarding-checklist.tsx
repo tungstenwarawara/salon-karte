@@ -22,8 +22,8 @@ export function OnboardingChecklist({
   const phase1Done = phase1Steps.every((s) => s.done);
   const allDone = setupSteps.every((s) => s.done);
   const completedCount = setupSteps.filter((s) => s.done).length;
-  const totalSteps = phase1Done ? setupSteps.length : phase1Steps.length;
-  const displayCompleted = phase1Done ? completedCount : setupSteps.filter((s) => s.phase === 1 && s.done).length;
+  const totalSteps = setupSteps.length;
+  const displayCompleted = completedCount;
 
   const { shouldShow: shouldCelebrate, markDone: markCelebrated } = useOnceFlag("checklist_completed");
   const [showCelebration, setShowCelebration] = useState(false);
@@ -61,10 +61,10 @@ export function OnboardingChecklist({
           ))}
         </div>
 
-        {/* Phase 2 ステップ（顧客登録後に表示） */}
-        {phase1Done && phase2Steps.length > 0 && (
+        {/* Phase 2 ステップ */}
+        {phase2Steps.length > 0 && (
           <div className="space-y-2 pt-1 border-t border-accent/10">
-            <p className="text-[10px] text-accent font-medium animate-fade-in-up">次のステップ</p>
+            <p className="text-[10px] text-accent font-medium">実務をはじめる</p>
             {phase2Steps.map((step) => (
               <StepItem key={step.href} step={step} />
             ))}
@@ -90,7 +90,7 @@ function StepItem({ step }: { step: SetupStep }) {
   return (
     <Link
       href={step.href}
-      className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
+      className={`flex items-center gap-3 p-2 rounded-xl transition-colors min-h-[44px] ${
         step.done ? "opacity-60" : "hover:bg-accent/10"
       }`}
     >

@@ -158,7 +158,7 @@ function SetupContent() {
           {error}
         </div>
       )}
-      <SetupWizard onComplete={handleComplete} />
+      <SetupWizard onComplete={handleComplete} loading={loading} />
     </>
   );
 }

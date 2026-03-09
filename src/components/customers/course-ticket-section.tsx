@@ -28,6 +28,7 @@ export function CourseTicketSection({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState(0);
   const [adjustError, setAdjustError] = useState("");
+  const [confirmAdjustId, setConfirmAdjustId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -70,9 +71,7 @@ export function CourseTicketSection({
     }
     if (editValue === ticket.used_sessions) { setEditingId(null); return; }
 
-    const remaining = ticket.total_sessions - editValue;
-    if (!confirm(`消化回数を ${ticket.used_sessions} → ${editValue} に変更しますか？（残り${remaining}回になります）`)) return;
-
+    setConfirmAdjustId(null);
     setAdjustError("");
     setProcessingId(ticketId);
     const supabase = createClient();
@@ -130,11 +129,14 @@ export function CourseTicketSection({
     editValue,
     adjustError,
     confirmDeleteId,
+    confirmAdjustId,
     consumptionEntries: consumptionHistory.get(ticket.id) ?? [],
     onUseSession: handleUseSession,
-    onStartEdit: (id: string, used: number) => { setEditingId(id); setEditValue(used); setAdjustError(""); },
-    onCancelEdit: () => { setEditingId(null); setAdjustError(""); },
-    onAdjust: handleAdjust,
+    onStartEdit: (id: string, used: number) => { setEditingId(id); setEditValue(used); setAdjustError(""); setConfirmAdjustId(null); },
+    onCancelEdit: () => { setEditingId(null); setAdjustError(""); setConfirmAdjustId(null); },
+    onRequestAdjust: (id: string) => setConfirmAdjustId(id),
+    onConfirmAdjust: handleAdjust,
+    onCancelAdjust: () => setConfirmAdjustId(null),
     onEditValueChange: (v: number) => { setEditValue(v); setAdjustError(""); },
     onRequestDelete: (id: string) => setConfirmDeleteId(id),
     onConfirmDelete: handleDelete,
