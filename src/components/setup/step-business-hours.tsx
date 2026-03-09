@@ -90,7 +90,7 @@ export function StepBusinessHours({
                   <select
                     value={schedule.open_time}
                     onChange={(e) => updateTime(day, "open_time", e.target.value)}
-                    className="flex-1 min-w-0 text-sm rounded-lg border border-border bg-surface px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent/50"
+                    className="flex-1 min-w-0 text-sm rounded-lg border border-border bg-surface px-2 py-2.5 min-h-[44px] focus:outline-none focus:ring-1 focus:ring-accent/50"
                   >
                     {TIME_OPTIONS.map((t) => (
                       <option key={t.value} value={t.value}>{t.label}</option>
@@ -100,7 +100,7 @@ export function StepBusinessHours({
                   <select
                     value={schedule.close_time}
                     onChange={(e) => updateTime(day, "close_time", e.target.value)}
-                    className="flex-1 min-w-0 text-sm rounded-lg border border-border bg-surface px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-accent/50"
+                    className="flex-1 min-w-0 text-sm rounded-lg border border-border bg-surface px-2 py-2.5 min-h-[44px] focus:outline-none focus:ring-1 focus:ring-accent/50"
                   >
                     {TIME_OPTIONS.map((t) => (
                       <option key={t.value} value={t.value}>{t.label}</option>

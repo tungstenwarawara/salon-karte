@@ -38,7 +38,16 @@ export default function LineSettingsPage() {
     load();
   }, []);
 
-  if (initialLoading) return null;
+  if (initialLoading) return (
+    <div className="space-y-4">
+      <div className="h-8 w-32 bg-border/30 rounded-lg animate-pulse" />
+      <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
+        <div className="h-5 w-24 bg-border/30 rounded animate-pulse" />
+        <div className="h-10 w-full bg-border/30 rounded-xl animate-pulse" />
+        <div className="h-10 w-full bg-border/30 rounded-xl animate-pulse" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-4">

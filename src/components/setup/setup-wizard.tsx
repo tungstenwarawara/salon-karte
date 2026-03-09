@@ -21,7 +21,7 @@ export type WizardData = {
 
 type StepNum = 1 | 2 | 3 | 4;
 
-export function SetupWizard({ onComplete }: { onComplete: (data: WizardData) => void }) {
+export function SetupWizard({ onComplete, loading }: { onComplete: (data: WizardData) => void; loading?: boolean }) {
   const [step, setStep] = useState<StepNum>(1);
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [animKey, setAnimKey] = useState(0);
@@ -122,6 +122,7 @@ export function SetupWizard({ onComplete }: { onComplete: (data: WizardData) => 
                   menu: menuData !== null,
                 }}
                 onStart={handleStart}
+                loading={loading}
               />
             )}
           </div>

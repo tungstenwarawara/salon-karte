@@ -90,7 +90,7 @@ function StepItem({ step }: { step: SetupStep }) {
   return (
     <Link
       href={step.href}
-      className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${
+      className={`flex items-center gap-3 p-2 rounded-xl transition-colors min-h-[44px] ${
         step.done ? "opacity-60" : "hover:bg-accent/10"
       }`}
     >

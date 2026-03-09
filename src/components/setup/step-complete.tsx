@@ -6,6 +6,7 @@ type StepCompleteProps = {
   salonName: string;
   setupSummary: { businessHours: boolean; menu: boolean };
   onStart: () => void;
+  loading?: boolean;
 };
 
 /** 完了チェックマーク SVG（描画アニメーション付き） */
@@ -88,7 +89,7 @@ function DailyFlowVisual() {
   );
 }
 
-export function StepComplete({ salonName, setupSummary, onStart }: StepCompleteProps) {
+export function StepComplete({ salonName, setupSummary, onStart, loading }: StepCompleteProps) {
   const summaryItems = [
     { label: "サロン情報", done: true },
     { label: "営業時間", done: setupSummary.businessHours },
@@ -135,9 +136,10 @@ export function StepComplete({ salonName, setupSummary, onStart }: StepCompleteP
       <button
         type="button"
         onClick={onStart}
-        className="w-full bg-accent hover:bg-accent-light text-white font-bold rounded-xl py-3.5 transition-colors min-h-[48px] shadow-md"
+        disabled={loading}
+        className="w-full bg-accent hover:bg-accent-light text-white font-bold rounded-xl py-3.5 transition-colors min-h-[48px] shadow-md disabled:opacity-50"
       >
-        サロンカルテを始める
+        {loading ? "登録中..." : "サロンカルテを始める"}
       </button>
     </div>
   );
