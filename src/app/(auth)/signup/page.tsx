@@ -2,13 +2,11 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useSearchParams } from "next/navigation";
 import { BrandLogo } from "@/components/ui/brand-logo";
 import { trackEvent } from "@/lib/analytics";
 
 function SignupForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const refCode = searchParams.get("ref") || "";
   const [email, setEmail] = useState("");
@@ -18,6 +16,8 @@ function SignupForm() {
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   // ページ表示時に signup_start を送信
   useEffect(() => {
@@ -45,38 +45,64 @@ function SignupForm() {
 
     setLoading(true);
 
-    const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-        data: {
-          agreed_terms_at: new Date().toISOString(),
-          terms_version: "2026-03-01",
-        },
-      },
-    });
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          agreedTermsAt: new Date().toISOString(),
+          termsVersion: "2026-03-01",
+          refCode,
+        }),
+      });
 
-    if (error) {
-      console.error("サインアップエラー:", error);
-      setError(`登録に失敗しました: ${error.message}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "登録に失敗しました");
+        setLoading(false);
+        return;
+      }
+
+      // サインアップ成功
+      trackEvent({ name: "signup_complete", params: { method: "email" } });
+
+      // メール確認が必要（通常フロー）
+      setEmailSent(true);
       setLoading(false);
-      return;
+    } catch (err) {
+      console.error("サインアップエラー:", err);
+      setError("ネットワークエラーが発生しました。もう一度お試しください。");
+      setLoading(false);
     }
+  };
 
-    // サインアップ成功
-    trackEvent({ name: "signup_complete", params: { method: "email" } });
+  const handleResendEmail = async () => {
+    setResending(true);
+    setResendSuccess(false);
+    setError("");
 
-    // If session exists immediately (email confirmation disabled), go to setup
-    if (data.session) {
-      router.push(refCode ? `/setup?ref=${encodeURIComponent(refCode)}` : "/setup");
-      return;
+    try {
+      const res = await fetch("/api/auth/resend-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "再送に失敗しました");
+      } else {
+        setResendSuccess(true);
+      }
+    } catch {
+      setError("ネットワークエラーが発生しました");
+    } finally {
+      setResending(false);
     }
-
-    // Email confirmation required
-    setEmailSent(true);
-    setLoading(false);
   };
 
   if (emailSent) {
@@ -95,9 +121,31 @@ function SignupForm() {
               <br />
               メール内のリンクをクリックして登録を完了してください。
             </p>
+            <div className="bg-background rounded-xl p-3">
+              <p className="text-xs text-text-light leading-relaxed">
+                メールが届かない場合は、迷惑メールフォルダもご確認ください。
+              </p>
+            </div>
+            {resendSuccess && (
+              <div className="bg-green-50 text-green-700 text-sm rounded-lg p-3">
+                確認メールを再送しました
+              </div>
+            )}
+            {error && (
+              <div className="bg-error/10 text-error text-sm rounded-lg p-3">
+                {error}
+              </div>
+            )}
+            <button
+              onClick={handleResendEmail}
+              disabled={resending}
+              className="text-sm text-accent font-medium hover:underline disabled:opacity-50 min-h-[44px]"
+            >
+              {resending ? "送信中..." : "確認メールを再送する"}
+            </button>
             <Link
               href="/login"
-              className="block text-sm text-accent font-medium hover:underline mt-4"
+              className="block text-sm text-text-light font-medium hover:underline mt-2"
             >
               ログインページに戻る
             </Link>

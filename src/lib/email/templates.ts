@@ -354,6 +354,49 @@ export function buildCustomerChangeConfirmationEmail(info: CustomerChangeConfirm
   };
 }
 
+type RegistrationConfirmationInfo = {
+  confirmUrl: string;
+};
+
+// 新規登録: メールアドレス確認メール
+export function buildRegistrationConfirmationEmail(info: RegistrationConfirmationInfo): {
+  subject: string;
+  html: string;
+} {
+  const body = `
+<tr><td style="padding:32px 24px 0;text-align:center;">
+  <h1 style="margin:0;font-size:20px;color:#333;">サロンカルテへようこそ</h1>
+</td></tr>
+<tr><td style="padding:24px;">
+  <p style="margin:0 0 16px;font-size:14px;color:#333;line-height:1.6;">
+    アカウント登録ありがとうございます。<br>
+    以下のボタンをクリックしてメールアドレスを確認し、登録を完了してください。
+  </p>
+  <div style="margin:24px 0;text-align:center;">
+    <a href="${info.confirmUrl}" style="display:inline-block;background:#c4956a;color:#ffffff;font-size:14px;font-weight:bold;padding:14px 40px;border-radius:12px;text-decoration:none;">
+      メールアドレスを確認する
+    </a>
+  </div>
+  <p style="margin:0 0 16px;font-size:13px;color:#888;line-height:1.6;">
+    ボタンが押せない場合は、以下のURLをブラウザにコピー＆ペーストしてください:
+  </p>
+  <p style="margin:0 0 24px;font-size:12px;color:#888;word-break:break-all;">
+    ${info.confirmUrl}
+  </p>
+  <div style="border-top:1px solid #eee;padding-top:16px;">
+    <p style="margin:0;font-size:12px;color:#999;line-height:1.6;">
+      このリンクは24時間有効です。<br>
+      心当たりのない場合は、このメールを無視してください。
+    </p>
+  </div>
+</td></tr>`;
+
+  return {
+    subject: "【サロンカルテ】メールアドレスの確認",
+    html: wrapHtml(body),
+  };
+}
+
 type OwnerChangeNotificationInfo = {
   customerName: string;
   oldDate: string;
