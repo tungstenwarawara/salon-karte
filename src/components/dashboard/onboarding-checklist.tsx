@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { CelebrationModal } from "@/components/ui/celebration-modal";
+import dynamic from "next/dynamic";
+const CelebrationModal = dynamic(
+  () => import("@/components/ui/celebration-modal").then((m) => m.CelebrationModal),
+  { ssr: false }
+);
 import { useOnceFlag } from "@/lib/hooks/use-first-visit";
 
 type SetupStep = {
