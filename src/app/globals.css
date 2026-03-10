@@ -262,16 +262,78 @@ input, select, textarea {
 }
 
 /* ブログ記事 カスタムスタイル */
+
+/* --- 見出し --- */
 .blog-content h2 {
   position: relative;
   padding-left: 1rem;
   border-left: 3px solid var(--color-accent);
 }
 
+.blog-content h3 {
+  padding-bottom: 0.25rem;
+}
+
+/* --- テーブル（レスポンシブ横スクロール） --- */
+.blog-content .table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 2rem 0;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
+}
+
+.blog-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .blog-content table {
+    white-space: normal;
+  }
+}
+
+.blog-content thead {
+  background-color: #F5F1ED;
+}
+
+.blog-content th {
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  color: var(--color-text);
+  text-align: left;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.blog-content td {
+  padding: 0.75rem 1rem;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.blog-content tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.blog-content tbody tr:nth-child(even) {
+  background-color: rgba(245, 241, 237, 0.4);
+}
+
+.blog-content tbody tr:hover {
+  background-color: rgba(196, 149, 106, 0.06);
+}
+
+/* --- コールアウト（tip / warning / point） --- */
 .blog-content .callout {
   border-radius: 0.75rem;
   padding: 1rem 1.25rem;
-  margin: 1.5rem 0;
+  margin: 2rem 0;
 }
 
 .blog-content .callout-tip {
@@ -298,6 +360,7 @@ input, select, textarea {
   gap: 0.375rem;
 }
 
+/* --- サマリーボックス --- */
 .blog-content .summary-box {
   background: linear-gradient(135deg, #FAF8F5 0%, #F5F1ED 100%);
   border: 1px solid var(--color-border);
@@ -310,6 +373,36 @@ input, select, textarea {
   border: none;
   margin-top: 0;
   padding-left: 0;
+}
+
+/* --- CTA ブロック（記事内） --- */
+.blog-content p > strong > a[href="/signup"] {
+  display: inline-block;
+  background-color: var(--color-accent);
+  color: white;
+  font-weight: 700;
+  padding: 0.75rem 2rem;
+  border-radius: 1rem;
+  text-decoration: none;
+  transition: background-color 0.2s;
+  margin: 0.5rem 0;
+}
+
+.blog-content p > strong > a[href="/signup"]:hover {
+  background-color: var(--color-accent-light);
+}
+
+/* --- リスト --- */
+.blog-content ul {
+  padding-left: 1.25rem;
+}
+
+.blog-content ol {
+  padding-left: 1.25rem;
+}
+
+.blog-content li + li {
+  margin-top: 0.5rem;
 }
 
 /* Details/Summary chevron rotation */
