@@ -63,7 +63,6 @@ export default async function DashboardPage() {
     birthdayRes,
     inventoryRes,
     kpiRes,
-    lastVisitsRes,
   ] = await Promise.all([
     supabase
       .from("appointments")
@@ -104,13 +103,6 @@ export default async function DashboardPage() {
     supabase
       .rpc("get_dashboard_kpi", { p_salon_id: salon.id })
       .returns<DashboardKpi[]>(),
-    // 前回来店日を並列取得（直列クエリを解消 → TTFB改善）
-    supabase
-      .from("treatment_records")
-      .select("customer_id, treatment_date")
-      .eq("salon_id", salon.id)
-      .order("treatment_date", { ascending: false })
-      .limit(200),
   ]);
 
   const todayAppointments = todayAppointmentsRes.data;
@@ -118,13 +110,23 @@ export default async function DashboardPage() {
   const menuCount = menuCountRes.count;
   const lapsedCustomers = lapsedCustomersRes.data as LapsedCustomer[] | null;
 
-  // 今日の予約の顧客ごとに前回来店日をマッピング
+  // 今日の予約顧客のみ前回来店日を取得（200件一括取得を廃止 → 必要分だけに最適化）
   const lastVisitMap: Record<string, string> = {};
-  if (todayAppointments && todayAppointments.length > 0 && lastVisitsRes.data) {
-    const appointedCustomerIds = new Set(todayAppointments.map((a) => a.customer_id));
-    for (const v of lastVisitsRes.data) {
-      if (appointedCustomerIds.has(v.customer_id) && !lastVisitMap[v.customer_id]) {
-        lastVisitMap[v.customer_id] = v.treatment_date;
+  if (todayAppointments && todayAppointments.length > 0) {
+    const customerIds = [...new Set(todayAppointments.map((a) => a.customer_id).filter(Boolean))] as string[];
+    if (customerIds.length > 0) {
+      const { data: lastVisits } = await supabase
+        .from("treatment_records")
+        .select("customer_id, treatment_date")
+        .eq("salon_id", salon.id)
+        .in("customer_id", customerIds)
+        .order("treatment_date", { ascending: false });
+      if (lastVisits) {
+        for (const v of lastVisits) {
+          if (!lastVisitMap[v.customer_id]) {
+            lastVisitMap[v.customer_id] = v.treatment_date;
+          }
+        }
       }
     }
   }
@@ -207,16 +209,16 @@ export default async function DashboardPage() {
       </div>
 
       {lowStockItems.length > 0 && (
-        <div className="animate-fade-in-up animation-delay-300">
+        <div className="animate-fade-in-up animation-delay-200">
           <InventoryAlert items={lowStockItems} />
         </div>
       )}
 
-      <div className="animate-fade-in-up animation-delay-400">
+      <div className="animate-fade-in-up animation-delay-300">
         <TodayAppointments appointments={todayAppointments} lastVisitMap={lastVisitMap} />
       </div>
 
-      <div className="animate-fade-in-up animation-delay-500">
+      <div className="animate-fade-in-up animation-delay-300">
         <BirthdayCustomers customers={birthdayCustomers} currentMonth={currentMonth} />
       </div>
     </div>

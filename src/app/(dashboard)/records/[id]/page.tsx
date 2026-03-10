@@ -59,12 +59,14 @@ export default async function RecordDetailPage({
       .from("purchases")
       .select("id, item_name, quantity, unit_price, total_price")
       .eq("treatment_record_id", id)
+      .eq("salon_id", salon.id)
       .order("created_at")
       .returns<Purchase[]>(),
     supabase
       .from("course_tickets")
       .select("id, ticket_name, total_sessions, price")
       .eq("treatment_record_id", id)
+      .eq("salon_id", salon.id)
       .order("created_at")
       .returns<CourseTicket[]>(),
     supabase
@@ -80,8 +82,24 @@ export default async function RecordDetailPage({
   if (!record) notFound();
 
   const customer = record.customers;
-  const photos = photosRes.data;
+  const photos = photosRes.data ?? [];
   const recordMenus = recordMenusRes.data ?? [];
+
+  // 写真のSigned URLをサーバー側で一括取得（クライアント側useEffectを排除 → INP改善）
+  const photoUrlMap: Record<string, string> = {};
+  if (photos.length > 0) {
+    const paths = photos.map((p) => p.storage_path);
+    const { data: signedUrls } = await supabase.storage
+      .from("treatment-photos")
+      .createSignedUrls(paths, 3600);
+    if (signedUrls) {
+      for (const item of signedUrls) {
+        if (item.signedUrl && item.path) {
+          photoUrlMap[item.path] = item.signedUrl;
+        }
+      }
+    }
+  }
   const linkedPurchases = purchasesRes.data ?? [];
   const linkedTickets = ticketsRes.data ?? [];
   const linkedAppointment = appointmentRes.data?.[0] ?? null;
@@ -246,8 +264,8 @@ export default async function RecordDetailPage({
       )}
 
       {/* 写真 */}
-      {photos && photos.length > 0 && (
-        <BeforeAfterComparison photos={photos} />
+      {photos.length > 0 && (
+        <BeforeAfterComparison photos={photos} serverUrlMap={photoUrlMap} />
       )}
     </div>
   );

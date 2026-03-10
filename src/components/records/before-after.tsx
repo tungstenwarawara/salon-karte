@@ -9,16 +9,22 @@ type TreatmentPhoto = Database["public"]["Tables"]["treatment_photos"]["Row"];
 
 export function BeforeAfterComparison({
   photos,
+  serverUrlMap,
 }: {
   photos: TreatmentPhoto[];
+  serverUrlMap?: Record<string, string>;
 }) {
-  const [urlMap, setUrlMap] = useState<Map<string, string>>(new Map());
-  const [loading, setLoading] = useState(true);
+  // サーバー側でURLが取得済みならそのまま使う（クライアント側fetchを排除 → INP改善）
+  const hasServerUrls = serverUrlMap && Object.keys(serverUrlMap).length > 0;
+  const [urlMap, setUrlMap] = useState<Map<string, string>>(
+    hasServerUrls ? new Map(Object.entries(serverUrlMap)) : new Map()
+  );
+  const [loading, setLoading] = useState(!hasServerUrls);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  // 全写真のSigned URLを一括取得（N+1問題の解消）
+  // サーバーURLがない場合のみクライアント側で取得（フォールバック）
   useEffect(() => {
-    if (photos.length === 0) {
+    if (hasServerUrls || photos.length === 0) {
       setLoading(false);
       return;
     }
@@ -27,7 +33,7 @@ export function BeforeAfterComparison({
       setUrlMap(map);
       setLoading(false);
     });
-  }, [photos]);
+  }, [photos, hasServerUrls]);
 
   const beforePhotos = photos.filter((p) => p.photo_type === "before");
   const afterPhotos = photos.filter((p) => p.photo_type === "after");
