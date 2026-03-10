@@ -85,6 +85,15 @@ input, select, textarea {
 .animation-delay-500 { animation-delay: 0.5s; }
 .animation-delay-600 { animation-delay: 0.6s; }
 
+/* アクセシビリティ: モーション軽減設定時にアニメーションを無効化 */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ローディングイラスト パルスアニメーション */
 @keyframes loading-pulse {
   0%, 100% { opacity: 0.6; transform: scale(0.97); }

@@ -209,16 +209,16 @@ export default async function DashboardPage() {
       </div>
 
       {lowStockItems.length > 0 && (
-        <div className="animate-fade-in-up animation-delay-300">
+        <div className="animate-fade-in-up animation-delay-200">
           <InventoryAlert items={lowStockItems} />
         </div>
       )}
 
-      <div className="animate-fade-in-up animation-delay-400">
+      <div className="animate-fade-in-up animation-delay-300">
         <TodayAppointments appointments={todayAppointments} lastVisitMap={lastVisitMap} />
       </div>
 
-      <div className="animate-fade-in-up animation-delay-500">
+      <div className="animate-fade-in-up animation-delay-300">
         <BirthdayCustomers customers={birthdayCustomers} currentMonth={currentMonth} />
       </div>
     </div>
