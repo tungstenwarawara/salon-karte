@@ -178,7 +178,8 @@ export default function PrivacyPolicyPage() {
                 提供元: Google LLC（米国）
               </p>
               <p className="text-xs text-text-light">
-                収集データ: ページビュー数、セッション時間、参照元URL、使用デバイス・ブラウザ情報等の匿名化された統計データ。
+                収集データ: ページビュー数、セッション時間、参照元URL、使用デバイス・ブラウザ情報、
+                サイト内操作データ（シミュレーター入力値・ボタンクリック等）の匿名化された統計データ。
                 個人を特定する情報は収集しません。
               </p>
               <p className="text-xs text-text-light">
