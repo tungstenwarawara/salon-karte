@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 import { remark } from "remark";
+import remarkGfm from "remark-gfm";
 import html from "remark-html";
 
 const BLOG_DIR = path.join(process.cwd(), "content/blog");
@@ -51,6 +52,14 @@ function extractHeadings(
     headings.push({ id, text, level: parseInt(match[1]) });
   }
   return headings;
+}
+
+/** table をレスポンシブラッパーで囲む */
+function wrapTables(htmlContent: string): string {
+  return htmlContent.replace(
+    /<table>([\s\S]*?)<\/table>/g,
+    '<div class="table-wrapper"><table>$1</table></div>'
+  );
 }
 
 /** h2/h3 に id 属性を付与 */
@@ -141,9 +150,10 @@ export async function getPostBySlug(
     const postSlug = data.slug || file.replace(/\.md$/, "");
 
     if (postSlug === slug) {
-      const result = await remark().use(html).process(content);
+      const result = await remark().use(remarkGfm).use(html).process(content);
       let htmlContent = result.toString();
       htmlContent = transformCallouts(htmlContent);
+      htmlContent = wrapTables(htmlContent);
       htmlContent = addHeadingIds(htmlContent);
       const headings = extractHeadings(htmlContent);
 
