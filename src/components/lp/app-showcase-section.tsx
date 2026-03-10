@@ -2,14 +2,17 @@
 
 /** アプリショーケース — タブ切替でアプリ画面をインタラクティブに見せる */
 
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { PhoneFrame } from "./phone-frame";
-import {
-  MockKarteScreen,
-  MockAppointmentScreen,
-  MockCustomerScreen,
-  MockSalesScreen,
-} from "./mockup-screens";
+
+const MockKarteScreen = lazy(() => import("./mockup-screens").then((m) => ({ default: m.MockKarteScreen })));
+const MockAppointmentScreen = lazy(() => import("./mockup-screens").then((m) => ({ default: m.MockAppointmentScreen })));
+const MockCustomerScreen = lazy(() => import("./mockup-screens").then((m) => ({ default: m.MockCustomerScreen })));
+const MockSalesScreen = lazy(() => import("./mockup-screens").then((m) => ({ default: m.MockSalesScreen })));
+
+function ScreenFallback() {
+  return <div className="w-full h-full bg-background animate-pulse rounded-lg" />;
+}
 
 const TABS = [
   {
@@ -86,7 +89,9 @@ export function AppShowcaseSection() {
           <div className="animate-float-phone">
             <PhoneFrame key={tab.key}>
               <div className="animate-screen-fade-in">
-                <tab.Screen />
+                <Suspense fallback={<ScreenFallback />}>
+                  <tab.Screen />
+                </Suspense>
               </div>
             </PhoneFrame>
           </div>
