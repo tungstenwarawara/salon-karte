@@ -32,28 +32,23 @@ export const getAuthAndSalon = cache(async () => {
     return { user: null, salon: null, staff: null as StaffInfo | null, supabase };
   }
 
-  // staff テーブルで検索（プライマリパス）
-  const { data: staffRecord } = await supabase
+  // staff + salons を JOIN で1クエリ取得（逐次2クエリ → 1クエリに最適化）
+  const { data: staffWithSalon } = await supabase
     .from("staff")
-    .select("id, salon_id, role, name")
+    .select("id, salon_id, role, name, salons(id, name, phone, address, business_hours, salon_holidays, plan_type)")
     .eq("auth_user_id", user.id)
     .eq("is_active", true)
     .single();
 
-  if (staffRecord) {
-    const { data: salon } = await supabase
-      .from("salons")
-      .select("id, name, phone, address, business_hours, salon_holidays, plan_type")
-      .eq("id", staffRecord.salon_id)
-      .single<Salon>();
-
+  if (staffWithSalon) {
+    const salon = staffWithSalon.salons as unknown as Salon | null;
     return {
       user,
       salon,
       staff: {
-        id: staffRecord.id,
-        role: staffRecord.role as StaffInfo["role"],
-        name: staffRecord.name,
+        id: staffWithSalon.id,
+        role: staffWithSalon.role as StaffInfo["role"],
+        name: staffWithSalon.name,
       },
       supabase,
     };
