@@ -17,7 +17,11 @@ type AcquisitionEvent =
   | { name: "signup_complete"; params: { method: "email" } }
   | { name: "onboarding_complete" }
   | { name: "first_record" }
-  | { name: "blog_read"; params: { slug: string; title: string } };
+  | { name: "blog_read"; params: { slug: string; title: string } }
+  | { name: "simulator_complete"; params: {
+      daily_customers: number; avg_price: number; working_days: number;
+      current_cost: number; tools: string; annual_savings: number;
+    } };
 
 /**
  * GA4 カスタムイベントを送信する。
