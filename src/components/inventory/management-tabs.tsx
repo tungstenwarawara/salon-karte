@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const tabs = [
   { href: "/sales", label: "売上レポート", exact: true },
   { href: "/sales/inventory", label: "在庫管理", exact: false },
+  { href: "/sales/daily", label: "日計・見込", exact: false },
 ];
 
 export function ManagementTabs() {
