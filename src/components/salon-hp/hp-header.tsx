@@ -33,15 +33,15 @@ export function HpHeader({ salonName, bookingSlug, bookingEnabled }: Props) {
         visible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
       }`}
     >
-      <div className="bg-white/90 backdrop-blur-lg border-b border-gray-100 shadow-sm">
+      <div className="bg-white/95 backdrop-blur-xl border-b border-[#E8E0D8]/60 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-          <span className="font-bold text-sm tracking-wider text-gray-800">
+          <span className="font-bold text-sm tracking-[0.15em] text-gray-800">
             {salonName}
           </span>
           {bookingEnabled && bookingSlug && (
             <Link
               href={`/book/${bookingSlug}`}
-              className="bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-full px-5 py-2 transition-colors min-h-[44px] flex items-center"
+              className="bg-[#C4956A] hover:bg-[#B8875E] text-white text-sm font-bold rounded-full px-6 py-2.5 transition-all duration-200 min-h-[44px] flex items-center shadow-sm"
             >
               予約する
             </Link>
