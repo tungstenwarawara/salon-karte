@@ -20,7 +20,7 @@ export function HpInlineCta({ bookingSlug, bookingEnabled }: Props) {
 
         <Link
           href={`/book/${bookingSlug}`}
-          className="inline-flex items-center text-[#C4956A] hover:text-[#B8875E] font-medium text-sm transition-colors min-h-[48px]"
+          className="inline-flex items-center justify-center bg-[#C4956A]/10 hover:bg-[#C4956A]/15 text-[#C4956A] hover:text-[#B8875E] font-bold text-sm rounded-full px-8 py-3 transition-all duration-300 min-h-[48px] border border-[#C4956A]/20"
         >
           ご予約・お問い合わせはこちら
           <svg className="w-4 h-4 ml-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
