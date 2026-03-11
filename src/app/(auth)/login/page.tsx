@@ -12,6 +12,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showEmailHelp, setShowEmailHelp] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,8 +33,18 @@ export default function LoginPage() {
       return;
     }
 
+    // メール確認済みかチェック（未確認ならログアウトして案内）
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email_confirmed_at) {
+      await supabase.auth.signOut();
+      setError("メールアドレスの確認が完了していません。登録時に届いた確認メールのリンクをクリックしてください。");
+      setShowEmailHelp(true);
+      setLoading(false);
+      return;
+    }
+
     // staff テーブルで所属サロン確認
-    const userId = (await supabase.auth.getUser()).data.user!.id;
+    const userId = user.id;
     const { data: staffRecord } = await supabase
       .from("staff")
       .select("salon_id")
@@ -86,6 +99,42 @@ export default function LoginPage() {
           {error && (
             <div className="bg-error/10 text-error text-sm rounded-xl p-3 animate-fade-in-up">
               {error}
+            </div>
+          )}
+
+          {showEmailHelp && (
+            <div className="bg-background rounded-xl p-4 space-y-3 animate-fade-in-up">
+              <p className="text-xs text-text-light leading-relaxed">
+                確認メールが届いていない場合は、再送できます。
+                <br />
+                <span className="text-amber-700 font-medium">
+                  ※ docomo・au・softbank のメールアドレスは届きにくい場合があります
+                </span>
+              </p>
+              {resendSuccess && (
+                <p className="text-xs text-green-600 font-medium">確認メールを再送しました。メールをご確認ください。</p>
+              )}
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!email) return;
+                  setResending(true);
+                  setResendSuccess(false);
+                  try {
+                    const res = await fetch("/api/auth/resend-confirmation", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ email }),
+                    });
+                    if (res.ok) setResendSuccess(true);
+                  } catch { /* ignore */ }
+                  setResending(false);
+                }}
+                disabled={resending || !email}
+                className="text-sm text-accent font-medium hover:underline disabled:opacity-50 min-h-[44px]"
+              >
+                {resending ? "送信中..." : "確認メールを再送する"}
+              </button>
             </div>
           )}
 

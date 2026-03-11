@@ -6,6 +6,20 @@ import { useSearchParams } from "next/navigation";
 import { BrandLogo } from "@/components/ui/brand-logo";
 import { trackEvent } from "@/lib/analytics";
 
+const CARRIER_DOMAINS = [
+  "docomo.ne.jp",
+  "ezweb.ne.jp",
+  "au.com",
+  "softbank.ne.jp",
+  "i.softbank.jp",
+  "ymobile.ne.jp",
+];
+
+function isCarrierEmail(email: string): boolean {
+  const domain = email.split("@")[1]?.toLowerCase();
+  return CARRIER_DOMAINS.some((d) => domain === d);
+}
+
 function SignupForm() {
   const searchParams = useSearchParams();
   const refCode = searchParams.get("ref") || "";
@@ -18,6 +32,7 @@ function SignupForm() {
   const [agreed, setAgreed] = useState(false);
   const [resending, setResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const showCarrierWarning = email.includes("@") && isCarrierEmail(email);
 
   // ページ表示時に signup_start を送信
   useEffect(() => {
@@ -121,10 +136,18 @@ function SignupForm() {
               <br />
               メール内のリンクをクリックして登録を完了してください。
             </p>
-            <div className="bg-background rounded-xl p-3">
+            <div className="bg-background rounded-xl p-3 space-y-2">
               <p className="text-xs text-text-light leading-relaxed">
                 メールが届かない場合は、迷惑メールフォルダもご確認ください。
               </p>
+              {showCarrierWarning && (
+                <div className="bg-warning/10 border border-warning/30 rounded-lg p-2.5">
+                  <p className="text-xs text-amber-700 leading-relaxed font-medium">
+                    キャリアメール（docomo・au・softbank）は確認メールが届きにくい場合があります。
+                    しばらく待っても届かない場合は、Gmail や Yahoo メールでの登録をおすすめします。
+                  </p>
+                </div>
+              )}
             </div>
             {resendSuccess && (
               <div className="bg-green-50 text-green-700 text-sm rounded-lg p-3">
@@ -183,6 +206,11 @@ function SignupForm() {
               placeholder="example@salon.com"
               className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             />
+            {showCarrierWarning && (
+              <p className="mt-1.5 text-xs text-amber-700 bg-warning/10 rounded-lg px-3 py-2 leading-relaxed">
+                キャリアメール（docomo・au・softbank）は確認メールが届かない場合があります。Gmail や Yahoo メールの利用をおすすめします。
+              </p>
+            )}
           </div>
 
           <div>
