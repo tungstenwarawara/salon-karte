@@ -28,6 +28,48 @@ export type BookingSettings = {
 /** 特定日の営業時間上書き（臨時の時短営業・延長営業等） */
 export type HourOverrides = Record<string, DaySchedule>; // "YYYY-MM-DD" → DaySchedule
 
+/** サロンHP コンテンツ（hp_content JSONB） */
+export type SalonHpContent = {
+  hero: {
+    headline: string;
+    subheadline: string;
+    image_path: string | null;
+  };
+  about: {
+    title: string;
+    description: string;
+    owner_name: string;
+    owner_title: string;
+    owner_image_path: string | null;
+  };
+  concept: {
+    title: string;
+    points: { title: string; description: string; icon?: string }[];
+  };
+  flow: {
+    steps: { title: string; description: string }[];
+  };
+  gallery: {
+    images: { path: string; caption: string }[];
+  };
+  testimonials: {
+    items: { name: string; content: string; menu: string }[];
+  };
+  faq: {
+    items: { question: string; answer: string }[];
+  };
+  access: {
+    station: string;
+    details: string;
+    google_maps_embed_url: string | null;
+  };
+  links: {
+    instagram: string | null;
+    line_url: string | null;
+    website: string | null;
+  };
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -47,6 +89,8 @@ export type Database = {
           counseling_template: CounselingTemplate | null;
           plan_type: "free" | "standard";
           referral_code: string;
+          hp_enabled: boolean;
+          hp_content: SalonHpContent | null;
           created_at: string;
           updated_at: string;
         };
@@ -65,6 +109,8 @@ export type Database = {
           counseling_template?: CounselingTemplate | null;
           plan_type?: "free" | "standard";
           referral_code?: string;
+          hp_enabled?: boolean;
+          hp_content?: SalonHpContent | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -83,6 +129,8 @@ export type Database = {
           counseling_template?: CounselingTemplate | null;
           plan_type?: "free" | "standard";
           referral_code?: string;
+          hp_enabled?: boolean;
+          hp_content?: SalonHpContent | null;
           created_at?: string;
           updated_at?: string;
         };
