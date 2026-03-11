@@ -37,11 +37,11 @@ export function TodayAppointments({
                 } ${needsKarte ? "border-l-4 border-l-orange-400" : ""}`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-accent tabular-nums">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-sm font-bold text-accent tabular-nums shrink-0">
                       {(apt.start_time as string).slice(0, 5)}
                     </span>
-                    <span className="font-medium text-sm">
+                    <span className="font-medium text-sm truncate">
                       {customer
                         ? `${customer.last_name} ${customer.first_name}`
                         : "不明"}
@@ -54,7 +54,7 @@ export function TodayAppointments({
                   )}
                 </div>
                 {(apt.menu_name_snapshot || apt.staff?.name) && (
-                  <p className="text-xs text-text-light mt-1 ml-[3.5rem]">
+                  <p className="text-xs text-text-light mt-1 ml-[3.5rem] truncate">
                     {apt.menu_name_snapshot}
                     {apt.staff?.name && (
                       <span className="ml-2">担当: {apt.staff.name}</span>

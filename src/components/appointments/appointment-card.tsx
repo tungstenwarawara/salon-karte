@@ -45,17 +45,17 @@ export function AppointmentCard({ appointment: apt }: { appointment: Appointment
           </span>
         </div>
       </div>
-      <div className="flex items-center justify-between mt-1">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-sm">
+      <div className="flex items-center justify-between mt-1 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-medium text-sm truncate">
             {customer ? `${customer.last_name} ${customer.first_name}` : "不明"}
           </span>
           {apt.staff?.name && (
-            <span className="text-xs text-text-light">担当: {apt.staff.name}</span>
+            <span className="text-xs text-text-light shrink-0">担当: {apt.staff.name}</span>
           )}
         </div>
         {apt.menu_name_snapshot && (
-          <span className="text-xs text-text-light">{apt.menu_name_snapshot}</span>
+          <span className="text-xs text-text-light truncate shrink min-w-0 max-w-[50%]">{apt.menu_name_snapshot}</span>
         )}
       </div>
     </Link>

@@ -44,10 +44,10 @@ export function AppointmentsDayPanel({ selectedDate, selectedDay, appointments, 
         <div className="space-y-1.5">
           {activeApts.map((apt) => (
             <Link key={apt.id} href={`/appointments/${apt.id}`}
-              className="flex items-center gap-2 text-sm py-1.5 px-2 -mx-2 rounded-lg hover:bg-background transition-colors">
+              className="flex items-center gap-2 text-sm py-1.5 px-2 -mx-2 rounded-lg hover:bg-background transition-colors min-w-0">
               <span className="font-medium tabular-nums text-accent w-11 shrink-0">{formatTime(apt.start_time)}</span>
               <span className="font-medium truncate">{apt.customers ? `${apt.customers.last_name} ${apt.customers.first_name}` : "不明"}</span>
-              {apt.menu_name_snapshot && <span className="text-xs text-text-light truncate ml-auto shrink-0">{apt.menu_name_snapshot}</span>}
+              {apt.menu_name_snapshot && <span className="text-xs text-text-light truncate ml-auto shrink min-w-0 max-w-[50%]">{apt.menu_name_snapshot}</span>}
               {apt.status !== "scheduled" && (
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${STATUS_LABELS[apt.status]?.color ?? ""}`}>{STATUS_LABELS[apt.status]?.label}</span>
               )}
