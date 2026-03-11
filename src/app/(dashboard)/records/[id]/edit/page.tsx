@@ -216,7 +216,7 @@ export default function EditRecordPage() {
     <div className="space-y-4">
       <PageHeader title="施術記録を編集" breadcrumbs={[{ label: "カルテ編集" }]} />
 
-      <CourseTicketInfo courseTickets={courseTickets} />
+      <CourseTicketInfo courseTickets={courseTickets} mode="edit" />
 
       <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
         {error && <ErrorAlert message={error} />}

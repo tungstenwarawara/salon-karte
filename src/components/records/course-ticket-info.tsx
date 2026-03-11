@@ -4,9 +4,10 @@ import type { CourseTicket } from "./types";
 
 type Props = {
   courseTickets: CourseTicket[];
+  mode?: "new" | "edit";
 };
 
-export function CourseTicketInfo({ courseTickets }: Props) {
+export function CourseTicketInfo({ courseTickets, mode = "new" }: Props) {
   if (courseTickets.length === 0) return null;
 
   return (
@@ -26,7 +27,9 @@ export function CourseTicketInfo({ courseTickets }: Props) {
         );
       })}
       <p className="text-xs text-text-light">
-        メニューの支払方法が「回数券」に設定されています。保存すると自動で消化されます。
+        {mode === "edit"
+          ? "支払方法を変更した場合のみ、回数券の消化数が自動調整されます。"
+          : "メニューの支払方法が「回数券」に設定されています。保存すると自動で消化されます。"}
       </p>
     </div>
   );
