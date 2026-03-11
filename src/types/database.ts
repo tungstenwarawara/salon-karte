@@ -34,6 +34,11 @@ export type SalonHpContent = {
     headline: string;
     subheadline: string;
     image_path: string | null;
+    trust_badges?: { label: string; value: string }[];
+  };
+  concerns?: {
+    title: string;
+    items: string[];
   };
   about: {
     title: string;
@@ -41,6 +46,9 @@ export type SalonHpContent = {
     owner_name: string;
     owner_title: string;
     owner_image_path: string | null;
+    story?: string;
+    qualifications?: string[];
+    message?: string;
   };
   concept: {
     title: string;
@@ -61,6 +69,13 @@ export type SalonHpContent = {
     hotpepper_rating?: number;
     hotpepper_review_count?: number;
     hotpepper_url?: string | null;
+  };
+  pricing?: {
+    title: string;
+    original_price?: number;
+    trial_price?: number;
+    description?: string;
+    note?: string;
   };
   faq: {
     items: { question: string; answer: string }[];

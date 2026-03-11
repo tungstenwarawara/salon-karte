@@ -45,8 +45,41 @@ export function HpAbout({ about }: Props) {
             <p className="text-gray-600 leading-[1.9] whitespace-pre-line text-[0.95rem]">
               {about.description}
             </p>
+
+            {/* 資格バッジ */}
+            {about.qualifications && about.qualifications.length > 0 && (
+              <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-5">
+                {about.qualifications.map((q, i) => (
+                  <span key={i} className="bg-[#C4956A]/5 text-[#C4956A] text-xs font-medium rounded-full px-3 py-1.5">
+                    {q}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
+
+        {/* オーナーストーリー */}
+        {about.story && (
+          <div className="mt-12 max-w-2xl mx-auto">
+            <p className="text-xs tracking-[0.2em] text-[#C4956A] mb-4 text-center md:text-left uppercase">My Story</p>
+            <div className="border-l-2 border-[#C4956A]/30 pl-5">
+              <p className="text-gray-600 leading-[1.9] whitespace-pre-line text-[0.95rem]">
+                {about.story}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* お客様へのメッセージ */}
+        {about.message && (
+          <div className="mt-10 max-w-2xl mx-auto bg-[#FAF7F3] rounded-xl p-6">
+            <p className="text-xs tracking-[0.2em] text-[#C4956A] mb-3 font-medium">お客様へのメッセージ</p>
+            <p className="text-gray-600 leading-[1.9] whitespace-pre-line text-[0.95rem]">
+              {about.message}
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

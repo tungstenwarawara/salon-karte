@@ -13,7 +13,7 @@ export function HpHero({ hero, salonName, bookingSlug, bookingEnabled }: Props) 
   const hasImage = !!hero.image_path;
 
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+    <section id="hero-section" className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       {/* 背景: 写真がある場合は実画像、ない場合はグラデーション */}
       {hasImage ? (
         <>
@@ -56,9 +56,28 @@ export function HpHero({ hero, salonName, bookingSlug, bookingEnabled }: Props) 
         </h1>
 
         {/* サブコピー */}
-        <p className={`text-base md:text-lg leading-relaxed mb-14 max-w-lg mx-auto whitespace-pre-line ${hasImage ? "text-white/85" : "text-gray-500"}`}>
+        <p className={`text-base md:text-lg leading-relaxed max-w-lg mx-auto whitespace-pre-line ${hasImage ? "text-white/85" : "text-gray-500"} ${hero.trust_badges && hero.trust_badges.length > 0 ? "mb-8" : "mb-14"}`}>
           {hero.subheadline}
         </p>
+
+        {/* 信頼バッジ */}
+        {hero.trust_badges && hero.trust_badges.length > 0 && (
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
+            {hero.trust_badges.map((badge, i) => (
+              <div
+                key={i}
+                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm border ${
+                  hasImage
+                    ? "bg-white/15 backdrop-blur-sm text-white border-white/25"
+                    : "bg-white/80 backdrop-blur-sm text-gray-700 border-[#E8E0D8]/60 shadow-sm"
+                }`}
+              >
+                <span className="font-bold">{badge.value}</span>
+                <span className={hasImage ? "text-white/70" : "text-gray-500"}>{badge.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* CTA — ゴールド系 */}
         {bookingEnabled && bookingSlug && (

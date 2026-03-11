@@ -16,6 +16,10 @@ import { HpAccess } from "@/components/salon-hp/hp-access";
 import { HpFaq } from "@/components/salon-hp/hp-faq";
 import { HpBookingCta } from "@/components/salon-hp/hp-booking-cta";
 import { HpFooter } from "@/components/salon-hp/hp-footer";
+import { HpConcerns } from "@/components/salon-hp/hp-concerns";
+import { HpInlineCta } from "@/components/salon-hp/hp-inline-cta";
+import { HpPricing } from "@/components/salon-hp/hp-pricing";
+import { HpStickyCta } from "@/components/salon-hp/hp-sticky-cta";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -82,15 +86,29 @@ export default async function SalonHpPage({ params }: Props) {
         bookingSlug={salon.booking_slug}
         bookingEnabled={salon.booking_enabled}
       />
+      {content.concerns && content.concerns.items.length > 0 && (
+        <HpConcerns concerns={content.concerns} />
+      )}
       <HpAbout about={content.about} />
       {content.before_after && content.before_after.items.length > 0 && (
         <HpBeforeAfter beforeAfter={content.before_after} />
       )}
+      <HpInlineCta bookingSlug={salon.booking_slug} bookingEnabled={salon.booking_enabled} />
       <HpConcept concept={content.concept} />
       <HpMenu menus={menus} />
+      {content.pricing ? (
+        <HpPricing
+          pricing={content.pricing}
+          bookingSlug={salon.booking_slug}
+          bookingEnabled={salon.booking_enabled}
+        />
+      ) : (
+        <HpInlineCta bookingSlug={salon.booking_slug} bookingEnabled={salon.booking_enabled} />
+      )}
       <HpFlow flow={content.flow} />
       {content.gallery.images.length > 0 && <HpGallery gallery={content.gallery} />}
       <HpTestimonials testimonials={content.testimonials} />
+      <HpInlineCta bookingSlug={salon.booking_slug} bookingEnabled={salon.booking_enabled} />
       <HpInstagram instagram={content.links.instagram} salonName={salon.name} />
       <HpAccess
         access={content.access}
@@ -106,6 +124,10 @@ export default async function SalonHpPage({ params }: Props) {
         salonName={salon.name}
       />
       <HpFooter salonName={salon.name} links={content.links} />
+      <HpStickyCta
+        bookingSlug={salon.booking_slug}
+        bookingEnabled={salon.booking_enabled}
+      />
 
       {/* JSON-LD LocalBusiness */}
       <script

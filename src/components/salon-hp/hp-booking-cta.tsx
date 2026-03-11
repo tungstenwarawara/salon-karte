@@ -10,7 +10,7 @@ export function HpBookingCta({ bookingSlug, bookingEnabled, salonName }: Props) 
   if (!bookingEnabled || !bookingSlug) return null;
 
   return (
-    <section className="py-20 md:py-28 hp-section">
+    <section id="booking-cta" className="py-20 md:py-28 hp-section">
       <div className="max-w-3xl mx-auto px-4 text-center">
         {/* 装飾線 */}
         <div className="flex items-center justify-center gap-3 mb-12">
