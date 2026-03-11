@@ -156,9 +156,7 @@ export function CourseTicketSection({
         </Link>
       </div>
       <p className="text-xs text-text-light mb-3">
-        施術と同時に登録する場合は、カルテ作成画面の「回数券を販売」から追加できます。
-        <br />
-        カルテで回数券支払いを選んだ場合は保存時に自動消化されるため、手動消化は不要です。
+        カルテ作成時に支払方法「回数券」で保存すると自動消化されます。ここでの手動消化は、カルテに紐づかない場合のみ使用してください。
       </p>
 
       {tickets.length > 0 ? (

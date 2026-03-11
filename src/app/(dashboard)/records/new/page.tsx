@@ -134,7 +134,15 @@ function NewRecordForm() {
       if (count && count > 0) {
         setHasTickets(true);
         const { data } = await supabase.from("course_tickets").select("id, ticket_name, total_sessions, used_sessions, price, status, memo, expiry_date").eq("customer_id", customerId).eq("salon_id", salonId).eq("status", "active").order("purchase_date", { ascending: false }).returns<CourseTicket[]>();
-        setCourseTickets(data ?? []);
+        const tickets = data ?? [];
+        setCourseTickets(tickets);
+        // 既にプリフィルされたメニューの支払方法を回数券に自動設定
+        if (tickets.length > 0) {
+          setMenuPayments((prev) => prev.map((mp) => mp.paymentType === "cash"
+            ? { ...mp, paymentType: "ticket" as const, ticketId: tickets.length === 1 ? tickets[0].id : null }
+            : mp
+          ));
+        }
       } else { setHasTickets(false); setCourseTickets([]); }
     };
     loadTickets();
@@ -148,7 +156,10 @@ function NewRecordForm() {
     const newIds = selectedMenuIds.includes(menuId) ? selectedMenuIds.filter((id) => id !== menuId) : [...selectedMenuIds, menuId];
     setSelectedMenuIds(newIds);
     if (newIds.includes(menuId) && !menuPayments.find((mp) => mp.menuId === menuId)) {
-      setMenuPayments((prev) => [...prev, { menuId, paymentType: "cash", ticketId: null, priceOverride: null }]);
+      const defaultPayment: MenuPaymentInfo = hasTickets
+        ? { menuId, paymentType: "ticket", ticketId: courseTickets.length === 1 ? courseTickets[0].id : null, priceOverride: null }
+        : { menuId, paymentType: "cash", ticketId: null, priceOverride: null };
+      setMenuPayments((prev) => [...prev, defaultPayment]);
     } else if (!newIds.includes(menuId)) {
       setMenuPayments((prev) => prev.filter((mp) => mp.menuId !== menuId));
     }
@@ -254,11 +265,7 @@ function NewRecordForm() {
           <input type="text" value={form.treatment_area} onChange={(e) => updateField("treatment_area", e.target.value)} placeholder="例: 顔全体、デコルテ" className={INPUT_CLASS} />
         </div>
 
-        <CollapsibleSection label="詳細な記録を追加（任意）">
-          <TreatmentDetailFields form={form} onUpdate={updateField} />
-        </CollapsibleSection>
-
-        <CollapsibleSection label={`新しい回数券を販売（任意）${pendingTickets.length > 0 ? ` — ${pendingTickets.length}件` : ""}`}>
+        <CollapsibleSection label={`回数券の新規登録${pendingTickets.length > 0 ? ` — ${pendingTickets.length}件` : ""}`}>
           {pendingTickets.length > 0 && (
             <div className="space-y-2 mb-3">
               {pendingTickets.map((t, i) => (
@@ -273,6 +280,10 @@ function NewRecordForm() {
             </div>
           )}
           <TicketInlineForm menus={menus} onAdd={(t) => setPendingTickets((prev) => [...prev, t])} />
+        </CollapsibleSection>
+
+        <CollapsibleSection label="詳細な記録を追加（任意）">
+          <TreatmentDetailFields form={form} onUpdate={updateField} />
         </CollapsibleSection>
 
         <CollapsibleSection label={`物販記録（任意）${pendingPurchases.length > 0 ? ` — ${pendingPurchases.length}件` : ""}`}>

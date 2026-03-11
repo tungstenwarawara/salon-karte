@@ -26,7 +26,7 @@ export function CourseTicketInfo({ courseTickets }: Props) {
         );
       })}
       <p className="text-xs text-text-light">
-        支払方法で「回数券」を選ぶと消化できます
+        メニューの支払方法が「回数券」に設定されています。保存すると自動で消化されます。
       </p>
     </div>
   );
