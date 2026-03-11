@@ -1,4 +1,5 @@
 import type { SalonHpContent } from "@/types/database";
+import Image from "next/image";
 
 type Props = {
   about: SalonHpContent["about"];
@@ -18,7 +19,13 @@ export function HpAbout({ about }: Props) {
           <div className="flex-shrink-0">
             <div className="w-44 h-44 rounded-full overflow-hidden ring-4 ring-[#C4956A]/10 ring-offset-4 ring-offset-white">
               {about.owner_image_path ? (
-                <div className="w-full h-full bg-gradient-to-br from-[#F5F1ED] to-[#E8E0D8]" />
+                <Image
+                  src={about.owner_image_path}
+                  alt={about.owner_name}
+                  width={176}
+                  height={176}
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-[#F0EBE4] to-[#E4DACE] flex items-center justify-center">
                   <svg className="w-20 h-20 text-[#C4956A]/25" fill="none" viewBox="0 0 24 24" strokeWidth={0.8} stroke="currentColor">

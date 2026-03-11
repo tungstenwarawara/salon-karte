@@ -46,6 +46,10 @@ export type SalonHpContent = {
     title: string;
     points: { title: string; description: string; icon?: string }[];
   };
+  before_after?: {
+    title: string;
+    items: { image_path: string; caption: string; menu: string }[];
+  };
   flow: {
     steps: { title: string; description: string }[];
   };
@@ -54,6 +58,9 @@ export type SalonHpContent = {
   };
   testimonials: {
     items: { name: string; content: string; menu: string }[];
+    hotpepper_rating?: number;
+    hotpepper_review_count?: number;
+    hotpepper_url?: string | null;
   };
   faq: {
     items: { question: string; answer: string }[];

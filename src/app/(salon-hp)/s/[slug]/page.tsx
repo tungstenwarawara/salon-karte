@@ -5,11 +5,13 @@ import type { SalonHpContent } from "@/types/database";
 import { HpHeader } from "@/components/salon-hp/hp-header";
 import { HpHero } from "@/components/salon-hp/hp-hero";
 import { HpAbout } from "@/components/salon-hp/hp-about";
+import { HpBeforeAfter } from "@/components/salon-hp/hp-before-after";
 import { HpConcept } from "@/components/salon-hp/hp-concept";
 import { HpMenu } from "@/components/salon-hp/hp-menu";
 import { HpFlow } from "@/components/salon-hp/hp-flow";
 import { HpGallery } from "@/components/salon-hp/hp-gallery";
 import { HpTestimonials } from "@/components/salon-hp/hp-testimonials";
+import { HpInstagram } from "@/components/salon-hp/hp-instagram";
 import { HpAccess } from "@/components/salon-hp/hp-access";
 import { HpFaq } from "@/components/salon-hp/hp-faq";
 import { HpBookingCta } from "@/components/salon-hp/hp-booking-cta";
@@ -81,11 +83,15 @@ export default async function SalonHpPage({ params }: Props) {
         bookingEnabled={salon.booking_enabled}
       />
       <HpAbout about={content.about} />
+      {content.before_after && content.before_after.items.length > 0 && (
+        <HpBeforeAfter beforeAfter={content.before_after} />
+      )}
       <HpConcept concept={content.concept} />
       <HpMenu menus={menus} />
       <HpFlow flow={content.flow} />
       {content.gallery.images.length > 0 && <HpGallery gallery={content.gallery} />}
       <HpTestimonials testimonials={content.testimonials} />
+      <HpInstagram instagram={content.links.instagram} salonName={salon.name} />
       <HpAccess
         access={content.access}
         salonName={salon.name}

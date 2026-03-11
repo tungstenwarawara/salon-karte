@@ -19,6 +19,9 @@ function StarRating() {
 export function HpTestimonials({ testimonials }: Props) {
   if (testimonials.items.length === 0) return null;
 
+  const rating = testimonials.hotpepper_rating ?? 5.0;
+  const reviewCount = testimonials.hotpepper_review_count ?? testimonials.items.length;
+
   return (
     <section className="py-20 md:py-28 bg-gradient-to-b from-[#FAF7F3] to-[#F5F0EA] hp-section">
       <div className="max-w-3xl mx-auto px-4">
@@ -30,8 +33,8 @@ export function HpTestimonials({ testimonials }: Props) {
         {/* 全体評価バッジ */}
         <div className="flex items-center justify-center gap-3 mb-14">
           <StarRating />
-          <span className="text-sm font-bold text-gray-700">5.0</span>
-          <span className="text-xs text-gray-400">（口コミ14件）</span>
+          <span className="text-sm font-bold text-gray-700">{rating.toFixed(1)}</span>
+          <span className="text-xs text-gray-400">（口コミ{reviewCount}件）</span>
         </div>
 
         <div className="space-y-4">
@@ -72,6 +75,23 @@ export function HpTestimonials({ testimonials }: Props) {
             </div>
           ))}
         </div>
+
+        {/* HotPepperリンク */}
+        {testimonials.hotpepper_url && (
+          <div className="mt-8 text-center">
+            <a
+              href={testimonials.hotpepper_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-[#C4956A] hover:text-[#B8875E] transition-colors font-medium"
+            >
+              もっと口コミを見る
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+              </svg>
+            </a>
+          </div>
+        )}
       </div>
     </section>
   );

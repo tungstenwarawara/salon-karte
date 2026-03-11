@@ -7,6 +7,17 @@ const nextConfig: NextConfig = {
     clientTraceMetadata: ["sentry-trace", "baggage"],
   },
 
+  // Supabase Storage の画像を next/Image で最適化表示
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
+  },
+
   async headers() {
     return [
       {
@@ -66,6 +77,8 @@ const nextConfig: NextConfig = {
               "font-src 'self'",
               // API接続先: 自サイト + Supabase + Sentry エラー送信（US リージョン含む）
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com",
+              // Google Maps 埋め込み用（サロンHPアクセスセクション）
+              "frame-src 'self' https://www.google.com",
               // フレーム埋め込み禁止
               "frame-ancestors 'none'",
               // フォーム送信先: 自サイトのみ
