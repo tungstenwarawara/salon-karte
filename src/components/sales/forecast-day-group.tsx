@@ -49,7 +49,7 @@ export function ForecastDayGroup({ date, isActual, actualEntries = [], forecastE
 
       {/* 見込分 */}
       {forecastEntries.map((entry) => (
-        <div key={entry.customerId + entry.date} className="bg-blue-50/50 border-l-4 border-l-blue-400 border border-blue-200 rounded-xl p-2.5">
+        <div key={`${entry.customerId}-${entry.date}-${entry.startTime}`} className="bg-blue-50/50 border-l-4 border-l-blue-400 border border-blue-200 rounded-xl p-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-medium">{entry.customerName} 様</span>
