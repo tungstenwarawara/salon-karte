@@ -1,5 +1,4 @@
-/** 顧客の全施術写真をZIPでダウンロード */
-import JSZip from "jszip";
+/** 顧客の全施術写真をZIPでダウンロード（JSZipは動的インポート: バンドルサイズ削減） */
 import { createClient } from "@/lib/supabase/client";
 
 export const PHOTO_TYPE_LABELS: Record<string, string> = {
@@ -69,6 +68,7 @@ export async function downloadCustomerPhotosAsZip(
   });
 
   // 5. ZIP生成 + 写真取得
+  const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
   const folderName = `${customerName}_写真`;
   const root = zip.folder(folderName)!;

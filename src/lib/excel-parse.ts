@@ -1,8 +1,7 @@
 /**
  * Excel(.xlsx/.xls)ファイルをCSV形式のArrayBufferに変換するユーティリティ
- * xlsxライブラリ（SheetJS）を使用
+ * xlsxライブラリ（SheetJS）は動的インポート（バンドルサイズ削減: -170kB）
  */
-import * as XLSX from "xlsx";
 
 /** ファイルがExcel形式かどうかを判定 */
 export function isExcelFile(file: File): boolean {
@@ -26,7 +25,8 @@ export type ExcelConvertResult = {
  * 1シート目のデータのみを使用
  * cellDates: true で日付セルを Date オブジェクトとして取得し、YYYY/MM/DD に正規化
  */
-export function excelToCSVBuffer(buffer: ArrayBuffer): ExcelConvertResult {
+export async function excelToCSVBuffer(buffer: ArrayBuffer): Promise<ExcelConvertResult> {
+  const XLSX = await import("xlsx");
   const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
   const warnings: string[] = [];
   const sheetName = workbook.SheetNames[0];

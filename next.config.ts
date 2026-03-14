@@ -108,4 +108,14 @@ export default withSentryConfig(nextConfig, {
 
   // 本番バンドルからデバッグログを除去
   disableLogger: true,
+
+  // バンドルサイズ最適化: 未使用のSentry機能をツリーシェイクで除去
+  bundleSizeOptimizations: {
+    // セッションリプレイは完全無効（PII対策）→ 関連コードを除去
+    excludeReplayIframe: true,
+    excludeReplayShadowDom: true,
+    excludeReplayWorker: true,
+    // デバッグ用ステートメントを除去（disableLogger の後継）
+    excludeDebugStatements: true,
+  },
 });

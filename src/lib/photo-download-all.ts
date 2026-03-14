@@ -1,5 +1,4 @@
-/** サロン全写真を一括ダウンロード */
-import JSZip from "jszip";
+/** サロン全写真を一括ダウンロード（JSZipは動的インポート: バンドルサイズ削減） */
 import { createClient } from "@/lib/supabase/client";
 import { PHOTO_TYPE_LABELS, downloadCustomerPhotosAsZip } from "@/lib/photo-download";
 
@@ -108,6 +107,7 @@ async function downloadBulk(
   });
 
   // ZIP生成
+  const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
   const today = new Date().toISOString().slice(0, 10);
   const root = zip.folder(`全写真_${today}`)!;
