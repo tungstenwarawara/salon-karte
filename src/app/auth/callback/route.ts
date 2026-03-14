@@ -58,7 +58,12 @@ export async function GET(request: Request) {
   if (authSuccess) {
     // next パラメータが指定されている場合（パスワード設定等）
     if (next) {
-      return NextResponse.redirect(`${origin}${next}`);
+      // サインアップ確認の場合、email_confirmed パラメータを付与（計測用）
+      const separator = next.includes("?") ? "&" : "?";
+      const redirectPath = type === "signup"
+        ? `${next}${separator}email_confirmed=1`
+        : next;
+      return NextResponse.redirect(`${origin}${redirectPath}`);
     }
 
     // staff テーブルで所属サロン確認
@@ -91,7 +96,8 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.redirect(`${origin}/setup`);
+    const setupPath = type === "signup" ? "/setup?email_confirmed=1" : "/setup";
+    return NextResponse.redirect(`${origin}${setupPath}`);
   }
 
   // 認証失敗 - ログインページにリダイレクト

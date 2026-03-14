@@ -10,9 +10,17 @@ function SetupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const refCode = searchParams.get("ref") || "";
+  const emailConfirmed = searchParams.get("email_confirmed") === "1";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
+
+  // メール確認完了の計測
+  useEffect(() => {
+    if (emailConfirmed) {
+      trackEvent({ name: "signup_email_confirmed" });
+    }
+  }, [emailConfirmed]);
 
   // 既存サロン確認 — あればダッシュボードへリダイレクト
   useEffect(() => {

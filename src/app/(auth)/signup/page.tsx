@@ -59,6 +59,7 @@ function SignupForm() {
     }
 
     setLoading(true);
+    trackEvent({ name: "signup_form_submit" });
 
     try {
       const res = await fetch("/api/auth/signup", {

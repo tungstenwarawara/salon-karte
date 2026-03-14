@@ -172,7 +172,9 @@ async function fetchGA4Report(): Promise<GA4Report | null> {
                 values: [
                   "cta_click",
                   "signup_start",
+                  "signup_form_submit",
                   "signup_complete",
+                  "signup_email_confirmed",
                   "onboarding_complete",
                   "first_record",
                   "blog_read",
@@ -296,7 +298,9 @@ function generateReport(
     const funnel = [
       ["CTA クリック", "cta_click"],
       ["サインアップ開始", "signup_start"],
-      ["サインアップ完了", "signup_complete"],
+      ["フォーム送信", "signup_form_submit"],
+      ["サインアップ完了（API成功）", "signup_complete"],
+      ["メール確認完了", "signup_email_confirmed"],
       ["オンボーディング完了", "onboarding_complete"],
       ["初回カルテ作成", "first_record"],
       ["ブログ精読 (75%)", "blog_read"],

@@ -14,7 +14,9 @@ declare global {
 type AcquisitionEvent =
   | { name: "cta_click"; params: { location: string; label: string } }
   | { name: "signup_start" }
+  | { name: "signup_form_submit" }
   | { name: "signup_complete"; params: { method: "email" } }
+  | { name: "signup_email_confirmed" }
   | { name: "onboarding_complete" }
   | { name: "first_record" }
   | { name: "blog_read"; params: { slug: string; title: string } }
