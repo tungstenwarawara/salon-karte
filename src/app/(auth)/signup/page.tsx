@@ -55,6 +55,7 @@ function SignupForm() {
 
     if (!agreed) {
       setError("利用規約・プライバシーポリシー・特定商取引法に基づく表記への同意が必要です");
+      document.getElementById("agree-checkbox")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
@@ -188,6 +189,12 @@ function SignupForm() {
         </div>
 
         <form onSubmit={handleSignup} className="bg-surface rounded-2xl shadow-sm border border-border p-6 space-y-5">
+          <div className="bg-accent/5 border border-accent/20 rounded-xl px-4 py-3 text-center">
+            <p className="text-sm text-text-light">
+              初期費用0円 · クレジットカード不要 · いつでも解約OK
+            </p>
+          </div>
+
           {error && (
             <div className="bg-error/10 text-error text-sm rounded-lg p-3">
               {error}
@@ -244,7 +251,7 @@ function SignupForm() {
             />
           </div>
 
-          <label className="flex items-start gap-3 cursor-pointer">
+          <label id="agree-checkbox" className="flex items-start gap-3 cursor-pointer">
             <input
               type="checkbox"
               checked={agreed}
@@ -263,11 +270,15 @@ function SignupForm() {
 
           <button
             type="submit"
-            disabled={loading || !agreed}
+            disabled={loading}
             className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-50 min-h-[48px]"
           >
             {loading ? "登録中..." : "アカウントを作成"}
           </button>
+
+          <p className="text-xs text-text-light text-center">
+            30日間無料。期間終了後は月額2,980円
+          </p>
         </form>
 
         <p className="text-center text-sm text-text-light mt-6">

@@ -15,7 +15,10 @@ type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
 type StaffMenu = { id: string; staff_id: string; menu_id: string };
 type StaffOption = { id: string; name: string };
 
-const CATEGORIES = ["フェイシャル", "ボディ", "脱毛", "その他"];
+const CATEGORY_PRESETS = [
+  "フェイシャル", "ボディ", "脱毛", "ヘッドスパ", "ネイル",
+  "まつ毛", "眉毛", "リラクゼーション", "その他",
+];
 
 export default function MenusPage() {
   const [menus, setMenus] = useState<Menu[]>([]);
@@ -92,8 +95,16 @@ export default function MenusPage() {
     }
 
     setLoading(false);
-    resetForm();
-    showToast(editingId ? "メニューを更新しました" : "メニューを追加しました");
+    if (editingId) {
+      resetForm();
+      showToast("メニューを更新しました");
+    } else {
+      // 新規追加後: フォームを開いたままカテゴリを維持して連続登録を可能にする
+      setForm({ name: "", category: form.category, duration_minutes: "", price: "" });
+      setSelectedStaffIds([]);
+      setEditingId(null);
+      showToast("メニューを追加しました。続けて追加できます");
+    }
     loadMenus();
   };
 
@@ -160,10 +171,16 @@ export default function MenusPage() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">カテゴリ</label>
-            <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors">
-              <option value="">選択してください</option>
-              {CATEGORIES.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
-            </select>
+            <input
+              list="category-presets"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              placeholder="カテゴリを入力または選択"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            />
+            <datalist id="category-presets">
+              {CATEGORY_PRESETS.map((cat) => <option key={cat} value={cat} />)}
+            </datalist>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -188,9 +205,23 @@ export default function MenusPage() {
       )}
 
       {menus.length > 0 ? (
-        <div className="space-y-2">
-          {menus.map((menu) => (
-            <MenuCard key={menu.id} menu={menu} staffNames={getStaffNames(menu.id)} showConfirmDelete={confirmDeleteId === menu.id} onEdit={startEdit} onToggleActive={handleToggleActive} onRequestDelete={setConfirmDeleteId} onConfirmDelete={handleDelete} onCancelDelete={() => setConfirmDeleteId(null)} />
+        <div className="space-y-4">
+          {Object.entries(
+            menus.reduce((acc, menu) => {
+              const cat = menu.category ?? "未分類";
+              if (!acc[cat]) acc[cat] = [];
+              acc[cat].push(menu);
+              return acc;
+            }, {} as Record<string, Menu[]>)
+          ).map(([category, items]) => (
+            <div key={category}>
+              <h4 className="text-sm font-medium text-text-light mb-2">{category}</h4>
+              <div className="space-y-2">
+                {items.map((menu) => (
+                  <MenuCard key={menu.id} menu={menu} staffNames={getStaffNames(menu.id)} showConfirmDelete={confirmDeleteId === menu.id} onEdit={startEdit} onToggleActive={handleToggleActive} onRequestDelete={setConfirmDeleteId} onConfirmDelete={handleDelete} onCancelDelete={() => setConfirmDeleteId(null)} />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       ) : (
