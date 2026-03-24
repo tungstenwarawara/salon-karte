@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SetupWizard, type WizardData } from "@/components/setup/setup-wizard";
 import { trackEvent } from "@/lib/analytics";
+import { DEFAULT_BUSINESS_HOURS } from "@/lib/business-hours";
 
 function SetupContent() {
   const router = useRouter();
@@ -78,7 +79,7 @@ function SetupContent() {
       return;
     }
 
-    // 1. サロン作成（営業時間も同時保存）
+    // 1. サロン作成（デフォルト営業時間を自動適用）
     const { data: newSalon, error: salonError } = await supabase
       .from("salons")
       .insert({
@@ -86,7 +87,7 @@ function SetupContent() {
         name: data.salonName,
         phone: data.phone || null,
         address: data.address || null,
-        business_hours: data.businessHours,
+        business_hours: DEFAULT_BUSINESS_HOURS,
         plan_type: "free",
       })
       .select("id")
@@ -131,15 +132,19 @@ function SetupContent() {
       }
     }
 
-    // 4. メニュー登録（入力された場合のみ）
-    if (data.menuName) {
-      const { error: menuError } = await supabase.from("treatment_menus").insert({
+    // 4. メニュー一括登録（プリセットから選択された場合）
+    if (data.menus.length > 0) {
+      const menuRows = data.menus.map((m) => ({
         salon_id: newSalon.id,
-        name: data.menuName,
-        duration_minutes: data.menuDuration,
-        price: data.menuPrice ?? 0,
+        name: m.name,
+        category: m.category || null,
+        duration_minutes: m.duration || null,
+        price: m.price || 0,
         is_active: true,
-      });
+      }));
+      const { error: menuError } = await supabase
+        .from("treatment_menus")
+        .insert(menuRows);
 
       if (menuError) {
         console.error("メニュー登録エラー:", menuError);

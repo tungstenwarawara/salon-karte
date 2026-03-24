@@ -1,7 +1,7 @@
-const STEP_PROGRESS: Record<number, number> = { 1: 20, 2: 45, 3: 70, 4: 100 };
-const STEP_LABELS = ["サロン情報", "営業時間", "メニュー", "完了"];
+const STEP_PROGRESS: Record<number, number> = { 1: 25, 2: 60, 3: 100 };
+const STEP_LABELS = ["サロン情報", "メニュー", "完了"];
 
-export function SetupProgressBar({ currentStep }: { currentStep: 1 | 2 | 3 | 4 }) {
+export function SetupProgressBar({ currentStep }: { currentStep: 1 | 2 | 3 }) {
   const pct = STEP_PROGRESS[currentStep];
 
   return (

@@ -4,7 +4,7 @@ import { Confetti } from "@/components/ui/confetti";
 
 type StepCompleteProps = {
   salonName: string;
-  setupSummary: { businessHours: boolean; menu: boolean };
+  menuCount: number;
   onStart: () => void;
   loading?: boolean;
 };
@@ -89,11 +89,11 @@ function DailyFlowVisual() {
   );
 }
 
-export function StepComplete({ salonName, setupSummary, onStart, loading }: StepCompleteProps) {
+export function StepComplete({ salonName, menuCount, onStart, loading }: StepCompleteProps) {
   const summaryItems = [
     { label: "サロン情報", done: true },
-    { label: "営業時間", done: setupSummary.businessHours },
-    { label: "メニュー", done: setupSummary.menu },
+    { label: "営業時間", done: true },
+    { label: `メニュー${menuCount > 0 ? `(${menuCount}件)` : ""}`, done: menuCount > 0 },
   ];
 
   return (

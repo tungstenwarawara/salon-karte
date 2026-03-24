@@ -1,25 +1,20 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { BusinessHours } from "@/types/database";
 import { BrandLogo } from "@/components/ui/brand-logo";
 import { SetupProgressBar } from "./setup-progress-bar";
 import { StepSalonInfo } from "./step-salon-info";
-import { StepBusinessHours } from "./step-business-hours";
-import { StepFirstMenu } from "./step-first-menu";
+import { StepMenuPresets, type PresetMenu } from "./step-menu-presets";
 import { StepComplete } from "./step-complete";
 
 export type WizardData = {
   salonName: string;
   phone: string;
   address: string;
-  businessHours: BusinessHours | null;
-  menuName: string | null;
-  menuDuration: number | null;
-  menuPrice: number | null;
+  menus: PresetMenu[];
 };
 
-type StepNum = 1 | 2 | 3 | 4;
+type StepNum = 1 | 2 | 3;
 
 export function SetupWizard({ onComplete, loading }: { onComplete: (data: WizardData) => void; loading?: boolean }) {
   const [step, setStep] = useState<StepNum>(1);
@@ -28,8 +23,7 @@ export function SetupWizard({ onComplete, loading }: { onComplete: (data: Wizard
 
   // 各ステップのデータ
   const [salonInfo, setSalonInfo] = useState({ name: "", phone: "", address: "" });
-  const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
-  const [menuData, setMenuData] = useState<{ name: string; duration: number | null; price: number | null } | null>(null);
+  const [menus, setMenus] = useState<PresetMenu[]>([]);
 
   const goTo = useCallback((next: StepNum, dir: "forward" | "back" = "forward") => {
     setDirection(dir);
@@ -43,40 +37,26 @@ export function SetupWizard({ onComplete, loading }: { onComplete: (data: Wizard
     goTo(2);
   }, [goTo]);
 
-  // Step 2: 営業時間
-  const handleBusinessHours = useCallback((hours: BusinessHours) => {
-    setBusinessHours(hours);
+  // Step 2: 業種選択+メニュー
+  const handleMenus = useCallback((selected: PresetMenu[]) => {
+    setMenus(selected);
     goTo(3);
   }, [goTo]);
 
-  const skipBusinessHours = useCallback(() => {
-    setBusinessHours(null);
+  const skipMenus = useCallback(() => {
+    setMenus([]);
     goTo(3);
   }, [goTo]);
 
-  // Step 3: メニュー
-  const handleMenu = useCallback((data: { name: string; duration: number | null; price: number | null }) => {
-    setMenuData(data);
-    goTo(4);
-  }, [goTo]);
-
-  const skipMenu = useCallback(() => {
-    setMenuData(null);
-    goTo(4);
-  }, [goTo]);
-
-  // Step 4: 完了
+  // Step 3: 完了
   const handleStart = useCallback(() => {
     onComplete({
       salonName: salonInfo.name,
       phone: salonInfo.phone,
       address: salonInfo.address,
-      businessHours,
-      menuName: menuData?.name ?? null,
-      menuDuration: menuData?.duration ?? null,
-      menuPrice: menuData?.price ?? null,
+      menus,
     });
-  }, [onComplete, salonInfo, businessHours, menuData]);
+  }, [onComplete, salonInfo, menus]);
 
   const animClass = direction === "forward" ? "animate-slide-in-right" : "animate-slide-in-left";
 
@@ -91,11 +71,11 @@ export function SetupWizard({ onComplete, loading }: { onComplete: (data: Wizard
         {/* プログレスバー */}
         <SetupProgressBar currentStep={step} />
 
-        {/* 戻るボタン（Step 2, 3） */}
-        {(step === 2 || step === 3) && (
+        {/* 戻るボタン（Step 2） */}
+        {step === 2 && (
           <button
             type="button"
-            onClick={() => goTo((step - 1) as StepNum, "back")}
+            onClick={() => goTo(1, "back")}
             className="flex items-center gap-1 text-sm text-text-light hover:text-accent transition-colors min-h-[44px] -mb-2"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
@@ -108,19 +88,15 @@ export function SetupWizard({ onComplete, loading }: { onComplete: (data: Wizard
         {/* ステップコンテンツ */}
         <div
           key={animKey}
-          className={step === 4 ? "" : animClass}
+          className={step === 3 ? "" : animClass}
         >
           <div className="bg-surface rounded-2xl shadow-sm border border-border p-5">
             {step === 1 && <StepSalonInfo onNext={handleSalonInfo} />}
-            {step === 2 && <StepBusinessHours onNext={handleBusinessHours} onSkip={skipBusinessHours} />}
-            {step === 3 && <StepFirstMenu onNext={handleMenu} onSkip={skipMenu} />}
-            {step === 4 && (
+            {step === 2 && <StepMenuPresets onNext={handleMenus} onSkip={skipMenus} />}
+            {step === 3 && (
               <StepComplete
                 salonName={salonInfo.name}
-                setupSummary={{
-                  businessHours: businessHours !== null,
-                  menu: menuData !== null,
-                }}
+                menuCount={menus.length}
                 onStart={handleStart}
                 loading={loading}
               />
