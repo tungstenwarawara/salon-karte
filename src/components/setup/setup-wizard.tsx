@@ -43,11 +43,6 @@ export function SetupWizard({ onComplete, loading }: { onComplete: (data: Wizard
     goTo(3);
   }, [goTo]);
 
-  const skipMenus = useCallback(() => {
-    setMenus([]);
-    goTo(3);
-  }, [goTo]);
-
   // Step 3: 完了
   const handleStart = useCallback(() => {
     onComplete({
@@ -92,7 +87,7 @@ export function SetupWizard({ onComplete, loading }: { onComplete: (data: Wizard
         >
           <div className="bg-surface rounded-2xl shadow-sm border border-border p-5">
             {step === 1 && <StepSalonInfo onNext={handleSalonInfo} />}
-            {step === 2 && <StepMenuPresets onNext={handleMenus} onSkip={skipMenus} />}
+            {step === 2 && <StepMenuPresets onNext={handleMenus} />}
             {step === 3 && (
               <StepComplete
                 salonName={salonInfo.name}

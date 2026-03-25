@@ -93,7 +93,7 @@ export function StepComplete({ salonName, menuCount, onStart, loading }: StepCom
   const summaryItems = [
     { label: "サロン情報", done: true },
     { label: "営業時間", done: true },
-    { label: `メニュー${menuCount > 0 ? `(${menuCount}件)` : ""}`, done: menuCount > 0 },
+    { label: `メニュー(${menuCount}件)`, done: true },
   ];
 
   return (

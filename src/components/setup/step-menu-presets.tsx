@@ -62,10 +62,9 @@ const INDUSTRIES = Object.entries(INDUSTRY_PRESETS);
 
 type Props = {
   onNext: (menus: PresetMenu[]) => void;
-  onSkip: () => void;
 };
 
-export function StepMenuPresets({ onNext, onSkip }: Props) {
+export function StepMenuPresets({ onNext }: Props) {
   const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
   const [checkedMenus, setCheckedMenus] = useState<Record<number, boolean>>({});
   // 「その他」業種の自由入力
@@ -144,14 +143,6 @@ export function StepMenuPresets({ onNext, onSkip }: Props) {
             その他
           </button>
         </div>
-
-        <button
-          type="button"
-          onClick={onSkip}
-          className="w-full text-sm text-text-light hover:text-accent transition-colors py-2 min-h-[44px]"
-        >
-          スキップ（あとで設定画面から登録できます）
-        </button>
       </div>
     );
   }
