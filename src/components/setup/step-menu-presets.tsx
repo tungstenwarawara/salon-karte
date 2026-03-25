@@ -57,6 +57,7 @@ const INDUSTRY_PRESETS: Record<
   },
 };
 
+/** 業種一覧（表示順） + 「その他」 */
 const INDUSTRIES = Object.entries(INDUSTRY_PRESETS);
 
 type Props = {
@@ -67,8 +68,11 @@ type Props = {
 export function StepMenuPresets({ onNext, onSkip }: Props) {
   const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
   const [checkedMenus, setCheckedMenus] = useState<Record<number, boolean>>({});
+  // 「その他」業種の自由入力
+  const [customName, setCustomName] = useState("");
+  const [customDuration, setCustomDuration] = useState("");
+  const [customPrice, setCustomPrice] = useState("");
 
-  // 業種選択時にプリセットメニューを全てONにする
   const handleSelectIndustry = (key: string) => {
     setSelectedIndustry(key);
     const menus = INDUSTRY_PRESETS[key].menus;
@@ -77,21 +81,40 @@ export function StepMenuPresets({ onNext, onSkip }: Props) {
     setCheckedMenus(all);
   };
 
+  const handleSelectOther = () => {
+    setSelectedIndustry("other");
+  };
+
   const toggleMenu = (index: number) => {
     setCheckedMenus((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
+  // プリセット確定
   const handleConfirm = () => {
-    if (!selectedIndustry) return;
+    if (!selectedIndustry || selectedIndustry === "other") return;
     const menus = INDUSTRY_PRESETS[selectedIndustry].menus;
     const selected = menus.filter((_, i) => checkedMenus[i]);
     onNext(selected);
   };
 
-  const selectedCount = Object.values(checkedMenus).filter(Boolean).length;
-  const presetMenus = selectedIndustry ? INDUSTRY_PRESETS[selectedIndustry].menus : [];
+  // 自由入力確定
+  const handleCustomSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customName.trim()) return;
+    onNext([{
+      name: customName.trim(),
+      duration: customDuration ? parseInt(customDuration, 10) || 0 : 0,
+      price: customPrice ? parseInt(customPrice, 10) || 0 : 0,
+      category: "その他",
+    }]);
+  };
 
-  // 業種選択画面
+  const selectedCount = Object.values(checkedMenus).filter(Boolean).length;
+  const presetMenus = selectedIndustry && selectedIndustry !== "other"
+    ? INDUSTRY_PRESETS[selectedIndustry].menus
+    : [];
+
+  // --- 業種選択画面 ---
   if (!selectedIndustry) {
     return (
       <div className="space-y-5 animate-slide-in-right">
@@ -113,6 +136,13 @@ export function StepMenuPresets({ onNext, onSkip }: Props) {
               {label}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={handleSelectOther}
+            className="bg-background hover:bg-accent/5 border border-border hover:border-accent rounded-xl p-4 text-center transition-colors min-h-[56px] font-medium text-sm text-text-light"
+          >
+            その他
+          </button>
         </div>
 
         <button
@@ -120,19 +150,111 @@ export function StepMenuPresets({ onNext, onSkip }: Props) {
           onClick={onSkip}
           className="w-full text-sm text-text-light hover:text-accent transition-colors py-2 min-h-[44px]"
         >
-          スキップ（あとで自分で登録）
+          スキップ（あとで設定画面から登録できます）
         </button>
       </div>
     );
   }
 
-  // プリセットメニュー確認画面
+  // --- 「その他」業種: 自由入力フォーム ---
+  if (selectedIndustry === "other") {
+    return (
+      <form onSubmit={handleCustomSubmit} className="space-y-5 animate-slide-in-right">
+        <div className="text-center space-y-2">
+          <h2 className="text-lg font-bold">メニューを登録</h2>
+          <p className="text-sm text-text-light">
+            よく施術するメニューを1つ登録しましょう
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="setup-custom-name" className="block text-sm font-medium mb-1.5">
+              メニュー名 <span className="text-error text-xs">必須</span>
+            </label>
+            <input
+              id="setup-custom-name"
+              type="text"
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+              required
+              placeholder="例: カット＆カラー"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="setup-custom-duration" className="block text-sm font-medium mb-1.5">
+                所要時間 <span className="text-xs text-text-light">任意</span>
+              </label>
+              <div className="relative">
+                <input
+                  id="setup-custom-duration"
+                  type="number"
+                  inputMode="numeric"
+                  value={customDuration}
+                  onChange={(e) => setCustomDuration(e.target.value)}
+                  placeholder="60"
+                  min={1}
+                  className="w-full rounded-xl border border-border bg-background pl-4 pr-8 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-light">分</span>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="setup-custom-price" className="block text-sm font-medium mb-1.5">
+                料金 <span className="text-xs text-text-light">任意</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-light">¥</span>
+                <input
+                  id="setup-custom-price"
+                  type="number"
+                  inputMode="numeric"
+                  value={customPrice}
+                  onChange={(e) => setCustomPrice(e.target.value)}
+                  placeholder="5,000"
+                  min={0}
+                  className="w-full rounded-xl border border-border bg-background pl-8 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-xs text-text-light text-center">
+          残りのメニューは設定画面からいつでも追加できます
+        </p>
+
+        <div className="space-y-2">
+          <button
+            type="submit"
+            disabled={!customName.trim()}
+            className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-40 min-h-[48px]"
+          >
+            登録して次へ
+          </button>
+          <button
+            type="button"
+            onClick={() => { setSelectedIndustry(null); }}
+            className="w-full text-sm text-text-light hover:text-accent transition-colors py-2 min-h-[44px]"
+          >
+            業種を選びなおす
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  // --- プリセットメニュー確認画面 ---
   return (
     <div className="space-y-5 animate-slide-in-right">
       <div className="text-center space-y-2">
         <h2 className="text-lg font-bold">メニューを確認</h2>
         <p className="text-sm text-text-light">
-          不要なメニューはチェックを外してください。あとから編集・追加できます
+          不要なメニューはチェックを外してください
         </p>
       </div>
 
@@ -159,6 +281,10 @@ export function StepMenuPresets({ onNext, onSkip }: Props) {
           </label>
         ))}
       </div>
+
+      <p className="text-xs text-text-light text-center">
+        メニュー名・料金は設定画面からいつでも編集・追加できます
+      </p>
 
       <div className="space-y-2">
         <button
