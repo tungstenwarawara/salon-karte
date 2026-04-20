@@ -39,12 +39,29 @@ function scrubPii(event: Sentry.ErrorEvent): Sentry.ErrorEvent {
   return event;
 }
 
+// 認証後の管理画面（実業務で使うパス）のみで Sentry を有効化する。
+// LP・公開予約・カウンセリング等の公開ページでは runtime コストを落として
+// Real Experience Score（LCP / INP）を優先する。
+function isMonitoredPath(): boolean {
+  if (typeof window === "undefined") return true;
+  const p = window.location.pathname;
+  return (
+    p.startsWith("/dashboard") ||
+    p.startsWith("/settings") ||
+    p.startsWith("/customers") ||
+    p.startsWith("/appointments") ||
+    p.startsWith("/records") ||
+    p.startsWith("/sales") ||
+    p.startsWith("/setup")
+  );
+}
+
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   environment: process.env.NODE_ENV,
 
-  // 開発環境ではエラー送信しない（Sentry Issues のノイズ防止）
-  enabled: process.env.NODE_ENV === "production",
+  // 本番かつ監視対象パスのみ有効。LP等では init が no-op 化される。
+  enabled: process.env.NODE_ENV === "production" && isMonitoredPath(),
 
   // パフォーマンス: 10%サンプリング（小規模SaaSには十分）
   tracesSampleRate: 0.1,
