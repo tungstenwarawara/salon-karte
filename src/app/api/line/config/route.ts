@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { encrypt } from "@/lib/line/crypto";
+import type { Database } from "@/types/database";
+
+type SalonLineConfigUpdate = Database["public"]["Tables"]["salon_line_configs"]["Update"];
 
 // POST: LINE設定の保存（新規作成 or 更新）
 export async function POST(request: Request) {
@@ -53,7 +56,7 @@ export async function PATCH(request: Request) {
   }
 
   const body = await request.json();
-  const updates: Record<string, boolean> = {};
+  const updates: SalonLineConfigUpdate = {};
 
   if (typeof body.is_active === "boolean") updates.is_active = body.is_active;
   if (typeof body.reminder_enabled === "boolean") updates.reminder_enabled = body.reminder_enabled;
