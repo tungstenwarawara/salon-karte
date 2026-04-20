@@ -7,9 +7,10 @@ import { buildReminderMessage } from "@/lib/line/messages";
 import { getResendClient, getFromAddress } from "@/lib/email/client";
 import { buildCustomerReminderEmail } from "@/lib/email/templates";
 
-// POST: 前日リマインド（Vercel Cron Job: 毎日 12:00 UTC = 21:00 JST）
+// GET: 前日リマインド（Vercel Cron Job: 毎日 12:00 UTC = 21:00 JST）
 // LINE + メール の両チャネルで送信
-export async function POST(request: Request) {
+// Vercel Cron は GET で呼び出す仕様。POST にすると 405 で空振りし続けるので注意
+export async function GET(request: Request) {
   // CRON_SECRET検証（未設定時はリクエストを拒否）
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
