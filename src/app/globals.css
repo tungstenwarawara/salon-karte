@@ -87,8 +87,20 @@ input, select, textarea {
 
 /* アクセシビリティ: モーション軽減設定時にアニメーションを無効化 */
 @media (prefers-reduced-motion: reduce) {
-  .animate-fade-in-up {
-    animation: none;
+  .animate-fade-in-up,
+  .animate-orb-drift,
+  .animate-orb-drift-slow,
+  .animate-float-phone,
+  .animate-cta-pulse::after,
+  .animate-slide-in-right,
+  .animate-slide-in-left,
+  .animate-check-pop,
+  .animate-scale-in,
+  .animate-screen-fade-in,
+  .loading-pulse,
+  .loading-pulse-text,
+  .login-dot-float {
+    animation: none !important;
     opacity: 1;
     transform: none;
   }

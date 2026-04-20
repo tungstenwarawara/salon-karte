@@ -1,5 +1,4 @@
 import { BrandLogo } from "@/components/ui/brand-logo";
-import { ScrollFadeIn } from "./scroll-fade-in";
 import { PhoneFrame } from "./phone-frame";
 import { MockDashboardScreen } from "./mockup-screens";
 import { CtaLink } from "./cta-link";
@@ -7,15 +6,15 @@ import { CtaLink } from "./cta-link";
 export function HeroSection() {
   return (
     <section className="relative overflow-hidden">
-      {/* 背景グラデーション + 装飾 */}
+      {/* 背景グラデーション + 装飾（blur を下げて LCP のペイントコストを削減） */}
       <div className="absolute inset-0 bg-gradient-to-b from-background to-[#F0ECE8]" />
-      <div className="absolute top-20 left-[10%] w-72 h-72 rounded-full bg-accent/5 blur-3xl animate-orb-drift" />
+      <div className="absolute top-20 left-[10%] w-72 h-72 rounded-full bg-accent/5 blur-2xl animate-orb-drift" />
       <div className="absolute bottom-10 right-[10%] w-56 h-56 rounded-full bg-accent/8 blur-2xl animate-orb-drift-slow" />
 
       <div className="relative max-w-5xl mx-auto px-4 pt-24 pb-16 md:pt-32 md:pb-24">
         <div className="flex flex-col md:flex-row items-center gap-12 md:gap-16">
-          {/* コピー */}
-          <ScrollFadeIn direction="down" className="flex-1 text-center md:text-left">
+          {/* コピー — ファーストビューなのでフェードイン演出は行わず即時可視（LCP最優先） */}
+          <div className="flex-1 text-center md:text-left">
             <div className="mb-6">
               <BrandLogo size="lg" className="mx-auto md:mx-0" />
             </div>
@@ -55,16 +54,14 @@ export function HeroSection() {
                 </span>
               ))}
             </div>
-          </ScrollFadeIn>
+          </div>
 
-          {/* スマホモックアップ */}
-          <ScrollFadeIn direction="right" delay={300} className="flex-shrink-0">
-            <div className="animate-float-phone">
-              <PhoneFrame>
-                <MockDashboardScreen />
-              </PhoneFrame>
-            </div>
-          </ScrollFadeIn>
+          {/* スマホモックアップ — 常時浮遊アニメ（animate-float-phone）を除去しINPを改善 */}
+          <div className="flex-shrink-0">
+            <PhoneFrame>
+              <MockDashboardScreen />
+            </PhoneFrame>
+          </div>
         </div>
       </div>
     </section>
