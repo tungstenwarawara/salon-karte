@@ -19,7 +19,7 @@
 - `.select("description")` → 正しくは `memo`。ビルドでは検出不可（文字列型） (2026-02-21)
 - `.select("total_price, skin_condition")` → 別テーブルのカラム名を誤指定。Supabaseは空配列を返すだけ (2026-02-21)
 - 全クエリに `.eq("salon_id", salon.id)` 欠落 → ルールに明記済みだったが守られず (2026-02-21)
-- **対策**: `python3 scripts/check-select-columns.sh` をコミット前に必ず実行
+- **対策**: `python3 scripts/check-select-columns.py` をコミット前に必ず実行
 
 ## コード品質
 - records/new が1145行に膨張 → ファイルサイズ制限（ページ300行、コンポーネント200行） (2026-02-20)

@@ -33,4 +33,4 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-key-for-build
 
       - name: Column name check
-        run: python3 scripts/check-select-columns.sh
+        run: python3 scripts/check-select-columns.py

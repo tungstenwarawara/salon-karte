@@ -21,7 +21,7 @@
 - `npm test` — ユニットテスト実行（Vitest）
 - `npm run test:watch` — テスト監視モード
 - `npm run test:coverage` — カバレッジ付きテスト
-- `python3 scripts/check-select-columns.sh` — カラム名照合（コミット前必須）
+- `python3 scripts/check-select-columns.py` — カラム名照合（コミット前必須）
 - `npx tsx scripts/seed-test-data.ts` — テストデータ投入（初回）
 - `npx tsx scripts/seed-test-data.ts --reset` — テストデータリセット
 
@@ -29,7 +29,7 @@
 1. `npx tsc --noEmit` パス
 2. `npm test` パス
 3. `npm run build` パス
-4. `python3 scripts/check-select-columns.sh` パス（カラム名 + salon_idフィルタ）
+4. `python3 scripts/check-select-columns.py` パス（カラム名 + salon_idフィルタ）
 
 ## コミットメッセージ規約
 - `feat:` 新機能 / `fix:` バグ修正 / `refactor:` リファクタ / `docs:` ドキュメント
@@ -101,12 +101,18 @@
 - `docs/` — 計画ドキュメント（実装状況と同期必須）
 
 ## ルール詳細
-プロジェクト固有ルールは `.claude/rules/` を参照:
+
+### 常時読み込み（設計・業務の根幹）
 - @.claude/rules/planning.md — 設計哲学・セッション運用
-- @.claude/rules/uiux.md — UI/UX品質基準
+- @.claude/rules/uiux.md — UI/UX品質基準（レビュー観点含む）
 - @.claude/rules/security.md — セキュリティ・マルチテナント
-- @.claude/rules/database.md — スキーマ・マイグレーション
-- @.claude/rules/performance.md — パフォーマンス最適化
 - @.claude/rules/lessons-learned.md — 過去の障害・教訓
-- @.claude/rules/test-salon.md — テストサロン運用ルール
-- @.claude/rules/external-services.md — 外部サービス一元管理・障害対応
+
+### 必要時に Read するリファレンス（context節約のため auto-load しない）
+- `.claude/rules/database.md` — DB変更・マイグレーション時
+- `.claude/rules/performance.md` — パフォーマンス調整時
+- `.claude/rules/test-salon.md` — E2E / レベル2・3テスト時
+- `.claude/rules/external-services.md` — 外部サービス障害対応・プラン変更時
+- `.claude/rules/blog-content.md` — ブログ記事制作時
+- `.claude/rules/lp-design.md` — LP改修時
+- `.claude/rules/sellability.md` — LP/サインアップ/価格訴求レビュー時

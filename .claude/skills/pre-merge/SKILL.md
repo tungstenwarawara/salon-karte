@@ -18,7 +18,7 @@ npm run build
 
 ## 3. カラム名・salon_idフィルタ照合
 ```bash
-python3 scripts/check-select-columns.sh
+python3 scripts/check-select-columns.py
 ```
 
 ## 4. ファイルサイズ違反チェック

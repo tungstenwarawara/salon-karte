@@ -5,8 +5,7 @@ selectカラム名とDBスキーマの照合チェック
 Supabase SDKの.select()は文字列型のため、存在しないカラムを指定しても
 ビルド・実行時エラーにならない。このスクリプトでコミット前に検出する。
 
-使い方: python3 scripts/check-select-columns.sh
-  または: bash scripts/check-select-columns.sh（shebangでpython3を呼ぶ）
+使い方: python3 scripts/check-select-columns.py
 """
 
 import re

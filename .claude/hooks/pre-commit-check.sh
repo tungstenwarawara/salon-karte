@@ -28,7 +28,7 @@ if [[ -z "$PROJECT_DIR" ]]; then
   PROJECT_DIR="$CLAUDE_PROJECT_DIR"
 fi
 
-CHECK_RESULT=$(cd "$PROJECT_DIR" && python3 scripts/check-select-columns.sh 2>&1)
+CHECK_RESULT=$(cd "$PROJECT_DIR" && python3 scripts/check-select-columns.py 2>&1)
 CHECK_EXIT=$?
 
 if [[ $CHECK_EXIT -ne 0 ]]; then

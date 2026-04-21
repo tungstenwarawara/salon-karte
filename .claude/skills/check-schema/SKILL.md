@@ -8,7 +8,7 @@ DBスキーマとソースコードの整合性を検証する。
 
 ## 1. カラム名照合スクリプト実行
 ```bash
-python3 scripts/check-select-columns.sh
+python3 scripts/check-select-columns.py
 ```
 
 ## 2. エラーがあった場合

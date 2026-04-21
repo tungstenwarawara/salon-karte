@@ -18,7 +18,7 @@ memory: project
 
 ## 検証コマンド
 ```bash
-python3 scripts/check-select-columns.sh
+python3 scripts/check-select-columns.py
 ```
 
 結果は重要度別（CRITICAL / HIGH / MEDIUM / LOW）に報告する。
