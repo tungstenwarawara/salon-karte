@@ -48,10 +48,11 @@ export function ReferralSection() {
       <h3 className="font-bold">友だちに紹介する</h3>
       <p className="text-sm text-text-light leading-relaxed">
         サロンオーナーのお知り合いに Salon Karte を紹介してください。
-        あなた専用の紹介リンクから登録された方を、紹介実績として記録しています。
-      </p>
-      <p className="text-xs text-text-light bg-background rounded-xl p-3 leading-relaxed">
-        紹介特典（スタンダードプラン1ヶ月無料）は準備中です。対応開始時に、すでに紹介実績のある方にも遡及して適用します。
+        紹介された方がスタンダードプランにアップグレードすると、
+        <span className="font-bold text-accent"> 紹介された方は30日間無料 </span>
+        で利用できます。さらに、紹介された方の初回お支払いが完了すると、
+        <span className="font-bold text-accent"> あなたにも1ヶ月分のクレジット </span>
+        が付与されます（次回請求から自動で差し引かれます）。
       </p>
 
       {/* 紹介リンク */}
