@@ -214,7 +214,7 @@ export default function EditRecordPage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="施術記録を編集" breadcrumbs={[{ label: "カルテ編集" }]} />
+      <PageHeader title="施術記録を編集" breadcrumbs={[{ label: "カルテ", href: "/records" }, { label: "カルテ詳細", href: `/records/${id}` }, { label: "編集" }]} />
 
       <CourseTicketInfo courseTickets={courseTickets} mode="edit" />
 

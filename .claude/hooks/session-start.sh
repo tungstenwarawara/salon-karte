@@ -36,6 +36,26 @@ MIGRATION_COUNT=$(ls supabase/migrations/*.sql 2>/dev/null | wc -l)
 echo "【規模】ページ: ${PAGE_COUNT}, マイグレーション: ${MIGRATION_COUNT}"
 echo ""
 
+# Phase 1 集中検証ウィンドウのステータス（2026-04-24 開始、2週間）
+VALIDATION_START="2026-04-24"
+VALIDATION_END="2026-05-08"
+NOW_TS=$(date +%s 2>/dev/null)
+START_TS=$(date -d "$VALIDATION_START" +%s 2>/dev/null)
+END_TS=$(date -d "$VALIDATION_END" +%s 2>/dev/null)
+if [ -n "$NOW_TS" ] && [ -n "$START_TS" ] && [ -n "$END_TS" ]; then
+  if [ "$NOW_TS" -ge "$START_TS" ] && [ "$NOW_TS" -le "$END_TS" ]; then
+    DAYS_ELAPSED=$(( (NOW_TS - START_TS) / 86400 + 1 ))
+    DAYS_LEFT=$(( (END_TS - NOW_TS) / 86400 ))
+    # 検証期間中のコミット数を実測
+    VALIDATION_COMMITS=$(git log --since="$VALIDATION_START" --oneline 2>/dev/null | wc -l)
+    echo "🎯 Phase 1 集中検証ウィンドウ: Day ${DAYS_ELAPSED}/14（残り ${DAYS_LEFT}日）"
+    echo "   期間中コミット数: ${VALIDATION_COMMITS}"
+    echo "   方針: 新機能開発停止、テスター経由紹介で有料成約を検証"
+    echo "   詳細: docs/commercial-launch-roadmap.md の Phase 1 集中検証ウィンドウ参照"
+    echo ""
+  fi
+fi
+
 # docs の乖離チェック（簡易）
 PLAN_DOC="docs/competitive-analysis-and-plan.md"
 if [ -f "$PLAN_DOC" ]; then

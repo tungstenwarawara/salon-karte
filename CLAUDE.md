@@ -2,6 +2,8 @@
 
 個人サロン向け顧客管理・カルテ・予約アプリ（Next.js + Supabase）
 
+> **現フェーズ**: Phase 1 集中検証ウィンドウ（2026-04-24〜05-08、2週間）。新機能開発を停止し、既存テスター経由の紹介で有料成約を検証する。判断記録・撤退基準は `docs/commercial-launch-roadmap.md` の「Phase 1 集中検証ウィンドウ」セクション参照。
+
 ## 技術スタック
 - Next.js 15 (App Router) / React 19 / TypeScript 5.9
 - Supabase (Auth + PostgreSQL + Storage)

@@ -81,16 +81,16 @@ export function SectionEditor({
       {/* 操作ボタン */}
       <div className="flex items-center gap-1 px-3 pb-2 border-t border-border pt-2">
         <button type="button" onClick={onMoveUp} disabled={isFirst}
-          className="text-xs px-2 py-1.5 rounded-lg hover:bg-accent/5 text-accent disabled:opacity-30 min-h-[36px]">
+          className="text-xs px-2 py-1.5 rounded-lg hover:bg-accent/5 text-accent disabled:opacity-30 min-h-[44px]">
           ↑
         </button>
         <button type="button" onClick={onMoveDown} disabled={isLast}
-          className="text-xs px-2 py-1.5 rounded-lg hover:bg-accent/5 text-accent disabled:opacity-30 min-h-[36px]">
+          className="text-xs px-2 py-1.5 rounded-lg hover:bg-accent/5 text-accent disabled:opacity-30 min-h-[44px]">
           ↓
         </button>
         <div className="flex-1" />
         <button type="button" onClick={onDelete}
-          className="text-xs text-error px-2 py-1.5 rounded-lg hover:bg-error/5 min-h-[36px]">
+          className="text-xs text-error px-2 py-1.5 rounded-lg hover:bg-error/5 min-h-[44px]">
           削除
         </button>
       </div>
@@ -153,13 +153,13 @@ export function SectionEditor({
                         </span>
                       </div>
                       <button type="button" onClick={() => moveField(fi, fi - 1)} disabled={fi === 0}
-                        className="text-xs text-accent px-1 py-1 disabled:opacity-30 min-h-[36px]">↑</button>
+                        className="text-xs text-accent px-1 py-1 disabled:opacity-30 min-h-[44px]">↑</button>
                       <button type="button" onClick={() => moveField(fi, fi + 1)} disabled={fi === section.fields.length - 1}
-                        className="text-xs text-accent px-1 py-1 disabled:opacity-30 min-h-[36px]">↓</button>
+                        className="text-xs text-accent px-1 py-1 disabled:opacity-30 min-h-[44px]">↓</button>
                       <button type="button" onClick={() => setEditingFieldIdx(fi)}
-                        className="text-xs text-accent px-2 py-1 rounded-lg hover:bg-accent/5 min-h-[36px]">編集</button>
+                        className="text-xs text-accent px-2 py-1 rounded-lg hover:bg-accent/5 min-h-[44px]">編集</button>
                       <button type="button" onClick={() => deleteField(fi)}
-                        className="text-xs text-error px-2 py-1 rounded-lg hover:bg-error/5 min-h-[36px]">削除</button>
+                        className="text-xs text-error px-2 py-1 rounded-lg hover:bg-error/5 min-h-[44px]">削除</button>
                     </div>
                   )
                 )}

@@ -173,12 +173,12 @@ export default function BillingPage() {
       {/* おためしプランの制限説明 */}
       {planType === "free" && (
         <div className="bg-surface border border-border rounded-2xl p-5 space-y-2">
-          <h3 className="font-bold text-sm text-text-light">おためしプランの制限</h3>
+          <h3 className="font-bold text-sm text-text-light">おためしプランの目安</h3>
           <ul className="text-sm text-text-light space-y-1.5">
-            <li>顧客 10件まで</li>
-            <li>カルテ 1顧客あたり5件まで</li>
-            <li>予約 月20件まで</li>
-            <li>写真保存・LINE連携・カウンセリングシート・売上分析は利用不可</li>
+            <li>顧客 50人まで</li>
+            <li>カルテ 100件まで</li>
+            <li>予約 月30件まで</li>
+            <li>写真保存・LINE連携・カウンセリングシート・売上分析は含まれません</li>
           </ul>
         </div>
       )}

@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type Stripe from "stripe";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+const REFERRER_REWARD_AMOUNT_JPY = 2980;
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -92,6 +95,18 @@ export async function POST(request: Request) {
       if (updateError) {
         console.error("salon plan_type update エラー:", updateError);
       }
+
+      // 紹介特典（被紹介者側）: trial 付きチェックアウトなら referred_reward_applied_at を記録
+      const referralId = session.metadata?.referral_id;
+      if (referralId && sub.trial_end) {
+        const { error: refError } = await supabase
+          .from("referrals")
+          .update({ referred_reward_applied_at: new Date().toISOString() })
+          .eq("id", referralId);
+        if (refError) {
+          console.error("referrals 被紹介特典更新エラー:", refError);
+        }
+      }
       break;
     }
 
@@ -156,9 +171,94 @@ export async function POST(request: Request) {
       }
       break;
     }
+
+    case "invoice.paid": {
+      // 被紹介者の初回有料請求（trial 終了後）が完了したら、紹介者に 2,980円分のクレジットを付与
+      const invoice = event.data.object as Stripe.Invoice;
+      if (invoice.amount_paid <= 0 || !invoice.customer) break;
+
+      const customerId =
+        typeof invoice.customer === "string"
+          ? invoice.customer
+          : invoice.customer.id;
+
+      // 1. この customer が「被紹介側」で紹介者特典がまだ未付与の referrals を探す
+      const { data: subscription } = await supabase
+        .from("subscriptions")
+        .select("salon_id")
+        .eq("stripe_customer_id", customerId)
+        .single();
+
+      if (!subscription) break;
+
+      const { data: referral } = await supabase
+        .from("referrals")
+        .select("id, referrer_salon_id")
+        .eq("referred_salon_id", subscription.salon_id)
+        .is("referrer_reward_applied_at", null)
+        .maybeSingle();
+
+      if (!referral) break;
+
+      // 2. 紹介者側のサブスク情報を取得
+      await applyReferrerReward(supabase, referral);
+      break;
+    }
   }
 
   return NextResponse.json({ received: true });
+}
+
+/** 紹介者側に 1ヶ月分（2,980円）のクレジットを付与し referrals を更新 */
+async function applyReferrerReward(
+  supabase: SupabaseClient,
+  referral: { id: string; referrer_salon_id: string }
+) {
+  // 紹介者のサブスク情報を取得
+  const { data: referrerSub } = await supabase
+    .from("subscriptions")
+    .select("stripe_customer_id")
+    .eq("salon_id", referral.referrer_salon_id)
+    .single();
+
+  // 紹介者がまだ有料プラン未加入の場合は後で（salon側が checkout するとき）適用するため今回はスキップ
+  // referrer_reward_applied_at は更新しないので、次回 invoice.paid で再チェックされる
+  if (!referrerSub?.stripe_customer_id) {
+    console.log(`紹介者(${referral.referrer_salon_id})は未課金のため特典を保留`);
+    return;
+  }
+
+  try {
+    // Stripe Customer Balance に -2,980 JPY のクレジットを付与（次回請求から自動控除）
+    await getStripe().customers.createBalanceTransaction(
+      referrerSub.stripe_customer_id,
+      {
+        amount: -REFERRER_REWARD_AMOUNT_JPY,
+        currency: "jpy",
+        description: `紹介特典: 1ヶ月無料分クレジット (referral_id=${referral.id})`,
+      }
+    );
+  } catch (err) {
+    console.error("紹介者クレジット付与エラー:", err);
+    return;
+  }
+
+  // referrals テーブルを更新（両者適用済みなら status=rewarded）
+  const now = new Date().toISOString();
+  const { data: current } = await supabase
+    .from("referrals")
+    .select("referred_reward_applied_at")
+    .eq("id", referral.id)
+    .single();
+
+  const bothApplied = !!current?.referred_reward_applied_at;
+  await supabase
+    .from("referrals")
+    .update({
+      referrer_reward_applied_at: now,
+      ...(bothApplied ? { status: "rewarded" } : {}),
+    })
+    .eq("id", referral.id);
 }
 
 /** Stripe のステータスをアプリ内ステータスにマッピング */

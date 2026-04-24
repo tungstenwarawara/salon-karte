@@ -14,7 +14,7 @@ export default function TokushoPage() {
           <tbody className="divide-y divide-border">
             <tr>
               <td className="px-4 py-3 font-medium bg-background w-1/3">事業者名</td>
-              <td className="px-4 py-3">請求があれば遅滞なく開示いたします</td>
+              <td className="px-4 py-3">salon-karte（個人事業）</td>
             </tr>
             <tr>
               <td className="px-4 py-3 font-medium bg-background">所在地</td>
@@ -22,7 +22,7 @@ export default function TokushoPage() {
             </tr>
             <tr>
               <td className="px-4 py-3 font-medium bg-background">電話番号</td>
-              <td className="px-4 py-3">請求があれば遅滞なく開示いたします</td>
+              <td className="px-4 py-3">メールでのお問い合わせのみ対応しております</td>
             </tr>
             <tr>
               <td className="px-4 py-3 font-medium bg-background">メールアドレス</td>
