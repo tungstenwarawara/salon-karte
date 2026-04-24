@@ -277,7 +277,7 @@ function SignupForm() {
           </button>
 
           <p className="text-xs text-text-light text-center">
-            30日間無料。期間終了後は月額2,980円
+            おためしプランで無料スタート。必要になったら月額2,980円にアップグレード
           </p>
         </form>
 

@@ -6,9 +6,9 @@ export type PlanType = "free" | "standard";
 export const PLAN_LIMITS = {
   free: {
     label: "おためしプラン",
-    maxCustomers: 10,
-    maxRecordsPerCustomer: 5,
-    maxAppointmentsPerMonth: 20,
+    maxCustomers: 50,
+    maxRecords: 100,
+    maxAppointmentsPerMonth: 30,
     photoStorage: false,
     lineIntegration: false,
     counselingSheet: false,
@@ -17,7 +17,7 @@ export const PLAN_LIMITS = {
   standard: {
     label: "スタンダードプラン",
     maxCustomers: Infinity,
-    maxRecordsPerCustomer: Infinity,
+    maxRecords: Infinity,
     maxAppointmentsPerMonth: Infinity,
     photoStorage: true,
     lineIntegration: true,

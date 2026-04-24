@@ -6,7 +6,7 @@ import { CtaLink } from "./cta-link";
 const STANDARD_FEATURES = [
   "顧客管理（人数無制限）",
   "施術記録（カルテ）・枚数無制限",
-  "ビフォーアフター写真の保存（5GB）",
+  "ビフォーアフター写真の保存",
   "カルテPDF出力",
   "予約管理（空き時間表示・重複チェック）",
   "LINE連携（リマインド・来店促進）",
@@ -51,7 +51,7 @@ export function PricingSection() {
               <span className="text-5xl md:text-6xl font-bold text-accent">2,980</span>
               <span className="text-text-light">円/月（税込）</span>
             </div>
-            <p className="text-sm text-text-light mt-2">初期費用 0円 ・ いつでも解約OK</p>
+            <p className="text-sm text-text-light mt-2">初期費用 0円 ・ クレジットカード不要 ・ いつでも解約OK</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-6">
             {STANDARD_FEATURES.map((f) => (
@@ -62,12 +62,6 @@ export function PricingSection() {
                 <span className="text-sm text-text-light">{f}</span>
               </div>
             ))}
-          </div>
-          <div className="border-t border-border pt-4 mb-6">
-            <p className="text-xs text-text-light">
-              オプション：写真容量アップ（5GB → 20GB）
-              <strong className="text-text ml-1">+500円/月</strong>
-            </p>
           </div>
           <CtaLink
             href="/signup"
@@ -91,7 +85,7 @@ export function PricingSection() {
             </div>
           </div>
           <p className="text-sm text-text-light leading-relaxed mb-4">
-            まずは試してみたい方向け。顧客10件・カルテ1顧客あたり5件・予約月20件まで。
+            まずは試してみたい方向け。顧客50人・カルテ100件・予約月30件までの目安。
             写真保存・LINE連携・カウンセリングシート・売上分析は含まれません。
           </p>
           <CtaLink

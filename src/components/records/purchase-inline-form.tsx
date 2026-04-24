@@ -132,11 +132,11 @@ export function PurchaseInlineForm({ products, onAdd }: Props) {
         <label className="block text-xs text-text-light">支払方法</label>
         <div className="flex gap-1 bg-background rounded-xl p-0.5">
           <button type="button" onClick={() => setPaymentType("cash")}
-            className={`flex-1 text-center text-xs font-medium py-1.5 rounded-lg transition-colors min-h-[36px] ${paymentType === "cash" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"}`}>
+            className={`flex-1 text-center text-xs font-medium py-1.5 rounded-lg transition-colors min-h-[44px] ${paymentType === "cash" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"}`}>
             現金
           </button>
           <button type="button" onClick={() => setPaymentType("credit")}
-            className={`flex-1 text-center text-xs font-medium py-1.5 rounded-lg transition-colors min-h-[36px] ${paymentType === "credit" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"}`}>
+            className={`flex-1 text-center text-xs font-medium py-1.5 rounded-lg transition-colors min-h-[44px] ${paymentType === "credit" ? "bg-accent text-white shadow-sm" : "text-text-light hover:text-text"}`}>
             クレジット
           </button>
         </div>
