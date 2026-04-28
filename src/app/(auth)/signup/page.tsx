@@ -34,9 +34,9 @@ function SignupForm() {
   const [resendSuccess, setResendSuccess] = useState(false);
   const showCarrierWarning = email.includes("@") && isCarrierEmail(email);
 
-  // ページ表示時に signup_start を送信
+  // ページ表示時に sign_up_start を送信
   useEffect(() => {
-    trackEvent({ name: "signup_start" });
+    trackEvent({ name: "sign_up_start" });
   }, []);
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -60,7 +60,7 @@ function SignupForm() {
     }
 
     setLoading(true);
-    trackEvent({ name: "signup_form_submit" });
+    trackEvent({ name: "sign_up_form_submit" });
 
     try {
       const res = await fetch("/api/auth/signup", {
@@ -84,7 +84,7 @@ function SignupForm() {
       }
 
       // サインアップ成功
-      trackEvent({ name: "signup_complete", params: { method: "email" } });
+      trackEvent({ name: "sign_up_completed", params: { method: "email" } });
 
       // メール確認が必要（通常フロー）
       setEmailSent(true);

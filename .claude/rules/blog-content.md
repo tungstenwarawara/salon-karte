@@ -107,7 +107,7 @@ author: "salon-karte編集部（個人サロンオーナー監修）"
 
 ## 〈中間CTA〉
 
-**[salon-karte を30日間無料で試してみる →](/signup)**
+**[salon-karte を無料ではじめる →](/signup)**
 初期費用0円 / クレジットカード不要 / いつでも解約OK
 
 ## まとめ：〈要点を箇条書き3つ〉
@@ -116,7 +116,7 @@ author: "salon-karte編集部（個人サロンオーナー監修）"
 - ポイント2
 - ポイント3
 
-**[salon-karte を30日間無料で試してみる →](/signup)**
+**[salon-karte を無料ではじめる →](/signup)**
 
 ---
 
@@ -201,7 +201,7 @@ author: "salon-karte編集部（個人サロンオーナー監修）"
 
 ### CTA文言（統一）
 ```markdown
-**[salon-karte を30日間無料で試してみる →](/signup)**
+**[salon-karte を無料ではじめる →](/signup)**
 
 初期費用0円 / クレジットカード不要 / いつでも解約OK
 ```

@@ -18,7 +18,7 @@ function SetupContent() {
   // メール確認完了の計測
   useEffect(() => {
     if (emailConfirmed) {
-      trackEvent({ name: "signup_email_confirmed" });
+      trackEvent({ name: "email_confirmed" });
     }
   }, [emailConfirmed]);
 
