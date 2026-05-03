@@ -54,7 +54,7 @@ export function HolidayCalendarGrid({
           const hasOverride = !!(hourOverrides && cd.dateStr in hourOverrides);
           const hasSettings = cd.isIrregularHoliday || hasOverride;
           const isSelected = cd.dateStr === selectedDateStr;
-          const canInteract = cd.isCurrentMonth && (!cd.isWeeklyHoliday || hasSettings) && (!cd.isPast || hasSettings);
+          const canInteract = cd.isCurrentMonth && (!cd.isPast || hasSettings);
 
           return (
             <button key={cd.dateStr} type="button"

@@ -69,11 +69,18 @@ export function DateScheduleEditor({
     onSetHourOverride(newOpen, newClose);
   };
 
-  const modes: { key: DateMode; label: string; activeClass: string }[] = [
-    { key: "normal", label: "通常営業", activeClass: "bg-emerald-50 text-emerald-700 border-2 border-emerald-300" },
-    { key: "holiday", label: "臨時休業", activeClass: "bg-error/15 text-error border-2 border-error/40" },
-    { key: "custom", label: "時間変更", activeClass: "bg-accent/15 text-accent border-2 border-accent/40" },
-  ];
+  // 曜日定休日（business_hours で is_open: false）の場合は文言を切り替える
+  const isWeeklyHoliday = !defaultSchedule.is_open;
+  const modes: { key: DateMode; label: string; activeClass: string }[] = isWeeklyHoliday
+    ? [
+        { key: "normal", label: "定休のまま", activeClass: "bg-border/60 text-text border-2 border-border" },
+        { key: "custom", label: "この日は営業", activeClass: "bg-accent/15 text-accent border-2 border-accent/40" },
+      ]
+    : [
+        { key: "normal", label: "通常営業", activeClass: "bg-emerald-50 text-emerald-700 border-2 border-emerald-300" },
+        { key: "holiday", label: "臨時休業", activeClass: "bg-error/15 text-error border-2 border-error/40" },
+        { key: "custom", label: "時間変更", activeClass: "bg-accent/15 text-accent border-2 border-accent/40" },
+      ];
 
   return (
     <div className="bg-surface border border-accent/20 rounded-xl p-4 space-y-3 shadow-sm">
@@ -87,7 +94,7 @@ export function DateScheduleEditor({
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className={`grid gap-1.5 ${isWeeklyHoliday ? "grid-cols-2" : "grid-cols-3"}`}>
         {modes.map(({ key, label, activeClass }) => (
           <button key={key} type="button" onClick={() => handleModeChange(key)}
             className={`py-2.5 rounded-xl text-xs font-medium transition-all min-h-[48px] ${
@@ -102,9 +109,13 @@ export function DateScheduleEditor({
         <div className="bg-background rounded-xl p-3 space-y-2.5">
           <TimeSelect label="開店" value={openTime} onChange={(v) => handleTimeChange("open", v)} />
           <TimeSelect label="閉店" value={closeTime} onChange={(v) => handleTimeChange("close", v)} />
-          {defaultSchedule.is_open && (
+          {defaultSchedule.is_open ? (
             <p className="text-[11px] text-text-light pt-0.5">
               通常: {defaultSchedule.open_time} 〜 {defaultSchedule.close_time}
+            </p>
+          ) : (
+            <p className="text-[11px] text-text-light pt-0.5">
+              この日は{dayLabel}曜の定休日ですが、特別に営業します
             </p>
           )}
         </div>
