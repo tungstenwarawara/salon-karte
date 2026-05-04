@@ -153,7 +153,7 @@ export async function GET(request: Request) {
     if (customer.email) {
       const resend = getResendClient();
       if (resend) {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.salonkarte.com";
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://salonkarte.com";
         const cancelUrl = apt.cancel_token ? `${baseUrl}/book/cancel/${apt.cancel_token}` : undefined;
         const changeUrl = apt.cancel_token ? `${baseUrl}/book/change/${apt.cancel_token}` : undefined;
 

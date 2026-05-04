@@ -56,10 +56,9 @@ export async function POST(request: Request) {
     }
 
     // 確認URLを組み立て（Supabase が返す hashed_token を使う）
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
     if (!baseUrl) {
-      console.error("NEXT_PUBLIC_APP_URL / NEXT_PUBLIC_BASE_URL が未設定です");
+      console.error("NEXT_PUBLIC_APP_URL が未設定です");
       return NextResponse.json(
         { error: "サーバー設定エラーが発生しました" },
         { status: 500 }

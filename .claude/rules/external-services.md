@@ -44,7 +44,7 @@
 | ダッシュボード | https://vercel.com/dashboard |
 | ステータスページ | https://www.vercel-status.com/ |
 | MCP接続 | Claude設定画面から接続済み |
-| 環境変数 | `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_BASE_URL` |
+| 環境変数 | `NEXT_PUBLIC_APP_URL` |
 
 #### Hobby プランの制限（商用利用リスク）
 - **商用利用不可**（利用規約: "personal, non-commercial projects only"）
@@ -204,8 +204,7 @@ CRON_SECRET                       # Cron 認証キー
 NEXT_PUBLIC_GA4_ID                # Google Analytics 4 測定ID（設定済み）
 RESEND_API_KEY                    # Resend APIキー（未設定時はメール送信スキップ）
 EMAIL_FROM                        # メール送信元アドレス
-NEXT_PUBLIC_APP_URL               # アプリURL（OGP・SEO用）
-NEXT_PUBLIC_BASE_URL              # ベースURL（開発用）
+NEXT_PUBLIC_APP_URL               # アプリURL（OGP・SEO用、Stripe/Resend/Cron 全リンク生成に使用）
 ```
 
 ---

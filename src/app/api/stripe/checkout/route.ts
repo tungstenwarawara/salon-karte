@@ -36,8 +36,8 @@ export async function POST() {
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/settings/billing?success=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/settings/billing`,
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/settings/billing?success=true`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/settings/billing`,
     metadata: {
       salon_id: salon.id,
       user_id: user.id,

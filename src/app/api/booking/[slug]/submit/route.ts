@@ -233,7 +233,7 @@ export async function POST(
 
   // --- 通知送信（fire-and-forget: 失敗しても予約は成功扱い） ---
   const customerName = `${last_name.trim()} ${first_name.trim()}`;
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${request.headers.get("host")}`;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${request.headers.get("host")}`;
   sendWebBookingNotifications({
     salonId: salon.id,
     salonName: salon.name,

@@ -171,7 +171,7 @@ async function sendCancelNotifications(params: {
       const resend = getResendClient();
       if (!resend) return;
 
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.salonkarte.com";
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://salonkarte.com";
       const bookingUrl = salon.booking_slug ? `${baseUrl}/book/${salon.booking_slug}` : undefined;
 
       const { subject, html } = buildCustomerCancelConfirmationEmail({
