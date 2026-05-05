@@ -4,14 +4,19 @@
  * 使い方:
  *   npx tsx scripts/seed-test-data.ts          # 初回作成（既存なら何もしない）
  *   npx tsx scripts/seed-test-data.ts --reset   # テストデータのみ削除→再作成
+ *   npx tsx scripts/seed-test-data.ts --check   # 安全チェックのみ実行（DB変更なし）
  *
  * 必要な環境変数（.env.local）:
  *   NEXT_PUBLIC_SUPABASE_URL
  *   SUPABASE_SERVICE_ROLE_KEY
  *
- * 安全装置:
- *   - DELETE 対象は固定ID (00000000-0000-0000-0000-000000000001) のテストサロンのみ
- *   - 本番データには絶対に触れない
+ * 安全装置（多層防御）:
+ *   Layer 1: UUID 一致チェック（00000000-0000-0000-0000-000000000001）
+ *   Layer 2: owner_id 一致チェック（00000000-0000-0000-0000-000000000099）
+ *   Layer 3: オーナーメール完全一致チェック（test-salon@salon-karte.dev）
+ *   Layer 4: 本番環境ガード（VERCEL_ENV=production / NODE_ENV=production を拒否）
+ *   Layer 5: 透明ログ — 削除前に「保護対象サロン一覧」を全件出力
+ *   いずれか1層でも違反すれば即中止。本番データに絶対触れない構造。
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -40,10 +45,11 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 });
 
 // ============================================================
-// 固定ID（テストデータ識別用）
+// 固定ID（テストデータ識別用）— このセクションは安全装置の根幹。慎重に変更すること。
 // ============================================================
 const TEST_SALON_ID = "00000000-0000-0000-0000-000000000001";
-const TEST_EMAIL = "test-salon@salonkarte.com";
+const TEST_OWNER_ID = "00000000-0000-0000-0000-000000000099";
+const TEST_EMAIL = "test-salon@salon-karte.dev";
 const TEST_PASSWORD = "TestSalon2026!";
 
 // スタッフ
@@ -124,28 +130,112 @@ const monthsAgo = (n: number) => {
 };
 
 // ============================================================
+// 安全チェック — DB を変更する前に必ず通す
+// ============================================================
+async function verifySafety(): Promise<{ targetExists: boolean }> {
+  console.log("\n[安全チェック] 開始 ─────────────────────────");
+
+  // Layer 4: 本番環境ガード
+  if (process.env.VERCEL_ENV === "production") {
+    throw new Error(
+      "[安全装置] VERCEL_ENV=production を検知。本番環境では実行不可。中止。"
+    );
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "[安全装置] NODE_ENV=production を検知。本番環境では実行不可。中止。"
+    );
+  }
+
+  // Layer 5: 全サロン一覧（透明ログ）
+  const { data: allSalons, error: listError } = await supabase
+    .from("salons")
+    .select("id, name, owner_id");
+  if (listError) {
+    throw new Error(`[安全装置] サロン一覧取得失敗: ${listError.message}`);
+  }
+  if (!allSalons) {
+    throw new Error("[安全装置] サロン一覧が null。中止。");
+  }
+
+  const target = allSalons.find((s) => s.id === TEST_SALON_ID);
+  const others = allSalons.filter((s) => s.id !== TEST_SALON_ID);
+
+  console.log(`[安全チェック] DB 内サロン総数: ${allSalons.length}件`);
+  console.log(`[安全チェック] 削除対象 UUID : ${TEST_SALON_ID}`);
+  console.log(`[安全チェック] 保護対象（${others.length}件、絶対に触れない）:`);
+  for (const s of others) {
+    console.log(`  ✓ ${s.name} (${s.id})`);
+  }
+
+  if (!target) {
+    console.log("[安全チェック] 削除対象サロンは未作成。新規作成のみ実行。");
+    console.log("[安全チェック] OK ───────────────────────────\n");
+    return { targetExists: false };
+  }
+
+  // Layer 1+2: UUID + owner_id 一致チェック
+  if (target.owner_id !== TEST_OWNER_ID) {
+    throw new Error(
+      `[安全装置] サロン ${TEST_SALON_ID} の owner_id が "${target.owner_id}" でテスト用 "${TEST_OWNER_ID}" と一致しません。本番データの可能性。中止。`
+    );
+  }
+
+  // Layer 3: オーナーメール完全一致チェック
+  const { data: userResp, error: userError } =
+    await supabase.auth.admin.getUserById(target.owner_id);
+  if (userError || !userResp?.user) {
+    throw new Error(
+      `[安全装置] オーナー認証ユーザー取得失敗: ${userError?.message ?? "user not found"}`
+    );
+  }
+  if (userResp.user.email !== TEST_EMAIL) {
+    throw new Error(
+      `[安全装置] オーナーメール "${userResp.user.email}" がテスト用 "${TEST_EMAIL}" と一致しません。中止。`
+    );
+  }
+
+  console.log(`[安全チェック] 削除対象サロン名: "${target.name}"`);
+  console.log(`[安全チェック] 削除対象 owner_id: ${target.owner_id} ✓`);
+  console.log(`[安全チェック] 削除対象 email   : ${userResp.user.email} ✓`);
+  console.log("[安全チェック] OK ───────────────────────────\n");
+
+  return { targetExists: true };
+}
+
+// ============================================================
 // メイン処理
 // ============================================================
 async function main() {
   const isReset = process.argv.includes("--reset");
+  const isCheckOnly = process.argv.includes("--check");
 
   console.log("=== テストサロン シードデータ ===");
-  console.log(`モード: ${isReset ? "RESET（削除→再作成）" : "CREATE（初回作成）"}`);
+  console.log(
+    `モード: ${
+      isCheckOnly
+        ? "CHECK（安全チェックのみ、DB変更なし）"
+        : isReset
+          ? "RESET（削除→再作成）"
+          : "CREATE（初回作成）"
+    }`
+  );
   console.log(`サロンID: ${TEST_SALON_ID}`);
 
-  // テストサロンの存在チェック
-  const { data: existingSalon } = await supabase
-    .from("salons")
-    .select("id")
-    .eq("id", TEST_SALON_ID)
-    .single();
+  // 安全チェック（必ず通す）
+  const { targetExists } = await verifySafety();
 
-  if (existingSalon && !isReset) {
+  if (isCheckOnly) {
+    console.log("=== チェックのみで終了（DB は変更されていません） ===");
+    return;
+  }
+
+  if (targetExists && !isReset) {
     console.log("テストサロンは既に存在します。--reset で再作成できます。");
     return;
   }
 
-  if (existingSalon && isReset) {
+  if (targetExists && isReset) {
     console.log("テストサロンを削除中...");
     // 子テーブルから順番に削除（FK制約を尊重）
     await deleteTestData();
@@ -187,11 +277,17 @@ async function ensureAuthUser(): Promise<string> {
   const { data: users } = await supabase.auth.admin.listUsers();
   const existing = users?.users?.find((u) => u.email === TEST_EMAIL);
   if (existing) {
+    if (existing.id !== TEST_OWNER_ID) {
+      throw new Error(
+        `[安全装置] 既存 auth ユーザーの id "${existing.id}" がテスト用 "${TEST_OWNER_ID}" と一致しません。` +
+          `手動でこのユーザーを削除してから再実行してください。中止。`
+      );
+    }
     console.log("Auth ユーザー: 既存を使用");
     return existing.id;
   }
 
-  // 新規作成
+  // 新規作成（UUID は Supabase 側で発行されるため事後検証）
   const { data, error } = await supabase.auth.admin.createUser({
     email: TEST_EMAIL,
     password: TEST_PASSWORD,
@@ -200,6 +296,12 @@ async function ensureAuthUser(): Promise<string> {
   if (error) {
     console.error("Auth ユーザー作成エラー:", error.message);
     process.exit(1);
+  }
+  if (data.user.id !== TEST_OWNER_ID) {
+    console.warn(
+      `[警告] 新規作成 auth ユーザーの id ${data.user.id} は固定値 ${TEST_OWNER_ID} と異なります。` +
+        `seed-test-data.ts の TEST_OWNER_ID を更新するか、手動で UUID を揃えてください。`
+    );
   }
   console.log("Auth ユーザー: 新規作成");
   return data.user.id;
@@ -364,7 +466,7 @@ async function insertStaff(authUserId: string) {
       salon_id: TEST_SALON_ID,
       auth_user_id: null,
       name: "テストスタッフ",
-      email: "test-staff@salonkarte.com",
+      email: "test-staff@salon-karte.dev",
       role: "staff",
       is_active: true,
       default_schedule: {

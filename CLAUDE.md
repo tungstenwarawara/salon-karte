@@ -23,9 +23,14 @@
 - `npm test` — ユニットテスト実行（Vitest）
 - `npm run test:watch` — テスト監視モード
 - `npm run test:coverage` — カバレッジ付きテスト
+- `npm run test:e2e` — E2Eテスト（Playwright、Chromium + iPhone）
+- `npm run test:e2e:ui` — Playwright UI モード（対話的にデバッグ）
+- `npm run test:e2e:check` — テストデータ安全チェックのみ（DB変更なし）
+- `npm run test:e2e:reset` — テストデータをリセットしてから E2E 実行
 - `python3 scripts/check-select-columns.py` — カラム名照合（コミット前必須）
+- `npx tsx scripts/seed-test-data.ts --check` — 安全チェックのみ（DB変更なし、5層防御の動作確認）
 - `npx tsx scripts/seed-test-data.ts` — テストデータ投入（初回）
-- `npx tsx scripts/seed-test-data.ts --reset` — テストデータリセット
+- `npx tsx scripts/seed-test-data.ts --reset` — テストデータリセット（5層防御を経由）
 
 ## コミット前チェック（必須）
 1. `npx tsc --noEmit` パス

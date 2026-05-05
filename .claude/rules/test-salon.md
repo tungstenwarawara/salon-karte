@@ -9,8 +9,14 @@
 ## テストサロン情報
 - サロン名: テストサロン花
 - サロンID: `00000000-0000-0000-0000-000000000001`
-- メールアドレス: `test-salon@salonkarte.com`
+- オーナーID（auth user UUID）: `00000000-0000-0000-0000-000000000099`
+- メールアドレス: `test-salon@salon-karte.dev`
 - パスワード: `TestSalon2026!`
+
+> **重要**: 本番に SEI様のサロン（`17ed3123-244b-43ab-936f-74c422982fb3` / `luica_sazawa@yahoo.co.jp`）が存在し、
+> 名前が「バスト専門店SEI」とテストサロンと混同しやすい。
+> `seed-test-data.ts` は **UUID + owner_id + メール** の3点ホワイトリストで防御済み（5層防御）。
+> 安全チェックのみ実行: `npx tsx scripts/seed-test-data.ts --check`
 
 ## テストサロンへのログイン手順
 1. `preview_start(name: "dev")` で dev server 起動
@@ -33,9 +39,14 @@
 ## テストデータのリセット
 テストデータが壊れた場合:
 ```bash
+# まず安全チェック（DB は変更しない）
+npx tsx scripts/seed-test-data.ts --check
+
+# 問題なければリセット実行
 npx tsx scripts/seed-test-data.ts --reset
 ```
 ※ `--reset` なしで実行すると、テストサロンが既に存在する場合は何もしない
+※ `SUPABASE_SERVICE_ROLE_KEY` を `.env.local` に設定する必要あり
 
 ## 禁止事項
 - 本番アカウント（luica_sazawa, tungstenwarawara 等）でのログイン
