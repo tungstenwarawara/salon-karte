@@ -57,7 +57,6 @@ async function saveAndWait(page: import("@playwright/test").Page) {
     .filter({ hasText: /保存/ });
   await saveBtn.scrollIntoViewIfNeeded();
   await saveBtn.click();
-  // カルテ作成後は /customers/{id} にリダイレクト
   await page.waitForURL(/\/(records|customers)\/[^/]+$/, { timeout: 15_000 });
 }
 
@@ -80,7 +79,6 @@ test.describe("@records カルテ作成", () => {
     await selectMenuByIndex(page, 1);
 
     await expect(page.locator("body")).toContainText(/選択中.*2件/);
-
     await saveAndWait(page);
   });
 
@@ -148,34 +146,41 @@ test.describe("@records カルテ作成", () => {
     await saveAndWait(page);
   });
 
-  test("R-09: 物販セクション — 商品選択", async ({ page }) => {
+  test("R-09: 物販セクション — 商品選択（ProductCombobox）", async ({ page }) => {
     await gotoNewRecord(page);
     await selectCustomer(page, CUSTOMERS.sato.lastName, CUSTOMERS.sato.firstName);
     await selectMenuByIndex(page, 0);
 
+    // 物販セクションを開く
     const purchaseSection = page
       .locator("button[type='button']")
       .filter({ hasText: /物販記録/ });
     await purchaseSection.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
     if (await purchaseSection.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await purchaseSection.click();
       await page.waitForTimeout(500);
     }
 
-    const fromProductBtn = page.locator("button").filter({ hasText: "商品から選ぶ" });
-    if (await fromProductBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await fromProductBtn.click();
+    // 「商品から選ぶ」がデフォルト。ProductCombobox で商品を検索・選択
+    const productSearch = page.getByPlaceholder("商品名で検索...");
+    if (await productSearch.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await productSearch.click();
       await page.waitForTimeout(300);
+      // ドロップダウンリストから最初の商品を選択
+      const firstProduct = page
+        .locator("button[type='button'], li, div[role='option']")
+        .filter({ hasNotText: /商品名で検索|商品から選ぶ|自由入力|物販を追加/ })
+        .first();
+      if (await firstProduct.isVisible({ timeout: 3_000 }).catch(() => false)) {
+        await firstProduct.click();
+        await page.waitForTimeout(300);
+      }
     }
 
-    const productSelect = page.locator("select").filter({ hasText: /商品を選択/ });
-    if (await productSelect.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await productSelect.selectOption({ index: 1 });
-      await page.waitForTimeout(300);
-    }
-
+    // 追加ボタン（canAdd=true ならクリック可能）
     const addBtn = page.locator("button").filter({ hasText: /物販を追加/ });
-    if (await addBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
+    if (await addBtn.isEnabled({ timeout: 3_000 }).catch(() => false)) {
       await addBtn.click();
       await page.waitForTimeout(300);
     }
@@ -188,36 +193,38 @@ test.describe("@records カルテ作成", () => {
     await selectCustomer(page, CUSTOMERS.tanaka.lastName, CUSTOMERS.tanaka.firstName);
     await selectMenuByIndex(page, 0);
 
+    // 物販セクションまでスクロールして開く
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(500);
     const purchaseSection = page
       .locator("button[type='button']")
       .filter({ hasText: /物販記録/ });
-    await purchaseSection.scrollIntoViewIfNeeded();
-    if (await purchaseSection.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await purchaseSection.click();
-      await page.waitForTimeout(500);
-    }
+    await expect(purchaseSection).toBeVisible({ timeout: 5_000 });
+    await purchaseSection.click();
+    await page.waitForTimeout(500);
 
-    const freeBtn = page.locator("button").filter({ hasText: "自由入力" }).first();
-    if (await freeBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await freeBtn.click();
-      await page.waitForTimeout(300);
-    }
+    // 自由入力モードに切替（物販セクション内の最後の「自由入力」ボタン）
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(300);
+    const freeBtn = page
+      .locator("button[type='button']")
+      .filter({ hasText: /^自由入力$/ })
+      .last();
+    await expect(freeBtn).toBeVisible({ timeout: 3_000 });
+    await freeBtn.click();
+    await page.waitForTimeout(500);
 
+    // 商品名入力（自由入力モードのplaceholder）
     const nameInput = page.getByPlaceholder("商品名");
-    if (await nameInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await nameInput.fill("E2Eテスト商品");
-    }
+    await expect(nameInput).toBeVisible({ timeout: 3_000 });
+    await nameInput.fill("E2Eテスト商品");
+    await page.waitForTimeout(200);
 
-    const priceInput = page.getByPlaceholder("0").first();
-    if (await priceInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await priceInput.fill("3000");
-    }
-
+    // 追加ボタン（商品名入力でcanAdd=trueになる）
     const addBtn = page.locator("button").filter({ hasText: /物販を追加/ });
-    if (await addBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await addBtn.click();
-      await page.waitForTimeout(300);
-    }
+    await expect(addBtn).toBeEnabled({ timeout: 3_000 });
+    await addBtn.click();
+    await page.waitForTimeout(300);
 
     await saveAndWait(page);
   });
@@ -249,7 +256,6 @@ test.describe("@records カルテ作成", () => {
     await submitBtn.scrollIntoViewIfNeeded();
     await submitBtn.click();
 
-    // クリック直後に disabled or 「保存中...」
     const isDisabledOrLoading = await Promise.race([
       submitBtn.isDisabled().then((d) => d),
       submitBtn.textContent().then((t) => t?.includes("保存中")),
