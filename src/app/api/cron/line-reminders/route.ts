@@ -20,6 +20,7 @@ export async function GET(request: Request) {
   }
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${cronSecret}`) {
+    console.error("Cron認証失敗: Authorizationヘッダー不一致");
     return NextResponse.json({ error: "認証エラー" }, { status: 401 });
   }
 

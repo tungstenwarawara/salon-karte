@@ -4,6 +4,12 @@ import { updateSession } from "@/lib/supabase/middleware";
 const CANONICAL_HOST = "salonkarte.com";
 
 export async function middleware(request: NextRequest) {
+  // Vercel Cron はリダイレクト対象外（Authorizationヘッダーが失われるため）
+  const pathname = request.nextUrl.pathname;
+  if (pathname.startsWith("/api/cron/")) {
+    return await updateSession(request);
+  }
+
   // 旧ドメインからカノニカルドメインへリダイレクト
   const host = request.headers.get("host") ?? "";
   if (

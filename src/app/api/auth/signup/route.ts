@@ -106,6 +106,11 @@ export async function POST(request: Request) {
       }
     } else {
       console.warn("RESEND_API_KEY 未設定のため確認メールをスキップしました");
+      return NextResponse.json({
+        success: true,
+        emailSent: false,
+        message: "アカウントは作成されましたが、メール設定が未構成のため確認メールを送信できませんでした。",
+      });
     }
 
     return NextResponse.json({ success: true, emailSent: true });
