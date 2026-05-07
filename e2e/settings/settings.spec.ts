@@ -32,7 +32,7 @@ test.describe("@settings 設定ページ", () => {
     await page.getByPlaceholder(/例: フェイシャルエステ/).fill(menuName);
 
     // 所要時間
-    const durationInput = page.getByPlaceholder("60");
+    const durationInput = page.getByPlaceholder("60", { exact: true });
     if (await durationInput.isVisible()) {
       await durationInput.fill("30");
     }

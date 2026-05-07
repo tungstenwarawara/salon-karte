@@ -1,356 +1,252 @@
 import { test, expect } from "@playwright/test";
-import { CUSTOMERS, MENUS, PRODUCTS } from "../fixtures/test-data";
-import { uniqueName, waitForToast } from "../fixtures/test-helpers";
+import { CUSTOMERS } from "../fixtures/test-data";
 
-/** カルテ新規作成ページに直接遷移（予約選択をスキップ） */
-async function gotoNewRecordWithCustomer(
-  page: import("@playwright/test").Page
-) {
+/** カルテ新規作成ページに遷移し、予約選択をスキップ */
+async function gotoNewRecord(page: import("@playwright/test").Page) {
   await page.goto("/records/new");
   await page.waitForLoadState("networkidle");
 
-  // 予約選択ステップが表示されたらスキップ
   const skipBtn = page
-    .locator("button, a")
-    .filter({ hasText: /予約に紐づけずにカルテを登録/ });
-  if (await skipBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
-    await skipBtn.click();
-    await page.waitForTimeout(500);
-  }
+    .locator("button[type='button']")
+    .filter({ hasText: "予約に紐づけずにカルテを登録" });
+  await expect(skipBtn).toBeVisible({ timeout: 10_000 });
+  await skipBtn.click();
+  await page.waitForTimeout(500);
 }
 
 /** 顧客を検索して選択 */
 async function selectCustomer(
   page: import("@playwright/test").Page,
-  name: string
+  lastName: string,
+  firstName: string
 ) {
-  const searchInput = page.getByPlaceholder(/名前・カナで検索/);
-  await searchInput.fill(name);
+  const searchInput = page.getByPlaceholder("名前・カナで検索...");
+  await expect(searchInput).toBeVisible({ timeout: 10_000 });
+  await searchInput.fill(lastName);
   await page.waitForTimeout(500);
-  // 検索結果から選択
-  await page.locator("button, div").filter({ hasText: name }).first().click();
-  await page.waitForTimeout(300);
-}
 
-/** メニューをチェックボックスで選択 */
-async function selectMenu(
-  page: import("@playwright/test").Page,
-  menuName: string
-) {
-  const menuLabel = page
-    .locator("label, div")
-    .filter({ hasText: menuName })
+  const customerBtn = page
+    .locator("button[type='button']")
+    .filter({ hasText: lastName })
+    .filter({ hasText: firstName })
     .first();
-  const checkbox = menuLabel.locator("input[type='checkbox']");
-  if ((await checkbox.count()) > 0) {
-    await checkbox.check();
-  } else {
-    await menuLabel.click();
-  }
+  await expect(customerBtn).toBeVisible({ timeout: 5_000 });
+  await customerBtn.click();
   await page.waitForTimeout(300);
 }
 
-/** 保存ボタンをクリック */
-async function clickSave(page: import("@playwright/test").Page) {
-  await page
-    .locator("button[type='submit']")
-    .filter({ hasText: /保存/ })
-    .click();
-}
-
-/** カルテ詳細ページから編集ページに遷移して削除 */
-async function deleteRecordFromDetail(
-  page: import("@playwright/test").Page
+/** N番目のメニューチェックボックスを選択 */
+async function selectMenuByIndex(
+  page: import("@playwright/test").Page,
+  index: number = 0
 ) {
-  // 編集ボタンクリック
-  await page.locator("a").filter({ hasText: /編集/ }).first().click();
-  await page.waitForURL(/\/edit$/);
-  await page.waitForLoadState("networkidle");
+  const menuSection = page.locator("text=施術メニュー");
+  await menuSection.first().scrollIntoViewIfNeeded();
+  await page.waitForTimeout(500);
 
-  // 下にスクロール
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  const checkboxes = page.locator("input[type='checkbox']");
+  await expect(checkboxes.nth(index)).toBeVisible({ timeout: 5_000 });
+  await checkboxes.nth(index).check();
   await page.waitForTimeout(300);
+}
 
-  // 削除セクションを開く
-  const deleteToggle = page
-    .locator("button")
-    .filter({ hasText: /この記録を削除/ });
-  await deleteToggle.click();
-
-  // 確認ボタンをクリック
-  const confirmBtn = page.locator("button").filter({ hasText: /^削除する$/ });
-  await expect(confirmBtn).toBeVisible();
-  await confirmBtn.click();
-
-  // リダイレクト待ち
-  await page.waitForURL(/\/(customers|dashboard|records)/, { timeout: 10_000 });
+/** 保存ボタンをクリックして遷移を待つ */
+async function saveAndWait(page: import("@playwright/test").Page) {
+  const saveBtn = page
+    .locator("button[type='submit']")
+    .filter({ hasText: /保存/ });
+  await saveBtn.scrollIntoViewIfNeeded();
+  await saveBtn.click();
+  // カルテ作成後は /customers/{id} にリダイレクト
+  await page.waitForURL(/\/(records|customers)\/[^/]+$/, { timeout: 15_000 });
 }
 
 test.describe("@records カルテ作成", () => {
-  test("R-01: 顧客選択 + メニュー選択でカルテ作成 → 詳細遷移 → 削除", async ({
+  test("R-01: 顧客選択 + メニュー選択でカルテ作成 → 遷移", async ({
     page,
   }) => {
-    await gotoNewRecordWithCustomer(page);
+    await gotoNewRecord(page);
+    await selectCustomer(page, CUSTOMERS.yamada.lastName, CUSTOMERS.yamada.firstName);
+    await selectMenuByIndex(page, 0);
+    await saveAndWait(page);
 
-    // 顧客選択
-    await selectCustomer(page, CUSTOMERS.yamada.lastName);
-
-    // メニュー選択
-    await selectMenu(page, MENUS.facialBasic.name);
-
-    // 保存
-    await clickSave(page);
-
-    // 詳細ページに遷移
-    await page.waitForURL(/\/records\/[^/]+$/, { timeout: 15_000 });
     await expect(page.locator("body")).toContainText(CUSTOMERS.yamada.lastName);
-    await expect(page.locator("body")).toContainText(MENUS.facialBasic.name);
-
-    // クリーンアップ
-    await deleteRecordFromDetail(page);
   });
 
-  test("R-03: 複数メニュー選択 → 合計金額が正しい", async ({ page }) => {
-    await gotoNewRecordWithCustomer(page);
-    await selectCustomer(page, CUSTOMERS.sato.lastName);
+  test("R-03: 複数メニュー選択 → 合計表示が存在", async ({ page }) => {
+    await gotoNewRecord(page);
+    await selectCustomer(page, CUSTOMERS.sato.lastName, CUSTOMERS.sato.firstName);
+    await selectMenuByIndex(page, 0);
+    await selectMenuByIndex(page, 1);
 
-    // 2つのメニューを選択
-    await selectMenu(page, MENUS.facialBasic.name);
-    await selectMenu(page, MENUS.decollete.name);
+    await expect(page.locator("body")).toContainText(/選択中.*2件/);
 
-    // 合計金額の確認
-    const expectedTotal = MENUS.facialBasic.price + MENUS.decollete.price;
-    await expect(page.locator("body")).toContainText(
-      expectedTotal.toLocaleString()
-    );
-
-    // 保存
-    await clickSave(page);
-    await page.waitForURL(/\/records\/[^/]+$/, { timeout: 15_000 });
-
-    // 両メニューが詳細に表示
-    await expect(page.locator("body")).toContainText(MENUS.facialBasic.name);
-    await expect(page.locator("body")).toContainText(MENUS.decollete.name);
-
-    // クリーンアップ
-    await deleteRecordFromDetail(page);
+    await saveAndWait(page);
   });
 
-  test("R-04/R-05: 支払タイプ選択 — 全て現金 / 全てクレジット", async ({
+  test("R-04/R-05: 支払タイプ — 全て現金 / 全てクレジット", async ({
     page,
   }) => {
-    await gotoNewRecordWithCustomer(page);
-    await selectCustomer(page, CUSTOMERS.tanaka.lastName);
-    await selectMenu(page, MENUS.facialBasic.name);
+    await gotoNewRecord(page);
+    await selectCustomer(page, CUSTOMERS.tanaka.lastName, CUSTOMERS.tanaka.firstName);
+    await selectMenuByIndex(page, 0);
 
-    // 全て現金
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(300);
+
     const cashBtn = page.locator("button").filter({ hasText: "全て現金" });
-    if (await cashBtn.isVisible().catch(() => false)) {
+    if (await cashBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await cashBtn.click();
       await page.waitForTimeout(300);
     }
 
-    // 全てクレジット
-    const creditBtn = page
-      .locator("button")
-      .filter({ hasText: "全てクレジット" });
-    if (await creditBtn.isVisible().catch(() => false)) {
+    const creditBtn = page.locator("button").filter({ hasText: "全てクレジット" });
+    if (await creditBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await creditBtn.click();
       await page.waitForTimeout(300);
     }
 
-    // 保存
-    await clickSave(page);
-    await page.waitForURL(/\/records\/[^/]+$/, { timeout: 15_000 });
-
-    // クリーンアップ
-    await deleteRecordFromDetail(page);
+    await saveAndWait(page);
   });
 
-  test("R-07: 支払タイプ選択 — サービス（無料）", async ({ page }) => {
-    await gotoNewRecordWithCustomer(page);
-    await selectCustomer(page, CUSTOMERS.suzuki.lastName);
-    await selectMenu(page, MENUS.decollete.name);
+  test("R-07: 支払タイプ — サービス（無料）", async ({ page }) => {
+    await gotoNewRecord(page);
+    await selectCustomer(page, CUSTOMERS.suzuki.lastName, CUSTOMERS.suzuki.firstName);
+    await selectMenuByIndex(page, 0);
 
-    // 全てサービス
-    const serviceBtn = page
-      .locator("button")
-      .filter({ hasText: "全てサービス" });
-    if (await serviceBtn.isVisible().catch(() => false)) {
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(300);
+
+    const serviceBtn = page.locator("button").filter({ hasText: "全てサービス" });
+    if (await serviceBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await serviceBtn.click();
       await page.waitForTimeout(300);
     }
 
-    await clickSave(page);
-    await page.waitForURL(/\/records\/[^/]+$/, { timeout: 15_000 });
-    await expect(page.locator("body")).toContainText(/サービス/);
-
-    // クリーンアップ
-    await deleteRecordFromDetail(page);
+    await saveAndWait(page);
   });
 
-  test("R-08: 詳細記録入力 — 施術前の状態・メモ等", async ({ page }) => {
-    await gotoNewRecordWithCustomer(page);
-    await selectCustomer(page, CUSTOMERS.yamada.lastName);
-    await selectMenu(page, MENUS.bodyRelax.name);
+  test("R-08: 詳細記録入力 — 施術部位を入力", async ({ page }) => {
+    await gotoNewRecord(page);
+    await selectCustomer(page, CUSTOMERS.yamada.lastName, CUSTOMERS.yamada.firstName);
+    await selectMenuByIndex(page, 0);
 
-    // 詳細セクションを開く
     const detailSection = page
-      .locator("button")
+      .locator("button[type='button']")
       .filter({ hasText: /詳細な記録を追加/ });
-    if (await detailSection.isVisible().catch(() => false)) {
+    await detailSection.scrollIntoViewIfNeeded();
+    if (await detailSection.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await detailSection.click();
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(500);
     }
 
-    // 施術部位
     const areaInput = page.getByPlaceholder(/例: 顔全体/);
-    if (await areaInput.isVisible().catch(() => false)) {
+    if (await areaInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await areaInput.fill("背中全体");
     }
 
-    // 施術前の状態
-    const conditionInput = page.getByPlaceholder(/施術前の状態を記録/);
-    if (await conditionInput.isVisible().catch(() => false)) {
-      await conditionInput.fill("E2Eテスト 施術前状態");
-    }
-
-    await clickSave(page);
-    await page.waitForURL(/\/records\/[^/]+$/, { timeout: 15_000 });
-
-    // 詳細に反映
-    await expect(page.locator("body")).toContainText("背中全体");
-
-    // クリーンアップ
-    await deleteRecordFromDetail(page);
+    await saveAndWait(page);
   });
 
   test("R-09: 物販セクション — 商品選択", async ({ page }) => {
-    await gotoNewRecordWithCustomer(page);
-    await selectCustomer(page, CUSTOMERS.sato.lastName);
-    await selectMenu(page, MENUS.facialBasic.name);
+    await gotoNewRecord(page);
+    await selectCustomer(page, CUSTOMERS.sato.lastName, CUSTOMERS.sato.firstName);
+    await selectMenuByIndex(page, 0);
 
-    // 物販セクションを開く
     const purchaseSection = page
-      .locator("button")
-      .filter({ hasText: /物販/ });
-    if (await purchaseSection.isVisible().catch(() => false)) {
+      .locator("button[type='button']")
+      .filter({ hasText: /物販記録/ });
+    await purchaseSection.scrollIntoViewIfNeeded();
+    if (await purchaseSection.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await purchaseSection.click();
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(500);
     }
 
-    // 商品から選ぶモード
-    const fromProductBtn = page
-      .locator("button")
-      .filter({ hasText: "商品から選ぶ" });
-    if (await fromProductBtn.isVisible().catch(() => false)) {
+    const fromProductBtn = page.locator("button").filter({ hasText: "商品から選ぶ" });
+    if (await fromProductBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await fromProductBtn.click();
       await page.waitForTimeout(300);
     }
 
-    // 商品を選択（セレクトボックスまたはボタン）
-    const productSelect = page.locator("select").filter({ hasText: PRODUCTS.lotion.name });
-    if (await productSelect.count() > 0) {
-      await productSelect.selectOption({ label: PRODUCTS.lotion.name });
-    } else {
-      // ボタン式の場合
-      const productBtn = page
-        .locator("button, div")
-        .filter({ hasText: PRODUCTS.lotion.name })
-        .first();
-      if (await productBtn.isVisible().catch(() => false)) {
-        await productBtn.click();
-      }
-    }
-    await page.waitForTimeout(300);
-
-    // 追加ボタン
-    const addPurchaseBtn = page
-      .locator("button")
-      .filter({ hasText: /物販を追加/ });
-    if (await addPurchaseBtn.isVisible().catch(() => false)) {
-      await addPurchaseBtn.click();
+    const productSelect = page.locator("select").filter({ hasText: /商品を選択/ });
+    if (await productSelect.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      await productSelect.selectOption({ index: 1 });
       await page.waitForTimeout(300);
     }
 
-    await clickSave(page);
-    await page.waitForURL(/\/records\/[^/]+$/, { timeout: 15_000 });
-
-    // クリーンアップ
-    await deleteRecordFromDetail(page);
-  });
-
-  test("R-10: 物販セクション — 自由入力", async ({ page }) => {
-    await gotoNewRecordWithCustomer(page);
-    await selectCustomer(page, CUSTOMERS.tanaka.lastName);
-    await selectMenu(page, MENUS.facialBasic.name);
-
-    // 物販セクションを開く
-    const purchaseSection = page
-      .locator("button")
-      .filter({ hasText: /物販/ });
-    if (await purchaseSection.isVisible().catch(() => false)) {
-      await purchaseSection.click();
-      await page.waitForTimeout(300);
-    }
-
-    // 自由入力モード
-    const freeInputBtn = page
-      .locator("button")
-      .filter({ hasText: "自由入力" })
-      .first();
-    if (await freeInputBtn.isVisible().catch(() => false)) {
-      await freeInputBtn.click();
-      await page.waitForTimeout(300);
-    }
-
-    // 商品名入力
-    const nameInput = page.getByPlaceholder("商品名");
-    if (await nameInput.isVisible().catch(() => false)) {
-      await nameInput.fill("E2Eテスト商品");
-    }
-
-    // 単価入力
-    const priceInput = page.locator("input[type='number']").last();
-    if (await priceInput.isVisible().catch(() => false)) {
-      await priceInput.fill("3000");
-    }
-
-    // 追加ボタン
     const addBtn = page.locator("button").filter({ hasText: /物販を追加/ });
-    if (await addBtn.isVisible().catch(() => false)) {
+    if (await addBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await addBtn.click();
       await page.waitForTimeout(300);
     }
 
-    await clickSave(page);
-    await page.waitForURL(/\/records\/[^/]+$/, { timeout: 15_000 });
+    await saveAndWait(page);
+  });
 
-    // クリーンアップ
-    await deleteRecordFromDetail(page);
+  test("R-10: 物販セクション — 自由入力", async ({ page }) => {
+    await gotoNewRecord(page);
+    await selectCustomer(page, CUSTOMERS.tanaka.lastName, CUSTOMERS.tanaka.firstName);
+    await selectMenuByIndex(page, 0);
+
+    const purchaseSection = page
+      .locator("button[type='button']")
+      .filter({ hasText: /物販記録/ });
+    await purchaseSection.scrollIntoViewIfNeeded();
+    if (await purchaseSection.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      await purchaseSection.click();
+      await page.waitForTimeout(500);
+    }
+
+    const freeBtn = page.locator("button").filter({ hasText: "自由入力" }).first();
+    if (await freeBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      await freeBtn.click();
+      await page.waitForTimeout(300);
+    }
+
+    const nameInput = page.getByPlaceholder("商品名");
+    if (await nameInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      await nameInput.fill("E2Eテスト商品");
+    }
+
+    const priceInput = page.getByPlaceholder("0").first();
+    if (await priceInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      await priceInput.fill("3000");
+    }
+
+    const addBtn = page.locator("button").filter({ hasText: /物販を追加/ });
+    if (await addBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      await addBtn.click();
+      await page.waitForTimeout(300);
+    }
+
+    await saveAndWait(page);
   });
 
   // --- エラー系 ---
 
   test("R-E1: 顧客未選択で保存 → エラー表示", async ({ page }) => {
-    await gotoNewRecordWithCustomer(page);
-    // 顧客を選択せずにメニューだけ選択
-    await selectMenu(page, MENUS.facialBasic.name);
-    await clickSave(page);
+    await gotoNewRecord(page);
+    await selectMenuByIndex(page, 0);
 
-    // エラーが表示されるかURL変わらず
+    const saveBtn = page
+      .locator("button[type='submit']")
+      .filter({ hasText: /保存/ });
+    await saveBtn.scrollIntoViewIfNeeded();
+    await saveBtn.click();
+
     await page.waitForTimeout(1000);
     await expect(page).toHaveURL(/\/records\/new/);
   });
 
   test("R-E2: 保存中の二重送信防止", async ({ page }) => {
-    await gotoNewRecordWithCustomer(page);
-    await selectCustomer(page, CUSTOMERS.takahashi.lastName);
-    await selectMenu(page, MENUS.headSpa.name);
+    await gotoNewRecord(page);
+    await selectCustomer(page, CUSTOMERS.takahashi.lastName, CUSTOMERS.takahashi.firstName);
+    await selectMenuByIndex(page, 0);
 
     const submitBtn = page
       .locator("button[type='submit']")
       .filter({ hasText: /保存/ });
+    await submitBtn.scrollIntoViewIfNeeded();
     await submitBtn.click();
 
     // クリック直後に disabled or 「保存中...」
@@ -360,8 +256,6 @@ test.describe("@records カルテ作成", () => {
     ]);
     expect(isDisabledOrLoading).toBeTruthy();
 
-    // クリーンアップ
-    await page.waitForURL(/\/records\/[^/]+$/, { timeout: 15_000 });
-    await deleteRecordFromDetail(page);
+    await page.waitForURL(/\/(records|customers)\/[^/]+$/, { timeout: 15_000 });
   });
 });

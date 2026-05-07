@@ -3,10 +3,13 @@ import { COUNSELING } from "../fixtures/test-data";
 
 /**
  * カウンセリングシート公開ページテスト
- * 認証不要のページ
+ * 認証不要。SUPABASE_SERVICE_ROLE_KEY が必要（Server Component が admin client を使う）。
  */
 
+const skipIfNoServiceKey = !process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 test.describe("@counseling カウンセリング公開ページ", () => {
+  test.skip(() => skipIfNoServiceKey, "SUPABASE_SERVICE_ROLE_KEY が未設定のためスキップ");
   test("CS-01: 回答フォーム表示 — pending状態のトークン", async ({
     browser,
     baseURL,

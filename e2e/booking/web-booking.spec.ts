@@ -3,10 +3,16 @@ import { TEST_SALON, MENUS } from "../fixtures/test-data";
 
 /**
  * Web予約の公開ページテスト
- * 認証不要のページなので storageState を空にして実行
+ * 認証不要のページ。SUPABASE_SERVICE_ROLE_KEY が必要（booking APIが使う）。
+ * 環境変数が未設定の場合、サーバーエラーになるためテスト全体をスキップする。
  */
 
+// SERVICE_ROLE_KEY が設定されていない場合はスキップ
+const skipIfNoServiceKey = !process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 test.describe("@booking Web予約フォーム", () => {
+  test.skip(() => skipIfNoServiceKey, "SUPABASE_SERVICE_ROLE_KEY が未設定のためスキップ");
+
   test("B-01: 予約フォーム表示 — サロン名・メニュー一覧", async ({
     browser,
     baseURL,
