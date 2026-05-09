@@ -14,7 +14,11 @@ export default function TokushoPage() {
           <tbody className="divide-y divide-border">
             <tr>
               <td className="px-4 py-3 font-medium bg-background w-1/3">事業者名</td>
-              <td className="px-4 py-3">salon-karte（個人事業）</td>
+              <td className="px-4 py-3">Mikkabouzu Lab（屋号: salon-karte / 個人事業）</td>
+            </tr>
+            <tr>
+              <td className="px-4 py-3 font-medium bg-background">運営責任者</td>
+              <td className="px-4 py-3">藤原 由大</td>
             </tr>
             <tr>
               <td className="px-4 py-3 font-medium bg-background">所在地</td>
