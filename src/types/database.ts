@@ -1444,6 +1444,16 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      auth_user_lookup_by_email: {
+        Args: {
+          p_email: string;
+        };
+        Returns: {
+          id: string;
+          email: string;
+          email_confirmed_at: string | null;
+        }[];
+      };
       get_lapsed_customers: {
         Args: {
           p_salon_id: string;

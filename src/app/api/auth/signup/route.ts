@@ -22,6 +22,18 @@ export async function POST(request: Request) {
       );
     }
 
+    // Supabase 側の Password requirements (Lowercase / Uppercase / digits) と一致させる
+    // クライアント検証を通り抜けた場合の最終ガード。サーバー側で日本語エラーを返す。
+    if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      return NextResponse.json(
+        {
+          error:
+            "パスワードは英小文字・英大文字・数字をそれぞれ1文字以上含めてください",
+        },
+        { status: 400 }
+      );
+    }
+
     const admin = createAdminClient();
 
     // Admin API で確認リンクを生成（メール送信はしない）
@@ -41,10 +53,18 @@ export async function POST(request: Request) {
     if (linkError) {
       console.error("サインアップリンク生成エラー:", linkError);
 
-      // よくあるエラーを日本語化
-      if (linkError.message?.includes("already registered")) {
+      // 重複メール検出: Supabase は code "email_exists" or message に "already registered" / "exists" を返す
+      const errorCode = (linkError as { code?: string }).code;
+      const isDuplicate =
+        errorCode === "email_exists" ||
+        linkError.message?.toLowerCase().includes("already registered") ||
+        linkError.message?.toLowerCase().includes("already exists") ||
+        linkError.message?.toLowerCase().includes("user already") ||
+        linkError.message?.toLowerCase().includes("email exists");
+
+      if (isDuplicate) {
         return NextResponse.json(
-          { error: "このメールアドレスは既に登録されています" },
+          { error: "このメールアドレスは既に登録されています。ログインページからお試しください" },
           { status: 409 }
         );
       }

@@ -7,6 +7,20 @@ import { createClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/supabase/auth-errors";
 import { BrandLogo } from "@/components/ui/brand-logo";
 
+/** Supabase 側の Password requirements (Lowercase / Uppercase / digits) と一致 */
+type PasswordChecks = { length: boolean; lowercase: boolean; uppercase: boolean; digit: boolean };
+function checkPassword(pw: string): PasswordChecks {
+  return {
+    length: pw.length >= 8,
+    lowercase: /[a-z]/.test(pw),
+    uppercase: /[A-Z]/.test(pw),
+    digit: /[0-9]/.test(pw),
+  };
+}
+function allChecksPass(c: PasswordChecks): boolean {
+  return c.length && c.lowercase && c.uppercase && c.digit;
+}
+
 function UpdatePasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -15,6 +29,10 @@ function UpdatePasswordForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const pwChecks = checkPassword(password);
+  const pwAllPass = allChecksPass(pwChecks);
+  const showPwHint = passwordFocused || (password.length > 0 && !pwAllPass);
 
   // 招待フローかパスワードリセットかを判定
   const isInvite = searchParams.get("invite") === "1";
@@ -60,8 +78,10 @@ function UpdatePasswordForm() {
     e.preventDefault();
     setError("");
 
-    if (password.length < 8) {
-      setError("パスワードは8文字以上で入力してください");
+    if (!allChecksPass(checkPassword(password))) {
+      setError(
+        "パスワードは8文字以上で、英小文字・英大文字・数字をそれぞれ1文字以上含めてください",
+      );
       return;
     }
 
@@ -122,10 +142,37 @@ function UpdatePasswordForm() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onFocus={() => setPasswordFocused(true)}
+              onBlur={() => setPasswordFocused(false)}
               required
-              placeholder="8文字以上"
+              placeholder="8文字以上・英大文字・英小文字・数字を含む"
+              aria-describedby="update-password-requirements"
               className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             />
+            <ul
+              id="update-password-requirements"
+              className={`mt-2 space-y-1 text-xs transition-opacity ${
+                showPwHint ? "opacity-100" : "opacity-0 h-0 overflow-hidden"
+              }`}
+              aria-live="polite"
+            >
+              {[
+                { ok: pwChecks.length, label: "8文字以上" },
+                { ok: pwChecks.lowercase, label: "英小文字（a〜z）を含む" },
+                { ok: pwChecks.uppercase, label: "英大文字（A〜Z）を含む" },
+                { ok: pwChecks.digit, label: "数字（0〜9）を含む" },
+              ].map((item) => (
+                <li
+                  key={item.label}
+                  className={`flex items-center gap-1.5 ${
+                    item.ok ? "text-green-600" : "text-text-light"
+                  }`}
+                >
+                  <span aria-hidden="true">{item.ok ? "✓" : "・"}</span>
+                  <span>{item.label}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
           <div>

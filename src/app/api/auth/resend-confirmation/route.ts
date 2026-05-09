@@ -17,17 +17,22 @@ export async function POST(request: Request) {
     const admin = createAdminClient();
 
     // ユーザーが存在し、未確認であることを確認
-    const { data: users, error: listError } =
-      await admin.auth.admin.listUsers();
-    if (listError) {
-      console.error("ユーザー一覧取得エラー:", listError);
+    // SECURITY DEFINER の RPC で auth.users を email でインデックス検索する
+    // (旧実装の listUsers() 全件取得は perPage=1000 を超えると壊れるため廃止)
+    const { data: lookupRows, error: lookupError } = await admin.rpc(
+      "auth_user_lookup_by_email",
+      { p_email: email }
+    );
+
+    if (lookupError) {
+      console.error("auth_user_lookup_by_email エラー:", lookupError);
       return NextResponse.json(
         { error: "サーバーエラーが発生しました" },
         { status: 500 }
       );
     }
 
-    const user = users.users.find((u) => u.email === email);
+    const user = Array.isArray(lookupRows) ? lookupRows[0] : null;
     if (!user) {
       // セキュリティ: ユーザーの存在を漏らさない
       return NextResponse.json({ success: true });

@@ -20,6 +20,30 @@ function isCarrierEmail(email: string): boolean {
   return CARRIER_DOMAINS.some((d) => domain === d);
 }
 
+/**
+ * パスワード要件のリアルタイム検証結果
+ * Supabase 側の設定（最低8文字 + Lowercase / Uppercase / digits 必須）と一致させる
+ */
+type PasswordChecks = {
+  length: boolean;
+  lowercase: boolean;
+  uppercase: boolean;
+  digit: boolean;
+};
+
+function checkPassword(pw: string): PasswordChecks {
+  return {
+    length: pw.length >= 8,
+    lowercase: /[a-z]/.test(pw),
+    uppercase: /[A-Z]/.test(pw),
+    digit: /[0-9]/.test(pw),
+  };
+}
+
+function allChecksPass(c: PasswordChecks): boolean {
+  return c.length && c.lowercase && c.uppercase && c.digit;
+}
+
 function SignupForm() {
   const searchParams = useSearchParams();
   const refCode = searchParams.get("ref") || "";
@@ -32,7 +56,12 @@ function SignupForm() {
   const [agreed, setAgreed] = useState(false);
   const [resending, setResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
   const showCarrierWarning = email.includes("@") && isCarrierEmail(email);
+  const pwChecks = checkPassword(password);
+  const pwAllPass = allChecksPass(pwChecks);
+  // パスワード要件ヒントの表示判定: フォーカス中 OR 入力済みで未充足
+  const showPwHint = passwordFocused || (password.length > 0 && !pwAllPass);
 
   // ページ表示時に signup_start を送信
   useEffect(() => {
@@ -43,8 +72,10 @@ function SignupForm() {
     e.preventDefault();
     setError("");
 
-    if (password.length < 8) {
-      setError("パスワードは8文字以上で入力してください");
+    if (!allChecksPass(checkPassword(password))) {
+      setError(
+        "パスワードは8文字以上で、英小文字・英大文字・数字をそれぞれ1文字以上含めてください",
+      );
       return;
     }
 
@@ -230,10 +261,38 @@ function SignupForm() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onFocus={() => setPasswordFocused(true)}
+              onBlur={() => setPasswordFocused(false)}
               required
-              placeholder="8文字以上"
+              placeholder="8文字以上・英大文字・英小文字・数字を含む"
+              aria-describedby="password-requirements"
               className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
             />
+            {/* パスワード要件チェックリスト（フォーカス中 or 入力済み未充足のとき表示） */}
+            <ul
+              id="password-requirements"
+              className={`mt-2 space-y-1 text-xs transition-opacity ${
+                showPwHint ? "opacity-100" : "opacity-0 h-0 overflow-hidden"
+              }`}
+              aria-live="polite"
+            >
+              {[
+                { ok: pwChecks.length, label: "8文字以上" },
+                { ok: pwChecks.lowercase, label: "英小文字（a〜z）を含む" },
+                { ok: pwChecks.uppercase, label: "英大文字（A〜Z）を含む" },
+                { ok: pwChecks.digit, label: "数字（0〜9）を含む" },
+              ].map((item) => (
+                <li
+                  key={item.label}
+                  className={`flex items-center gap-1.5 ${
+                    item.ok ? "text-green-600" : "text-text-light"
+                  }`}
+                >
+                  <span aria-hidden="true">{item.ok ? "✓" : "・"}</span>
+                  <span>{item.label}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
           <div>

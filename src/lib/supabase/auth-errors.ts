@@ -11,6 +11,13 @@ const AUTH_ERROR_TRANSLATIONS: Record<string, string> = {
     "パスワードは6文字以上で入力してください。",
   "Password should be at least 8 characters.":
     "パスワードは8文字以上で入力してください。",
+  // Supabase の Password requirements 機能のメッセージ（pwned/strength系）
+  "Password should contain at least one character of each: abcdefghijklmnopqrstuvwxyz, ABCDEFGHIJKLMNOPQRSTUVWXYZ, 0123456789.":
+    "パスワードは英小文字・英大文字・数字をそれぞれ1文字以上含めてください。",
+  "weak_password":
+    "パスワードが弱すぎます。8文字以上で、英小文字・英大文字・数字をそれぞれ1文字以上含めてください。",
+  "Password is known to be weak and easy to guess, please choose a different one.":
+    "推測されやすいパスワードです。別のパスワードを入力してください。",
   "Auth session missing!":
     "認証セッションが見つかりません。メールのリンクをもう一度クリックしてください。",
 
