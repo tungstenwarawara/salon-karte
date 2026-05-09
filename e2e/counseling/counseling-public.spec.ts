@@ -20,7 +20,7 @@ test.describe("@counseling カウンセリング公開ページ", () => {
     });
     const page = await context.newPage();
 
-    await page.goto(`/c/${COUNSELING.pendingId}`);
+    await page.goto(`/c/${COUNSELING.pendingToken}`);
     await page.waitForLoadState("networkidle");
 
     // フォームが表示される（送信ボタンまたは次へボタンがある）
@@ -68,7 +68,7 @@ test.describe("@counseling カウンセリング公開ページ", () => {
     });
     const page = await context.newPage();
 
-    await page.goto(`/c/${COUNSELING.submittedId}`);
+    await page.goto(`/c/${COUNSELING.submittedToken}`);
     await page.waitForLoadState("networkidle");
 
     // 完了ページにリダイレクト or 完了メッセージが表示
@@ -93,7 +93,7 @@ test.describe("@counseling カウンセリング公開ページ", () => {
     });
     const page = await context.newPage();
 
-    await page.goto(`/c/${COUNSELING.submittedId}/complete`);
+    await page.goto(`/c/${COUNSELING.submittedToken}/complete`);
     await page.waitForLoadState("networkidle");
 
     await expect(page.locator("body")).toContainText(

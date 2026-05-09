@@ -111,9 +111,25 @@ export function SetupWizard({ onComplete, loading }: { onComplete: (data: Wizard
           className={step === 4 ? "" : animClass}
         >
           <div className="bg-surface rounded-2xl shadow-sm border border-border p-5">
-            {step === 1 && <StepSalonInfo onNext={handleSalonInfo} />}
-            {step === 2 && <StepBusinessHours onNext={handleBusinessHours} onSkip={skipBusinessHours} />}
-            {step === 3 && <StepFirstMenu onNext={handleMenu} onSkip={skipMenu} />}
+            {step === 1 && <StepSalonInfo onNext={handleSalonInfo} initial={salonInfo} />}
+            {step === 2 && (
+              <StepBusinessHours
+                onNext={handleBusinessHours}
+                onSkip={skipBusinessHours}
+                initial={businessHours}
+              />
+            )}
+            {step === 3 && (
+              <StepFirstMenu
+                onNext={handleMenu}
+                onSkip={skipMenu}
+                initial={
+                  menuData
+                    ? { name: menuData.name, duration: menuData.duration, price: menuData.price }
+                    : undefined
+                }
+              />
+            )}
             {step === 4 && (
               <StepComplete
                 salonName={salonInfo.name}

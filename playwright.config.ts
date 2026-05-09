@@ -1,4 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config as loadEnv } from "dotenv";
+import { resolve } from "path";
+
+// テストプロセス側でも .env.local を読み込む（admin client / SUPABASE_SERVICE_ROLE_KEY 用）
+loadEnv({ path: resolve(__dirname, ".env.local") });
 
 /**
  * Playwright 設定

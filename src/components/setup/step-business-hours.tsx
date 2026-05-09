@@ -14,12 +14,14 @@ const TIME_OPTIONS = generateTimeOptions();
 export function StepBusinessHours({
   onNext,
   onSkip,
+  initial,
 }: {
   onNext: (hours: BusinessHours) => void;
   onSkip: () => void;
+  initial?: BusinessHours | null;
 }) {
   const [hours, setHours] = useState<BusinessHours>(() =>
-    JSON.parse(JSON.stringify(DEFAULT_BUSINESS_HOURS))
+    JSON.parse(JSON.stringify(initial ?? DEFAULT_BUSINESS_HOURS))
   );
 
   const toggleDay = (day: keyof BusinessHours) => {

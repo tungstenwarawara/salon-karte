@@ -8,13 +8,15 @@ type MenuData = { name: string; duration: number | null; price: number | null };
 export function StepFirstMenu({
   onNext,
   onSkip,
+  initial,
 }: {
   onNext: (data: MenuData) => void;
   onSkip: () => void;
+  initial?: { name: string; duration: number | null; price: number | null };
 }) {
-  const [name, setName] = useState("");
-  const [duration, setDuration] = useState("");
-  const [price, setPrice] = useState("");
+  const [name, setName] = useState(initial?.name ?? "");
+  const [duration, setDuration] = useState(initial?.duration != null ? String(initial.duration) : "");
+  const [price, setPrice] = useState(initial?.price != null ? String(initial.price) : "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

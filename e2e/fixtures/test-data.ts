@@ -58,10 +58,15 @@ export const TICKETS = {
   expired: { name: "ヘッドスパ3回", total: 3, used: 1 },
 };
 
-/** カウンセリングシートのトークン */
+/** カウンセリングシート — シードと完全一致させる
+ *  ※ 公開URL（/c/[token]）は token 列の値を使う。id 列とは別物。 */
 export const COUNSELING = {
+  /** sheet の id（DB上の主キー） */
   pendingId: "00000000-0000-0000-0000-000000008001",
   submittedId: "00000000-0000-0000-0000-000000008002",
+  /** 公開URLに使うトークン（/c/[token] のセグメント） */
+  pendingToken: "aaaaaaaa-0000-0000-0000-000000000001",
+  submittedToken: "aaaaaaaa-0000-0000-0000-000000000002",
 };
 
 /** データ件数（検証用） */

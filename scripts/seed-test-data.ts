@@ -362,6 +362,8 @@ async function insertSalon(authUserId: string) {
     name: "テストサロン花",
     phone: "03-1234-5678",
     address: "東京都渋谷区テスト町1-2-3",
+    booking_slug: "test-salon-hana",
+    booking_enabled: true,
     business_hours: {
       monday: { is_open: true, open_time: "10:00", close_time: "20:00" },
       tuesday: { is_open: true, open_time: "10:00", close_time: "20:00" },

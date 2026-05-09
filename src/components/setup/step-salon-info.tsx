@@ -5,10 +5,16 @@ import { EmptyStateIllustration } from "@/components/ui/empty-state-illustration
 
 type SalonInfoData = { name: string; phone: string; address: string };
 
-export function StepSalonInfo({ onNext }: { onNext: (data: SalonInfoData) => void }) {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+export function StepSalonInfo({
+  onNext,
+  initial,
+}: {
+  onNext: (data: SalonInfoData) => void;
+  initial?: SalonInfoData;
+}) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [phone, setPhone] = useState(initial?.phone ?? "");
+  const [address, setAddress] = useState(initial?.address ?? "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
