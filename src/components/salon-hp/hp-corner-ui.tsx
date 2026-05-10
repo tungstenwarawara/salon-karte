@@ -79,29 +79,25 @@ export function HpCornerUi({ brandMark, brandSub, bookingSlug, bookingEnabled }:
         </span>
       </Link>
 
-      {/* Corner menu (top-right) */}
-      <button
-        className="fixed right-6 md:right-8 top-5 md:top-7 z-[60] w-11 h-11 rounded-full border border-current grid place-items-center text-white sei-corner-menu"
-        aria-label="メニューを開く"
-      >
-        <span className="relative block w-4 h-px bg-current">
-          <span className="absolute -top-[5px] left-0 w-4 h-px bg-current" />
-          <span className="absolute top-[5px] left-0 w-4 h-px bg-current" />
-        </span>
-      </button>
+      {/* Corner menu removed — NANA系ではアンカーリンクで十分（フッターに集約） */}
 
       {/* Sticky CTA dot (bottom-right) */}
       {bookingEnabled && bookingSlug && (
         <Link
           href={`/book/${bookingSlug}`}
-          className="sticky-cta-dot fixed right-6 md:right-7 bottom-6 md:bottom-7 z-[65] w-[88px] h-[88px] md:w-24 md:h-24 rounded-full bg-[color:var(--ink)] text-[color:var(--bg)] grid place-items-center text-center font-sans-en text-[10px] tracking-[0.3em] uppercase shadow-[0_12px_40px_rgba(0,0,0,0.18)] group"
+          className="sticky-cta-dot fixed right-6 md:right-7 bottom-6 md:bottom-7 z-[65] w-[88px] h-[88px] md:w-24 md:h-24 rounded-full grid place-items-center text-center font-sans-en text-[10px] tracking-[0.3em] uppercase shadow-[0_12px_40px_rgba(0,0,0,0.18)] group"
           aria-label="予約する"
+          style={{ backgroundColor: "#2a2d2b", color: "#fbfbf9" }}
         >
           <span className="absolute -inset-[10px] rounded-full border border-dashed border-white/35 transition-transform duration-[1400ms] group-hover:rotate-180" />
-          <span className="relative">
-            Reserve
-            <br />
-            <span className="block text-[18px] mt-0.5 font-serif-en">→</span>
+          <span className="relative leading-tight">
+            予約
+            <span
+              className="block text-[18px] mt-1 font-serif-en italic"
+              style={{ color: "#fbfbf9" }}
+            >
+              →
+            </span>
           </span>
         </Link>
       )}
@@ -114,9 +110,6 @@ export function HpCornerUi({ brandMark, brandSub, bookingSlug, bookingEnabled }:
         .sei-corner-logo.sei-invert {
           mix-blend-mode: normal;
           color: var(--ink);
-        }
-        .sei-corner-menu {
-          mix-blend-mode: difference;
         }
       `}</style>
     </>

@@ -51,7 +51,12 @@ export function HpReserve({
         {bookingEnabled && bookingSlug && (
           <Link
             href={`/book/${bookingSlug}`}
-            className="inline-flex items-center gap-3.5 px-12 py-5 min-w-[240px] font-sans-en text-[11px] tracking-[0.4em] uppercase border border-white bg-white text-[color:var(--ink)] transition-all duration-300 hover:bg-transparent hover:text-white"
+            className="reserve-btn-primary inline-flex items-center gap-3.5 px-12 py-5 min-w-[240px] font-sans-en text-[11px] tracking-[0.4em] uppercase transition-all duration-300"
+            style={{
+              border: "1px solid #fff",
+              background: "#fff",
+              color: "#2a2d2b",
+            }}
           >
             {reserve?.primary_label ?? "Online Booking"}
             <span className="font-serif-en italic text-base tracking-normal">→</span>
@@ -62,13 +67,21 @@ export function HpReserve({
             href={reserve.secondary_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-3.5 px-12 py-5 min-w-[240px] font-sans-en text-[11px] tracking-[0.4em] uppercase border border-white text-white transition-all duration-300 hover:bg-white hover:text-[color:var(--ink)]"
+            className="reserve-btn-secondary inline-flex items-center gap-3.5 px-12 py-5 min-w-[240px] font-sans-en text-[11px] tracking-[0.4em] uppercase transition-all duration-300"
+            style={{
+              border: "1px solid #fff",
+              color: "#fff",
+            }}
           >
             {reserve.secondary_label ?? "LINEで予約"}
             <span className="font-serif-en italic text-base tracking-normal">→</span>
           </a>
         )}
       </div>
+      <style>{`
+        .reserve-btn-primary:hover { background: transparent !important; color: #fff !important; }
+        .reserve-btn-secondary:hover { background: #fff !important; color: #2a2d2b !important; }
+      `}</style>
     </section>
   );
 }
