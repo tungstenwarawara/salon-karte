@@ -61,6 +61,25 @@ export default function NewCustomerPage() {
     }
 
     const supabase = createClient();
+
+    // フリープラン制限チェック（UIゲートをすり抜けてここに到達した場合の防御）
+    const [{ data: salon }, { count }] = await Promise.all([
+      supabase.from("salons").select("plan_type").eq("id", salonId).single(),
+      supabase
+        .from("customers")
+        .select("id", { count: "exact", head: true })
+        .eq("salon_id", salonId),
+    ]);
+    const { isAtLimit } = await import("@/lib/plan");
+    const planType = (salon?.plan_type ?? "free") as "free" | "standard";
+    if (isAtLimit(planType, "customers", count ?? 0)) {
+      setError(
+        "おためしプランの顧客登録上限（50人）に達しました。スタンダードプランにアップグレードしてください。"
+      );
+      setLoading(false);
+      return;
+    }
+
     const { data: newCustomer, error } = await supabase.from("customers").insert({
       salon_id: salonId,
       last_name: form.last_name,

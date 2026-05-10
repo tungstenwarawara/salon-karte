@@ -5,6 +5,9 @@ import Link from "next/link";
 import { CustomerListFilters, type SortKey, type VisitFilter } from "./customer-list-filters";
 import { CustomerCard } from "./customer-card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PlanLimitModal } from "@/components/plan/plan-limit-modal";
+import { PlanLimitWarning } from "@/components/plan/plan-limit-warning";
+import { isAtLimit, type PlanType } from "@/lib/plan";
 
 type CustomerWithVisitInfo = {
   id: string;
@@ -28,15 +31,22 @@ const PAGE_SIZE = 20;
 
 type Props = {
   customers: CustomerWithVisitInfo[];
+  planType: PlanType;
+  hasReferralBenefit?: boolean;
 };
 
 /** 顧客一覧の検索・フィルター・ソート・表示を担当するClient Component */
-export function CustomerList({ customers }: Props) {
+export function CustomerList({ customers, planType, hasReferralBenefit = false }: Props) {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("kana");
   const [visitFilter, setVisitFilter] = useState<VisitFilter>("all");
   const [hideGraduated, setHideGraduated] = useState(true);
   const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+
+  // フリープラン制限チェック（卒業済み含む全顧客が対象）
+  const customerCount = customers.length;
+  const atLimit = isAtLimit(planType, "customers", customerCount);
 
   const resetPagination = () => setDisplayCount(PAGE_SIZE);
 
@@ -85,6 +95,22 @@ export function CustomerList({ customers }: Props) {
 
   return (
     <>
+      {/* 上限到達モーダル */}
+      {showLimitModal && (
+        <PlanLimitModal
+          blockType={{ kind: "limit", type: "customers", current: customerCount }}
+          hasReferralBenefit={hasReferralBenefit}
+          onClose={() => setShowLimitModal(false)}
+        />
+      )}
+
+      {/* 80%警告バナー */}
+      <PlanLimitWarning
+        planType={planType}
+        type="customers"
+        current={customerCount}
+      />
+
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-2">
@@ -95,12 +121,21 @@ export function CustomerList({ customers }: Props) {
               : `${customers.length}名`}
           </span>
         </div>
-        <Link
-          href="/customers/new"
-          className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px] flex items-center"
-        >
-          + 顧客を登録
-        </Link>
+        {atLimit ? (
+          <button
+            onClick={() => setShowLimitModal(true)}
+            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px] flex items-center"
+          >
+            + 顧客を登録
+          </button>
+        ) : (
+          <Link
+            href="/customers/new"
+            className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px] flex items-center"
+          >
+            + 顧客を登録
+          </Link>
+        )}
       </div>
 
       {/* 検索 */}

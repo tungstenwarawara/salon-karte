@@ -12,9 +12,15 @@ import { AppointmentsDayPanel } from "@/components/appointments/appointments-day
 import { WeekViewContainer } from "@/components/appointments/week-view-container";
 import { DateNavigator } from "@/components/ui/date-navigator";
 import { getWeekMonday } from "@/lib/staff-schedule";
+import { PlanLimitModal } from "@/components/plan/plan-limit-modal";
+import { PlanLimitWarning } from "@/components/plan/plan-limit-warning";
+import { isAtLimit, type PlanType } from "@/lib/plan";
 
 type Props = {
   salonId: string;
+  planType: PlanType;
+  monthlyAppointmentCount: number;
+  hasReferralBenefit?: boolean;
   initialAppointments: AppointmentWithCustomer[];
   initialBusinessHours: BusinessHours | null;
   initialSalonHolidays: string[] | null;
@@ -22,7 +28,9 @@ type Props = {
 };
 
 /** 予約管理のClient Component（初期データはServerから注入） */
-export function AppointmentsView({ salonId, initialAppointments, initialBusinessHours, initialSalonHolidays, initialHourOverrides }: Props) {
+export function AppointmentsView({ salonId, planType, monthlyAppointmentCount, hasReferralBenefit = false, initialAppointments, initialBusinessHours, initialSalonHolidays, initialHourOverrides }: Props) {
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const atMonthlyLimit = isAtLimit(planType, "appointmentsThisMonth", monthlyAppointmentCount);
   const [appointments, setAppointments] = useState(initialAppointments);
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month");
@@ -77,11 +85,36 @@ export function AppointmentsView({ salonId, initialAppointments, initialBusiness
       ? (() => { const ws = getWeekMonday(selectedDate); const we = new Date(ws); we.setDate(we.getDate() + 6); return `${ws.getMonth() + 1}/${ws.getDate()} 〜 ${we.getMonth() + 1}/${we.getDate()}`; })()
       : `${selectedDate.getFullYear()}年${selectedDate.getMonth() + 1}月`;
 
+  const newApptHref = `/appointments/new${viewMode === "day" ? `?date=${toDateStr(selectedDate)}` : selectedDay !== null ? `?date=${toDateStr(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDay))}` : ""}`;
+  const newApptButtonClass = "bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px] flex items-center";
+
   return (
     <div className="space-y-4">
+      {showLimitModal && (
+        <PlanLimitModal
+          blockType={{ kind: "limit", type: "appointmentsThisMonth", current: monthlyAppointmentCount }}
+          hasReferralBenefit={hasReferralBenefit}
+          onClose={() => setShowLimitModal(false)}
+        />
+      )}
+
+      <PlanLimitWarning
+        planType={planType}
+        type="appointmentsThisMonth"
+        current={monthlyAppointmentCount}
+      />
+
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold">予約管理</h2>
-        <Link href={`/appointments/new${viewMode === "day" ? `?date=${toDateStr(selectedDate)}` : selectedDay !== null ? `?date=${toDateStr(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDay))}` : ""}`} className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[48px] flex items-center">+ 予約を登録</Link>
+        {atMonthlyLimit ? (
+          <button onClick={() => setShowLimitModal(true)} className={newApptButtonClass}>
+            + 予約を登録
+          </button>
+        ) : (
+          <Link href={newApptHref} className={newApptButtonClass}>
+            + 予約を登録
+          </Link>
+        )}
       </div>
 
       {/* ビューモード切替 */}

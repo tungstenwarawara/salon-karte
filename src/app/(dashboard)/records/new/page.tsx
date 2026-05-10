@@ -49,6 +49,7 @@ function NewRecordForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [salonId, setSalonId] = useState("");
+  const [planType, setPlanType] = useState<"free" | "standard">("free");
   const [customerName, setCustomerName] = useState("");
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
   const [staffList, setStaffList] = useState<{ id: string; name: string }[]>([]);
@@ -79,6 +80,10 @@ function NewRecordForm() {
       setSalonId(resolvedSalonId);
 
       const supabase = createClient();
+
+      // プラン情報も読み込む（写真機能ロックの判定に使う）
+      const { data: salonRow } = await supabase.from("salons").select("plan_type").eq("id", resolvedSalonId).single();
+      if (salonRow?.plan_type) setPlanType(salonRow.plan_type as "free" | "standard");
       const menusQuery = supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name").returns<Menu[]>();
       const productsQuery = supabase.from("products").select("id, name, category, base_sell_price, base_cost_price").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name").returns<Product[]>();
       const staffQuery = supabase.from("staff").select("id, name").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name");
@@ -188,6 +193,27 @@ function NewRecordForm() {
     if (!customerId) { setError("顧客が選択されていません"); return; }
     if (menuPayments.find((mp) => mp.paymentType === "ticket" && !mp.ticketId)) { setError("回数券支払いのメニューでチケットが選択されていません"); return; }
     setError(""); setLoading(true);
+
+    // フリープラン制限チェック（UIゲートをすり抜けてここに到達した場合の防御）
+    if (salonId) {
+      const supabase = createClient();
+      const [{ data: salon }, { count }] = await Promise.all([
+        supabase.from("salons").select("plan_type").eq("id", salonId).single(),
+        supabase
+          .from("treatment_records")
+          .select("id", { count: "exact", head: true })
+          .eq("salon_id", salonId),
+      ]);
+      const { isAtLimit } = await import("@/lib/plan");
+      const planType = (salon?.plan_type ?? "free") as "free" | "standard";
+      if (isAtLimit(planType, "records", count ?? 0)) {
+        setError(
+          "おためしプランのカルテ作成上限（100件）に達しました。スタンダードプランにアップグレードしてください。"
+        );
+        setLoading(false);
+        return;
+      }
+    }
 
     const result = await submitTreatmentRecord({
       customerId, salonId, staffId, form, menus, selectedMenuIds, menuPayments, pendingTickets, pendingPurchases, photos, appointmentId, courseTickets,
@@ -307,7 +333,7 @@ function NewRecordForm() {
           <PurchaseInlineForm products={products} onAdd={(p) => setPendingPurchases((prev) => [...prev, p])} />
         </CollapsibleSection>
 
-        <PhotoUpload photos={photos} onChange={setPhotos} />
+        <PhotoUpload photos={photos} onChange={setPhotos} planType={planType} />
 
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={() => router.back()} className="flex-1 bg-background border border-border text-text font-medium rounded-xl py-3 transition-colors min-h-[48px]">キャンセル</button>

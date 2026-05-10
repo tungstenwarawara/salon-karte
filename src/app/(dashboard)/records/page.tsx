@@ -1,15 +1,28 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { PageHeader } from "@/components/layout/page-header";
 import { RecordListSearch } from "@/components/records/record-list-search";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FirstVisitHint } from "@/components/ui/first-visit-hint";
+import { LimitAwareCreateButton } from "@/components/plan/limit-aware-create-button";
+import { PlanLimitWarning } from "@/components/plan/plan-limit-warning";
+import type { PlanType } from "@/lib/plan";
 
 export default async function RecordsPage() {
   const { user, salon, supabase } = await getAuthAndSalon();
   if (!user) redirect("/login");
   if (!salon) redirect("/setup");
+
+  const planType: PlanType = (salon.plan_type ?? "free") as PlanType;
+
+  // 紹介特典の有無
+  const { data: referralRow } = await supabase
+    .from("referrals")
+    .select("id")
+    .eq("referred_salon_id", salon.id)
+    .is("referred_reward_applied_at", null)
+    .maybeSingle();
+  const hasReferralBenefit = !!referralRow;
 
   // 今日・明日の日付（JST）
   const todayStr = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
@@ -61,18 +74,24 @@ export default async function RecordsPage() {
       };
     });
 
+  const recordCount = allRecords.length;
+
   return (
     <div className="space-y-4">
       <PageHeader title="カルテ" breadcrumbs={[{ label: "カルテ" }]}>
-        <Link
+        <LimitAwareCreateButton
           href="/records/new"
-          className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[44px] flex items-center"
-        >
-          + カルテを登録
-        </Link>
+          label="+ カルテを登録"
+          planType={planType}
+          type="records"
+          current={recordCount}
+          hasReferralBenefit={hasReferralBenefit}
+        />
       </PageHeader>
 
       <FirstVisitHint pageKey="records" message="施術内容や写真をカルテに記録できます。予約なしでも直接作成できます" />
+
+      <PlanLimitWarning planType={planType} type="records" current={recordCount} />
 
       <RecordListSearch
         records={allRecords}

@@ -7,6 +7,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { LineSetupGuide } from "@/components/settings/line-setup-guide";
 import { LineStatus } from "@/components/settings/line-status";
 import { LineLinkManager } from "@/components/settings/line-link-manager";
+import { FeatureLockCard } from "@/components/plan/feature-lock-card";
+import { canUseFeature, type PlanType } from "@/lib/plan";
 
 type LineConfig = {
   id: string;
@@ -18,6 +20,7 @@ type LineConfig = {
 
 export default function LineSettingsPage() {
   const [config, setConfig] = useState<LineConfig | null>(null);
+  const [planType, setPlanType] = useState<PlanType>("free");
   const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
@@ -26,13 +29,17 @@ export default function LineSettingsPage() {
       if (!user || !salonId) return;
 
       const supabase = createClient();
-      const { data } = await supabase
-        .from("salon_line_configs")
-        .select("id, webhook_secret, is_active, reminder_enabled, confirmation_enabled")
-        .eq("salon_id", salonId)
-        .single();
+      const [{ data: lineData }, { data: salonData }] = await Promise.all([
+        supabase
+          .from("salon_line_configs")
+          .select("id, webhook_secret, is_active, reminder_enabled, confirmation_enabled")
+          .eq("salon_id", salonId)
+          .single(),
+        supabase.from("salons").select("plan_type").eq("id", salonId).single(),
+      ]);
 
-      if (data) setConfig(data);
+      if (lineData) setConfig(lineData);
+      if (salonData?.plan_type) setPlanType(salonData.plan_type as PlanType);
       setInitialLoading(false);
     };
     load();
@@ -48,6 +55,26 @@ export default function LineSettingsPage() {
       </div>
     </div>
   );
+
+  // フリープランは LINE 連携を使えない
+  if (!canUseFeature(planType, "lineIntegration")) {
+    return (
+      <div className="space-y-4">
+        <PageHeader
+          title="LINE連携"
+          breadcrumbs={[
+            { label: "設定", href: "/settings" },
+            { label: "LINE連携" },
+          ]}
+        />
+        <FeatureLockCard
+          feature="lineIntegration"
+          variant="page"
+          description="お客様のLINEと自動で連携し、予約確認・リマインドを自動送信できます。"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

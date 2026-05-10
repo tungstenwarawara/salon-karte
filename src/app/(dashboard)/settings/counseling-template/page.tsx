@@ -10,6 +10,8 @@ import { ErrorAlert } from "@/components/ui/error-alert";
 import { DEFAULT_COUNSELING_TEMPLATE } from "@/lib/counseling-default-template";
 import type { CounselingTemplate } from "@/types/counseling-template";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FeatureLockCard } from "@/components/plan/feature-lock-card";
+import { canUseFeature, type PlanType } from "@/lib/plan";
 
 type Template = {
   id: string;
@@ -20,6 +22,7 @@ type Template = {
 
 export default function CounselingTemplateListPage() {
   const [salonId, setSalonId] = useState("");
+  const [planType, setPlanType] = useState<PlanType>("free");
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -32,11 +35,17 @@ export default function CounselingTemplateListPage() {
     setSalonId(sid);
 
     const supabase = createClient();
-    const { data, error: fetchError } = await supabase
-      .from("counseling_templates")
-      .select("id, name, template, is_default")
-      .eq("salon_id", sid)
-      .order("is_default", { ascending: false });
+    const [salonRes, templatesRes] = await Promise.all([
+      supabase.from("salons").select("plan_type").eq("id", sid).single(),
+      supabase
+        .from("counseling_templates")
+        .select("id, name, template, is_default")
+        .eq("salon_id", sid)
+        .order("is_default", { ascending: false }),
+    ]);
+
+    if (salonRes.data?.plan_type) setPlanType(salonRes.data.plan_type as PlanType);
+    const { data, error: fetchError } = templatesRes;
 
     if (fetchError) {
       setError(`読み込みに失敗しました: ${fetchError.message}`);
@@ -81,6 +90,26 @@ export default function CounselingTemplateListPage() {
     t.sections.reduce((sum, s) => sum + s.fields.length, 0);
 
   if (loading) return null;
+
+  // フリープランはカウンセリングシート機能を使えない
+  if (!canUseFeature(planType, "counselingSheet")) {
+    return (
+      <div className="space-y-4">
+        <PageHeader
+          title="カウンセリングシート設定"
+          breadcrumbs={[
+            { label: "設定", href: "/settings" },
+            { label: "カウンセリングシート設定" },
+          ]}
+        />
+        <FeatureLockCard
+          feature="counselingSheet"
+          variant="page"
+          description="お客様ごとにカスタムカウンセリングシートを作成し、URL/QRコードで事前回答を依頼できます。"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

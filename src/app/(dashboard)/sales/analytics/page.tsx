@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { AnalyticsView } from "@/components/sales/analytics-view";
 import type { MenuRanking } from "@/components/sales/treatment-ranking";
+import { FeatureLockCard } from "@/components/plan/feature-lock-card";
+import { canUseFeature, type PlanType } from "@/lib/plan";
+import { PageHeader } from "@/components/layout/page-header";
 
 type LtvRow = {
   customer_id: string;
@@ -32,6 +35,28 @@ export default async function AnalyticsPage() {
   const { user, salon, supabase } = await getAuthAndSalon();
   if (!user) redirect("/login");
   if (!salon) redirect("/setup");
+
+  const planType: PlanType = (salon.plan_type ?? "free") as PlanType;
+
+  // フリープランは売上分析を使えない（ダッシュボードの当月サマリだけ）
+  if (!canUseFeature(planType, "salesAnalytics")) {
+    return (
+      <div className="space-y-4">
+        <PageHeader
+          title="売上分析"
+          breadcrumbs={[
+            { label: "経営", href: "/sales" },
+            { label: "売上分析" },
+          ]}
+        />
+        <FeatureLockCard
+          feature="salesAnalytics"
+          variant="page"
+          description="月別売上推移・顧客LTV・リピーター分析など、サロン経営の判断材料がすべて揃います。"
+        />
+      </div>
+    );
+  }
 
   const currentYear = new Date().getFullYear();
 

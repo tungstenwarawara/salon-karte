@@ -220,11 +220,24 @@ function SignupForm() {
         </div>
 
         <form onSubmit={handleSignup} className="bg-surface rounded-2xl shadow-sm border border-border p-6 space-y-5">
-          <div className="bg-accent/5 border border-accent/20 rounded-xl px-4 py-3 text-center">
-            <p className="text-sm text-text-light">
-              初期費用0円 · クレジットカード不要 · いつでも解約OK
-            </p>
-          </div>
+          {refCode ? (
+            <div className="bg-accent/10 border-2 border-accent rounded-xl p-4 flex items-start gap-3">
+              <span className="text-2xl leading-none">🎁</span>
+              <div className="flex-1">
+                <p className="font-bold text-accent text-sm">紹介特典が適用されます</p>
+                <p className="text-xs text-text-light mt-1 leading-relaxed">
+                  サインアップ後、おためしプランの上限に達した時点でスタンダードプランに切り替えると
+                  <span className="font-bold">最初の30日間が無料</span>になります。
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-accent/5 border border-accent/20 rounded-xl px-4 py-3 text-center">
+              <p className="text-sm text-text-light">
+                初期費用0円 · クレジットカード不要 · いつでも解約OK
+              </p>
+            </div>
+          )}
 
           {error && (
             <div className="bg-error/10 text-error text-sm rounded-lg p-3">

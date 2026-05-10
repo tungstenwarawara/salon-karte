@@ -150,6 +150,34 @@ function NewAppointmentForm() {
     e.preventDefault();
     if (!customerId) { setError("顧客を選択してください"); return; }
     setError(""); setSaving(true);
+
+    // フリープラン制限チェック（UIゲートをすり抜けてここに到達した場合の防御）
+    if (salonId) {
+      const supabase = createClient();
+      const now = new Date();
+      const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+      const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const startOfNextMonth = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-01`;
+      const [{ data: salon }, { count }] = await Promise.all([
+        supabase.from("salons").select("plan_type").eq("id", salonId).single(),
+        supabase
+          .from("appointments")
+          .select("id", { count: "exact", head: true })
+          .eq("salon_id", salonId)
+          .gte("appointment_date", startOfMonth)
+          .lt("appointment_date", startOfNextMonth),
+      ]);
+      const { isAtLimit } = await import("@/lib/plan");
+      const planType = (salon?.plan_type ?? "free") as "free" | "standard";
+      if (isAtLimit(planType, "appointmentsThisMonth", count ?? 0)) {
+        setError(
+          "おためしプランの月間予約上限（30件）に達しました。スタンダードプランにアップグレードしてください。"
+        );
+        setSaving(false);
+        return;
+      }
+    }
+
     const result = await submitAppointment({
       salonId, customerId, staffId: staffId || null, menus, selectedMenuIds,
       appointmentDate, startHour, startMinute, endHour, endMinute, source, memo,

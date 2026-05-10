@@ -2,12 +2,24 @@ import { redirect } from "next/navigation";
 import { getAuthAndSalon } from "@/lib/supabase/auth-helpers";
 import { CustomerList } from "@/components/customers/customer-list";
 import { FirstVisitHint } from "@/components/ui/first-visit-hint";
+import type { PlanType } from "@/lib/plan";
 
 export default async function CustomersPage() {
   const { user, salon, supabase } = await getAuthAndSalon();
 
   if (!user) redirect("/login");
   if (!salon) redirect("/setup");
+
+  const planType: PlanType = (salon.plan_type ?? "free") as PlanType;
+
+  // 紹介特典の有無（PlanLimitModal で30日無料を訴求）
+  const { data: referralRow } = await supabase
+    .from("referrals")
+    .select("id")
+    .eq("referred_salon_id", salon.id)
+    .is("referred_reward_applied_at", null)
+    .maybeSingle();
+  const hasReferralBenefit = !!referralRow;
 
   // 顧客データと来店統計を並列取得（Server Component なので初回HTMLに含まれる）
   const [customersResult, visitResult] = await Promise.all([
@@ -45,7 +57,7 @@ export default async function CustomersPage() {
   return (
     <div className="space-y-4">
       <FirstVisitHint pageKey="customers" message="まずはお客様を登録しましょう。登録後、予約やカルテの記録ができるようになります" />
-      <CustomerList customers={customers} />
+      <CustomerList customers={customers} planType={planType} hasReferralBenefit={hasReferralBenefit} />
     </div>
   );
 }

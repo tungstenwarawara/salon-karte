@@ -8,6 +8,8 @@ import { TodayAppointments } from "@/components/dashboard/today-appointments";
 import { BirthdayCustomers } from "@/components/dashboard/birthday-customers";
 import { KpiTrendCards } from "@/components/dashboard/kpi-trend-cards";
 import { GreetingVisual } from "@/components/dashboard/greeting-visual";
+import { PlanStatusCard } from "@/components/dashboard/plan-status-card";
+import type { PlanType } from "@/lib/plan";
 
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
 
@@ -53,6 +55,8 @@ export default async function DashboardPage() {
     previous_month_visits: number;
   };
 
+  const planType: PlanType = (salon.plan_type ?? "free") as PlanType;
+
   const [
     todayAppointmentsRes,
     customerCountRes,
@@ -63,6 +67,7 @@ export default async function DashboardPage() {
     birthdayRes,
     inventoryRes,
     kpiRes,
+    referralRes,
   ] = await Promise.all([
     supabase
       .from("appointments")
@@ -103,6 +108,12 @@ export default async function DashboardPage() {
     supabase
       .rpc("get_dashboard_kpi", { p_salon_id: salon.id })
       .returns<DashboardKpi[]>(),
+    supabase
+      .from("referrals")
+      .select("id")
+      .eq("referred_salon_id", salon.id)
+      .is("referred_reward_applied_at", null)
+      .maybeSingle(),
   ]);
 
   const todayAppointments = todayAppointmentsRes.data;
@@ -182,6 +193,16 @@ export default async function DashboardPage() {
           <p className="text-text-light text-sm">{getGreeting()}</p>
           <h2 className="text-xl font-bold mt-0.5">{salon.name}</h2>
         </div>
+      </div>
+
+      {/* プラン状態カード（Free + Standard 両対応） */}
+      <div className="animate-fade-in-up animation-delay-100">
+        <PlanStatusCard
+          planType={planType}
+          customerCount={customerCount ?? 0}
+          recordCount={recordTotalRes.count ?? 0}
+          hasReferralBenefit={!!referralRes.data}
+        />
       </div>
 
       {!allSetupDone && (

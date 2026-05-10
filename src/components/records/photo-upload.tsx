@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import { MAX_FILE_SIZE, ALLOWED_MIME_TYPES } from "@/lib/supabase/storage";
 import { PhotoCard } from "./photo-card";
+import { FeatureLockCard } from "@/components/plan/feature-lock-card";
+import { canUseFeature, type PlanType } from "@/lib/plan";
 
 type PhotoEntry = {
   file: File;
@@ -14,10 +16,18 @@ type PhotoEntry = {
 export function PhotoUpload({
   photos,
   onChange,
+  planType = "standard",
 }: {
   photos: PhotoEntry[];
   onChange: (photos: PhotoEntry[]) => void;
+  /** 省略時は standard 扱い（既存呼び出しを壊さない） */
+  planType?: PlanType;
 }) {
+  // Free プランは写真機能を使えない → ロック画面を表示
+  if (!canUseFeature(planType, "photoStorage")) {
+    return <FeatureLockCard feature="photoStorage" />;
+  }
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addingTypeRef = useRef<"before" | "after" | "other">("before");
   const [validationError, setValidationError] = useState<string | null>(null);
