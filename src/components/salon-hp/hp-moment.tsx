@@ -59,8 +59,12 @@ export function HpMoment({ moment }: Props) {
           {moment.eyebrow ?? "MOMENT"}
         </span>
         <h2
-          className="reveal font-serif-en italic font-light leading-[1.25] text-white my-4"
-          style={{ fontSize: "clamp(36px, 5vw, 68px)" }}
+          className="reveal font-serif-jp font-light text-white my-5 md:my-6 whitespace-pre-line"
+          style={{
+            fontSize: "clamp(22px, 3.2vw, 36px)",
+            letterSpacing: "0.08em",
+            lineHeight: "1.7",
+          }}
         >
           {moment.headline}
         </h2>
