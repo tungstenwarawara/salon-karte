@@ -19,7 +19,7 @@ export function HeroSection() {
             <div className="mb-6">
               <BrandLogo size="lg" className="mx-auto md:mx-0" />
             </div>
-            <h1 className="text-[2rem] md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.2] mb-6">
+            <h1 className="text-[2rem] md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.2] mb-6 text-balance [word-break:auto-phrase]">
               カルテも予約も
               <br />
               LINEも。
@@ -28,8 +28,10 @@ export function HeroSection() {
               <br className="md:hidden" />
               ぜんぶ。
             </h1>
-            <p className="text-lg md:text-xl text-text-light leading-relaxed mb-8">
-              個人サロンのための、やさしいサロン管理アプリ
+            <p className="text-lg md:text-xl text-text-light leading-relaxed mb-8 text-pretty [word-break:auto-phrase]">
+              個人サロンのための、
+              <br className="md:hidden" />
+              やさしいサロン管理アプリ
             </p>
             <div className="space-y-4">
               <CtaLink
@@ -40,9 +42,13 @@ export function HeroSection() {
               >
                 無料ではじめる
               </CtaLink>
-              <p className="text-sm text-text-light">
-                初期費用0円 ・ クレジットカード不要 ・ いつでも解約OK
-              </p>
+              <div className="text-sm text-text-light flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1">
+                <span className="whitespace-nowrap">初期費用0円</span>
+                <span className="text-text-light/50" aria-hidden>・</span>
+                <span className="whitespace-nowrap">クレジットカード不要</span>
+                <span className="text-text-light/50" aria-hidden>・</span>
+                <span className="whitespace-nowrap">いつでも解約OK</span>
+              </div>
             </div>
             {/* 信頼バッジ */}
             <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-8">

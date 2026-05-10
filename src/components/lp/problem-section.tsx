@@ -66,10 +66,10 @@ export function ProblemSection() {
       <div className="max-w-5xl mx-auto px-4">
         <ScrollFadeIn>
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance [word-break:auto-phrase]">
               こんなお悩み、ありませんか？
             </h2>
-            <p className="text-text-light text-lg">
+            <p className="text-text-light text-lg text-pretty [word-break:auto-phrase]">
               ひとりで抱え込んでいませんか？
             </p>
           </div>
@@ -82,8 +82,8 @@ export function ProblemSection() {
                 <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center text-accent mb-3">
                   <p.icon />
                 </div>
-                <h3 className="text-lg font-bold mb-2">{p.title}</h3>
-                <p className="text-text-light text-sm leading-relaxed">{p.body}</p>
+                <h3 className="text-lg font-bold mb-2 text-balance [word-break:auto-phrase]">{p.title}</h3>
+                <p className="text-text-light text-sm leading-relaxed text-pretty [word-break:auto-phrase]">{p.body}</p>
               </div>
             </ScrollFadeIn>
           ))}

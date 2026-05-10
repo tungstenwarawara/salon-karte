@@ -30,10 +30,10 @@ export function StepsSection() {
       <div className="max-w-4xl mx-auto px-4">
         <ScrollFadeIn>
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance [word-break:auto-phrase]">
               かんたん3ステップで始められます
             </h2>
-            <p className="text-text-light text-lg">
+            <p className="text-text-light text-lg text-pretty [word-break:auto-phrase]">
               登録から利用開始まで、たったの5分。
             </p>
           </div>
@@ -51,8 +51,8 @@ export function StepsSection() {
                   <div className="w-16 h-16 rounded-full bg-accent text-white text-2xl font-bold flex items-center justify-center mx-auto mb-4 shadow-lg shadow-accent/20">
                     {s.num}
                   </div>
-                  <h3 className="text-lg font-bold mb-2">{s.title}</h3>
-                  <p className="text-text-light text-sm leading-relaxed max-w-[240px] mx-auto">
+                  <h3 className="text-lg font-bold mb-2 text-balance [word-break:auto-phrase]">{s.title}</h3>
+                  <p className="text-text-light text-sm leading-relaxed max-w-[240px] mx-auto text-pretty [word-break:auto-phrase]">
                     {s.description}
                   </p>
                 </div>
@@ -69,9 +69,11 @@ export function StepsSection() {
             >
               無料ではじめる
             </Link>
-            <p className="text-sm text-text-light mt-3">
-              クレジットカード不要 ・ 5分で登録完了
-            </p>
+            <div className="text-sm text-text-light mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+              <span className="whitespace-nowrap">クレジットカード不要</span>
+              <span className="text-text-light/50" aria-hidden>・</span>
+              <span className="whitespace-nowrap">5分で登録完了</span>
+            </div>
           </div>
         </ScrollFadeIn>
       </div>

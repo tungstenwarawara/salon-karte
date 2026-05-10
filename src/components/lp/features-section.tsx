@@ -62,12 +62,10 @@ export function FeaturesSection() {
       <div className="max-w-5xl mx-auto px-4">
         <ScrollFadeIn>
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              サロン運営に必要な機能が、
-              <br className="md:hidden" />
-              ぜんぶ入ってます
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance [word-break:auto-phrase]">
+              サロン運営に必要な機能が、ぜんぶ入ってます
             </h2>
-            <p className="text-text-light text-lg">
+            <p className="text-text-light text-lg text-pretty [word-break:auto-phrase]">
               月額2,980円に全機能込み。追加費用は一切ありません。
             </p>
           </div>
@@ -90,7 +88,7 @@ export function FeaturesSection() {
                   className="flex-shrink-0"
                 >
                   <div className="scale-90 md:scale-100">
-                    <PhoneFrame minHeight={420} glow={false}>
+                    <PhoneFrame glow={false}>
                       <f.Screen />
                     </PhoneFrame>
                   </div>
@@ -102,8 +100,8 @@ export function FeaturesSection() {
                   delay={200}
                   className="flex-1 text-center md:text-left"
                 >
-                  <h3 className="text-2xl md:text-3xl font-bold mb-4">{f.title}</h3>
-                  <p className="text-text-light text-base leading-relaxed mb-6 max-w-md mx-auto md:mx-0">
+                  <h3 className="text-2xl md:text-3xl font-bold mb-4 text-balance [word-break:auto-phrase]">{f.title}</h3>
+                  <p className="text-text-light text-base leading-relaxed mb-6 max-w-md mx-auto md:mx-0 text-pretty [word-break:auto-phrase]">
                     {f.description}
                   </p>
                   <ul className="space-y-3 inline-block text-left">

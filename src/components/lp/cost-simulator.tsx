@@ -89,10 +89,10 @@ export function CostSimulator() {
       <div className="max-w-3xl mx-auto px-4">
         <ScrollFadeIn>
           <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance [word-break:auto-phrase]">
               いくら節約できる？
             </h2>
-            <p className="text-text-light text-lg">
+            <p className="text-text-light text-lg text-pretty [word-break:auto-phrase]">
               あなたのサロンの数字で、かんたんシミュレーション
             </p>
           </div>
@@ -206,9 +206,13 @@ export function CostSimulator() {
                 >
                   無料ではじめる
                 </CtaLink>
-                <p className="text-center text-xs text-text-light mt-3">
-                  初期費用0円 / クレジットカード不要 / いつでも解約OK
-                </p>
+                <div className="text-xs text-text-light mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+                  <span className="whitespace-nowrap">初期費用0円</span>
+                  <span className="text-text-light/50" aria-hidden>/</span>
+                  <span className="whitespace-nowrap">クレジットカード不要</span>
+                  <span className="text-text-light/50" aria-hidden>/</span>
+                  <span className="whitespace-nowrap">いつでも解約OK</span>
+                </div>
               </div>
             </div>
           </div>

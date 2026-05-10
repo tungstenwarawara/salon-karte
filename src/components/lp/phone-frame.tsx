@@ -5,8 +5,8 @@ import type { ReactNode } from "react";
 interface PhoneFrameProps {
   children: ReactNode;
   className?: string;
-  /** フレーム内コンテンツの最小高さ（デフォルト: 460px） */
-  minHeight?: number;
+  /** フレーム内コンテンツの固定高さ（デフォルト: 480px / 全LP統一） */
+  height?: number;
   /** グロー効果を表示するか */
   glow?: boolean;
 }
@@ -14,7 +14,7 @@ interface PhoneFrameProps {
 export function PhoneFrame({
   children,
   className = "",
-  minHeight = 460,
+  height = 480,
   glow = true,
 }: PhoneFrameProps) {
   return (
@@ -27,8 +27,8 @@ export function PhoneFrame({
         <div className="bg-[#2D2D2D] h-7 flex items-center justify-center">
           <div className="w-20 h-4 bg-[#1a1a1a] rounded-full" />
         </div>
-        {/* コンテンツ */}
-        <div className="bg-background overflow-hidden" style={{ minHeight }}>
+        {/* コンテンツ（高さ固定で全セクション統一） */}
+        <div className="bg-background overflow-hidden" style={{ height }}>
           {children}
         </div>
         {/* ホームバー */}

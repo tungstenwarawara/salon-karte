@@ -51,7 +51,7 @@ export function FaqSection() {
       <div className="max-w-3xl mx-auto px-4">
         <ScrollFadeIn>
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance [word-break:auto-phrase]">
               よくあるご質問
             </h2>
           </div>
@@ -62,7 +62,7 @@ export function FaqSection() {
             <ScrollFadeIn key={item.q} delay={i * 50}>
               <details className="group bg-background rounded-2xl border border-border/50 overflow-hidden">
 
-              <summary className="flex items-center justify-between gap-4 cursor-pointer p-5 font-medium text-sm md:text-base list-none min-h-[56px] hover:bg-accent/5 transition-colors">
+              <summary className="flex items-center justify-between gap-4 cursor-pointer p-5 font-medium text-sm md:text-base list-none min-h-[56px] hover:bg-accent/5 transition-colors text-pretty [word-break:auto-phrase]">
                 {item.q}
                 <svg
                   className="w-5 h-5 text-text-light flex-shrink-0 transition-transform duration-200 details-open-rotate"
@@ -74,7 +74,7 @@ export function FaqSection() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                 </svg>
               </summary>
-              <div className="px-5 pb-5 text-sm text-text-light leading-relaxed border-t border-border/50 pt-4">
+              <div className="px-5 pb-5 text-sm text-text-light leading-relaxed border-t border-border/50 pt-4 text-pretty [word-break:auto-phrase]">
                 {item.a}
               </div>
               </details>

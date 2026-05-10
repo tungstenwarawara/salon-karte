@@ -44,10 +44,10 @@ export function ComparisonSection() {
       <div className="max-w-5xl mx-auto px-4">
         <ScrollFadeIn>
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance [word-break:auto-phrase]">
               他サービスとの比較
             </h2>
-            <p className="text-text-light text-lg">
+            <p className="text-text-light text-lg text-pretty [word-break:auto-phrase]">
               全機能込みで、この価格はサロンカルテだけ。
             </p>
           </div>
