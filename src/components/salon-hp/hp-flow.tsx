@@ -4,38 +4,51 @@ type Props = {
   flow: SalonHpContent["flow"];
 };
 
+/** NANA系: 細罫線の縦タイムライン、ステップ番号はセリフ書体で控えめに */
 export function HpFlow({ flow }: Props) {
   if (flow.steps.length === 0) return null;
 
   return (
-    <section className="py-20 md:py-28 bg-gradient-to-b from-[#FAF7F3] to-[#F5F0EA] hp-section">
-      <div className="max-w-3xl mx-auto px-4">
-        <h2 className="text-2xl md:text-3xl font-bold text-center mb-2 text-gray-900">
-          施術の流れ
-        </h2>
-        <p className="text-xs tracking-[0.3em] text-[#C4956A] text-center mb-14 uppercase">Flow</p>
-
-        <div className="space-y-0">
-          {flow.steps.map((step, i) => (
-            <div key={i} className="flex gap-5 md:gap-7">
-              {/* ステップ番号 + 接続線 */}
-              <div className="flex flex-col items-center">
-                <div className="w-11 h-11 rounded-full bg-[#C4956A] text-white flex items-center justify-center font-bold text-sm flex-shrink-0 shadow-sm shadow-[#C4956A]/20">
-                  {i + 1}
-                </div>
-                {i < flow.steps.length - 1 && (
-                  <div className="w-px flex-1 bg-gradient-to-b from-[#C4956A]/30 to-[#C4956A]/10 my-1" />
-                )}
-              </div>
-
-              {/* コンテンツ */}
-              <div className="pb-10 pt-2 flex-1">
-                <h3 className="font-bold text-gray-900 mb-1.5 text-[1.05rem]">{step.title}</h3>
-                <p className="text-sm text-gray-500 leading-[1.8]">{step.description}</p>
-              </div>
-            </div>
-          ))}
+    <section className="py-24 md:py-32 hp-section bg-[#F4ECDD]/40">
+      <div className="max-w-3xl mx-auto px-5 md:px-10">
+        <div className="text-center mb-16 md:mb-20">
+          <p className="text-[10px] tracking-[0.4em] text-[#9B7A52] uppercase mb-4">Flow</p>
+          <h2
+            className="text-2xl md:text-[1.6rem] font-light tracking-[0.1em] text-gray-800"
+            style={{ fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", serif' }}
+          >
+            施術の流れ
+          </h2>
         </div>
+
+        <ol className="space-y-10 md:space-y-12">
+          {flow.steps.map((step, i) => (
+            <li
+              key={i}
+              className="grid grid-cols-12 gap-5 md:gap-8 items-start border-b border-[#E5DBCB]/60 pb-10 last:border-b-0 last:pb-0"
+            >
+              <div className="col-span-2 md:col-span-2">
+                <p
+                  className="text-2xl md:text-3xl font-light text-[#9B7A52] tracking-[0.1em]"
+                  style={{ fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", serif' }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </p>
+              </div>
+              <div className="col-span-10">
+                <h3
+                  className="text-base md:text-lg text-gray-800 mb-2 md:mb-3 font-light tracking-wider"
+                  style={{ fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", serif' }}
+                >
+                  {step.title}
+                </h3>
+                <p className="text-sm text-gray-600 leading-[2] tracking-wider whitespace-pre-line">
+                  {step.description}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );

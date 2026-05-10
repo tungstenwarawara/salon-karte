@@ -8,6 +8,7 @@ type Props = {
   bookingEnabled: boolean;
 };
 
+/** NANA系: 重い塗りボタンでなく細枠ボタンを下から薄くスライドイン */
 export function HpStickyCta({ bookingSlug, bookingEnabled }: Props) {
   const [visible, setVisible] = useState(false);
 
@@ -23,7 +24,6 @@ export function HpStickyCta({ bookingSlug, bookingEnabled }: Props) {
       setVisible(!heroLeft && !bookingCtaVisible);
     };
 
-    // ヒーロー通過を検知
     const heroObserver = new IntersectionObserver(
       ([entry]) => {
         heroLeft = entry.isIntersecting;
@@ -32,7 +32,6 @@ export function HpStickyCta({ bookingSlug, bookingEnabled }: Props) {
       { threshold: 0 }
     );
 
-    // BookingCTA到達を検知
     const ctaObserver = new IntersectionObserver(
       ([entry]) => {
         bookingCtaVisible = entry.isIntersecting;
@@ -54,22 +53,29 @@ export function HpStickyCta({ bookingSlug, bookingEnabled }: Props) {
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-40 transition-transform duration-300 ${
-        visible ? "translate-y-0" : "translate-y-full"
+      className={`fixed bottom-4 left-0 right-0 z-40 transition-all duration-500 ${
+        visible
+          ? "translate-y-0 opacity-100"
+          : "translate-y-full opacity-0 pointer-events-none"
       }`}
     >
-      <div className="bg-white/95 backdrop-blur-xl border-t border-[#E8E0D8]/60 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-        <div className="max-w-lg mx-auto px-4 py-3 text-center">
-          <Link
-            href={`/book/${bookingSlug}`}
-            className="block bg-[#C4956A] hover:bg-[#B8875E] text-white font-bold rounded-full py-3.5 text-sm transition-all duration-300 hp-cta-glow"
+      <div className="max-w-sm mx-auto px-4 text-center">
+        <Link
+          href={`/book/${bookingSlug}`}
+          className="group inline-flex items-center justify-center gap-3 w-full bg-[#FAF6F0]/95 backdrop-blur-md border border-[#9B7A52] text-[#9B7A52] hover:bg-[#9B7A52] hover:text-white tracking-[0.3em] text-xs uppercase py-4 transition-all duration-300 shadow-[0_4px_20px_rgba(155,122,82,0.15)]"
+        >
+          <span className="w-5 h-px bg-current" />
+          Reserve
+          <svg
+            className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
           >
-            今すぐ予約する
-          </Link>
-          <p className="text-[10px] text-gray-400 mt-1.5 tracking-wide">
-            24時間受付 ・ キャンセル無料
-          </p>
-        </div>
+            <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+          </svg>
+        </Link>
       </div>
     </div>
   );

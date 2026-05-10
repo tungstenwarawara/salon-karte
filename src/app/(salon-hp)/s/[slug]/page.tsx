@@ -54,11 +54,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!data) return { title: "サロンが見つかりません" };
 
   const content = data.salon.hp_content as SalonHpContent;
+  const displayName = content.display_name_override ?? data.salon.name;
   return {
-    title: `${data.salon.name} | ${content.hero.headline}`,
+    title: `${displayName} | ${content.hero.headline}`,
     description: content.hero.subheadline,
     openGraph: {
-      title: `${data.salon.name} | ${content.hero.headline}`,
+      title: `${displayName} | ${content.hero.headline}`,
       description: content.hero.subheadline,
       type: "website",
     },
@@ -73,16 +74,23 @@ export default async function SalonHpPage({ params }: Props) {
   const { salon, menus } = data;
   const content = salon.hp_content as SalonHpContent;
 
+  // hp_content に override があれば優先（test→本番移植まで test salon 上で SEI 様情報を表示するため）
+  const displayName = content.display_name_override ?? salon.name;
+  const displayAddress = content.address_override ?? salon.address;
+  const displayPhone = content.phone_override !== undefined ? content.phone_override : salon.phone;
+  const displayBusinessHours = content.business_hours_override ?? salon.business_hours;
+  const displayMenus = content.menu_override ?? menus;
+
   return (
     <>
       <HpHeader
-        salonName={salon.name}
+        salonName={displayName}
         bookingSlug={salon.booking_slug}
         bookingEnabled={salon.booking_enabled}
       />
       <HpHero
         hero={content.hero}
-        salonName={salon.name}
+        salonName={displayName}
         bookingSlug={salon.booking_slug}
         bookingEnabled={salon.booking_enabled}
       />
@@ -95,7 +103,7 @@ export default async function SalonHpPage({ params }: Props) {
       )}
       <HpInlineCta bookingSlug={salon.booking_slug} bookingEnabled={salon.booking_enabled} />
       <HpConcept concept={content.concept} />
-      <HpMenu menus={menus} />
+      <HpMenu menus={displayMenus} />
       {content.pricing ? (
         <HpPricing
           pricing={content.pricing}
@@ -109,21 +117,21 @@ export default async function SalonHpPage({ params }: Props) {
       {content.gallery.images.length > 0 && <HpGallery gallery={content.gallery} />}
       <HpTestimonials testimonials={content.testimonials} />
       <HpInlineCta bookingSlug={salon.booking_slug} bookingEnabled={salon.booking_enabled} />
-      <HpInstagram instagram={content.links.instagram} salonName={salon.name} />
+      <HpInstagram instagram={content.links.instagram} salonName={displayName} />
       <HpAccess
         access={content.access}
-        salonName={salon.name}
-        address={salon.address}
-        phone={salon.phone}
-        businessHours={salon.business_hours}
+        salonName={displayName}
+        address={displayAddress}
+        phone={displayPhone}
+        businessHours={displayBusinessHours}
       />
-      <HpFaq faq={content.faq} salonName={salon.name} />
+      <HpFaq faq={content.faq} salonName={displayName} />
       <HpBookingCta
         bookingSlug={salon.booking_slug}
         bookingEnabled={salon.booking_enabled}
-        salonName={salon.name}
+        salonName={displayName}
       />
-      <HpFooter salonName={salon.name} links={content.links} />
+      <HpFooter salonName={displayName} links={content.links} />
       <HpStickyCta
         bookingSlug={salon.booking_slug}
         bookingEnabled={salon.booking_enabled}
@@ -136,14 +144,14 @@ export default async function SalonHpPage({ params }: Props) {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "BeautySalon",
-            name: salon.name,
-            address: salon.address ? {
+            name: displayName,
+            address: displayAddress ? {
               "@type": "PostalAddress",
-              streetAddress: salon.address,
+              streetAddress: displayAddress,
               addressLocality: "東京都",
               addressCountry: "JP",
             } : undefined,
-            telephone: salon.phone || undefined,
+            telephone: displayPhone || undefined,
             url: `https://salonkarte.com/s/${slug}`,
           }),
         }}

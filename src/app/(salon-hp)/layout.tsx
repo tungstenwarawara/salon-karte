@@ -5,5 +5,10 @@ export const metadata: Metadata = {
 };
 
 export default function SalonHpLayout({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen bg-white">{children}</div>;
+  // NANA 系: 白でなくクリーム基調・余白多め・落ち着いた質感
+  return (
+    <div className="min-h-screen bg-[#FAF6F0] text-gray-800 antialiased salon-hp-root">
+      {children}
+    </div>
+  );
 }

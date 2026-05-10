@@ -6,38 +6,42 @@ type Props = {
   salonName: string;
 };
 
+/** NANA系: 最終CTAも控えめなセリフ + 細枠ボタン */
 export function HpBookingCta({ bookingSlug, bookingEnabled, salonName }: Props) {
   if (!bookingEnabled || !bookingSlug) return null;
 
   return (
-    <section id="booking-cta" className="py-20 md:py-28 hp-section">
-      <div className="max-w-3xl mx-auto px-4 text-center">
-        {/* 装飾線 */}
-        <div className="flex items-center justify-center gap-3 mb-12">
-          <div className="w-12 h-px bg-gradient-to-r from-transparent to-[#C4956A]/30" />
-          <div className="w-1.5 h-1.5 rotate-45 bg-[#C4956A]/40" />
-          <div className="w-12 h-px bg-gradient-to-l from-transparent to-[#C4956A]/30" />
-        </div>
-
-        <p className="text-xs tracking-[0.3em] text-[#C4956A] mb-6 uppercase">Reservation</p>
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+    <section id="booking-cta" className="py-28 md:py-36 hp-section bg-[#FAF6F0]">
+      <div className="max-w-3xl mx-auto px-5 md:px-10 text-center">
+        <p className="text-[10px] tracking-[0.4em] text-[#9B7A52] uppercase mb-5">Reservation</p>
+        <h2
+          className="text-2xl md:text-[1.7rem] font-light tracking-[0.1em] text-gray-800 mb-6"
+          style={{ fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", serif' }}
+        >
           ご予約をお待ちしております
         </h2>
-        <p className="text-gray-500 mb-10 leading-relaxed">
-          {salonName}で、あなただけの特別な時間をお過ごしください。
+        <p className="text-sm text-gray-500 leading-[2] tracking-wider mb-12">
+          {salonName} で、あなただけの特別な時間をお過ごしください。
         </p>
 
         <Link
           href={`/book/${bookingSlug}`}
-          className="inline-flex items-center justify-center bg-[#C4956A] hover:bg-[#B8875E] text-white font-bold rounded-full px-14 py-4 text-base transition-all duration-300 min-h-[56px] hp-cta-glow"
+          className="group inline-flex items-center gap-4 border border-[#9B7A52] text-[#9B7A52] hover:bg-[#9B7A52] hover:text-white tracking-[0.3em] text-xs uppercase px-10 py-5 transition-all duration-300 min-h-[56px]"
         >
-          Web予約はこちら
-          <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+          <span className="w-6 h-px bg-current" />
+          Reserve Online
+          <svg
+            className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
           </svg>
         </Link>
-        <p className="text-xs text-gray-400 mt-4 tracking-wide">
-          24時間受付 ・ キャンセル無料
+        <p className="text-[10px] tracking-[0.25em] text-gray-400 mt-6 uppercase">
+          24h online · cancel free
         </p>
       </div>
     </section>

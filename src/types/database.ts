@@ -30,6 +30,13 @@ export type HourOverrides = Record<string, DaySchedule>; // "YYYY-MM-DD" → Day
 
 /** サロンHP コンテンツ（hp_content JSONB） */
 export type SalonHpContent = {
+  // テスト用または別表示名/住所/営業時間/メニューで運用したい場合の上書き
+  // 通常は salons テーブルや treatment_menus の値を使用、定義されていれば優先
+  display_name_override?: string;
+  address_override?: string;
+  phone_override?: string | null;
+  business_hours_override?: BusinessHours;
+  menu_override?: { id: string; name: string; price: number; duration_minutes: number }[];
   hero: {
     headline: string;
     subheadline: string;

@@ -5,49 +5,47 @@ type Props = {
   salonName: string;
 };
 
-export function HpFaq({ faq, salonName }: Props) {
+/** NANA系: 細罫線アコーディオン、+/- アイコン、影なし */
+export function HpFaq({ faq }: Props) {
   if (faq.items.length === 0) return null;
 
   return (
-    <section className="py-20 md:py-28 bg-gradient-to-b from-[#FAF7F3] to-[#F5F0EA] hp-section">
-      <div className="max-w-3xl mx-auto px-4">
-        <h2 className="text-2xl md:text-3xl font-bold text-center mb-2 text-gray-900">
-          よくあるご質問
-        </h2>
-        <p className="text-xs tracking-[0.3em] text-[#C4956A] text-center mb-14 uppercase">FAQ</p>
+    <section className="py-24 md:py-32 hp-section bg-white">
+      <div className="max-w-3xl mx-auto px-5 md:px-10">
+        <div className="text-center mb-16 md:mb-20">
+          <p className="text-[10px] tracking-[0.4em] text-[#9B7A52] uppercase mb-4">FAQ</p>
+          <h2
+            className="text-2xl md:text-[1.6rem] font-light tracking-[0.1em] text-gray-800"
+            style={{ fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", serif' }}
+          >
+            よくあるご質問
+          </h2>
+        </div>
 
-        <div className="space-y-3">
+        <div className="border-t border-[#E5DBCB]/60">
           {faq.items.map((item, i) => (
-            <details
-              key={i}
-              className="group bg-white rounded-2xl border border-[#E8E0D8]/60 shadow-sm overflow-hidden"
-            >
-              <summary className="flex items-center justify-between gap-4 cursor-pointer p-6 font-medium text-sm md:text-base list-none min-h-[56px] hover:bg-[#FAF7F3]/50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="w-7 h-7 rounded-full bg-[#C4956A]/10 text-[#C4956A] flex items-center justify-center flex-shrink-0 text-xs font-bold">
-                    Q
+            <details key={i} className="group border-b border-[#E5DBCB]/60">
+              <summary className="flex items-center justify-between gap-4 cursor-pointer py-5 md:py-6 list-none">
+                <span className="flex items-baseline gap-4 md:gap-5">
+                  <span
+                    className="text-[10px] tracking-[0.3em] text-[#9B7A52] uppercase flex-shrink-0"
+                    style={{ fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", serif' }}
+                  >
+                    Q.
                   </span>
-                  <span className="text-gray-900">{item.question}</span>
-                </div>
-                <svg
-                  className="w-5 h-5 text-[#C4956A]/50 flex-shrink-0 transition-transform duration-200 details-open-rotate"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                </svg>
+                  <span className="text-sm md:text-[0.95rem] text-gray-800 tracking-wider leading-[1.7]">
+                    {item.question}
+                  </span>
+                </span>
+                <span className="relative w-3 h-3 flex-shrink-0">
+                  <span className="absolute top-1/2 left-0 w-3 h-px bg-[#9B7A52] -translate-y-1/2" />
+                  <span className="absolute top-0 left-1/2 w-px h-3 bg-[#9B7A52] -translate-x-1/2 transition-transform duration-300 group-open:rotate-90 group-open:opacity-0" />
+                </span>
               </summary>
-              <div className="px-6 pb-6 border-t border-[#E8E0D8]/40">
-                <div className="flex gap-3 pt-5">
-                  <span className="w-7 h-7 rounded-full bg-[#C4956A] text-white flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">
-                    A
-                  </span>
-                  <p className="text-sm text-gray-600 leading-[1.8]">
-                    {item.answer}
-                  </p>
-                </div>
+              <div className="pb-6 md:pb-7 pl-8 md:pl-10 pr-3">
+                <p className="text-sm text-gray-600 leading-[2] tracking-wider whitespace-pre-line">
+                  {item.answer}
+                </p>
               </div>
             </details>
           ))}
