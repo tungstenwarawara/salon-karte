@@ -30,10 +30,10 @@ export function PricingSection() {
       <div className="max-w-3xl mx-auto px-4">
         <ScrollFadeIn>
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance [word-break:auto-phrase]">
               シンプルな料金プラン
             </h2>
-            <p className="text-text-light text-lg">
+            <p className="text-text-light text-lg text-pretty [word-break:auto-phrase]">
               必要な機能は、ぜんぶ入ってこの価格。
             </p>
           </div>
@@ -51,7 +51,13 @@ export function PricingSection() {
               <span className="text-5xl md:text-6xl font-bold text-accent">2,980</span>
               <span className="text-text-light">円/月（税込）</span>
             </div>
-            <p className="text-sm text-text-light mt-2">初期費用 0円 ・ クレジットカード不要 ・ いつでも解約OK</p>
+            <div className="text-sm text-text-light mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="whitespace-nowrap">初期費用 0円</span>
+              <span className="text-text-light/50" aria-hidden>・</span>
+              <span className="whitespace-nowrap">クレジットカード不要</span>
+              <span className="text-text-light/50" aria-hidden>・</span>
+              <span className="whitespace-nowrap">いつでも解約OK</span>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-6">
             {STANDARD_FEATURES.map((f) => (
@@ -84,7 +90,7 @@ export function PricingSection() {
               <span className="text-sm text-text-light">円</span>
             </div>
           </div>
-          <p className="text-sm text-text-light leading-relaxed mb-4">
+          <p className="text-sm text-text-light leading-relaxed mb-4 text-pretty [word-break:auto-phrase]">
             まずは試してみたい方向け。顧客50人・カルテ100件・予約月30件までの目安。
             写真保存・LINE連携・カウンセリングシート・売上分析は含まれません。
           </p>

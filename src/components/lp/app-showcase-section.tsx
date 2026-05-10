@@ -54,10 +54,10 @@ export function AppShowcaseSection() {
       <div className="max-w-5xl mx-auto px-4">
         {/* 見出し */}
         <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance [word-break:auto-phrase]">
             使いやすさを、見てください
           </h2>
-          <p className="text-text-light text-lg">
+          <p className="text-text-light text-lg text-pretty [word-break:auto-phrase]">
             直感的な画面で、ITが苦手でもすぐに使いこなせます
           </p>
         </div>
@@ -102,8 +102,8 @@ export function AppShowcaseSection() {
                 <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
               </svg>
             </div>
-            <h3 className="text-2xl font-bold mb-3">{tab.label}管理</h3>
-            <p className="text-text-light leading-relaxed">{tab.caption}</p>
+            <h3 className="text-2xl font-bold mb-3 text-balance [word-break:auto-phrase]">{tab.label}管理</h3>
+            <p className="text-text-light leading-relaxed text-pretty [word-break:auto-phrase]">{tab.caption}</p>
             <div className="mt-6 flex flex-wrap justify-center md:justify-start gap-2">
               {TABS.map((_, i) => (
                 <button

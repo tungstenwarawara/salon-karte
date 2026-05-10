@@ -51,12 +51,10 @@ export function AllInOneSection() {
         {/* 見出し */}
         <ScrollFadeIn>
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              ツールの掛け持ち、
-              <br className="md:hidden" />
-              やめませんか？
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance [word-break:auto-phrase]">
+              ツールの掛け持ち、やめませんか？
             </h2>
-            <p className="text-text-light text-lg max-w-2xl mx-auto leading-relaxed">
+            <p className="text-text-light text-lg max-w-2xl mx-auto leading-relaxed text-pretty [word-break:auto-phrase]">
               カルテ管理、予約管理、売上管理、在庫管理、会計ソフト連携——
               <br className="hidden md:block" />
               バラバラのツールを使い分ける手間から解放されます。
@@ -120,9 +118,9 @@ export function AllInOneSection() {
                       <path strokeLinecap="round" strokeLinejoin="round" d={b.icon} />
                     </svg>
                   </div>
-                  <h3 className="font-bold text-sm">{b.title}</h3>
+                  <h3 className="font-bold text-sm text-balance [word-break:auto-phrase]">{b.title}</h3>
                 </div>
-                <p className="text-text-light text-sm leading-relaxed pl-12">
+                <p className="text-text-light text-sm leading-relaxed pl-12 text-pretty [word-break:auto-phrase]">
                   {b.description}
                 </p>
               </div>

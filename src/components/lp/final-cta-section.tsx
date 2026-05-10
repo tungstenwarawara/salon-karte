@@ -12,10 +12,10 @@ export function FinalCtaSection() {
       <div className="absolute bottom-0 left-0 w-72 h-72 rounded-full bg-accent/5 blur-2xl animate-orb-drift-slow" />
 
       <ScrollFadeIn className="relative max-w-2xl mx-auto px-4 text-center">
-        <h2 className="text-3xl md:text-4xl font-bold mb-4">
+        <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance [word-break:auto-phrase]">
           まずは無料ではじめてみませんか？
         </h2>
-        <p className="text-text-light text-lg leading-relaxed mb-8">
+        <p className="text-text-light text-lg leading-relaxed mb-8 text-pretty [word-break:auto-phrase]">
           面倒な初期設定は不要。5分で登録完了、
           <br className="hidden md:inline" />
           今日からサロン管理をもっとラクに。
