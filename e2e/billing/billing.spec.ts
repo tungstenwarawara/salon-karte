@@ -45,15 +45,18 @@ test.describe("@billing 課金画面 — おためしプラン", () => {
       await expect(page.locator("body")).toContainText("スタンダードプラン");
       await expect(page.locator("body")).toContainText("2,980");
 
-      // アップグレード CTA
+      // アップグレード CTA（紹介経由なら "30日無料で始める"、通常は "スタンダードにアップグレード"）
       await expect(
-        page.locator("button").filter({ hasText: /スタンダードにアップグレード/ }),
+        page.locator("button").filter({
+          hasText: /(スタンダードにアップグレード|30日無料で始める)/,
+        }),
       ).toBeVisible();
 
-      // 制限説明
-      await expect(page.locator("body")).toContainText("おためしプランの目安");
-      await expect(page.locator("body")).toContainText("顧客 50人まで");
-      await expect(page.locator("body")).toContainText("カルテ 100件まで");
+      // 制限説明（2026-05-10 以降: 「使用状況バー」+「プラン比較」セクションに統合）
+      await expect(page.locator("body")).toContainText("プラン比較");
+      await expect(page.locator("body")).toContainText("顧客 50人");
+      await expect(page.locator("body")).toContainText("カルテ 100件");
+      await expect(page.locator("body")).toContainText("予約 月30件");
     } finally {
       await restore();
     }
