@@ -18,26 +18,33 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 const SALON_ID = "00000000-0000-0000-0000-000000000001";
 const BUCKET = "salon-hp-photos";
 
-async function main() {
-  const local = "/tmp/unsplash-test/hero-silk.jpg";
-  const dest = `${SALON_ID}/hero-silk.jpg`;
-  const buf = fs.readFileSync(local);
+const UPLOADS = [
+  ["/tmp/unsplash-test/hero-silk.jpg", "hero-silk.jpg"],
+  ["/tmp/unsplash-test/moment-candle.jpg", "moment-candle.jpg"],
+  ["/tmp/unsplash-test/reserve-door.jpg", "reserve-door.jpg"],
+];
 
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(dest, buf, {
-      contentType: "image/jpeg",
-      upsert: true,
-      cacheControl: "31536000",
-    });
-  if (error) {
-    console.error("upload failed:", error.message);
-    process.exit(1);
+async function main() {
+  for (const [local, name] of UPLOADS) {
+    if (!fs.existsSync(local)) {
+      console.log(`skip (not found): ${local}`);
+      continue;
+    }
+    const dest = `${SALON_ID}/${name}`;
+    const buf = fs.readFileSync(local);
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(dest, buf, {
+        contentType: "image/jpeg",
+        upsert: true,
+        cacheControl: "31536000",
+      });
+    if (error) {
+      console.error(`fail ${name}: ${error.message}`);
+    } else {
+      console.log(`uploaded: ${dest} (${(buf.length / 1024).toFixed(0)}KB)`);
+    }
   }
-  console.log(`uploaded: ${dest} (${(buf.length / 1024).toFixed(0)}KB)`);
-  console.log(
-    `URL: ${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${dest}`
-  );
 }
 
 main().catch((e) => {
