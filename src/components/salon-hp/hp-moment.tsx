@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 
 type Props = {
   moment: {
@@ -40,13 +41,17 @@ export function HpMoment({ moment }: Props) {
       <div
         ref={bgRef}
         className="absolute inset-0 will-change-transform"
-        style={{
-          backgroundImage: `url(${moment.image_path})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          filter: "saturate(0.85) brightness(0.96)",
-        }}
-      />
+        style={{ filter: "saturate(0.85) brightness(0.96)" }}
+      >
+        <Image
+          src={moment.image_path}
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover"
+          loading="lazy"
+        />
+      </div>
       <div
         className="absolute inset-0 pointer-events-none"
         style={{

@@ -47,7 +47,7 @@ export function HpJourney({ journey }: Props) {
             <div className="reveal-img relative bg-[color:var(--bg)]" style={{ aspectRatio: "4/5" }}>
               <Image
                 src={it.image_path}
-                alt=""
+                alt={`${it.label} - ${it.title}`}
                 fill
                 sizes="(max-width: 768px) 50vw, 20vw"
                 className="object-cover transition-transform duration-[1200ms] ease-out hover:scale-[1.06]"

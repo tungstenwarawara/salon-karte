@@ -6,6 +6,7 @@ type Props = {
     paragraphs: string[];
     image_path: string;
   };
+  salonName: string;
 };
 
 /**
@@ -14,13 +15,14 @@ type Props = {
  *  - PC: カード(右半分) + 画像が左半分に absolute で配置（カードの左上に -24px 飛び出す）
  *  - 画像とテキストが絶対に重ならないよう、本文は marginLeft で画像分の幅を確保
  */
-export function HpConcept({ concept }: Props) {
+export function HpConcept({ concept, salonName }: Props) {
+  const altText = `${salonName} のサロン空間`;
   return (
     <section className="px-[5vw] py-20 md:py-[120px]">
       {/* モバイル: シンプル縦積み */}
       <div className="md:hidden max-w-[560px] mx-auto reveal">
         <div className="reveal-img relative w-full overflow-hidden" style={{ aspectRatio: "5/4" }}>
-          <Image src={concept.image_path} alt="" fill sizes="100vw" className="object-cover" />
+          <Image src={concept.image_path} alt={altText} fill sizes="100vw" className="object-cover" />
         </div>
         <div className="px-6 py-9" style={{ background: "var(--soft)" }}>
           <span className="head-en">{concept.eyebrow ?? "CONCEPT"}</span>
@@ -59,7 +61,7 @@ export function HpConcept({ concept }: Props) {
           >
             <Image
               src={concept.image_path}
-              alt=""
+              alt={altText}
               fill
               sizes="(max-width: 1120px) 44vw, 490px"
               className="object-cover transition-transform duration-[1400ms] ease-out hover:scale-[1.04]"

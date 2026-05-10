@@ -39,7 +39,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  // maximumScale は削除（アクセシビリティ：視覚障害ユーザーがズームできるように）
 };
 
 export default function RootLayout({

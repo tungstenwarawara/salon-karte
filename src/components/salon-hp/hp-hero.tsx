@@ -1,8 +1,10 @@
 import type { SalonHpContent } from "@/types/database";
+import Image from "next/image";
 
 type Props = {
   hero: SalonHpContent["hero"];
   brandMark: string;
+  salonName: string;
 };
 
 /**
@@ -12,23 +14,30 @@ type Props = {
  * - 左中央に "No.01 Welcome — Ginza · Tokyo"
  * - 右下に縦書き "SCROLL" + パルスライン
  */
-export function HpHero({ hero, brandMark }: Props) {
+export function HpHero({ hero, brandMark, salonName }: Props) {
   const headline = hero.headline || brandMark;
   return (
     <section
       id="top"
       className="relative h-screen min-h-[640px] overflow-hidden bg-[#1a1a18] sei-dark-section"
     >
-      {/* Background image with Ken Burns */}
+      {/* SEO/A11y用 h1 (視覚的には非表示) */}
+      <h1 className="sr-only">
+        {salonName} ／ {hero.headline} {hero.subheadline}
+      </h1>
+
+      {/* Background image with Ken Burns (Next.js Image で最適化) */}
       {hero.image_path && (
-        <div
-          className="absolute inset-0 hero-bg"
-          style={{
-            backgroundImage: `url(${hero.image_path})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
+        <div className="absolute inset-0 hero-bg">
+          <Image
+            src={hero.image_path}
+            alt={`${salonName} ${hero.headline}`}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+        </div>
       )}
 
       {/* Top + bottom gradient overlay */}

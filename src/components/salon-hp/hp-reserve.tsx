@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 type Props = {
   bookingSlug: string | null;
@@ -28,12 +29,21 @@ export function HpReserve({
     <section
       id="reserve"
       className="relative px-[5vw] py-32 md:py-[160px] text-center text-white sei-dark-section overflow-hidden"
-      style={{
-        backgroundImage: `linear-gradient(rgba(20,18,15,0.55), rgba(20,18,15,0.55)), url(${imagePath})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
     >
+      {/* 背景画像 (Next.js Image で最適化) */}
+      <Image
+        src={imagePath}
+        alt=""
+        fill
+        sizes="100vw"
+        className="object-cover -z-10"
+        loading="lazy"
+      />
+      {/* 暗オーバーレイ */}
+      <div
+        className="absolute inset-0 -z-10 pointer-events-none"
+        style={{ background: "rgba(20,18,15,0.55)" }}
+      />
       <span className="head-en reveal text-white/85 block">
         {reserve?.eyebrow ?? "RESERVATION"}
       </span>
