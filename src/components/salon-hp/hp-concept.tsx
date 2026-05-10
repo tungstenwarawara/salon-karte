@@ -9,40 +9,28 @@ type Props = {
 };
 
 /**
- * Claude Design 仕様の Concept カード:
- *  - カード本体は --soft 背景
- *  - 画像は align-self: start で row 高さに引き伸ばされず、
- *    transform: translate で上左に飛び出す（PC: -32px, モバイル: -12px）
- *  - PCは grid 5/7、モバイルは縦積み
+ * Concept セクション (シンプル版)
+ *  - モバイル: 画像 → カード を縦積み
+ *  - PC: カード(右半分) + 画像が左半分に absolute で配置（カードの左上に -24px 飛び出す）
+ *  - 画像とテキストが絶対に重ならないよう、本文は marginLeft で画像分の幅を確保
  */
 export function HpConcept({ concept }: Props) {
   return (
-    <section className="px-[5vw] py-20 md:py-[100px]">
-      <div className="hp-concept-card reveal max-w-[1120px] mx-auto relative grid grid-cols-1 md:grid-cols-[5fr_7fr] items-stretch">
-        <div
-          className="hp-concept-pic reveal-img relative overflow-hidden"
-          style={{ aspectRatio: "5/4", alignSelf: "start" }}
-        >
-          <Image
-            src={concept.image_path}
-            alt=""
-            fill
-            sizes="(max-width: 768px) 100vw, 40vw"
-            className="object-cover transition-transform duration-[1400ms] ease-out hover:scale-[1.04]"
-          />
+    <section className="px-[5vw] py-20 md:py-[120px]">
+      {/* モバイル: シンプル縦積み */}
+      <div className="md:hidden max-w-[560px] mx-auto reveal">
+        <div className="reveal-img relative w-full overflow-hidden" style={{ aspectRatio: "5/4" }}>
+          <Image src={concept.image_path} alt="" fill sizes="100vw" className="object-cover" />
         </div>
-
-        <div className="hp-concept-body px-7 py-9 md:px-12 md:py-14 lg:px-16 lg:py-16 md:pl-6">
+        <div className="px-6 py-9" style={{ background: "var(--soft)" }}>
           <span className="head-en">{concept.eyebrow ?? "CONCEPT"}</span>
           {concept.paragraphs.map((p, i) => (
             <p
               key={i}
-              className={`mt-6 md:mt-7 leading-[2.4] tracking-[0.08em] whitespace-pre-line ${
-                i === 0 ? "text-[15px] md:text-base" : "text-[12.5px] md:text-[13px]"
+              className={`mt-5 leading-[2.3] tracking-[0.08em] whitespace-pre-line ${
+                i === 0 ? "text-[15px]" : "text-[12.5px]"
               }`}
-              style={{
-                color: i === 0 ? "var(--ink)" : "var(--ink-soft)",
-              }}
+              style={{ color: i === 0 ? "var(--ink)" : "var(--ink-soft)" }}
             >
               {p}
             </p>
@@ -50,13 +38,58 @@ export function HpConcept({ concept }: Props) {
         </div>
       </div>
 
-      <style>{`
-        .hp-concept-card { background: var(--soft); }
-        .hp-concept-pic { transform: translate(-12px, -12px); }
-        @media (min-width: 768px) {
-          .hp-concept-pic { transform: translate(-32px, -32px); }
-        }
-      `}</style>
+      {/* PC: 画像が左に absolute、テキストが右に marginLeft 確保 */}
+      <div className="hidden md:block reveal">
+        <div
+          className="relative max-w-[1120px] mx-auto"
+          style={{
+            background: "var(--soft)",
+            minHeight: "420px",
+          }}
+        >
+          {/* 画像: 左半分に絶対配置、上左 -24px はみ出す */}
+          <div
+            className="reveal-img absolute overflow-hidden"
+            style={{
+              top: "-24px",
+              left: "-24px",
+              width: "44%",
+              aspectRatio: "5/4",
+            }}
+          >
+            <Image
+              src={concept.image_path}
+              alt=""
+              fill
+              sizes="(max-width: 1120px) 44vw, 490px"
+              className="object-cover transition-transform duration-[1400ms] ease-out hover:scale-[1.04]"
+            />
+          </div>
+
+          {/* 本文: 画像幅分(44%) + バッファ(40px) を marginLeft で確保 → 重ならない */}
+          <div
+            style={{
+              marginLeft: "calc(44% + 40px)",
+              paddingTop: "64px",
+              paddingRight: "64px",
+              paddingBottom: "64px",
+            }}
+          >
+            <span className="head-en">{concept.eyebrow ?? "CONCEPT"}</span>
+            {concept.paragraphs.map((p, i) => (
+              <p
+                key={i}
+                className={`mt-7 leading-[2.4] tracking-[0.08em] whitespace-pre-line ${
+                  i === 0 ? "text-base" : "text-[13px]"
+                }`}
+                style={{ color: i === 0 ? "var(--ink)" : "var(--ink-soft)" }}
+              >
+                {p}
+              </p>
+            ))}
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
