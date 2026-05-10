@@ -5,68 +5,69 @@ type Props = {
   salonName: string;
 };
 
-/** NANA系: 細罫線アコーディオン、+/- アイコン、影なし */
+/** NANA / Claude Design テイストの細罫線アコーディオン */
 export function HpFaq({ faq }: Props) {
   if (faq.items.length === 0) return null;
 
   return (
-    <section className="py-24 md:py-32 hp-section bg-white">
-      <div className="max-w-3xl mx-auto px-5 md:px-10">
-        <div className="text-center mb-16 md:mb-20">
-          <p className="text-[10px] tracking-[0.4em] text-[#9B7A52] uppercase mb-4">FAQ</p>
-          <h2
-            className="text-2xl md:text-[1.6rem] font-light tracking-[0.1em] text-gray-800"
-            style={{ fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", serif' }}
-          >
-            よくあるご質問
-          </h2>
-        </div>
-
-        <div className="border-t border-[#E5DBCB]/60">
-          {faq.items.map((item, i) => (
-            <details key={i} className="group border-b border-[#E5DBCB]/60">
-              <summary className="flex items-center justify-between gap-4 cursor-pointer py-5 md:py-6 list-none">
-                <span className="flex items-baseline gap-4 md:gap-5">
-                  <span
-                    className="text-[10px] tracking-[0.3em] text-[#9B7A52] uppercase flex-shrink-0"
-                    style={{ fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", serif' }}
-                  >
-                    Q.
-                  </span>
-                  <span className="text-sm md:text-[0.95rem] text-gray-800 tracking-wider leading-[1.7]">
-                    {item.question}
-                  </span>
-                </span>
-                <span className="relative w-3 h-3 flex-shrink-0">
-                  <span className="absolute top-1/2 left-0 w-3 h-px bg-[#9B7A52] -translate-y-1/2" />
-                  <span className="absolute top-0 left-1/2 w-px h-3 bg-[#9B7A52] -translate-x-1/2 transition-transform duration-300 group-open:rotate-90 group-open:opacity-0" />
-                </span>
-              </summary>
-              <div className="pb-6 md:pb-7 pl-8 md:pl-10 pr-3">
-                <p className="text-sm text-gray-600 leading-[2] tracking-wider whitespace-pre-line">
-                  {item.answer}
-                </p>
-              </div>
-            </details>
-          ))}
-        </div>
-
-        {/* JSON-LD FAQPage */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "FAQPage",
-              mainEntity: faq.items.map((item) => ({
-                "@type": "Question",
-                name: item.question,
-                acceptedAnswer: { "@type": "Answer", text: item.answer },
-              })),
-            }),
-          }}
-        />
+    <section className="px-[5vw] py-24 md:py-[120px] max-w-[880px] mx-auto">
+      <div className="text-center mb-16 md:mb-20">
+        <span className="head-en reveal block">FAQ</span>
+        <h2
+          className="reveal font-serif-en italic font-light mt-6 leading-none"
+          style={{ fontSize: "clamp(40px, 5vw, 72px)" }}
+        >
+          Questions.
+        </h2>
+        <p className="reveal font-serif-jp text-xs tracking-[0.4em] text-[color:var(--ink-mute)] mt-5">
+          — よくあるご質問
+        </p>
       </div>
+
+      <div className="border-t border-[color:var(--line)]">
+        {faq.items.map((item, i) => (
+          <details
+            key={i}
+            className="reveal group border-b border-[color:var(--line)]"
+          >
+            <summary className="flex items-baseline justify-between gap-5 cursor-pointer py-7 list-none">
+              <span className="flex items-baseline gap-5 md:gap-7">
+                <span className="font-serif-en italic text-[color:var(--accent)] text-sm tracking-[0.18em]">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="font-serif-jp text-[15px] tracking-[0.16em] leading-[1.7] text-[color:var(--ink)]">
+                  {item.question}
+                </span>
+              </span>
+              <span className="relative w-3 h-3 flex-shrink-0">
+                <span className="absolute top-1/2 left-0 w-3 h-px bg-[color:var(--ink)] -translate-y-1/2" />
+                <span className="absolute top-0 left-1/2 w-px h-3 bg-[color:var(--ink)] -translate-x-1/2 transition-transform duration-300 group-open:scale-y-0" />
+              </span>
+            </summary>
+            <div className="pb-8 pl-9 md:pl-12 pr-3">
+              <p className="text-[13px] leading-[2.2] tracking-[0.06em] text-[color:var(--ink-soft)] whitespace-pre-line">
+                {item.answer}
+              </p>
+            </div>
+          </details>
+        ))}
+      </div>
+
+      {/* JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faq.items.map((item) => ({
+              "@type": "Question",
+              name: item.question,
+              acceptedAnswer: { "@type": "Answer", text: item.answer },
+            })),
+          }),
+        }}
+      />
     </section>
   );
 }

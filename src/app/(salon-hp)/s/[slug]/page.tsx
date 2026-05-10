@@ -2,24 +2,21 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { SalonHpContent } from "@/types/database";
-import { HpHeader } from "@/components/salon-hp/hp-header";
+import { HpCornerUi } from "@/components/salon-hp/hp-corner-ui";
+import { HpRevealController } from "@/components/salon-hp/hp-reveal";
 import { HpHero } from "@/components/salon-hp/hp-hero";
-import { HpAbout } from "@/components/salon-hp/hp-about";
-import { HpBeforeAfter } from "@/components/salon-hp/hp-before-after";
+import { HpMarquee } from "@/components/salon-hp/hp-marquee";
+import { HpWhySei } from "@/components/salon-hp/hp-why-sei";
+import { HpMoment } from "@/components/salon-hp/hp-moment";
 import { HpConcept } from "@/components/salon-hp/hp-concept";
 import { HpMenu } from "@/components/salon-hp/hp-menu";
-import { HpFlow } from "@/components/salon-hp/hp-flow";
-import { HpGallery } from "@/components/salon-hp/hp-gallery";
-import { HpTestimonials } from "@/components/salon-hp/hp-testimonials";
-import { HpInstagram } from "@/components/salon-hp/hp-instagram";
+import { HpJourney } from "@/components/salon-hp/hp-journey";
+import { HpTherapist } from "@/components/salon-hp/hp-therapist";
+import { HpVoice } from "@/components/salon-hp/hp-voice";
+import { HpReserve } from "@/components/salon-hp/hp-reserve";
 import { HpAccess } from "@/components/salon-hp/hp-access";
 import { HpFaq } from "@/components/salon-hp/hp-faq";
-import { HpBookingCta } from "@/components/salon-hp/hp-booking-cta";
 import { HpFooter } from "@/components/salon-hp/hp-footer";
-import { HpConcerns } from "@/components/salon-hp/hp-concerns";
-import { HpInlineCta } from "@/components/salon-hp/hp-inline-cta";
-import { HpPricing } from "@/components/salon-hp/hp-pricing";
-import { HpStickyCta } from "@/components/salon-hp/hp-sticky-cta";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -37,7 +34,6 @@ async function getSalonData(slug: string) {
 
   if (!salon || !salon.hp_content) return null;
 
-  // アクティブなメニュー取得
   const { data: menus } = await admin
     .from("treatment_menus")
     .select("id, name, price, duration_minutes")
@@ -74,67 +70,126 @@ export default async function SalonHpPage({ params }: Props) {
   const { salon, menus } = data;
   const content = salon.hp_content as SalonHpContent;
 
-  // hp_content に override があれば優先（test→本番移植まで test salon 上で SEI 様情報を表示するため）
+  // overrides
   const displayName = content.display_name_override ?? salon.name;
   const displayAddress = content.address_override ?? salon.address;
   const displayPhone = content.phone_override !== undefined ? content.phone_override : salon.phone;
   const displayBusinessHours = content.business_hours_override ?? salon.business_hours;
   const displayMenus = content.menu_override ?? menus;
 
+  // brand
+  const brandMark = content.brand?.mark ?? displayName;
+  const brandSub = content.brand?.sub ?? "Bust care studio";
+  const brandSummary = content.brand?.summary;
+
+  // reserve image fallback to hero image
+  const reserveImage = content.reserve?.image_path ?? content.hero.image_path ?? "";
+
   return (
     <>
-      <HpHeader
-        salonName={displayName}
+      <HpRevealController />
+      <HpCornerUi
+        brandMark={brandMark}
+        brandSub={brandSub}
         bookingSlug={salon.booking_slug}
         bookingEnabled={salon.booking_enabled}
       />
-      <HpHero
-        hero={content.hero}
+
+      <main>
+        {/* 01. Hero */}
+        <HpHero hero={content.hero} brandMark={brandMark} />
+
+        {/* 02. Marquee */}
+        {content.marquee && content.marquee.items.length > 0 && (
+          <HpMarquee items={content.marquee.items} />
+        )}
+
+        {/* 03. Why SEI */}
+        {content.why_sei && content.why_sei.items.length > 0 && (
+          <HpWhySei whySei={content.why_sei} />
+        )}
+
+        {/* 04. Moment */}
+        {content.moment && <HpMoment moment={content.moment} />}
+
+        {/* 05. Concept */}
+        {content.concept.paragraphs && content.concept.image_path && (
+          <section id="concept">
+            <HpConcept
+              concept={{
+                eyebrow: content.concept.eyebrow,
+                paragraphs: content.concept.paragraphs,
+                image_path: content.concept.image_path,
+              }}
+            />
+          </section>
+        )}
+
+        {/* 06. Menu */}
+        <section id="menu">
+          <HpMenu menus={displayMenus} />
+        </section>
+
+        {/* 07. Journey */}
+        {content.journey && content.journey.items.length > 0 && (
+          <section id="journey">
+            <HpJourney journey={content.journey} />
+          </section>
+        )}
+
+        {/* 08. Therapist */}
+        {content.about.name_en && content.about.owner_image_path && (
+          <HpTherapist
+            therapist={{
+              eyebrow: "THERAPIST",
+              name_en: content.about.name_en,
+              role: content.about.role ?? content.about.owner_title,
+              description: content.about.story ?? content.about.description,
+              image_path: content.about.owner_image_path,
+              career: content.about.career,
+              license: content.about.license,
+              specialty: content.about.specialty,
+            }}
+          />
+        )}
+
+        {/* 09. Voice */}
+        <section id="voice">
+          <HpVoice testimonials={content.testimonials} />
+        </section>
+
+        {/* 10. Access */}
+        <section id="access">
+          <HpAccess
+            access={content.access}
+            salonName={displayName}
+            address={displayAddress}
+            phone={displayPhone}
+            businessHours={displayBusinessHours}
+          />
+        </section>
+
+        {/* 11. FAQ */}
+        <section id="faq">
+          <HpFaq faq={content.faq} salonName={displayName} />
+        </section>
+
+        {/* 12. Reserve (closing CTA) */}
+        {reserveImage && (
+          <HpReserve
+            bookingSlug={salon.booking_slug}
+            bookingEnabled={salon.booking_enabled}
+            imagePath={reserveImage}
+            reserve={content.reserve}
+          />
+        )}
+      </main>
+
+      <HpFooter
         salonName={displayName}
-        bookingSlug={salon.booking_slug}
-        bookingEnabled={salon.booking_enabled}
-      />
-      {content.concerns && content.concerns.items.length > 0 && (
-        <HpConcerns concerns={content.concerns} />
-      )}
-      <HpAbout about={content.about} />
-      {content.before_after && content.before_after.items.length > 0 && (
-        <HpBeforeAfter beforeAfter={content.before_after} />
-      )}
-      <HpInlineCta bookingSlug={salon.booking_slug} bookingEnabled={salon.booking_enabled} />
-      <HpConcept concept={content.concept} />
-      <HpMenu menus={displayMenus} />
-      {content.pricing ? (
-        <HpPricing
-          pricing={content.pricing}
-          bookingSlug={salon.booking_slug}
-          bookingEnabled={salon.booking_enabled}
-        />
-      ) : (
-        <HpInlineCta bookingSlug={salon.booking_slug} bookingEnabled={salon.booking_enabled} />
-      )}
-      <HpFlow flow={content.flow} />
-      {content.gallery.images.length > 0 && <HpGallery gallery={content.gallery} />}
-      <HpTestimonials testimonials={content.testimonials} />
-      <HpInlineCta bookingSlug={salon.booking_slug} bookingEnabled={salon.booking_enabled} />
-      <HpInstagram instagram={content.links.instagram} salonName={displayName} />
-      <HpAccess
-        access={content.access}
-        salonName={displayName}
-        address={displayAddress}
-        phone={displayPhone}
-        businessHours={displayBusinessHours}
-      />
-      <HpFaq faq={content.faq} salonName={displayName} />
-      <HpBookingCta
-        bookingSlug={salon.booking_slug}
-        bookingEnabled={salon.booking_enabled}
-        salonName={displayName}
-      />
-      <HpFooter salonName={displayName} links={content.links} />
-      <HpStickyCta
-        bookingSlug={salon.booking_slug}
-        bookingEnabled={salon.booking_enabled}
+        brandMark={brandMark}
+        brandSummary={brandSummary}
+        links={content.links}
       />
 
       {/* JSON-LD LocalBusiness */}
@@ -145,12 +200,14 @@ export default async function SalonHpPage({ params }: Props) {
             "@context": "https://schema.org",
             "@type": "BeautySalon",
             name: displayName,
-            address: displayAddress ? {
-              "@type": "PostalAddress",
-              streetAddress: displayAddress,
-              addressLocality: "東京都",
-              addressCountry: "JP",
-            } : undefined,
+            address: displayAddress
+              ? {
+                  "@type": "PostalAddress",
+                  streetAddress: displayAddress,
+                  addressLocality: "東京都",
+                  addressCountry: "JP",
+                }
+              : undefined,
             telephone: displayPhone || undefined,
             url: `https://salonkarte.com/s/${slug}`,
           }),

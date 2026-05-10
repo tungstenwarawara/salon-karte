@@ -1,0 +1,144 @@
+/**
+ * SEI様HP用 デザイントークン + アニメーション
+ * Claude Design (sei homepage v3) 由来
+ */
+
+.salon-hp-root {
+  --bg: #fbfbf9;
+  --soft: #eef1ec;
+  --soft-2: #e2e9e7;
+  --soft-3: #f1ebe6;
+  --ink: #2a2d2b;
+  --ink-soft: #6c6f6c;
+  --ink-mute: #9aa09c;
+  --line: #e6e8e3;
+  --accent: #8aa093;
+
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: 300;
+  line-height: 1.95;
+  letter-spacing: 0.04em;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+.salon-hp-root img { display: block; max-width: 100%; }
+.salon-hp-root a { color: inherit; text-decoration: none; }
+
+/* ====== Fonts ====== */
+.font-serif-en { font-family: var(--font-cormorant), 'Cormorant Garamond', serif; }
+.font-sans-en { font-family: var(--font-jost), 'Jost', sans-serif; }
+.font-serif-jp { font-family: var(--font-shippori), var(--font-noto-serif-jp), 'Shippori Mincho', 'Noto Serif JP', serif; }
+
+/* ====== Eyebrow label ====== */
+.head-en {
+  font-family: var(--font-jost), 'Jost', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0.55em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+/* ====== Reveal animations ====== */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 1s cubic-bezier(0.2, 0.7, 0.2, 1), transform 1s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-img {
+  overflow: hidden;
+}
+.reveal-img > * {
+  transform: scale(1.18);
+  transition: transform 1.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.reveal-img.in > * {
+  transform: scale(1);
+}
+
+/* ====== Hero ====== */
+@keyframes kenburns {
+  from { transform: scale(1.18) translate(2%, -2%); }
+  to { transform: scale(1.02) translate(0, 0); }
+}
+@keyframes rise {
+  from { transform: translateY(110%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scrollPulse {
+  0%, 100% { transform: scaleY(0.4); transform-origin: top; }
+  50% { transform: scaleY(1); transform-origin: top; }
+}
+@keyframes scrollX {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes ctaIn {
+  to { opacity: 1; transform: scale(1); }
+}
+
+.hero-bg {
+  filter: saturate(0.78) brightness(0.95);
+  animation: kenburns 18s 0.2s ease-out both;
+}
+.hero-rise {
+  display: inline-block;
+  transform: translateY(120%);
+  opacity: 0;
+  animation: rise 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+.hero-rise-lead {
+  display: inline-block;
+  transform: translateY(110%);
+  animation: rise 0.9s 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+.hero-rise-sub {
+  display: inline-block;
+  transform: translateY(110%);
+  animation: rise 0.9s 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+.hero-fadein {
+  opacity: 0;
+  animation: fadein 1s 1.4s forwards;
+}
+.hero-meta-fadein {
+  opacity: 0;
+  animation: fadein 1.2s 1.6s forwards;
+}
+.scroll-pulse {
+  animation: scrollPulse 2.4s ease-in-out infinite;
+}
+
+/* ====== Marquee ====== */
+.marquee-track {
+  animation: scrollX 38s linear infinite;
+  will-change: transform;
+}
+
+/* ====== Sticky CTA dot ====== */
+.sticky-cta-dot {
+  transform: scale(0.9);
+  opacity: 0;
+  animation: ctaIn 1s 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+/* ====== Reduced motion ====== */
+@media (prefers-reduced-motion: reduce) {
+  .salon-hp-root *,
+  .salon-hp-root *::before,
+  .salon-hp-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

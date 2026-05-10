@@ -31,12 +31,67 @@ export type HourOverrides = Record<string, DaySchedule>; // "YYYY-MM-DD" → Day
 /** サロンHP コンテンツ（hp_content JSONB） */
 export type SalonHpContent = {
   // テスト用または別表示名/住所/営業時間/メニューで運用したい場合の上書き
-  // 通常は salons テーブルや treatment_menus の値を使用、定義されていれば優先
   display_name_override?: string;
   address_override?: string;
   phone_override?: string | null;
   business_hours_override?: BusinessHours;
-  menu_override?: { id: string; name: string; price: number; duration_minutes: number }[];
+  menu_override?: {
+    id: string;
+    name: string;
+    name_en?: string;
+    description?: string;
+    price: number;
+    duration_minutes: number;
+  }[];
+
+  // ブランド表記 (Hero / Footer / Corner Logo で参照)
+  brand?: {
+    mark: string;       // 例: "SEI." (corner logo / footer)
+    sub?: string;       // 例: "Bust care studio"
+    summary?: string;   // フッターの説明文
+  };
+
+  // マーキー帯
+  marquee?: {
+    items: string[];
+  };
+
+  // Why セクション (3 reasons)
+  why_sei?: {
+    eyebrow?: string;
+    headline?: string;
+    headline_em?: string;
+    lead?: string;
+    items: { number: string; label: string; title: string; description: string }[];
+  };
+
+  // Moment 全画面引用
+  moment?: {
+    eyebrow?: string;
+    headline: string;
+    body: string;
+    image_path: string;
+  };
+
+  // Journey 5ステップ
+  journey?: {
+    eyebrow?: string;
+    headline?: string;
+    subheadline?: string;
+    items: { number: string; label: string; title: string; description: string; image_path: string }[];
+  };
+
+  // Reserve 最終CTA
+  reserve?: {
+    eyebrow?: string;
+    headline?: string;
+    lead?: string;
+    primary_label?: string;
+    secondary_label?: string;
+    secondary_url?: string | null;
+    image_path?: string;
+  };
+
   hero: {
     headline: string;
     subheadline: string;
@@ -53,12 +108,20 @@ export type SalonHpContent = {
     owner_name: string;
     owner_title: string;
     owner_image_path: string | null;
+    name_en?: string;            // Therapist セクションの "Ruika." 等
+    role?: string;               // Therapist 役職
+    career?: string;             // dl Career
+    license?: string;            // dl License
+    specialty?: string;          // dl Specialty
     story?: string;
     qualifications?: string[];
     message?: string;
   };
   concept: {
     title: string;
+    paragraphs?: string[];       // Claude Design 用 (本文段落)
+    image_path?: string;         // Claude Design 用 (左の写真)
+    eyebrow?: string;
     points: { title: string; description: string; icon?: string }[];
   };
   before_after?: {

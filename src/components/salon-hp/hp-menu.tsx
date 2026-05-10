@@ -1,74 +1,81 @@
 type MenuItem = {
   id: string;
   name: string;
+  name_en?: string;
+  description?: string;
   price: number;
   duration_minutes: number;
 };
 
 type Props = {
   menus: MenuItem[];
+  eyebrow?: string;
+  headline?: string;
+  subheadline?: string;
 };
 
-/** NANA系: NANAのMENU&PRICE構成を踏襲。左にメニュー名、右に価格、細罫線区切り */
-export function HpMenu({ menus }: Props) {
+/** Claude Design: エディトリアルなメニューテーブル、ホバーで背景拡張 */
+export function HpMenu({ menus, eyebrow, headline, subheadline }: Props) {
   if (menus.length === 0) return null;
 
   return (
-    <section className="py-24 md:py-32 hp-section bg-white">
-      <div className="max-w-3xl mx-auto px-5 md:px-10">
-        <div className="text-center mb-16 md:mb-20">
-          <p className="text-[10px] tracking-[0.4em] text-[#9B7A52] uppercase mb-4">
-            Menu &amp; Price
+    <section className="px-[5vw] py-24 md:py-[120px] max-w-[1120px] mx-auto">
+      <div className="text-center mb-16 md:mb-20">
+        <span className="head-en reveal block">{eyebrow ?? "MENU & PRICE"}</span>
+        <h2
+          className="reveal font-serif-en italic font-light mt-6 leading-none"
+          style={{ fontSize: "clamp(48px, 6vw, 84px)" }}
+        >
+          {headline ?? "Treatments."}
+        </h2>
+        {subheadline && (
+          <p className="reveal font-serif-jp text-xs tracking-[0.4em] text-[color:var(--ink-mute)] mt-5">
+            {subheadline}
           </p>
-          <h2
-            className="text-2xl md:text-[1.6rem] font-light tracking-[0.1em] text-gray-800"
-            style={{ fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", serif' }}
-          >
-            メニュー・料金
-          </h2>
-        </div>
-
-        <ul className="border-t border-[#E5DBCB]/60">
-          {menus.map((menu) => {
-            const isPopular = menu.name.includes("人気") || menu.name.includes("No.1");
-            return (
-              <li
-                key={menu.id}
-                className="grid grid-cols-12 gap-4 items-baseline py-5 md:py-6 border-b border-[#E5DBCB]/60"
-              >
-                <div className="col-span-8 md:col-span-9">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <p
-                      className="text-sm md:text-[0.95rem] text-gray-800 tracking-wider"
-                      style={{ fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", serif' }}
-                    >
-                      {menu.name}
-                    </p>
-                    {isPopular && (
-                      <span className="text-[9px] tracking-[0.2em] text-[#9B7A52] uppercase border border-[#9B7A52]/40 px-2 py-0.5">
-                        Popular
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] tracking-[0.15em] text-gray-400 uppercase mt-1.5">
-                    {menu.duration_minutes} min
-                  </p>
-                </div>
-                <p
-                  className="col-span-4 md:col-span-3 text-right text-base md:text-lg text-gray-700 tabular-nums tracking-wider"
-                  style={{ fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", serif' }}
-                >
-                  ¥{menu.price.toLocaleString()}
-                </p>
-              </li>
-            );
-          })}
-        </ul>
-
-        <p className="text-[10px] tracking-[0.2em] text-gray-400 mt-10 text-center uppercase">
-          All prices include tax · Course tickets available
-        </p>
+        )}
       </div>
+
+      <div className="max-w-[880px] mx-auto">
+        {menus.map((m, i) => (
+          <div
+            key={m.id}
+            className="reveal grid items-baseline gap-8 py-9 cursor-pointer transition-all duration-500 group border-t border-[color:var(--line)] last:border-b last:border-b-[color:var(--line)] px-2 hover:bg-[color:var(--soft)] hover:px-6"
+            style={{ gridTemplateColumns: "56px 1fr auto" }}
+          >
+            <span className="font-serif-en italic text-[color:var(--ink-mute)] text-[13px] tracking-[0.18em]">
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            <div>
+              <span className="font-serif-jp text-lg tracking-[0.16em] block">
+                {m.name}
+              </span>
+              {m.name_en && (
+                <span className="block font-sans-en text-[10px] tracking-[0.3em] text-[color:var(--ink-mute)] mt-1.5 uppercase">
+                  {m.name_en}
+                </span>
+              )}
+              {m.description && (
+                <span className="block text-xs text-[color:var(--ink-soft)] tracking-[0.06em] leading-[1.9] max-w-[460px] mt-3.5">
+                  {m.description}
+                </span>
+              )}
+            </div>
+            <div className="text-right">
+              <div className="font-sans-en text-[10px] tracking-[0.24em] text-[color:var(--ink-mute)] uppercase">
+                {m.duration_minutes} min
+              </div>
+              <div className="font-serif-en font-light text-[22px] mt-1.5">
+                {m.price.toLocaleString()}
+                <span className="text-sm text-[color:var(--ink-mute)]"> 円</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-center mt-14 text-[11px] tracking-[0.3em] text-[color:var(--ink-mute)]">
+        All prices include tax · 会員価格・回数券は別途ご案内
+      </p>
     </section>
   );
 }
