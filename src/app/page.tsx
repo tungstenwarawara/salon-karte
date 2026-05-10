@@ -5,6 +5,7 @@ import { HeroSection } from "@/components/lp/hero-section";
 import { ProblemSection } from "@/components/lp/problem-section";
 import { FeaturesSection } from "@/components/lp/features-section";
 import { AppShowcaseSection } from "@/components/lp/app-showcase-section";
+import { TestimonialSection } from "@/components/lp/testimonial-section";
 import { CostSimulator } from "@/components/lp/cost-simulator";
 import { PricingSection } from "@/components/lp/pricing-section";
 import { ComparisonSection } from "@/components/lp/comparison-section";
@@ -64,6 +65,7 @@ export default async function HomePage() {
         <ProblemSection />
         <FeaturesSection />
         <AppShowcaseSection />
+        <TestimonialSection />
         <CostSimulator />
         <PricingSection />
         <ComparisonSection />
