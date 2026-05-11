@@ -5,10 +5,13 @@ import Link from "next/link";
 import { formatDateShort } from "@/lib/format";
 import { RecordListFilters, type PeriodFilter } from "./record-list-filters";
 
+type RecordType = "visit" | "product_only" | "cancelled" | "memo";
+
 type RecordItem = {
   id: string;
   treatmentDate: string;
   menuName: string;
+  recordType: RecordType;
   customerName: string;
   customerId: string;
 };
@@ -25,8 +28,16 @@ type DisplayItem = {
   href: string;
   customerName: string;
   badge?: string;
+  recordType?: RecordType;
   subtitle: string;
   group?: string;
+};
+
+const TYPE_BADGE: Record<RecordType, { label: string; className: string }> = {
+  visit: { label: "来店", className: "bg-accent/10 text-accent" },
+  product_only: { label: "物販", className: "bg-blue-50 text-blue-700" },
+  cancelled: { label: "キャンセル", className: "bg-red-50 text-red-700" },
+  memo: { label: "メモ", className: "bg-gray-100 text-gray-700" },
 };
 
 function getLocalDateStr(offset: number): string {
@@ -47,7 +58,7 @@ function buildItems(
   if (period === "yesterday") {
     return records
       .filter((r) => r.treatmentDate === yesterdayStr)
-      .map((r) => ({ key: r.id, href: `/records/${r.id}`, customerName: r.customerName, subtitle: r.menuName, group: r.treatmentDate }));
+      .map((r) => ({ key: r.id, href: `/records/${r.id}`, customerName: r.customerName, subtitle: r.menuName, recordType: r.recordType, group: r.treatmentDate }));
   }
 
   if (period === "today") {
@@ -62,6 +73,8 @@ function buildItems(
         href: latest ? `/records/${latest.id}` : `/customers/${appt.customerId}`,
         customerName: appt.customerName,
         badge: appt.startTime.slice(0, 5),
+        // 予約から作られた行: 来店カルテ（種別なし表示=visit）として扱う。実カルテがあればその種別を採用
+        recordType: latest && isTodaysRecord ? latest.recordType : undefined,
         subtitle: latest
           ? isTodaysRecord ? latest.menuName : `前回 ${formatDateShort(latest.treatmentDate)} ${latest.menuName}`
           : "カルテなし",
@@ -70,7 +83,7 @@ function buildItems(
     // 予約なしの当日カルテ（ウォークイン）
     for (const r of records) {
       if (r.treatmentDate === todayStr && !appointmentCustomerIds.has(r.customerId)) {
-        items.push({ key: r.id, href: `/records/${r.id}`, customerName: r.customerName, subtitle: r.menuName });
+        items.push({ key: r.id, href: `/records/${r.id}`, customerName: r.customerName, subtitle: r.menuName, recordType: r.recordType });
       }
     }
     return items;
@@ -90,7 +103,7 @@ function buildItems(
   }
 
   // 全期間
-  return records.map((r) => ({ key: r.id, href: `/records/${r.id}`, customerName: r.customerName, subtitle: r.menuName, group: r.treatmentDate }));
+  return records.map((r) => ({ key: r.id, href: `/records/${r.id}`, customerName: r.customerName, subtitle: r.menuName, recordType: r.recordType, group: r.treatmentDate }));
 }
 
 const EMPTY_MESSAGES: Record<PeriodFilter, string> = {
@@ -204,14 +217,22 @@ export function RecordListSearch({
 }
 
 function ItemCard({ item }: { item: DisplayItem }) {
+  // visit はデフォルトの来店カルテなのでバッジは表示しない（既存UI維持）
+  const showTypeBadge = item.recordType && item.recordType !== "visit";
+  const badge = showTypeBadge ? TYPE_BADGE[item.recordType!] : null;
   return (
     <Link
       href={item.href}
       className="block bg-surface border border-border rounded-xl p-3 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span className="font-medium text-sm">{item.customerName}</span>
-        {item.badge && <span className="text-xs text-accent font-medium">{item.badge}</span>}
+        <div className="flex items-center gap-2 shrink-0">
+          {badge && (
+            <span className={`text-xs font-medium rounded-md px-1.5 py-0.5 ${badge.className}`}>{badge.label}</span>
+          )}
+          {item.badge && <span className="text-xs text-accent font-medium">{item.badge}</span>}
+        </div>
       </div>
       <p className="text-xs text-text-light mt-0.5">{item.subtitle}</p>
     </Link>

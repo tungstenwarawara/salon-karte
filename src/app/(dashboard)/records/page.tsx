@@ -32,7 +32,7 @@ export default async function RecordsPage() {
   const [recordsResult, todayApptResult, tomorrowApptResult] = await Promise.all([
     supabase
       .from("treatment_records")
-      .select("id, treatment_date, menu_name_snapshot, customer_id, customers(id, last_name, first_name)")
+      .select("id, treatment_date, menu_name_snapshot, customer_id, record_type, notes_after, customers(id, last_name, first_name)")
       .eq("salon_id", salon.id)
       .order("treatment_date", { ascending: false })
       .order("created_at", { ascending: false }),
@@ -54,10 +54,18 @@ export default async function RecordsPage() {
 
   const allRecords = (recordsResult.data ?? []).map((r) => {
     const c = r.customers as { id: string; last_name: string; first_name: string } | null;
+    // 種別ごとにサマリーを切り替え（subtitle 表示用）
+    const summary = (() => {
+      if (r.record_type === "product_only") return "商品のみ購入";
+      if (r.record_type === "cancelled") return r.notes_after?.slice(0, 30) || "キャンセル";
+      if (r.record_type === "memo") return r.notes_after?.slice(0, 30) || "メモ";
+      return r.menu_name_snapshot ?? "施術記録";
+    })();
     return {
       id: r.id,
       treatmentDate: r.treatment_date,
-      menuName: r.menu_name_snapshot ?? "施術記録",
+      menuName: summary,
+      recordType: r.record_type as "visit" | "product_only" | "cancelled" | "memo",
       customerName: c ? `${c.last_name} ${c.first_name}` : "不明",
       customerId: r.customer_id,
     };
