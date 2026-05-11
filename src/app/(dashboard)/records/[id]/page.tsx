@@ -24,6 +24,20 @@ const PAYMENT_TYPE_LABELS: Record<string, string> = {
   service: "サービス",
 };
 
+const RECORD_TYPE_BADGE: Record<TreatmentRecord["record_type"], { label: string; className: string }> = {
+  visit: { label: "来店", className: "bg-accent/10 text-accent" },
+  product_only: { label: "物販のみ", className: "bg-blue-50 text-blue-700" },
+  cancelled: { label: "キャンセル", className: "bg-red-50 text-red-700" },
+  memo: { label: "メモ", className: "bg-gray-100 text-gray-700" },
+};
+
+const PAGE_TITLE: Record<TreatmentRecord["record_type"], string> = {
+  visit: "カルテ詳細",
+  product_only: "物販のみ記録",
+  cancelled: "キャンセル記録",
+  memo: "メモ",
+};
+
 export default async function RecordDetailPage({
   params,
 }: {
@@ -38,7 +52,7 @@ export default async function RecordDetailPage({
   const [recordRes, photosRes, recordMenusRes, purchasesRes, ticketsRes, appointmentRes] = await Promise.all([
     supabase
       .from("treatment_records")
-      .select("id, treatment_date, menu_name_snapshot, treatment_area, products_used, skin_condition_before, notes_after, conversation_notes, caution_notes, next_visit_memo, customer_id, staff_id, customers(id, last_name, first_name), staff(name)")
+      .select("id, treatment_date, menu_name_snapshot, treatment_area, products_used, skin_condition_before, notes_after, conversation_notes, caution_notes, next_visit_memo, customer_id, staff_id, record_type, appointment_id, customers(id, last_name, first_name), staff(name)")
       .eq("id", id)
       .eq("salon_id", salon.id)
       .single<RecordWithCustomer>(),
@@ -84,6 +98,21 @@ export default async function RecordDetailPage({
   const customer = record.customers;
   const photos = photosRes.data ?? [];
   const recordMenus = recordMenusRes.data ?? [];
+  const recordType = record.record_type;
+  const badge = RECORD_TYPE_BADGE[recordType];
+  const pageTitle = PAGE_TITLE[recordType];
+
+  // キャンセル種別の場合、appointment_id 経由で予約を取得（visit は treatment_record_id 経由で既に取得済み）
+  let cancelledLinkedAppointment: { id: string; appointment_date: string; start_time: string } | null = null;
+  if (recordType === "cancelled" && record.appointment_id) {
+    const { data: cancelledApt } = await supabase
+      .from("appointments")
+      .select("id, appointment_date, start_time")
+      .eq("id", record.appointment_id)
+      .eq("salon_id", salon.id)
+      .maybeSingle<{ id: string; appointment_date: string; start_time: string }>();
+    cancelledLinkedAppointment = cancelledApt;
+  }
 
   // 写真のSigned URLをサーバー側で一括取得（クライアント側useEffectを排除 → INP改善）
   const photoUrlMap: Record<string, string> = {};
@@ -116,25 +145,27 @@ export default async function RecordDetailPage({
   return (
     <div className="space-y-5">
       <PageHeader
-        title="カルテ詳細"
+        title={pageTitle}
         breadcrumbs={
           customer
             ? [
                 { label: `${customer.last_name} ${customer.first_name}`, href: `/customers/${customer.id}` },
-                { label: "カルテ詳細" },
+                { label: pageTitle },
               ]
-            : [{ label: "カルテ詳細" }]
+            : [{ label: pageTitle }]
         }
       >
         <div className="flex items-center gap-3">
-          <a
-            href={`/records/${id}/print`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-accent hover:underline min-h-[44px] flex items-center"
-          >
-            PDF
-          </a>
+          {recordType === "visit" && (
+            <a
+              href={`/records/${id}/print`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-accent hover:underline min-h-[44px] flex items-center"
+            >
+              PDF
+            </a>
+          )}
           <Link
             href={`/records/${id}/edit`}
             className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[44px] flex items-center"
@@ -144,13 +175,16 @@ export default async function RecordDetailPage({
         </div>
       </PageHeader>
 
-      {/* ヘッダーカード: 日付・顧客・メニュー概要をまとめて表示 */}
+      {/* ヘッダーカード: 種別バッジ・日付・顧客 */}
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-lg font-bold">{formatDateJa(record.treatment_date)}</p>
-          {linkedAppointment && (
-            <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg">
-              予約 {linkedAppointment.start_time.slice(0, 5)}〜
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-medium rounded-md px-2 py-0.5 ${badge.className}`}>{badge.label}</span>
+            <p className="text-lg font-bold">{formatDateJa(record.treatment_date)}</p>
+          </div>
+          {(linkedAppointment || cancelledLinkedAppointment) && (
+            <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg shrink-0">
+              予約 {(linkedAppointment ?? cancelledLinkedAppointment)!.start_time.slice(0, 5)}〜
             </span>
           )}
         </div>
@@ -163,17 +197,45 @@ export default async function RecordDetailPage({
             <span className="font-medium">{customer.last_name} {customer.first_name}</span>
           </Link>
         )}
-        {record.staff && (
+        {recordType === "visit" && record.staff && (
           <div className="flex items-center gap-2 text-sm">
             <span className="text-text-light">担当</span>
             <span className="font-medium">{record.staff.name}</span>
           </div>
         )}
-        <p className="text-sm font-medium text-text-light">{menuDisplay}</p>
+        {recordType === "visit" && (
+          <p className="text-sm font-medium text-text-light">{menuDisplay}</p>
+        )}
       </div>
 
-      {/* 施術メニュー一覧 */}
-      {recordMenus.length > 0 && (
+      {/* キャンセル理由 */}
+      {recordType === "cancelled" && (
+        <div className="space-y-2">
+          <h3 className="font-bold">キャンセル理由</h3>
+          <div className="bg-surface border border-border rounded-xl p-4">
+            <p className="text-sm whitespace-pre-wrap leading-relaxed">
+              {record.notes_after || <span className="text-text-light">（記載なし）</span>}
+            </p>
+          </div>
+          <p className="text-xs text-text-light">来店分析にはカウントされません</p>
+        </div>
+      )}
+
+      {/* メモ本文 */}
+      {recordType === "memo" && (
+        <div className="space-y-2">
+          <h3 className="font-bold">メモ</h3>
+          <div className="bg-surface border border-border rounded-xl p-4">
+            <p className="text-sm whitespace-pre-wrap leading-relaxed">
+              {record.notes_after || <span className="text-text-light">（記載なし）</span>}
+            </p>
+          </div>
+          <p className="text-xs text-text-light">来店分析にはカウントされません</p>
+        </div>
+      )}
+
+      {/* 施術メニュー一覧（visit のみ） */}
+      {recordType === "visit" && recordMenus.length > 0 && (
         <div className="space-y-2">
           <h3 className="font-bold">施術メニュー</h3>
           {recordMenus.map((rm) => (
@@ -208,21 +270,23 @@ export default async function RecordDetailPage({
         </div>
       )}
 
-      {/* 施術メモ */}
-      <DetailSection
-        items={[
-          { label: "施術部位", value: record.treatment_area },
-          { label: "使用化粧品・機器", value: record.products_used },
-          { label: "施術前の状態", value: record.skin_condition_before },
-          { label: "施術後の経過", value: record.notes_after },
-          { label: "話した内容", value: record.conversation_notes },
-          { label: "注意事項", value: record.caution_notes, highlight: true },
-          { label: "次回への申し送り", value: record.next_visit_memo, highlight: true },
-        ]}
-      />
+      {/* 施術メモ（visit のみ） */}
+      {recordType === "visit" && (
+        <DetailSection
+          items={[
+            { label: "施術部位", value: record.treatment_area },
+            { label: "使用化粧品・機器", value: record.products_used },
+            { label: "施術前の状態", value: record.skin_condition_before },
+            { label: "施術後の経過", value: record.notes_after },
+            { label: "話した内容", value: record.conversation_notes },
+            { label: "注意事項", value: record.caution_notes, highlight: true },
+            { label: "次回への申し送り", value: record.next_visit_memo, highlight: true },
+          ]}
+        />
+      )}
 
-      {/* 回数券販売 */}
-      {linkedTickets.length > 0 && (
+      {/* 回数券販売（visit のみ） */}
+      {recordType === "visit" && linkedTickets.length > 0 && (
         <div className="space-y-2">
           <h3 className="font-bold">回数券販売</h3>
           {linkedTickets.map((ticket) => (
@@ -239,8 +303,8 @@ export default async function RecordDetailPage({
         </div>
       )}
 
-      {/* 物販記録 */}
-      {linkedPurchases.length > 0 && (
+      {/* 物販記録（visit / product_only で表示） */}
+      {(recordType === "visit" || recordType === "product_only") && linkedPurchases.length > 0 && (
         <div className="space-y-2">
           <h3 className="font-bold">物販記録</h3>
           {linkedPurchases.map((purchase) => (
@@ -263,8 +327,8 @@ export default async function RecordDetailPage({
         </div>
       )}
 
-      {/* 写真 */}
-      {photos.length > 0 && (
+      {/* 写真（visit のみ） */}
+      {recordType === "visit" && photos.length > 0 && (
         <BeforeAfterComparison photos={photos} serverUrlMap={photoUrlMap} />
       )}
     </div>

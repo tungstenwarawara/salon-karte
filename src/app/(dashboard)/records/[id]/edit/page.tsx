@@ -19,7 +19,7 @@ import { PhotoManageSection } from "@/components/records/photo-manage-section";
 import { updateTreatmentRecord, deleteTreatmentRecord } from "@/components/records/treatment-edit-submit";
 import { PurchaseInlineForm } from "@/components/records/purchase-inline-form";
 import { INPUT_CLASS } from "@/components/records/types";
-import type { Menu, CourseTicket, Product, MenuPaymentInfo, PendingPurchase } from "@/components/records/types";
+import type { Menu, CourseTicket, Product, MenuPaymentInfo, PendingPurchase, RecordType } from "@/components/records/types";
 import type { Database } from "@/types/database";
 
 type TreatmentRecord = Database["public"]["Tables"]["treatment_records"]["Row"];
@@ -52,6 +52,7 @@ export default function EditRecordPage() {
   const [deletingTicketId, setDeletingTicketId] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [pendingPurchases, setPendingPurchases] = useState<PendingPurchase[]>([]);
+  const [recordType, setRecordType] = useState<RecordType>("visit");
 
   const [form, setForm] = useState({
     treatment_date: "", treatment_area: "", products_used: "",
@@ -68,7 +69,7 @@ export default function EditRecordPage() {
       const supabase = createClient();
       const [menuRes, recordRes, recordMenusRes, purchasesRes, linkedTicketsRes, staffRes, productsRes] = await Promise.all([
         supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).order("name").returns<Menu[]>(),
-        supabase.from("treatment_records").select("id, customer_id, staff_id, treatment_date, menu_id, treatment_area, products_used, skin_condition_before, notes_after, next_visit_memo, conversation_notes, caution_notes").eq("id", id).eq("salon_id", resolvedSalonId).single<TreatmentRecord>(),
+        supabase.from("treatment_records").select("id, customer_id, staff_id, treatment_date, menu_id, treatment_area, products_used, skin_condition_before, notes_after, next_visit_memo, conversation_notes, caution_notes, record_type").eq("id", id).eq("salon_id", resolvedSalonId).single<TreatmentRecord>(),
         supabase.from("treatment_record_menus").select("id, menu_id, menu_name_snapshot, price_snapshot, duration_minutes_snapshot, payment_type, ticket_id, sort_order").eq("treatment_record_id", id).order("sort_order").returns<TreatmentRecordMenu[]>(),
         supabase.from("purchases").select("id, item_name, quantity, unit_price, total_price, memo, product_id, purchase_date").eq("treatment_record_id", id).eq("salon_id", resolvedSalonId).order("created_at").returns<Purchase[]>(),
         supabase.from("course_tickets").select("id, ticket_name, total_sessions, used_sessions, price, status, memo").eq("treatment_record_id", id).eq("salon_id", resolvedSalonId).order("created_at").returns<CourseTicket[]>(),
@@ -87,6 +88,7 @@ export default function EditRecordPage() {
       if (record) {
         setCustomerId(record.customer_id);
         setStaffId(record.staff_id);
+        setRecordType(record.record_type);
         setForm({
           treatment_date: record.treatment_date, treatment_area: record.treatment_area ?? "",
           products_used: record.products_used ?? "", skin_condition_before: record.skin_condition_before ?? "",
@@ -173,10 +175,15 @@ export default function EditRecordPage() {
     setError(""); setLoading(true);
     const result = await updateTreatmentRecord({
       recordId: id, salonId, staffId, form, menus, selectedMenuIds, menuPayments, originalTicketPayments,
-      pendingPurchases, customerId,
+      pendingPurchases, customerId, recordType,
     });
     if (!result.success) { setError(result.error); setLoading(false); return; }
-    setFlashToast("施術記録を更新しました");
+    const successLabel =
+      recordType === "cancelled" ? "キャンセル記録を更新しました"
+      : recordType === "memo" ? "メモを更新しました"
+      : recordType === "product_only" ? "物販記録を更新しました"
+      : "施術記録を更新しました";
+    setFlashToast(successLabel);
     router.push(`/records/${id}`);
   };
 
@@ -212,21 +219,32 @@ export default function EditRecordPage() {
     setDeletingTicketId(null);
   };
 
+  const editTitle =
+    recordType === "cancelled" ? "キャンセル記録を編集"
+    : recordType === "memo" ? "メモを編集"
+    : recordType === "product_only" ? "物販記録を編集"
+    : "施術記録を編集";
+  const dateLabel =
+    recordType === "cancelled" ? "対象日"
+    : recordType === "memo" ? "メモの日付"
+    : recordType === "product_only" ? "購入日"
+    : "施術日";
+
   return (
     <div className="space-y-4">
-      <PageHeader title="施術記録を編集" breadcrumbs={[{ label: "カルテ", href: "/records" }, { label: "カルテ詳細", href: `/records/${id}` }, { label: "編集" }]} />
+      <PageHeader title={editTitle} breadcrumbs={[{ label: "カルテ", href: "/records" }, { label: "詳細", href: `/records/${id}` }, { label: "編集" }]} />
 
-      <CourseTicketInfo courseTickets={courseTickets} mode="edit" />
+      {recordType === "visit" && <CourseTicketInfo courseTickets={courseTickets} mode="edit" />}
 
       <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
         {error && <ErrorAlert message={error} />}
 
         <div>
-          <label className="block text-sm font-medium mb-1.5">施術日 <span className="text-error">*</span></label>
+          <label className="block text-sm font-medium mb-1.5">{dateLabel} <span className="text-error">*</span></label>
           <input type="date" value={form.treatment_date} onChange={(e) => updateField("treatment_date", e.target.value)} required className={INPUT_CLASS} />
         </div>
 
-        {staffList.length > 1 && (
+        {recordType === "visit" && staffList.length > 1 && (
           <div>
             <label className="block text-sm font-medium mb-1.5">担当スタッフ</label>
             <select value={staffId ?? ""} onChange={(e) => setStaffId(e.target.value || null)} className={INPUT_CLASS}>
@@ -235,47 +253,71 @@ export default function EditRecordPage() {
           </div>
         )}
 
-        <MenuSelector menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments} onToggle={toggleMenu} />
+        {recordType === "visit" && (
+          <>
+            <MenuSelector menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments} onToggle={toggleMenu} />
 
-        <PaymentSection
-          menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments}
-          courseTickets={courseTickets} hasTickets={hasTickets}
-          onSetAllPaymentType={setAllPaymentType} onSetAllService={setAllService}
-          onUpdatePayment={updateMenuPayment} onUpdatePrice={updateMenuPrice}
-          onUpdateTicket={updateMenuTicket}
-        />
+            <PaymentSection
+              menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments}
+              courseTickets={courseTickets} hasTickets={hasTickets}
+              onSetAllPaymentType={setAllPaymentType} onSetAllService={setAllService}
+              onUpdatePayment={updateMenuPayment} onUpdatePrice={updateMenuPrice}
+              onUpdateTicket={updateMenuTicket}
+            />
 
-        <div>
-          <label className="block text-sm font-medium mb-1.5">施術部位</label>
-          <input type="text" value={form.treatment_area} onChange={(e) => updateField("treatment_area", e.target.value)} className={INPUT_CLASS} />
-        </div>
-
-        <TreatmentDetailFields form={form} onUpdate={updateField} />
-
-        <TreatmentLinkedItems
-          linkedTickets={linkedTickets} linkedPurchases={linkedPurchases}
-          salonId={salonId} recordId={id} customerId={customerId}
-          deletingTicketId={deletingTicketId} deletingPurchaseId={deletingPurchaseId}
-          onDeleteTicket={handleDeleteLinkedTicket} onDeletePurchase={handleDeletePurchase}
-          onPurchaseUpdated={(updated) => setLinkedPurchases((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
-        />
-
-        <CollapsibleSection label={`物販を追加（任意）${pendingPurchases.length > 0 ? ` — ${pendingPurchases.length}件` : ""}`}>
-          {pendingPurchases.length > 0 && (
-            <div className="space-y-2 mb-3">
-              {pendingPurchases.map((p, i) => (
-                <div key={i} className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{p.item_name}</p>
-                    <p className="text-xs text-text-light">{p.quantity}個 × {p.unit_price.toLocaleString()}円 = {(p.quantity * p.unit_price).toLocaleString()}円</p>
-                  </div>
-                  <button type="button" onClick={() => setPendingPurchases((prev) => prev.filter((_, idx) => idx !== i))} className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">削除</button>
-                </div>
-              ))}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">施術部位</label>
+              <input type="text" value={form.treatment_area} onChange={(e) => updateField("treatment_area", e.target.value)} className={INPUT_CLASS} />
             </div>
-          )}
-          <PurchaseInlineForm products={products} onAdd={(p) => setPendingPurchases((prev) => [...prev, p])} />
-        </CollapsibleSection>
+
+            <TreatmentDetailFields form={form} onUpdate={updateField} />
+          </>
+        )}
+
+        {recordType === "cancelled" && (
+          <div>
+            <label className="block text-sm font-medium mb-1.5">キャンセル理由（任意）</label>
+            <textarea value={form.notes_after} onChange={(e) => updateField("notes_after", e.target.value)} rows={3} placeholder="例: 体調不良のため当日キャンセル" className={INPUT_CLASS} />
+            <p className="text-xs text-text-light mt-1">来店分析にはカウントされません</p>
+          </div>
+        )}
+
+        {recordType === "memo" && (
+          <div>
+            <label className="block text-sm font-medium mb-1.5">メモ <span className="text-error">*</span></label>
+            <textarea value={form.notes_after} onChange={(e) => updateField("notes_after", e.target.value)} rows={4} required placeholder="例: 商品発注の依頼を受けた" className={INPUT_CLASS} />
+            <p className="text-xs text-text-light mt-1">来店分析にはカウントされません</p>
+          </div>
+        )}
+
+        {(recordType === "visit" || recordType === "product_only") && (
+          <TreatmentLinkedItems
+            linkedTickets={recordType === "visit" ? linkedTickets : []} linkedPurchases={linkedPurchases}
+            salonId={salonId} recordId={id} customerId={customerId}
+            deletingTicketId={deletingTicketId} deletingPurchaseId={deletingPurchaseId}
+            onDeleteTicket={handleDeleteLinkedTicket} onDeletePurchase={handleDeletePurchase}
+            onPurchaseUpdated={(updated) => setLinkedPurchases((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
+          />
+        )}
+
+        {(recordType === "visit" || recordType === "product_only") && (
+          <CollapsibleSection label={`物販を追加${recordType === "visit" ? "（任意）" : ""}${pendingPurchases.length > 0 ? ` — ${pendingPurchases.length}件` : ""}`} defaultOpen={recordType === "product_only"}>
+            {pendingPurchases.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {pendingPurchases.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{p.item_name}</p>
+                      <p className="text-xs text-text-light">{p.quantity}個 × {p.unit_price.toLocaleString()}円 = {(p.quantity * p.unit_price).toLocaleString()}円</p>
+                    </div>
+                    <button type="button" onClick={() => setPendingPurchases((prev) => prev.filter((_, idx) => idx !== i))} className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">削除</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <PurchaseInlineForm products={products} onAdd={(p) => setPendingPurchases((prev) => [...prev, p])} />
+          </CollapsibleSection>
+        )}
 
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={() => router.back()} className="flex-1 bg-background border border-border text-text font-medium rounded-xl py-3 transition-colors min-h-[48px]">キャンセル</button>
@@ -283,9 +325,11 @@ export default function EditRecordPage() {
         </div>
       </form>
 
-      <div className="bg-surface border border-border rounded-2xl p-5">
-        <PhotoManageSection recordId={id} salonId={salonId} />
-      </div>
+      {recordType === "visit" && (
+        <div className="bg-surface border border-border rounded-2xl p-5">
+          <PhotoManageSection recordId={id} salonId={salonId} />
+        </div>
+      )}
 
       <div className="mt-4">
         <CollapsibleSection label="この記録を削除する">

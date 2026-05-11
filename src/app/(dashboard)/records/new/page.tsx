@@ -285,7 +285,7 @@ function NewRecordForm() {
         <RecordTypeTabs value={recordType} onChange={setRecordType} />
 
         <div>
-          <label className="block text-sm font-medium mb-1.5">{recordType === "cancelled" ? "対象日" : recordType === "memo" ? "メモの日付" : "施術日"} <span className="text-error">*</span></label>
+          <label className="block text-sm font-medium mb-1.5">{recordType === "cancelled" ? "対象日" : recordType === "memo" ? "メモの日付" : recordType === "product_only" ? "購入日" : "施術日"} <span className="text-error">*</span></label>
           <input type="date" value={form.treatment_date} onChange={(e) => updateField("treatment_date", e.target.value)} required className={INPUT_CLASS} />
         </div>
 
