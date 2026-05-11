@@ -260,6 +260,7 @@ export default async function AppointmentDetailPage({
         hasKarte={!!appointment.treatment_record_id}
         cancelledRecordId={cancelledRecord?.id ?? null}
         courseTickets={activeTickets ?? []}
+        suggestedFeeAmount={totalPrice}
       />
     </div>
   );

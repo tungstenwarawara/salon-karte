@@ -221,6 +221,31 @@ export default async function RecordDetailPage({
         </div>
       )}
 
+      {/* キャンセル料（cancelled で treatment_record_menus にデータあり） */}
+      {recordType === "cancelled" && recordMenus.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="font-bold">キャンセル料</h3>
+          {recordMenus.map((rm) => (
+            <div key={rm.id} className="bg-surface border border-border rounded-xl p-3 flex items-center justify-between">
+              <p className="text-sm font-medium">{rm.menu_name_snapshot || "キャンセル料"}</p>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  rm.payment_type === "ticket" ? "bg-blue-50 text-blue-700" :
+                  rm.payment_type === "service" ? "bg-green-50 text-green-700" :
+                  rm.payment_type === "credit" ? "bg-purple-50 text-purple-700" :
+                  "bg-gray-100 text-gray-600"
+                }`}>
+                  {PAYMENT_TYPE_LABELS[rm.payment_type] ?? rm.payment_type}
+                </span>
+                {rm.price_snapshot != null && rm.price_snapshot > 0 && (
+                  <span className="text-sm font-bold tabular-nums">{rm.price_snapshot.toLocaleString()}円</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* メモ本文 */}
       {recordType === "memo" && (
         <div className="space-y-2">
