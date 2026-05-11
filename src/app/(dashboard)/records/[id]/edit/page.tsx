@@ -19,6 +19,7 @@ import { PhotoManageSection } from "@/components/records/photo-manage-section";
 import { updateTreatmentRecord, deleteTreatmentRecord } from "@/components/records/treatment-edit-submit";
 import { PurchaseInlineForm } from "@/components/records/purchase-inline-form";
 import { INPUT_CLASS } from "@/components/records/types";
+import { CancellationFeeFields, type CancellationFeeState } from "@/components/records/cancellation-fee-fields";
 import type { Menu, CourseTicket, Product, MenuPaymentInfo, PendingPurchase, RecordType } from "@/components/records/types";
 import type { Database } from "@/types/database";
 
@@ -53,6 +54,14 @@ export default function EditRecordPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [pendingPurchases, setPendingPurchases] = useState<PendingPurchase[]>([]);
   const [recordType, setRecordType] = useState<RecordType>("visit");
+  // キャンセル料の状態（cancelled 種別用）
+  const [cancellationFee, setCancellationFee] = useState<CancellationFeeState>({ enabled: false });
+  // 既存のキャンセル料行のID（更新/削除の判別に使用）
+  const [existingFeeMenuId, setExistingFeeMenuId] = useState<string | null>(null);
+  // 元の回数券ID（消化取消の判別に使用）
+  const [existingFeeTicketId, setExistingFeeTicketId] = useState<string | null>(null);
+  // 利用可能な回数券（キャンセル料の選択肢用）
+  const [allActiveTickets, setAllActiveTickets] = useState<CourseTicket[]>([]);
 
   const [form, setForm] = useState({
     treatment_date: "", treatment_area: "", products_used: "",
@@ -96,7 +105,19 @@ export default function EditRecordPage() {
           conversation_notes: record.conversation_notes ?? "", caution_notes: record.caution_notes ?? "",
         });
 
-        if (existingMenus.length > 0) {
+        // キャンセル種別: existingMenus 先頭をキャンセル料として読み込み
+        if (record.record_type === "cancelled" && existingMenus.length > 0) {
+          const feeMenu = existingMenus[0];
+          setExistingFeeMenuId(feeMenu.id);
+          setExistingFeeTicketId(feeMenu.ticket_id ?? null);
+          setCancellationFee({
+            enabled: true,
+            paymentType: (feeMenu.payment_type as "service" | "cash" | "credit" | "ticket") ?? "service",
+            amount: feeMenu.price_snapshot ?? 0,
+            ticketId: feeMenu.ticket_id ?? null,
+          });
+        } else if (existingMenus.length > 0) {
+          // 来店種別: 通常のメニュー復元
           const ids = existingMenus.map((rm) => rm.menu_id).filter(Boolean) as string[];
           setSelectedMenuIds(ids);
           const allMenus = menuRes.data ?? [];
@@ -128,6 +149,7 @@ export default function EditRecordPage() {
             .eq("customer_id", record.customer_id).eq("salon_id", resolvedSalonId).eq("status", "active")
             .order("purchase_date", { ascending: false }).returns<CourseTicket[]>();
           setCourseTickets(tickets ?? []);
+          setAllActiveTickets(tickets ?? []);
         }
       }
     };
@@ -176,6 +198,7 @@ export default function EditRecordPage() {
     const result = await updateTreatmentRecord({
       recordId: id, salonId, staffId, form, menus, selectedMenuIds, menuPayments, originalTicketPayments,
       pendingPurchases, customerId, recordType,
+      cancellationFee, existingFeeMenuId, existingFeeTicketId,
     });
     if (!result.success) { setError(result.error); setLoading(false); return; }
     const successLabel =
@@ -275,11 +298,17 @@ export default function EditRecordPage() {
         )}
 
         {recordType === "cancelled" && (
-          <div>
-            <label className="block text-sm font-medium mb-1.5">キャンセル理由（任意）</label>
-            <textarea value={form.notes_after} onChange={(e) => updateField("notes_after", e.target.value)} rows={3} placeholder="例: 体調不良のため当日キャンセル" className={INPUT_CLASS} />
-            <p className="text-xs text-text-light mt-1">来店分析にはカウントされません</p>
-          </div>
+          <>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">キャンセル理由（任意）</label>
+              <textarea value={form.notes_after} onChange={(e) => updateField("notes_after", e.target.value)} rows={3} placeholder="例: 体調不良のため当日キャンセル" className={INPUT_CLASS} />
+            </div>
+            <CancellationFeeFields
+              value={cancellationFee}
+              onChange={setCancellationFee}
+              courseTickets={allActiveTickets}
+            />
+          </>
         )}
 
         {recordType === "memo" && (
