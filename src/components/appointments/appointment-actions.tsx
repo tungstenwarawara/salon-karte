@@ -5,26 +5,31 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { CancellationDialog, type CancellationSubmitData, type CancellationDialogTicket } from "./cancellation-dialog";
 
 type Props = {
   appointmentId: string;
   salonId: string;
   status: string;
   customerId: string;
+  customerName: string;
   appointmentDate: string;
   treatmentRecordId: string | null;
   hasKarte: boolean;
   cancelledRecordId: string | null;
+  courseTickets: CancellationDialogTicket[];
 };
 
 /** 予約詳細ページのアクションボタン群（Client Component） */
-export function AppointmentActions({ appointmentId, salonId, status, customerId, appointmentDate, treatmentRecordId, hasKarte, cancelledRecordId }: Props) {
+export function AppointmentActions({ appointmentId, salonId, status, customerId, customerName, appointmentDate, treatmentRecordId, hasKarte, cancelledRecordId, courseTickets }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
-  const updateStatus = async (newStatus: string) => {
+  /** 「来店のみ記録」「キャンセル取消」用の単純なステータス変更 */
+  const simpleStatusChange = async (newStatus: string) => {
     setLoading(true);
     setError("");
     const supabase = createClient();
@@ -33,24 +38,9 @@ export function AppointmentActions({ appointmentId, salonId, status, customerId,
       .update({ status: newStatus })
       .eq("id", appointmentId)
       .eq("salon_id", salonId);
-    if (e) {
-      setError(`ステータスの更新に失敗しました: ${e.message}`);
-      setLoading(false);
-      return;
-    }
+    if (e) { setError(`ステータスの更新に失敗しました: ${e.message}`); setLoading(false); return; }
 
-    // 双方向連動: cancelled になったら treatment_records に cancelled レコードを作成
-    if (newStatus === "cancelled" && !cancelledRecordId) {
-      const { error: insErr } = await supabase.from("treatment_records").insert({
-        salon_id: salonId,
-        customer_id: customerId,
-        treatment_date: appointmentDate,
-        record_type: "cancelled",
-        appointment_id: appointmentId,
-      });
-      if (insErr) console.error("Cancelled record creation failed:", insErr);
-    }
-    // cancelled 取消 → 紐づく cancelled レコードを削除
+    // キャンセル取消時に紐づく cancelled レコードを削除
     if (newStatus !== "cancelled" && cancelledRecordId) {
       const { error: delErr } = await supabase
         .from("treatment_records")
@@ -62,6 +52,57 @@ export function AppointmentActions({ appointmentId, salonId, status, customerId,
 
     router.refresh();
     setLoading(false);
+  };
+
+  /** ダイアログからのキャンセル確定処理 */
+  const handleCancellationSubmit = async (data: CancellationSubmitData) => {
+    const supabase = createClient();
+
+    // 1. 予約を cancelled に更新
+    const { error: aptErr } = await supabase
+      .from("appointments")
+      .update({ status: "cancelled" })
+      .eq("id", appointmentId)
+      .eq("salon_id", salonId);
+    if (aptErr) throw new Error(`予約の更新に失敗しました: ${aptErr.message}`);
+
+    // 2. treatment_records (cancelled) を作成
+    const { data: rec, error: recErr } = await supabase
+      .from("treatment_records")
+      .insert({
+        salon_id: salonId,
+        customer_id: customerId,
+        treatment_date: appointmentDate,
+        record_type: "cancelled",
+        appointment_id: appointmentId,
+        notes_after: data.reason || null,
+      })
+      .select("id")
+      .single<{ id: string }>();
+    if (recErr || !rec) throw new Error(`カルテ記録の作成に失敗しました: ${recErr?.message ?? "unknown"}`);
+
+    // 3. キャンセル料あり → treatment_record_menus に記録
+    if (data.fee.enabled) {
+      const { error: menuErr } = await supabase.from("treatment_record_menus").insert({
+        treatment_record_id: rec.id,
+        menu_id: null,
+        menu_name_snapshot: "キャンセル料",
+        price_snapshot: data.fee.amount,
+        duration_minutes_snapshot: null,
+        payment_type: data.fee.paymentType,
+        ticket_id: data.fee.ticketId,
+        sort_order: 0,
+      });
+      if (menuErr) console.error("Cancellation fee insert failed:", menuErr);
+
+      // 回数券消化
+      if (data.fee.paymentType === "ticket" && data.fee.ticketId) {
+        const { error: useErr } = await supabase.rpc("use_course_ticket_session", { p_ticket_id: data.fee.ticketId });
+        if (useErr) console.error("Ticket consumption failed:", useErr);
+      }
+    }
+
+    router.refresh();
   };
 
   const handleDelete = async () => {
@@ -107,7 +148,7 @@ export function AppointmentActions({ appointmentId, salonId, status, customerId,
       {status === "scheduled" && (
         <div className="flex items-center justify-center gap-6 pt-1">
           <button
-            onClick={() => updateStatus("completed")}
+            onClick={() => simpleStatusChange("completed")}
             disabled={loading}
             className="text-sm text-text-light hover:text-accent transition-colors min-h-[44px] disabled:opacity-50"
           >
@@ -116,7 +157,7 @@ export function AppointmentActions({ appointmentId, salonId, status, customerId,
           </button>
           <span className="text-border">|</span>
           <button
-            onClick={() => updateStatus("cancelled")}
+            onClick={() => setShowCancelDialog(true)}
             disabled={loading}
             className="text-sm text-text-light hover:text-error transition-colors min-h-[44px] disabled:opacity-50"
           >
@@ -131,13 +172,22 @@ export function AppointmentActions({ appointmentId, salonId, status, customerId,
             <p className="text-xs text-text-light text-center">カルテ履歴にキャンセル記録があります</p>
           )}
           <button
-            onClick={() => updateStatus("scheduled")}
+            onClick={() => simpleStatusChange("scheduled")}
             disabled={loading}
             className="block w-full text-center text-sm text-text-light hover:text-accent transition-colors min-h-[44px] disabled:opacity-50"
           >
             キャンセルを取り消す
           </button>
         </div>
+      )}
+
+      {showCancelDialog && (
+        <CancellationDialog
+          customerName={customerName}
+          courseTickets={courseTickets}
+          onCancel={() => setShowCancelDialog(false)}
+          onSubmit={handleCancellationSubmit}
+        />
       )}
 
       {/* 削除 */}

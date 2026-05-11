@@ -81,6 +81,16 @@ export default async function AppointmentDetailPage({
     .eq("record_type", "cancelled")
     .maybeSingle<{ id: string }>();
 
+  // 顧客の有効な回数券（キャンセルダイアログで使用）
+  const { data: activeTickets } = await supabase
+    .from("course_tickets")
+    .select("id, ticket_name, total_sessions, used_sessions")
+    .eq("customer_id", appointment.customer_id)
+    .eq("salon_id", salon.id)
+    .eq("status", "active")
+    .order("purchase_date", { ascending: false })
+    .returns<{ id: string; ticket_name: string; total_sessions: number; used_sessions: number }[]>();
+
   // カウンセリング関連データ取得
   const [counselingRes, templatesRes] = await Promise.all([
     supabase
@@ -244,10 +254,12 @@ export default async function AppointmentDetailPage({
         salonId={salon.id}
         status={appointment.status}
         customerId={appointment.customer_id}
+        customerName={customer ? `${customer.last_name} ${customer.first_name}` : "顧客"}
         appointmentDate={appointment.appointment_date}
         treatmentRecordId={appointment.treatment_record_id}
         hasKarte={!!appointment.treatment_record_id}
         cancelledRecordId={cancelledRecord?.id ?? null}
+        courseTickets={activeTickets ?? []}
       />
     </div>
   );
