@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import type { Menu, MenuPaymentInfo, PendingPurchase, RecordType } from "@/components/records/types";
+import type { CancellationFeeState } from "@/components/records/cancellation-fee-fields";
 
 type EditFormData = {
   treatment_date: string;
@@ -24,6 +25,12 @@ type UpdateParams = {
   pendingPurchases?: PendingPurchase[];
   customerId?: string;
   recordType: RecordType;
+  /** キャンセル種別: 編集後のキャンセル料状態 */
+  cancellationFee?: CancellationFeeState;
+  /** キャンセル種別: 既存のキャンセル料行ID（編集前） */
+  existingFeeMenuId?: string | null;
+  /** キャンセル種別: 既存のキャンセル料で消化した回数券ID（編集前） */
+  existingFeeTicketId?: string | null;
 };
 
 type UpdateResult =
@@ -42,6 +49,60 @@ export async function updateTreatmentRecord(params: UpdateParams): Promise<Updat
       notes_after: form.notes_after || null,
     }).eq("id", recordId).eq("salon_id", salonId);
     if (simpleUpdateError) return { success: false, error: `更新に失敗しました: ${simpleUpdateError.message}` };
+
+    // cancelled: キャンセル料の差分処理
+    if (recordType === "cancelled") {
+      const fee = params.cancellationFee;
+      const existingId = params.existingFeeMenuId ?? null;
+      const existingTicketId = params.existingFeeTicketId ?? null;
+
+      const willHaveFee = !!fee?.enabled;
+
+      // Case 1: 既存あり → 削除
+      if (existingId && !willHaveFee) {
+        await supabase.from("treatment_record_menus").delete().eq("id", existingId);
+        if (existingTicketId) {
+          await supabase.rpc("undo_course_ticket_session", { p_ticket_id: existingTicketId });
+        }
+      }
+      // Case 2: 既存あり → 更新
+      else if (existingId && willHaveFee && fee?.enabled) {
+        await supabase.from("treatment_record_menus").update({
+          menu_name_snapshot: "キャンセル料",
+          price_snapshot: fee.amount,
+          payment_type: fee.paymentType,
+          ticket_id: fee.ticketId,
+        }).eq("id", existingId);
+
+        // 回数券の差分
+        const newTicketId = fee.paymentType === "ticket" ? fee.ticketId : null;
+        if (existingTicketId !== newTicketId) {
+          if (existingTicketId) {
+            await supabase.rpc("undo_course_ticket_session", { p_ticket_id: existingTicketId });
+          }
+          if (newTicketId) {
+            await supabase.rpc("use_course_ticket_session", { p_ticket_id: newTicketId });
+          }
+        }
+      }
+      // Case 3: 既存なし → 新規作成
+      else if (!existingId && willHaveFee && fee?.enabled) {
+        await supabase.from("treatment_record_menus").insert({
+          treatment_record_id: recordId,
+          menu_id: null,
+          menu_name_snapshot: "キャンセル料",
+          price_snapshot: fee.amount,
+          duration_minutes_snapshot: null,
+          payment_type: fee.paymentType,
+          ticket_id: fee.ticketId,
+          sort_order: 0,
+        });
+        if (fee.paymentType === "ticket" && fee.ticketId) {
+          await supabase.rpc("use_course_ticket_session", { p_ticket_id: fee.ticketId });
+        }
+      }
+      // Case 4: 既存なし & 新規なし → 何もしない
+    }
 
     // product_only は新規物販の追加だけ許可
     if (recordType === "product_only" && params.pendingPurchases && params.pendingPurchases.length > 0 && params.customerId) {

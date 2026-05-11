@@ -1,51 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-type CourseTicket = {
-  id: string;
-  ticket_name: string;
-  total_sessions: number;
-  used_sessions: number;
-};
-
-type FeePaymentType = "service" | "cash" | "credit" | "ticket";
+import { CancellationFeeFields, type CancellationFeeState, type CancellationFeeTicket } from "@/components/records/cancellation-fee-fields";
 
 export type CancellationSubmitData = {
   reason: string;
-  fee:
-    | { enabled: false }
-    | {
-        enabled: true;
-        paymentType: FeePaymentType;
-        amount: number;
-        ticketId: string | null;
-      };
+  fee: CancellationFeeState;
 };
 
 type Props = {
   customerName: string;
-  courseTickets: CourseTicket[];
+  courseTickets: CancellationFeeTicket[];
   /** 予約メニューの合計金額。キャンセル料の初期値として使う */
   suggestedAmount?: number;
   onCancel: () => void;
   onSubmit: (data: CancellationSubmitData) => Promise<void>;
 };
 
-const FEE_OPTIONS: { value: FeePaymentType; label: string; helper?: string }[] = [
-  { value: "service", label: "無料にする" },
-  { value: "cash", label: "現金でもらう" },
-  { value: "credit", label: "カード・振込でもらう" },
-  { value: "ticket", label: "お持ちの回数券から1回引く" },
-];
-
 export function CancellationDialog({ customerName, courseTickets, suggestedAmount, onCancel, onSubmit }: Props) {
   const [visible, setVisible] = useState(false);
   const [reason, setReason] = useState("");
-  const [feeEnabled, setFeeEnabled] = useState(false);
-  const [feeType, setFeeType] = useState<FeePaymentType>("service");
-  const [amount, setAmount] = useState(suggestedAmount && suggestedAmount > 0 ? String(suggestedAmount) : "");
-  const [ticketId, setTicketId] = useState<string | null>(null);
+  const [fee, setFee] = useState<CancellationFeeState>({ enabled: false });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -66,12 +41,12 @@ export function CancellationDialog({ customerName, courseTickets, suggestedAmoun
 
   const handleSubmit = async () => {
     setError("");
-    if (feeEnabled) {
-      if (feeType === "ticket" && !ticketId) {
+    if (fee.enabled) {
+      if (fee.paymentType === "ticket" && !fee.ticketId) {
         setError("使用する回数券を選んでください");
         return;
       }
-      if ((feeType === "cash" || feeType === "credit") && (!amount || parseInt(amount, 10) <= 0)) {
+      if ((fee.paymentType === "cash" || fee.paymentType === "credit") && fee.amount <= 0) {
         setError("金額を入力してください");
         return;
       }
@@ -79,17 +54,7 @@ export function CancellationDialog({ customerName, courseTickets, suggestedAmoun
 
     setSubmitting(true);
     try {
-      await onSubmit({
-        reason: reason.trim(),
-        fee: feeEnabled
-          ? {
-              enabled: true,
-              paymentType: feeType,
-              amount: feeType === "service" ? 0 : parseInt(amount, 10) || 0,
-              ticketId: feeType === "ticket" ? ticketId : null,
-            }
-          : { enabled: false },
-      });
+      await onSubmit({ reason: reason.trim(), fee });
       setVisible(false);
       setTimeout(onCancel, 200);
     } catch (e) {
@@ -97,8 +62,6 @@ export function CancellationDialog({ customerName, courseTickets, suggestedAmoun
       setSubmitting(false);
     }
   };
-
-  const activeTickets = courseTickets.filter((t) => t.total_sessions - t.used_sessions > 0);
 
   return (
     <div
@@ -135,92 +98,13 @@ export function CancellationDialog({ customerName, courseTickets, suggestedAmoun
             />
           </div>
 
-          <div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={feeEnabled}
-                onChange={(e) => setFeeEnabled(e.target.checked)}
-                className="w-4 h-4 accent-accent"
-                disabled={submitting}
-              />
-              <span className="text-sm font-medium">キャンセル料を記録する</span>
-            </label>
-          </div>
-
-          {feeEnabled && (
-            <div className="space-y-3 bg-background rounded-xl p-3 border border-border">
-              <div className="space-y-2">
-                {FEE_OPTIONS.map((opt) => {
-                  const isTicket = opt.value === "ticket";
-                  const disabled = submitting || (isTicket && activeTickets.length === 0);
-                  return (
-                    <label
-                      key={opt.value}
-                      className={`flex items-center gap-2 ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                    >
-                      <input
-                        type="radio"
-                        name="feeType"
-                        value={opt.value}
-                        checked={feeType === opt.value}
-                        onChange={() => { setFeeType(opt.value); if (opt.value !== "ticket") setTicketId(null); }}
-                        disabled={disabled}
-                        className="accent-accent"
-                      />
-                      <span className="text-sm">{opt.label}</span>
-                      {isTicket && activeTickets.length === 0 && (
-                        <span className="text-xs text-text-light">（利用可能な回数券なし）</span>
-                      )}
-                    </label>
-                  );
-                })}
-              </div>
-
-              {feeType === "ticket" && activeTickets.length > 0 && (
-                <div>
-                  <label className="block text-xs font-medium mb-1">使用する回数券</label>
-                  <select
-                    value={ticketId ?? ""}
-                    onChange={(e) => setTicketId(e.target.value || null)}
-                    disabled={submitting}
-                    className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm"
-                  >
-                    <option value="">選択してください</option>
-                    {activeTickets.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.ticket_name}（残 {t.total_sessions - t.used_sessions}回）
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {(feeType === "cash" || feeType === "credit") && (
-                <div>
-                  <label className="block text-xs font-medium mb-1">金額</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="例: 3000"
-                      min={0}
-                      disabled={submitting}
-                      className="flex-1 rounded-xl border border-border bg-surface px-3 py-2 text-sm"
-                    />
-                    <span className="text-sm text-text-light">円</span>
-                  </div>
-                  {suggestedAmount && suggestedAmount > 0 && (
-                    <p className="text-xs text-text-light mt-1">予約メニューの合計金額を初期値に入れています</p>
-                  )}
-                </div>
-              )}
-
-              <p className="text-xs text-text-light">来店分析にはカウントされません</p>
-            </div>
-          )}
+          <CancellationFeeFields
+            value={fee}
+            onChange={setFee}
+            courseTickets={courseTickets}
+            suggestedAmount={suggestedAmount}
+            disabled={submitting}
+          />
         </div>
 
         <div className="p-5 border-t border-border flex gap-2">
@@ -246,4 +130,4 @@ export function CancellationDialog({ customerName, courseTickets, suggestedAmoun
   );
 }
 
-export type { CourseTicket as CancellationDialogTicket };
+export type CancellationDialogTicket = CancellationFeeTicket;
