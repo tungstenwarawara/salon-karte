@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import type { Menu, MenuPaymentInfo, PendingPurchase } from "@/components/records/types";
+import type { Menu, MenuPaymentInfo, PendingPurchase, RecordType } from "@/components/records/types";
 
 type EditFormData = {
   treatment_date: string;
@@ -23,16 +23,49 @@ type UpdateParams = {
   originalTicketPayments: Map<string, string>;
   pendingPurchases?: PendingPurchase[];
   customerId?: string;
+  recordType: RecordType;
 };
 
 type UpdateResult =
   | { success: true }
   | { success: false; error: string };
 
-/** カルテ編集のsubmit処理（メニュー更新・回数券diff処理） */
+/** カルテ編集のsubmit処理（種別別に最小限のフィールドだけ更新） */
 export async function updateTreatmentRecord(params: UpdateParams): Promise<UpdateResult> {
-  const { recordId, salonId, staffId, form, menus, selectedMenuIds, menuPayments, originalTicketPayments } = params;
+  const { recordId, salonId, staffId, form, menus, selectedMenuIds, menuPayments, originalTicketPayments, recordType } = params;
   const supabase = createClient();
+
+  // visit 以外は最小限のフィールドだけ更新して終了（メニュー/回数券/物販の整合性ロジックは visit 専用）
+  if (recordType !== "visit") {
+    const { error: simpleUpdateError } = await supabase.from("treatment_records").update({
+      treatment_date: form.treatment_date,
+      notes_after: form.notes_after || null,
+    }).eq("id", recordId).eq("salon_id", salonId);
+    if (simpleUpdateError) return { success: false, error: `更新に失敗しました: ${simpleUpdateError.message}` };
+
+    // product_only は新規物販の追加だけ許可
+    if (recordType === "product_only" && params.pendingPurchases && params.pendingPurchases.length > 0 && params.customerId) {
+      for (const purchase of params.pendingPurchases) {
+        if (purchase.mode === "product" && purchase.product_id) {
+          const { error: rpcError } = await supabase.rpc("record_product_sale", {
+            p_salon_id: salonId, p_customer_id: params.customerId, p_product_id: purchase.product_id,
+            p_quantity: purchase.quantity, p_sell_price: purchase.unit_price,
+            p_purchase_date: form.treatment_date, p_memo: purchase.memo || null, p_treatment_record_id: recordId,
+          });
+          if (rpcError) console.error("Product sale RPC error:", rpcError);
+        } else {
+          const { error: purchaseError } = await supabase.from("purchases").insert({
+            salon_id: salonId, customer_id: params.customerId, purchase_date: form.treatment_date,
+            item_name: purchase.item_name, quantity: purchase.quantity, unit_price: purchase.unit_price,
+            total_price: purchase.quantity * purchase.unit_price, memo: purchase.memo || null, treatment_record_id: recordId,
+          });
+          if (purchaseError) console.error("Purchase insert error:", purchaseError);
+        }
+      }
+    }
+
+    return { success: true };
+  }
 
   const firstMenuId = selectedMenuIds[0] || null;
   const menuNameSnapshot = selectedMenuIds.length > 0
