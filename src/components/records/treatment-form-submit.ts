@@ -151,9 +151,16 @@ export async function submitTreatmentRecord(params: SubmitParams): Promise<Submi
     if (photoErrors.length > 0) warnings.push("一部の写真のアップロードに失敗しました");
   }
 
-  // 6. 予約ステータス更新
+  // 6. 予約ステータス更新（種別ごとに挙動を分岐）
   if (appointmentId) {
-    await supabase.from("appointments").update({ treatment_record_id: record.id, status: "completed" }).eq("id", appointmentId).eq("salon_id", salonId);
+    if (recordType === "visit") {
+      // 来店記録 → 予約を完了扱いにし、カルテIDを紐付け
+      await supabase.from("appointments").update({ treatment_record_id: record.id, status: "completed" }).eq("id", appointmentId).eq("salon_id", salonId);
+    } else if (recordType === "cancelled") {
+      // キャンセル記録 → 予約も cancelled に同期（treatment_record_id は紐付けず、cancelled カルテ側の appointment_id で関連付け）
+      await supabase.from("appointments").update({ status: "cancelled" }).eq("id", appointmentId).eq("salon_id", salonId);
+    }
+    // product_only / memo は予約状態に影響しない
   }
 
   if (warnings.length > 0) {
