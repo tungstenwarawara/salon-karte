@@ -23,6 +23,13 @@ type Props = {
   hasPhotos: boolean;
 };
 
+const RECORD_TYPE_BADGE: Record<TreatmentRecord["record_type"], { label: string; className: string }> = {
+  visit: { label: "来店", className: "bg-accent/10 text-accent" },
+  product_only: { label: "物販", className: "bg-blue-50 text-blue-700" },
+  cancelled: { label: "キャンセル", className: "bg-red-50 text-red-700" },
+  memo: { label: "メモ", className: "bg-gray-100 text-gray-700" },
+};
+
 export function TreatmentHistory({ customerId, salonId, customerName, records, hasPhotos }: Props) {
   const { displayItems, hasMore, remaining, showMore, collapse, isExpanded } =
     useIncrementalList(records, 10, 5);
@@ -47,7 +54,7 @@ export function TreatmentHistory({ customerId, salonId, customerName, records, h
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-bold">施術履歴</h3>
+        <h3 className="font-bold">カルテ履歴</h3>
         <div className="flex items-center gap-3">
           <PhotoDownloadButton
             customerId={customerId}
@@ -74,20 +81,33 @@ export function TreatmentHistory({ customerId, salonId, customerName, records, h
               <div className="space-y-2">
                 {group.records.map((record) => {
                   const recordMenus = record.treatment_record_menus ?? [];
-                  const menuDisplay = recordMenus.length > 0
-                    ? recordMenus.map((rm) => rm.menu_name_snapshot).join("、")
-                    : record.menu_name_snapshot ?? "施術記録";
+                  const badge = RECORD_TYPE_BADGE[record.record_type];
+                  const summary = (() => {
+                    if (record.record_type === "visit") {
+                      return recordMenus.length > 0
+                        ? recordMenus.map((rm) => rm.menu_name_snapshot).join("、")
+                        : record.menu_name_snapshot ?? "施術記録";
+                    }
+                    if (record.record_type === "product_only") {
+                      return "商品のみ購入";
+                    }
+                    if (record.record_type === "cancelled") {
+                      return record.notes_after ?? "キャンセル";
+                    }
+                    return record.notes_after ?? "メモ";
+                  })();
                   return (
                     <Link
                       key={record.id}
                       href={`/records/${record.id}`}
                       className="block bg-surface border border-border rounded-xl p-3 hover:border-accent hover:shadow-sm active:scale-[0.98] transition-all duration-200"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <span className="text-sm text-text-light shrink-0">{formatDateShort(record.treatment_date)}</span>
-                        <span className="font-medium text-sm truncate">{menuDisplay}</span>
+                        <span className={`text-xs font-medium rounded-md px-1.5 py-0.5 shrink-0 ${badge.className}`}>{badge.label}</span>
+                        <span className="font-medium text-sm truncate">{summary}</span>
                       </div>
-                      {record.next_visit_memo && (
+                      {record.record_type === "visit" && record.next_visit_memo && (
                         <p className="text-sm text-text-light mt-1 truncate">次回: {record.next_visit_memo}</p>
                       )}
                     </Link>
@@ -117,7 +137,7 @@ export function TreatmentHistory({ customerId, salonId, customerName, records, h
       ) : (
         <EmptyState
           illustration="record"
-          message="施術記録はまだありません"
+          message="カルテはまだありません"
           action={{ label: "最初のカルテを登録する →", href: `/records/new?customer=${customerId}` }}
         />
       )}

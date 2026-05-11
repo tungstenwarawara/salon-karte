@@ -21,6 +21,12 @@
    - 消化 → カルテのメニュー支払タイプで連動
    - 一覧・残回数確認 → 顧客詳細ページ内の `CourseTicketSection`
    - 手動調整 → 顧客詳細ページ内で対応済み
+4. **顧客イベントは `treatment_records.record_type` で一元管理**（2026-05-11〜）
+   - 種別: `visit`（来店）/ `product_only`（物販のみ）/ `cancelled`（キャンセル）/ `memo`（備忘録）
+   - 物販のみ・キャンセル・メモも treatment_records に1行作る（顧客タイムライン統合のため）
+   - 物販のみは `/customers/[id]/purchases/new` → `/records/new?type=product_only` にリダイレクト
+   - 来店分析RPC（`get_customer_visit_summary`, `get_customer_ltv_summary`, `get_lapsed_customers`, `get_monthly_new_vs_returning`）は `record_type = 'visit'` でフィルタ
+   - キャンセルは `appointments.status='cancelled'` と双方向連動（`appointment_id` リンク、UNIQUE制約で1予約1キャンセル）
 
 ## セッション開始ルール（必須）
 1. **実態確認が先、計画は後**: `git log --oneline -10` と対象ソースの `wc -l` で現状を把握してから行動する

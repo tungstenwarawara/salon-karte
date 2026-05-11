@@ -14,10 +14,11 @@ type Props = {
   appointmentDate: string;
   treatmentRecordId: string | null;
   hasKarte: boolean;
+  cancelledRecordId: string | null;
 };
 
 /** 予約詳細ページのアクションボタン群（Client Component） */
-export function AppointmentActions({ appointmentId, salonId, status, customerId, appointmentDate, treatmentRecordId, hasKarte }: Props) {
+export function AppointmentActions({ appointmentId, salonId, status, customerId, appointmentDate, treatmentRecordId, hasKarte, cancelledRecordId }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,6 +38,28 @@ export function AppointmentActions({ appointmentId, salonId, status, customerId,
       setLoading(false);
       return;
     }
+
+    // 双方向連動: cancelled になったら treatment_records に cancelled レコードを作成
+    if (newStatus === "cancelled" && !cancelledRecordId) {
+      const { error: insErr } = await supabase.from("treatment_records").insert({
+        salon_id: salonId,
+        customer_id: customerId,
+        treatment_date: appointmentDate,
+        record_type: "cancelled",
+        appointment_id: appointmentId,
+      });
+      if (insErr) console.error("Cancelled record creation failed:", insErr);
+    }
+    // cancelled 取消 → 紐づく cancelled レコードを削除
+    if (newStatus !== "cancelled" && cancelledRecordId) {
+      const { error: delErr } = await supabase
+        .from("treatment_records")
+        .delete()
+        .eq("id", cancelledRecordId)
+        .eq("salon_id", salonId);
+      if (delErr) console.error("Cancelled record deletion failed:", delErr);
+    }
+
     router.refresh();
     setLoading(false);
   };
@@ -98,6 +121,21 @@ export function AppointmentActions({ appointmentId, salonId, status, customerId,
             className="text-sm text-text-light hover:text-error transition-colors min-h-[44px] disabled:opacity-50"
           >
             予約をキャンセル
+          </button>
+        </div>
+      )}
+
+      {status === "cancelled" && (
+        <div className="space-y-2 pt-1">
+          {cancelledRecordId && (
+            <p className="text-xs text-text-light text-center">カルテ履歴にキャンセル記録があります</p>
+          )}
+          <button
+            onClick={() => updateStatus("scheduled")}
+            disabled={loading}
+            className="block w-full text-center text-sm text-text-light hover:text-accent transition-colors min-h-[44px] disabled:opacity-50"
+          >
+            キャンセルを取り消す
           </button>
         </div>
       )}

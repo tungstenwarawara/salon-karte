@@ -474,6 +474,8 @@ export type Database = {
           next_visit_memo: string | null;
           conversation_notes: string | null;
           caution_notes: string | null;
+          record_type: "visit" | "product_only" | "cancelled" | "memo";
+          appointment_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -492,6 +494,8 @@ export type Database = {
           next_visit_memo?: string | null;
           conversation_notes?: string | null;
           caution_notes?: string | null;
+          record_type?: "visit" | "product_only" | "cancelled" | "memo";
+          appointment_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -510,6 +514,8 @@ export type Database = {
           next_visit_memo?: string | null;
           conversation_notes?: string | null;
           caution_notes?: string | null;
+          record_type?: "visit" | "product_only" | "cancelled" | "memo";
+          appointment_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };

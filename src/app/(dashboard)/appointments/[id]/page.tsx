@@ -60,16 +60,26 @@ export default async function AppointmentDetailPage({
   const menus = menusRes.data ?? [];
   const statusInfo = STATUS_LABELS[appointment.status] ?? STATUS_LABELS.scheduled;
 
-  // 前回カルテを取得（同一顧客の最新1件）
+  // 前回カルテを取得（同一顧客の最新1件、visit のみ）
   const { data: prevRecords } = await supabase
     .from("treatment_records")
     .select("id, treatment_date, menu_name_snapshot, skin_condition_before, next_visit_memo")
     .eq("customer_id", appointment.customer_id)
     .eq("salon_id", salon.id)
+    .eq("record_type", "visit")
     .order("treatment_date", { ascending: false })
     .limit(1);
 
   const prevKarte = prevRecords?.[0] ?? null;
+
+  // この予約に紐づく cancelled レコードを取得（双方向連動用）
+  const { data: cancelledRecord } = await supabase
+    .from("treatment_records")
+    .select("id")
+    .eq("appointment_id", id)
+    .eq("salon_id", salon.id)
+    .eq("record_type", "cancelled")
+    .maybeSingle<{ id: string }>();
 
   // カウンセリング関連データ取得
   const [counselingRes, templatesRes] = await Promise.all([
@@ -237,6 +247,7 @@ export default async function AppointmentDetailPage({
         appointmentDate={appointment.appointment_date}
         treatmentRecordId={appointment.treatment_record_id}
         hasKarte={!!appointment.treatment_record_id}
+        cancelledRecordId={cancelledRecord?.id ?? null}
       />
     </div>
   );
