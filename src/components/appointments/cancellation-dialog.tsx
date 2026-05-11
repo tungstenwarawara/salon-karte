@@ -26,6 +26,8 @@ export type CancellationSubmitData = {
 type Props = {
   customerName: string;
   courseTickets: CourseTicket[];
+  /** 予約メニューの合計金額。キャンセル料の初期値として使う */
+  suggestedAmount?: number;
   onCancel: () => void;
   onSubmit: (data: CancellationSubmitData) => Promise<void>;
 };
@@ -37,12 +39,12 @@ const FEE_OPTIONS: { value: FeePaymentType; label: string; helper?: string }[] =
   { value: "ticket", label: "お持ちの回数券から1回引く" },
 ];
 
-export function CancellationDialog({ customerName, courseTickets, onCancel, onSubmit }: Props) {
+export function CancellationDialog({ customerName, courseTickets, suggestedAmount, onCancel, onSubmit }: Props) {
   const [visible, setVisible] = useState(false);
   const [reason, setReason] = useState("");
   const [feeEnabled, setFeeEnabled] = useState(false);
   const [feeType, setFeeType] = useState<FeePaymentType>("service");
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(suggestedAmount && suggestedAmount > 0 ? String(suggestedAmount) : "");
   const [ticketId, setTicketId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -210,6 +212,9 @@ export function CancellationDialog({ customerName, courseTickets, onCancel, onSu
                     />
                     <span className="text-sm text-text-light">円</span>
                   </div>
+                  {suggestedAmount && suggestedAmount > 0 && (
+                    <p className="text-xs text-text-light mt-1">予約メニューの合計金額を初期値に入れています</p>
+                  )}
                 </div>
               )}
 

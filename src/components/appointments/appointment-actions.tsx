@@ -18,10 +18,12 @@ type Props = {
   hasKarte: boolean;
   cancelledRecordId: string | null;
   courseTickets: CancellationDialogTicket[];
+  /** 予約メニューの合計金額（キャンセル料の初期値として使用） */
+  suggestedFeeAmount?: number;
 };
 
 /** 予約詳細ページのアクションボタン群（Client Component） */
-export function AppointmentActions({ appointmentId, salonId, status, customerId, customerName, appointmentDate, treatmentRecordId, hasKarte, cancelledRecordId, courseTickets }: Props) {
+export function AppointmentActions({ appointmentId, salonId, status, customerId, customerName, appointmentDate, treatmentRecordId, hasKarte, cancelledRecordId, courseTickets, suggestedFeeAmount }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -185,6 +187,7 @@ export function AppointmentActions({ appointmentId, salonId, status, customerId,
         <CancellationDialog
           customerName={customerName}
           courseTickets={courseTickets}
+          suggestedAmount={suggestedFeeAmount}
           onCancel={() => setShowCancelDialog(false)}
           onSubmit={handleCancellationSubmit}
         />
