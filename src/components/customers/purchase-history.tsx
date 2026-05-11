@@ -106,14 +106,11 @@ export function PurchaseHistory({ customerId, purchases: initialPurchases, salon
             </span>
           )}
         </h3>
-        <Link href={`/customers/${customerId}/purchases/new`}
+        <Link href={`/records/new?customer=${customerId}&type=product_only`}
           className="bg-accent hover:bg-accent-light text-white text-sm font-medium rounded-xl px-4 py-2 transition-colors min-h-[44px] flex items-center">
           + 物販を登録
         </Link>
       </div>
-      <p className="text-xs text-text-light mb-3">
-        施術と同時に記録する場合は、カルテ作成画面の「物販記録」から追加できます。
-      </p>
 
       {purchases.length > 0 ? (
         <div>
@@ -146,7 +143,7 @@ export function PurchaseHistory({ customerId, purchases: initialPurchases, salon
         <EmptyState
           illustration="product"
           message="購入記録はまだありません"
-          action={{ label: "最初の物販を登録する →", href: `/customers/${customerId}/purchases/new` }}
+          action={{ label: "最初の物販を登録する →", href: `/records/new?customer=${customerId}&type=product_only` }}
         />
       )}
 

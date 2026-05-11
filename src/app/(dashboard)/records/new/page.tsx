@@ -22,7 +22,8 @@ import { TreatmentDetailFields } from "@/components/records/treatment-detail-fie
 import { submitTreatmentRecord } from "@/components/records/treatment-form-submit";
 import { INPUT_CLASS } from "@/components/records/types";
 import { AppointmentSelector, type SelectedAppointment } from "@/components/records/appointment-selector";
-import type { Menu, CourseTicket, Product, CustomerOption, MenuPaymentInfo, PendingTicket, PendingPurchase } from "@/components/records/types";
+import { RecordTypeTabs } from "@/components/records/record-type-tabs";
+import type { Menu, CourseTicket, Product, CustomerOption, MenuPaymentInfo, PendingTicket, PendingPurchase, RecordType } from "@/components/records/types";
 import type { Database } from "@/types/database";
 
 type AppointmentMenu = Database["public"]["Tables"]["appointment_menus"]["Row"];
@@ -41,8 +42,12 @@ function NewRecordForm() {
   const presetCustomerId = searchParams.get("customer");
   const appointmentParam = searchParams.get("appointment");
   const dateParam = searchParams.get("date");
+  const typeParam = searchParams.get("type") as RecordType | null;
+  const initialRecordType: RecordType = typeParam && ["visit", "product_only", "cancelled", "memo"].includes(typeParam) ? typeParam : "visit";
 
-  const [appointmentStepDone, setAppointmentStepDone] = useState(!!(presetCustomerId || appointmentParam));
+  const [recordType, setRecordType] = useState<RecordType>(initialRecordType);
+  // visit以外は予約選択ステップをスキップ（物販のみ・キャンセル・メモは予約と無関係）
+  const [appointmentStepDone, setAppointmentStepDone] = useState(!!(presetCustomerId || appointmentParam) || initialRecordType !== "visit");
   const [menus, setMenus] = useState<Menu[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState(presetCustomerId ?? "");
@@ -191,7 +196,15 @@ function NewRecordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerId) { setError("顧客が選択されていません"); return; }
-    if (menuPayments.find((mp) => mp.paymentType === "ticket" && !mp.ticketId)) { setError("回数券支払いのメニューでチケットが選択されていません"); return; }
+    // visit以外は施術関連バリデーションをスキップ（メニュー・回数券は visit のみ）
+    if (recordType === "visit" && menuPayments.find((mp) => mp.paymentType === "ticket" && !mp.ticketId)) {
+      setError("回数券支払いのメニューでチケットが選択されていません");
+      return;
+    }
+    if (recordType === "product_only" && pendingPurchases.length === 0) {
+      setError("物販を1件以上追加してください");
+      return;
+    }
     setError(""); setLoading(true);
 
     // フリープラン制限チェック（UIゲートをすり抜けてここに到達した場合の防御）
@@ -216,7 +229,7 @@ function NewRecordForm() {
     }
 
     const result = await submitTreatmentRecord({
-      customerId, salonId, staffId, form, menus, selectedMenuIds, menuPayments, pendingTickets, pendingPurchases, photos, appointmentId, courseTickets,
+      customerId, salonId, staffId, form, menus, selectedMenuIds, menuPayments, pendingTickets, pendingPurchases, photos, appointmentId, courseTickets, recordType,
     });
 
     if (!result.success) { setError(result.error); setLoading(false); return; }
@@ -269,12 +282,14 @@ function NewRecordForm() {
       <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
         {error && <ErrorAlert message={error} />}
 
+        <RecordTypeTabs value={recordType} onChange={setRecordType} />
+
         <div>
-          <label className="block text-sm font-medium mb-1.5">施術日 <span className="text-error">*</span></label>
+          <label className="block text-sm font-medium mb-1.5">{recordType === "cancelled" ? "対象日" : recordType === "memo" ? "メモの日付" : "施術日"} <span className="text-error">*</span></label>
           <input type="date" value={form.treatment_date} onChange={(e) => updateField("treatment_date", e.target.value)} required className={INPUT_CLASS} />
         </div>
 
-        {staffList.length > 1 && (
+        {recordType === "visit" && staffList.length > 1 && (
           <div>
             <label className="block text-sm font-medium mb-1.5">担当スタッフ</label>
             <select value={staffId ?? ""} onChange={(e) => setStaffId(e.target.value || null)} className={INPUT_CLASS}>
@@ -283,57 +298,79 @@ function NewRecordForm() {
           </div>
         )}
 
-        <MenuSelector menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments} onToggle={toggleMenu} />
-        <PaymentSection menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments} courseTickets={courseTickets} hasTickets={hasTickets} onSetAllPaymentType={setAllPaymentType} onSetAllService={setAllService} onUpdatePayment={updateMenuPayment} onUpdatePrice={updateMenuPrice} onUpdateTicket={updateMenuTicket} showCashTotal />
+        {recordType === "visit" && (
+          <>
+            <MenuSelector menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments} onToggle={toggleMenu} />
+            <PaymentSection menus={menus} selectedMenuIds={selectedMenuIds} menuPayments={menuPayments} courseTickets={courseTickets} hasTickets={hasTickets} onSetAllPaymentType={setAllPaymentType} onSetAllService={setAllService} onUpdatePayment={updateMenuPayment} onUpdatePrice={updateMenuPrice} onUpdateTicket={updateMenuTicket} showCashTotal />
 
-        <div>
-          <label className="block text-sm font-medium mb-1.5">施術部位</label>
-          <input type="text" value={form.treatment_area} onChange={(e) => updateField("treatment_area", e.target.value)} placeholder="例: 顔全体、デコルテ" className={INPUT_CLASS} />
-        </div>
-
-        <CollapsibleSection label={`回数券の新規登録${pendingTickets.length > 0 ? ` — ${pendingTickets.length}件` : ""}`}>
-          {pendingTickets.length > 0 && (
-            <div className="space-y-2 mb-3">
-              {pendingTickets.map((t, i) => (
-                <div key={i} className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{t.ticket_name}</p>
-                    <p className="text-xs text-text-light">{t.total_sessions}回{t.price ? ` / ${t.price.toLocaleString()}円` : ""}</p>
-                  </div>
-                  <button type="button" onClick={() => setPendingTickets((prev) => prev.filter((_, idx) => idx !== i))} className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">削除</button>
-                </div>
-              ))}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">施術部位</label>
+              <input type="text" value={form.treatment_area} onChange={(e) => updateField("treatment_area", e.target.value)} placeholder="例: 顔全体、デコルテ" className={INPUT_CLASS} />
             </div>
-          )}
-          <TicketInlineForm menus={menus} onAdd={(t) => setPendingTickets((prev) => [...prev, t])} />
-        </CollapsibleSection>
 
-        <CollapsibleSection label="詳細な記録を追加（任意）">
-          <TreatmentDetailFields form={form} onUpdate={updateField} />
-        </CollapsibleSection>
-
-        <CollapsibleSection label={`物販記録（任意）${pendingPurchases.length > 0 ? ` — ${pendingPurchases.length}件` : ""}`}>
-          {pendingPurchases.length > 0 && (
-            <div className="space-y-2 mb-3">
-              {pendingPurchases.map((p, i) => (
-                <div key={i} className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{p.item_name}</p>
-                    <p className="text-xs text-text-light">{p.quantity}個 × {p.unit_price.toLocaleString()}円 = {(p.quantity * p.unit_price).toLocaleString()}円</p>
-                  </div>
-                  <button type="button" onClick={() => setPendingPurchases((prev) => prev.filter((_, idx) => idx !== i))} className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">削除</button>
+            <CollapsibleSection label={`回数券の新規登録${pendingTickets.length > 0 ? ` — ${pendingTickets.length}件` : ""}`}>
+              {pendingTickets.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  {pendingTickets.map((t, i) => (
+                    <div key={i} className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{t.ticket_name}</p>
+                        <p className="text-xs text-text-light">{t.total_sessions}回{t.price ? ` / ${t.price.toLocaleString()}円` : ""}</p>
+                      </div>
+                      <button type="button" onClick={() => setPendingTickets((prev) => prev.filter((_, idx) => idx !== i))} className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">削除</button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-              <div className="flex items-center justify-between bg-accent/5 rounded-xl px-3 py-2">
-                <span className="text-xs text-text-light">物販合計</span>
-                <span className="text-sm font-bold text-accent">{pendingPurchases.reduce((s, p) => s + p.quantity * p.unit_price, 0).toLocaleString()}円</span>
+              )}
+              <TicketInlineForm menus={menus} onAdd={(t) => setPendingTickets((prev) => [...prev, t])} />
+            </CollapsibleSection>
+
+            <CollapsibleSection label="詳細な記録を追加（任意）">
+              <TreatmentDetailFields form={form} onUpdate={updateField} />
+            </CollapsibleSection>
+          </>
+        )}
+
+        {(recordType === "visit" || recordType === "product_only") && (
+          <CollapsibleSection label={`物販記録${recordType === "product_only" ? "" : "（任意）"}${pendingPurchases.length > 0 ? ` — ${pendingPurchases.length}件` : ""}`} defaultOpen={recordType === "product_only"}>
+            {pendingPurchases.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {pendingPurchases.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between bg-background rounded-xl px-3 py-2.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{p.item_name}</p>
+                      <p className="text-xs text-text-light">{p.quantity}個 × {p.unit_price.toLocaleString()}円 = {(p.quantity * p.unit_price).toLocaleString()}円</p>
+                    </div>
+                    <button type="button" onClick={() => setPendingPurchases((prev) => prev.filter((_, idx) => idx !== i))} className="text-error text-xs ml-2 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">削除</button>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between bg-accent/5 rounded-xl px-3 py-2">
+                  <span className="text-xs text-text-light">物販合計</span>
+                  <span className="text-sm font-bold text-accent">{pendingPurchases.reduce((s, p) => s + p.quantity * p.unit_price, 0).toLocaleString()}円</span>
+                </div>
               </div>
-            </div>
-          )}
-          <PurchaseInlineForm products={products} onAdd={(p) => setPendingPurchases((prev) => [...prev, p])} />
-        </CollapsibleSection>
+            )}
+            <PurchaseInlineForm products={products} onAdd={(p) => setPendingPurchases((prev) => [...prev, p])} />
+          </CollapsibleSection>
+        )}
 
-        <PhotoUpload photos={photos} onChange={setPhotos} planType={planType} />
+        {recordType === "cancelled" && (
+          <div>
+            <label className="block text-sm font-medium mb-1.5">キャンセル理由（任意）</label>
+            <textarea value={form.notes_after} onChange={(e) => updateField("notes_after", e.target.value)} rows={3} placeholder="例: 体調不良のため当日キャンセル" className={INPUT_CLASS} />
+            <p className="text-xs text-text-light mt-1">来店分析にはカウントされません</p>
+          </div>
+        )}
+
+        {recordType === "memo" && (
+          <div>
+            <label className="block text-sm font-medium mb-1.5">メモ <span className="text-error">*</span></label>
+            <textarea value={form.notes_after} onChange={(e) => updateField("notes_after", e.target.value)} rows={4} required placeholder="例: 商品発注の依頼を受けた" className={INPUT_CLASS} />
+            <p className="text-xs text-text-light mt-1">来店分析にはカウントされません</p>
+          </div>
+        )}
+
+        {recordType === "visit" && <PhotoUpload photos={photos} onChange={setPhotos} planType={planType} />}
 
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={() => router.back()} className="flex-1 bg-background border border-border text-text font-medium rounded-xl py-3 transition-colors min-h-[48px]">キャンセル</button>

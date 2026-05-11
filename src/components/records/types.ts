@@ -1,5 +1,14 @@
 import type { Database } from "@/types/database";
 
+export type RecordType = "visit" | "product_only" | "cancelled" | "memo";
+
+export const RECORD_TYPE_LABELS: Record<RecordType, string> = {
+  visit: "来店",
+  product_only: "物販のみ",
+  cancelled: "キャンセル",
+  memo: "メモ",
+};
+
 export type Menu = Database["public"]["Tables"]["treatment_menus"]["Row"];
 export type CourseTicket = Database["public"]["Tables"]["course_tickets"]["Row"];
 export type Product = Database["public"]["Tables"]["products"]["Row"];

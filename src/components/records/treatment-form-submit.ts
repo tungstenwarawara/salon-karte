@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { uploadPhotos } from "@/lib/supabase/storage";
 import type { PhotoEntry } from "@/components/records/photo-upload";
-import type { Menu, MenuPaymentInfo, PendingTicket, PendingPurchase, CourseTicket } from "@/components/records/types";
+import type { Menu, MenuPaymentInfo, PendingTicket, PendingPurchase, CourseTicket, RecordType } from "@/components/records/types";
 
 type RecordFormData = {
   treatment_date: string;
@@ -27,6 +27,7 @@ type SubmitParams = {
   photos: PhotoEntry[];
   appointmentId: string | null;
   courseTickets?: CourseTicket[];
+  recordType: RecordType;
 };
 
 type TicketConsumptionInfo = {
@@ -41,11 +42,13 @@ type SubmitResult =
 
 /** カルテ新規作成のsubmit処理（メニュー・回数券・物販・写真の一括保存） */
 export async function submitTreatmentRecord(params: SubmitParams): Promise<SubmitResult> {
-  const { customerId, salonId, staffId, form, menus, selectedMenuIds, menuPayments, pendingTickets, pendingPurchases, photos, appointmentId } = params;
+  const { customerId, salonId, staffId, form, menus, selectedMenuIds, menuPayments, pendingTickets, pendingPurchases, photos, appointmentId, recordType } = params;
   const supabase = createClient();
 
-  const firstMenuId = selectedMenuIds[0] || null;
-  const menuNameSnapshot = selectedMenuIds.length > 0
+  // visit以外は施術関連フィールドを記録しない
+  const isVisit = recordType === "visit";
+  const firstMenuId = isVisit ? (selectedMenuIds[0] || null) : null;
+  const menuNameSnapshot = isVisit && selectedMenuIds.length > 0
     ? selectedMenuIds.map((id) => menus.find((m) => m.id === id)?.name).filter(Boolean).join("、") : null;
 
   // 1. カルテ本体をINSERT
@@ -54,10 +57,15 @@ export async function submitTreatmentRecord(params: SubmitParams): Promise<Submi
     .insert({
       customer_id: customerId, salon_id: salonId, staff_id: staffId, treatment_date: form.treatment_date,
       menu_id: firstMenuId, menu_name_snapshot: menuNameSnapshot,
-      treatment_area: form.treatment_area || null, products_used: form.products_used || null,
-      skin_condition_before: form.skin_condition_before || null, notes_after: form.notes_after || null,
-      next_visit_memo: form.next_visit_memo || null, conversation_notes: form.conversation_notes || null,
+      treatment_area: isVisit ? (form.treatment_area || null) : null,
+      products_used: isVisit ? (form.products_used || null) : null,
+      skin_condition_before: isVisit ? (form.skin_condition_before || null) : null,
+      notes_after: form.notes_after || null,
+      next_visit_memo: isVisit ? (form.next_visit_memo || null) : null,
+      conversation_notes: isVisit ? (form.conversation_notes || null) : null,
       caution_notes: form.caution_notes || null,
+      record_type: recordType,
+      appointment_id: recordType === "cancelled" ? appointmentId : null,
     })
     .select("id").single<{ id: string }>();
 

@@ -50,7 +50,7 @@ export default async function CustomerDetailPage({
   const [recordsResult, appointmentResult, purchasesResult, courseTicketsResult, counselingResult, lineLinkResult, salonTemplateResult, counselingTemplatesResult] = await Promise.all([
     supabase
       .from("treatment_records")
-      .select("id, treatment_date, menu_name_snapshot, skin_condition_before, customer_id, treatment_record_menus(id, menu_name_snapshot, price_snapshot, payment_type, ticket_id)")
+      .select("id, treatment_date, menu_name_snapshot, skin_condition_before, customer_id, record_type, next_visit_memo, notes_after, appointment_id, treatment_record_menus(id, menu_name_snapshot, price_snapshot, payment_type, ticket_id)")
       .eq("customer_id", id)
       .eq("salon_id", salon.id)
       .order("treatment_date", { ascending: false })
