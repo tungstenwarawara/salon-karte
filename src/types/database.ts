@@ -279,6 +279,35 @@ export type Database = {
           },
         ];
       };
+      email_send_logs: {
+        Row: {
+          id: string;
+          salon_id: string;
+          email_type: string;
+          sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          salon_id: string;
+          email_type: string;
+          sent_at?: string;
+        };
+        Update: {
+          id?: string;
+          salon_id?: string;
+          email_type?: string;
+          sent_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "email_send_logs_salon_id_fkey";
+            columns: ["salon_id"];
+            isOneToOne: false;
+            referencedRelation: "salons";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       stripe_processed_events: {
         Row: {
           event_id: string;

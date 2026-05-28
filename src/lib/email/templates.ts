@@ -397,6 +397,127 @@ export function buildRegistrationConfirmationEmail(info: RegistrationConfirmatio
   };
 }
 
+type OnboardingEmailInfo = {
+  salonName: string;
+  appUrl: string;
+};
+
+// オンボーディング Day3: setup完了したが顧客がまだ0件のサロン向け
+export function buildDay3NoCustomerEmail(info: OnboardingEmailInfo): {
+  subject: string;
+  html: string;
+} {
+  const body = `
+<tr><td style="padding:32px 24px 0;text-align:center;">
+  <h1 style="margin:0;font-size:20px;color:#333;">最初のお客様を登録してみませんか？</h1>
+</td></tr>
+<tr><td style="padding:24px;">
+  <p style="margin:0 0 16px;font-size:14px;color:#333;">${info.salonName} のオーナー様</p>
+  <p style="margin:0 0 16px;font-size:14px;color:#333;line-height:1.7;">
+    サロンカルテにご登録いただきありがとうございます。<br>
+    最初のお客様を登録すると、カルテ・予約・売上の管理がはじめられます。<strong>所要時間は30秒</strong>です。
+  </p>
+  <div style="margin:24px 0;text-align:center;">
+    <a href="${info.appUrl}/customers/new" style="display:inline-block;background:#c4956a;color:#ffffff;font-size:14px;font-weight:bold;padding:14px 32px;border-radius:12px;text-decoration:none;">
+      お客様を登録する →
+    </a>
+  </div>
+  <div style="background:#f9f7f5;border-radius:12px;padding:16px;margin:16px 0;">
+    <p style="margin:0 0 8px;font-size:13px;color:#666;font-weight:bold;">最低限の入力でOK</p>
+    <p style="margin:0;font-size:13px;color:#666;line-height:1.6;">
+      お名前だけで登録できます。電話番号・誕生日・施術メモなどは後から追加できます。
+    </p>
+  </div>
+  <p style="margin:24px 0 0;font-size:12px;color:#999;text-align:center;line-height:1.6;">
+    使い方でお困りのことがあれば、いつでもこのメールにご返信ください。
+  </p>
+</td></tr>`;
+
+  return {
+    subject: "【サロンカルテ】最初のお客様を登録してみませんか？",
+    html: wrapHtml(body),
+  };
+}
+
+// オンボーディング Day7: 顧客は登録したがカルテがまだ0件のサロン向け
+export function buildDay7NoRecordEmail(info: OnboardingEmailInfo): {
+  subject: string;
+  html: string;
+} {
+  const body = `
+<tr><td style="padding:32px 24px 0;text-align:center;">
+  <h1 style="margin:0;font-size:20px;color:#333;">施術の記録を残してみませんか？</h1>
+</td></tr>
+<tr><td style="padding:24px;">
+  <p style="margin:0 0 16px;font-size:14px;color:#333;">${info.salonName} のオーナー様</p>
+  <p style="margin:0 0 16px;font-size:14px;color:#333;line-height:1.7;">
+    お客様の登録ありがとうございます。<br>
+    次は、施術の記録（カルテ）を残してみましょう。
+    <strong>記録は3タップで完了</strong>し、次回来店時のおもてなしに活かせます。
+  </p>
+  <div style="margin:24px 0;text-align:center;">
+    <a href="${info.appUrl}/records/new" style="display:inline-block;background:#c4956a;color:#ffffff;font-size:14px;font-weight:bold;padding:14px 32px;border-radius:12px;text-decoration:none;">
+      カルテを記録する →
+    </a>
+  </div>
+  <div style="background:#f9f7f5;border-radius:12px;padding:16px;margin:16px 0;">
+    <p style="margin:0 0 8px;font-size:13px;color:#666;font-weight:bold;">カルテに記録できること</p>
+    <p style="margin:0;font-size:13px;color:#666;line-height:1.6;">
+      • 施術メニューと料金<br>
+      • お客様の様子・会話の内容<br>
+      • 次回への申し送りメモ
+    </p>
+  </div>
+  <p style="margin:24px 0 0;font-size:12px;color:#999;text-align:center;line-height:1.6;">
+    ご不明点があればこのメールにご返信ください。
+  </p>
+</td></tr>`;
+
+  return {
+    subject: "【サロンカルテ】施術の記録を残してみませんか？",
+    html: wrapHtml(body),
+  };
+}
+
+// オンボーディング Day14: カルテ1件のみで14日経過、2件目を作る後押し
+export function buildDay14NoSecondRecordEmail(info: OnboardingEmailInfo): {
+  subject: string;
+  html: string;
+} {
+  const body = `
+<tr><td style="padding:32px 24px 0;text-align:center;">
+  <h1 style="margin:0;font-size:20px;color:#333;">カルテを習慣にすると、サロンが見えてきます</h1>
+</td></tr>
+<tr><td style="padding:24px;">
+  <p style="margin:0 0 16px;font-size:14px;color:#333;">${info.salonName} のオーナー様</p>
+  <p style="margin:0 0 16px;font-size:14px;color:#333;line-height:1.7;">
+    最初のカルテを記録してから少し時間が経ちました。<br>
+    施術ごとに記録を続けていくと、月間の売上推移、リピート率、お客様ごとの来店間隔が
+    <strong>自動で見えるようになります</strong>。
+  </p>
+  <div style="margin:24px 0;text-align:center;">
+    <a href="${info.appUrl}/records/new" style="display:inline-block;background:#c4956a;color:#ffffff;font-size:14px;font-weight:bold;padding:14px 32px;border-radius:12px;text-decoration:none;">
+      2件目のカルテを記録する →
+    </a>
+  </div>
+  <div style="background:#f9f7f5;border-radius:12px;padding:16px;margin:16px 0;">
+    <p style="margin:0 0 8px;font-size:13px;color:#666;font-weight:bold;">記録を続けるコツ</p>
+    <p style="margin:0;font-size:13px;color:#666;line-height:1.6;">
+      お客様が帰られた直後の数分間が、もっとも記録しやすいタイミングです。<br>
+      施術内容や会話を忘れる前にサッと記録しておきましょう。
+    </p>
+  </div>
+  <p style="margin:24px 0 0;font-size:12px;color:#999;text-align:center;line-height:1.6;">
+    使い方の質問や機能のリクエストはこのメールにご返信ください。
+  </p>
+</td></tr>`;
+
+  return {
+    subject: "【サロンカルテ】カルテを習慣にすると、サロンが見えてきます",
+    html: wrapHtml(body),
+  };
+}
+
 type OwnerChangeNotificationInfo = {
   customerName: string;
   oldDate: string;
