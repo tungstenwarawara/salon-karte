@@ -140,10 +140,10 @@ export function StepComplete({ salonName, setupSummary, onStart, loading }: Step
           disabled={loading}
           className="w-full bg-accent hover:bg-accent-light text-white font-bold rounded-xl py-3.5 transition-colors min-h-[48px] shadow-md disabled:opacity-50"
         >
-          {loading ? "登録中..." : "サンプルデータで使い方を見る"}
+          {loading ? "登録中..." : "サンプルで使い方を試す"}
         </button>
         <p className="text-[11px] text-text-light text-center">
-          顧客2人・メニュー1件・予約1件・カルテ1件を投入します（いつでも削除できます）
+          お試し用のお客様2人とメニュー1件を入れます（いつでも削除できます）
         </p>
         <button
           type="button"
@@ -151,7 +151,7 @@ export function StepComplete({ salonName, setupSummary, onStart, loading }: Step
           disabled={loading}
           className="w-full bg-background border border-border hover:bg-border/20 text-text font-medium rounded-xl py-3 transition-colors min-h-[48px] disabled:opacity-50"
         >
-          自分のデータから始める
+          サンプルなしで始める
         </button>
       </div>
     </div>

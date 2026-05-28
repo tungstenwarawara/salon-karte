@@ -6,11 +6,11 @@ import { setFlashToast } from "@/components/ui/toast";
 
 export function SampleDataBanner() {
   const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
   const handleDelete = async () => {
-    if (!confirm("サンプルデータを削除します。よろしいですか？")) return;
     setError("");
     setDeleting(true);
 
@@ -20,7 +20,7 @@ export function SampleDataBanner() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error ?? "削除に失敗しました");
       }
-      setFlashToast("サンプルデータを削除しました");
+      setFlashToast("サンプルを削除しました");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "削除に失敗しました");
@@ -29,24 +29,52 @@ export function SampleDataBanner() {
   };
 
   return (
-    <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 space-y-2">
+    <div className="bg-accent/10 border border-accent/30 rounded-2xl p-4 space-y-2">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-yellow-900">サンプルデータが表示されています</p>
-          <p className="text-xs text-yellow-800 mt-0.5">
-            「サンプル」と名前のついた顧客・メニュー・予約・カルテはお試し用のデータです。実際の利用を始める前に削除できます。
+          <p className="text-sm font-bold">お試し用のサンプルが入っています</p>
+          <p className="text-xs text-text-light mt-0.5">
+            「サンプル」と名前のついたお客様・メニュー・予約・カルテは使い方を試すためのものです。実際にお客様を登録するときに削除できます。
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={deleting}
-          className="bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-medium rounded-xl px-3 py-2 min-h-[44px] shrink-0 disabled:opacity-50 transition-colors"
-        >
-          {deleting ? "削除中..." : "一括削除"}
-        </button>
+        {!confirming && (
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            className="bg-surface border border-border hover:bg-background text-text text-xs font-medium rounded-xl px-3 py-2 min-h-[44px] shrink-0 transition-colors"
+          >
+            サンプルを全部消す
+          </button>
+        )}
       </div>
-      {error && <p className="text-xs text-error">{error}</p>}
+
+      {confirming && (
+        <div className="bg-surface border border-border rounded-xl p-3 space-y-2">
+          <p className="text-sm font-medium">本当にサンプルを全部消しますか？</p>
+          <p className="text-xs text-text-light">
+            サンプルのお客様・メニュー・予約・カルテがすべて削除されます。あなたが自分で追加したデータは残ります。
+          </p>
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              disabled={deleting}
+              className="flex-1 bg-background border border-border text-text text-sm font-medium rounded-xl py-2.5 min-h-[44px] disabled:opacity-50 transition-colors"
+            >
+              キャンセル
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="flex-1 bg-error hover:bg-error/90 text-white text-sm font-medium rounded-xl py-2.5 min-h-[44px] disabled:opacity-50 transition-colors"
+            >
+              {deleting ? "削除中..." : "全部消す"}
+            </button>
+          </div>
+          {error && <p className="text-xs text-error">{error}</p>}
+        </div>
+      )}
     </div>
   );
 }

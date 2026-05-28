@@ -49,6 +49,29 @@ export function StepSalonInfo({
         </div>
 
         <div>
+          <label className="block text-sm font-medium mb-1.5">
+            業種 <span className="text-error text-xs">必須</span>
+          </label>
+          <p className="text-xs text-text-light mb-2">次のステップでこの業種に合わせたメニュー候補が表示されます</p>
+          <div className="grid grid-cols-2 gap-2">
+            {BUSINESS_TYPES.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setBusinessType(opt.value)}
+                className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
+                  businessType === opt.value
+                    ? "bg-accent border-accent text-white"
+                    : "bg-background border-border text-text hover:border-accent/50"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
           <label htmlFor="setup-phone" className="block text-sm font-medium mb-1.5">
             電話番号 <span className="text-xs text-text-light">任意</span>
           </label>
@@ -75,38 +98,22 @@ export function StepSalonInfo({
             className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
           />
         </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            業種 <span className="text-error text-xs">必須</span>
-          </label>
-          <p className="text-xs text-text-light mb-2">次のステップでこの業種に合わせたメニュー候補が表示されます</p>
-          <div className="grid grid-cols-2 gap-2">
-            {BUSINESS_TYPES.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setBusinessType(opt.value)}
-                className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
-                  businessType === opt.value
-                    ? "bg-accent border-accent text-white"
-                    : "bg-background border-border text-text hover:border-accent/50"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
-      <button
-        type="submit"
-        disabled={!name.trim() || !businessType}
-        className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-40 min-h-[48px]"
-      >
-        次へ
-      </button>
+      <div className="space-y-2">
+        {(!name.trim() || !businessType) && (
+          <p className="text-xs text-text-light text-center">
+            サロン名と業種を入力すると次へ進めます
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={!name.trim() || !businessType}
+          className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-40 min-h-[48px]"
+        >
+          次へ
+        </button>
+      </div>
     </form>
   );
 }

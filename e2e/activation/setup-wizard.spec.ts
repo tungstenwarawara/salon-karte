@@ -83,7 +83,7 @@ test.describe("@activation セットアップウィザード", () => {
 
       // Step 4: 完了画面（サンプル投入は選ばずに進む）
       await expect(page.locator("body")).toContainText(`${salonName} の準備ができました`);
-      await page.locator("button").filter({ hasText: /^自分のデータから始める$/ }).click();
+      await page.locator("button").filter({ hasText: /^サンプルなしで始める$/ }).click();
 
       // ダッシュボード到達 — 時間帯依存の挨拶 + サロン名 + KPIカード
       await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
@@ -126,7 +126,7 @@ test.describe("@activation セットアップウィザード", () => {
 
       // Step 4: 完了
       await expect(page.locator("body")).toContainText(`${salonName} の準備ができました`);
-      await page.locator("button").filter({ hasText: /^自分のデータから始める$/ }).click();
+      await page.locator("button").filter({ hasText: /^サンプルなしで始める$/ }).click();
 
       await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
     } finally {
@@ -200,7 +200,7 @@ test.describe("@activation セットアップウィザード", () => {
       await page.locator("button[type='submit']").filter({ hasText: /次へ/ }).click();
       await page.locator("button").filter({ hasText: /スキップ/ }).click();
       await page.locator("button").filter({ hasText: /スキップ/ }).click();
-      await page.locator("button").filter({ hasText: /^自分のデータから始める$/ }).click();
+      await page.locator("button").filter({ hasText: /^サンプルなしで始める$/ }).click();
       await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
 
       // 再度 /setup にアクセス → /dashboard に戻される
@@ -235,7 +235,7 @@ test.describe("@activation セットアップ後のアクティベーション",
       await page.fill("#setup-menu-duration", "60");
       await page.fill("#setup-menu-price", "5000");
       await page.locator("button[type='submit']").filter({ hasText: /完了/ }).click();
-      await page.locator("button").filter({ hasText: /^自分のデータから始める$/ }).click();
+      await page.locator("button").filter({ hasText: /^サンプルなしで始める$/ }).click();
       await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
       // 時間帯依存の挨拶（おはようございます・こんにちは・おつかれさまです）+ サロン名で到達検知
       await expect(page.locator("body")).toContainText(

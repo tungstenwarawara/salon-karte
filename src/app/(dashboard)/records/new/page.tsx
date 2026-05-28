@@ -247,10 +247,10 @@ function NewRecordForm() {
       : "";
     if (preRecordCount === 0) {
       trackEvent({ name: "first_record" });
-      setFlashToast(`🎉 最初のカルテを記録しました！次回の来店時もこのフローで残せます${ticketInfo}`);
+      setFlashToast(`🎉 最初のカルテを記録しました！次回も同じ手順で記録できます${ticketInfo}`);
     } else if (preRecordCount === 1) {
       trackEvent({ name: "second_record" });
-      setFlashToast(`🎊 2件目を記録しました。月の売上が集計されています${ticketInfo}`);
+      setFlashToast(`🎊 2件目を記録しました。売上ページで月の合計が見られます${ticketInfo}`);
     } else {
       setFlashToast(`施術記録を保存しました${ticketInfo}`);
     }

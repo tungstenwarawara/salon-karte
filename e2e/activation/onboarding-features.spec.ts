@@ -70,7 +70,7 @@ async function runSetup(
   }
 
   // Step 4: サンプル or 自分のデータ
-  const btnText = opts.withSample ? /サンプルデータで使い方を見る/ : /^自分のデータから始める$/;
+  const btnText = opts.withSample ? /サンプルで使い方を試す/ : /^サンプルなしで始める$/;
   await page.locator("button").filter({ hasText: btnText }).click();
   await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
 }
@@ -88,8 +88,8 @@ test.describe("@activation サンプルデータ投入と削除", () => {
       await runSetup(page, { salonName, withSample: true });
 
       // ダッシュボードでサンプルバナーが表示される
-      await expect(page.locator("body")).toContainText("サンプルデータが表示されています", { timeout: 10_000 });
-      await expect(page.locator("button").filter({ hasText: "一括削除" })).toBeVisible();
+      await expect(page.locator("body")).toContainText("お試し用のサンプルが入っています", { timeout: 10_000 });
+      await expect(page.locator("button").filter({ hasText: "サンプルを全部消す" })).toBeVisible();
 
       // 顧客一覧にサンプル顧客が見える（表示は「姓 名」と半角スペース区切り）
       await page.goto("/customers");
@@ -125,16 +125,17 @@ test.describe("@activation サンプルデータ投入と削除", () => {
       await runSetup(page, { salonName, withSample: true });
 
       // バナーが見える状態でスタート
-      await expect(page.locator("body")).toContainText("サンプルデータが表示されています");
+      await expect(page.locator("body")).toContainText("お試し用のサンプルが入っています");
 
-      // confirm() を自動承認
-      page.on("dialog", (d) => d.accept());
+      // 1. 「サンプルを全部消す」ボタン押下 → インライン確認パネル表示
+      await page.locator("button").filter({ hasText: /^サンプルを全部消す$/ }).click();
+      await expect(page.locator("body")).toContainText("本当にサンプルを全部消しますか");
 
-      // 削除ボタン押下
-      await page.locator("button").filter({ hasText: "一括削除" }).click();
+      // 2. 「全部消す」で実行
+      await page.locator("button").filter({ hasText: /^全部消す$/ }).click();
 
       // バナーが消える（router.refresh で再取得後）
-      await expect(page.locator("body")).not.toContainText("サンプルデータが表示されています", { timeout: 10_000 });
+      await expect(page.locator("body")).not.toContainText("お試し用のサンプルが入っています", { timeout: 10_000 });
 
       // DB で is_sample 顧客が 0 件
       const salonId = await getSalonId(userId);
