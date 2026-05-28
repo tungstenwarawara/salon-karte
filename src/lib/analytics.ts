@@ -19,6 +19,7 @@ type AcquisitionEvent =
   | { name: "signup_email_confirmed" }
   | { name: "onboarding_complete" }
   | { name: "first_record" }
+  | { name: "second_record" }
   | { name: "blog_read"; params: { slug: string; title: string } }
   | { name: "simulator_complete"; params: {
       daily_customers: number; avg_price: number; working_days: number;

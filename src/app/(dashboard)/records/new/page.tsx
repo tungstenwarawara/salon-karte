@@ -211,7 +211,8 @@ function NewRecordForm() {
     }
     setError(""); setLoading(true);
 
-    // フリープラン制限チェック（UIゲートをすり抜けてここに到達した場合の防御）
+    // フリープラン制限チェック + 既存カルテ数の取得（Reward判定に使用）
+    let preRecordCount: number | null = null;
     if (salonId) {
       const supabase = createClient();
       const [{ data: salon }, { count }] = await Promise.all([
@@ -221,9 +222,10 @@ function NewRecordForm() {
           .select("id", { count: "exact", head: true })
           .eq("salon_id", salonId),
       ]);
+      preRecordCount = count ?? 0;
       const { isAtLimit } = await import("@/lib/plan");
       const planType = (salon?.plan_type ?? "free") as "free" | "standard";
-      if (isAtLimit(planType, "records", count ?? 0)) {
+      if (isAtLimit(planType, "records", preRecordCount)) {
         setError(
           "おためしプランのカルテ作成上限（100件）に達しました。スタンダードプランにアップグレードしてください。"
         );
@@ -237,14 +239,22 @@ function NewRecordForm() {
     });
 
     if (!result.success) { setError(result.error); setLoading(false); return; }
-    trackEvent({ name: "first_record" });
-    clearDraft();
-    if (result.ticketConsumptions && result.ticketConsumptions.length > 0) {
-      const info = result.ticketConsumptions.map((tc) => `${tc.ticketName} ${tc.consumed}回消化→残${tc.remaining}回`).join("、");
-      setFlashToast(`施術記録を保存しました（${info}）`);
+
+    // 1件目・2件目はReward（Hook Model の Variable Reward）+ GA4イベント
+    // 3件目以降は通常のトースト
+    const ticketInfo = result.ticketConsumptions && result.ticketConsumptions.length > 0
+      ? `（${result.ticketConsumptions.map((tc) => `${tc.ticketName} ${tc.consumed}回消化→残${tc.remaining}回`).join("、")}）`
+      : "";
+    if (preRecordCount === 0) {
+      trackEvent({ name: "first_record" });
+      setFlashToast(`🎉 最初のカルテを記録しました！次回の来店時もこのフローで残せます${ticketInfo}`);
+    } else if (preRecordCount === 1) {
+      trackEvent({ name: "second_record" });
+      setFlashToast(`🎊 2件目を記録しました。月の売上が集計されています${ticketInfo}`);
     } else {
-      setFlashToast("施術記録を保存しました");
+      setFlashToast(`施術記録を保存しました${ticketInfo}`);
     }
+    clearDraft();
     router.push(`/customers/${customerId}`);
   };
 
