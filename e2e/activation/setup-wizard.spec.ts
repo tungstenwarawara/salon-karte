@@ -62,11 +62,12 @@ test.describe("@activation セットアップウィザード", () => {
     try {
       await loginAs(page, email, ACTIVATION_PASSWORD);
 
-      // Step 1: サロン情報
+      // Step 1: サロン情報（業種選択を含む）
       await expect(page.locator("body")).toContainText("サロン情報を入力");
       await page.fill("#setup-name", salonName);
       await page.fill("#setup-phone", "03-1234-5678");
       await page.fill("#setup-address", "東京都渋谷区テスト1-2-3");
+      await page.locator("button").filter({ hasText: /^エステ$/ }).click();
       await page.locator("button[type='submit']").filter({ hasText: /次へ/ }).click();
 
       // Step 2: 営業時間（デフォルト値のまま次へ）
@@ -80,9 +81,9 @@ test.describe("@activation セットアップウィザード", () => {
       await page.fill("#setup-menu-price", "5000");
       await page.locator("button[type='submit']").filter({ hasText: /完了/ }).click();
 
-      // Step 4: 完了画面
+      // Step 4: 完了画面（サンプル投入は選ばずに進む）
       await expect(page.locator("body")).toContainText(`${salonName} の準備ができました`);
-      await page.locator("button").filter({ hasText: /サロンカルテを始める/ }).click();
+      await page.locator("button").filter({ hasText: /^自分のデータから始める$/ }).click();
 
       // ダッシュボード到達 — 時間帯依存の挨拶 + サロン名 + KPIカード
       await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
@@ -110,8 +111,9 @@ test.describe("@activation セットアップウィザード", () => {
     try {
       await loginAs(page, email, ACTIVATION_PASSWORD);
 
-      // Step 1
+      // Step 1（業種選択を含む）
       await page.fill("#setup-name", salonName);
+      await page.locator("button").filter({ hasText: /^エステ$/ }).click();
       await page.locator("button[type='submit']").filter({ hasText: /次へ/ }).click();
 
       // Step 2: スキップ
@@ -124,7 +126,7 @@ test.describe("@activation セットアップウィザード", () => {
 
       // Step 4: 完了
       await expect(page.locator("body")).toContainText(`${salonName} の準備ができました`);
-      await page.locator("button").filter({ hasText: /サロンカルテを始める/ }).click();
+      await page.locator("button").filter({ hasText: /^自分のデータから始める$/ }).click();
 
       await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
     } finally {
@@ -132,7 +134,7 @@ test.describe("@activation セットアップウィザード", () => {
     }
   });
 
-  test("AS-SETUP-03: サロン名空 → 次へボタンが無効", async ({ page }) => {
+  test("AS-SETUP-03: サロン名・業種が未入力 → 次へボタンが無効", async ({ page }) => {
     const email = generateActivationEmail();
     const { userId } = await createConfirmedUser(email);
 
@@ -143,8 +145,12 @@ test.describe("@activation セットアップウィザード", () => {
       const nextBtn = page.locator("button[type='submit']").filter({ hasText: /次へ/ });
       await expect(nextBtn).toBeDisabled();
 
-      // 入力すると有効になる
+      // サロン名だけでは有効にならない（業種も必須）
       await page.fill("#setup-name", "テスト");
+      await expect(nextBtn).toBeDisabled();
+
+      // 業種を選ぶと有効になる
+      await page.locator("button").filter({ hasText: /^エステ$/ }).click();
       await expect(nextBtn).toBeEnabled();
     } finally {
       await cleanupActivationUser(userId, email);
@@ -159,9 +165,10 @@ test.describe("@activation セットアップウィザード", () => {
     try {
       await loginAs(page, email, ACTIVATION_PASSWORD);
 
-      // Step 1 入力
+      // Step 1 入力（業種選択を含む）
       await page.fill("#setup-name", salonName);
       await page.fill("#setup-phone", "090-1111-2222");
+      await page.locator("button").filter({ hasText: /^エステ$/ }).click();
       await page.locator("button[type='submit']").filter({ hasText: /次へ/ }).click();
 
       // Step 2 へ → 戻る
@@ -189,10 +196,11 @@ test.describe("@activation セットアップウィザード", () => {
 
       // 最低限のセットアップを完了
       await page.fill("#setup-name", salonName);
+      await page.locator("button").filter({ hasText: /^エステ$/ }).click();
       await page.locator("button[type='submit']").filter({ hasText: /次へ/ }).click();
       await page.locator("button").filter({ hasText: /スキップ/ }).click();
       await page.locator("button").filter({ hasText: /スキップ/ }).click();
-      await page.locator("button").filter({ hasText: /サロンカルテを始める/ }).click();
+      await page.locator("button").filter({ hasText: /^自分のデータから始める$/ }).click();
       await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
 
       // 再度 /setup にアクセス → /dashboard に戻される
@@ -220,13 +228,14 @@ test.describe("@activation セットアップ後のアクティベーション",
 
       // セットアップ（メニュー登録あり）
       await page.fill("#setup-name", salonName);
+      await page.locator("button").filter({ hasText: /^エステ$/ }).click();
       await page.locator("button[type='submit']").filter({ hasText: /次へ/ }).click();
       await page.locator("button").filter({ hasText: /^次へ$/ }).click();
       await page.fill("#setup-menu-name", menuName);
       await page.fill("#setup-menu-duration", "60");
       await page.fill("#setup-menu-price", "5000");
       await page.locator("button[type='submit']").filter({ hasText: /完了/ }).click();
-      await page.locator("button").filter({ hasText: /サロンカルテを始める/ }).click();
+      await page.locator("button").filter({ hasText: /^自分のデータから始める$/ }).click();
       await page.waitForURL(/\/dashboard/, { timeout: 15_000 });
       // 時間帯依存の挨拶（おはようございます・こんにちは・おつかれさまです）+ サロン名で到達検知
       await expect(page.locator("body")).toContainText(
