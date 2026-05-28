@@ -90,7 +90,7 @@ export async function POST() {
     end_time: "11:00",
     menu_name_snapshot: menu.name,
     status: "scheduled",
-    source: "manual",
+    source: "direct",
   });
 
   if (appointmentError) {
