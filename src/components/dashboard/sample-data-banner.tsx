@@ -36,6 +36,11 @@ export function SampleDataBanner() {
           <p className="text-xs text-text-light mt-0.5">
             「サンプル」と名前のついたお客様・メニュー・予約・カルテは使い方を試すためのものです。実際にお客様を登録するときに削除できます。
           </p>
+          {!confirming && (
+            <p className="text-xs text-accent mt-2">
+              まずは下の「今日の予約」や顧客一覧を見て、使い方を試してみましょう。
+            </p>
+          )}
         </div>
         {!confirming && (
           <button

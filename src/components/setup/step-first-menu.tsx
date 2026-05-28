@@ -51,16 +51,19 @@ export function StepFirstMenu({
 
       {presets.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs text-text-light">候補から選ぶ（タップで入力）</p>
-          <div className="flex flex-wrap gap-2">
+          <p className="text-xs text-text-light">タップすると下のフォームに自動入力されます</p>
+          <div className="space-y-2">
             {presets.map((preset) => (
               <button
                 key={preset.name}
                 type="button"
                 onClick={() => applyPreset(preset)}
-                className="bg-accent/10 hover:bg-accent/20 text-accent text-xs font-medium rounded-full px-3 py-2 transition-colors min-h-[36px]"
+                className="w-full bg-accent/10 hover:bg-accent/20 text-text font-medium rounded-xl px-4 py-2.5 transition-colors min-h-[48px] text-left"
               >
-                {preset.name}（{preset.duration}分 / {preset.price.toLocaleString()}円）
+                <div className="text-sm font-bold text-accent">{preset.name}</div>
+                <div className="text-xs text-text-light mt-0.5">
+                  {preset.duration}分 / {preset.price.toLocaleString()}円
+                </div>
               </button>
             ))}
           </div>

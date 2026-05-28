@@ -90,6 +90,8 @@ test.describe("@activation サンプルデータ投入と削除", () => {
       // ダッシュボードでサンプルバナーが表示される
       await expect(page.locator("body")).toContainText("お試し用のサンプルが入っています", { timeout: 10_000 });
       await expect(page.locator("button").filter({ hasText: "サンプルを全部消す" })).toBeVisible();
+      // 「最初の一手」ガイド文言
+      await expect(page.locator("body")).toContainText("使い方を試してみましょう");
 
       // 顧客一覧にサンプル顧客が見える（表示は「姓 名」と半角スペース区切り）
       await page.goto("/customers");
@@ -168,12 +170,13 @@ test.describe("@activation Step3 メニュープリセット", () => {
       // Step 2: 営業時間スキップ
       await page.locator("button").filter({ hasText: /スキップ/ }).click();
 
-      // Step 3: プリセットが表示されているか確認
-      await expect(page.locator("body")).toContainText("候補から選ぶ");
+      // Step 3: プリセットの案内文 + 2行構造（名前 + 時間/料金）が見える
+      await expect(page.locator("body")).toContainText("タップすると下のフォームに自動入力されます");
       await expect(page.locator("body")).toContainText("ハンドジェル");
+      await expect(page.locator("body")).toContainText(/90分\s*\/\s*7,000円/);
 
-      // プリセットをタップ
-      await page.locator("button").filter({ hasText: /ハンドジェル.*90分.*7,000円/ }).click();
+      // プリセットをタップ（ボタン内の名前部分から押下）
+      await page.locator("button").filter({ hasText: /ハンドジェル/ }).filter({ hasText: /90分/ }).click();
 
       // フォームに値が入る
       await expect(page.locator("#setup-menu-name")).toHaveValue("ハンドジェル");
@@ -206,6 +209,10 @@ test.describe("@activation /records/new 前提不足ガード", () => {
       await expect(page.locator("body")).toContainText("メニュー");
       await expect(page.locator("a").filter({ hasText: /顧客を登録する/ })).toBeVisible();
       await expect(page.locator("a").filter({ hasText: /メニューを登録する/ })).toBeVisible();
+
+      // 「あとで設定する」リンクで /dashboard に戻れる
+      await page.locator("a").filter({ hasText: /あとで設定する/ }).click();
+      await page.waitForURL(/\/dashboard/, { timeout: 10_000 });
     } finally {
       await cleanupActivationUser(userId, email);
     }
