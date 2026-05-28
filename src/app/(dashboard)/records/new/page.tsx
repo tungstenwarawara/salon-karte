@@ -23,6 +23,7 @@ import { submitTreatmentRecord } from "@/components/records/treatment-form-submi
 import { INPUT_CLASS } from "@/components/records/types";
 import { AppointmentSelector, type SelectedAppointment } from "@/components/records/appointment-selector";
 import { RecordTypeTabs } from "@/components/records/record-type-tabs";
+import { PrerequisiteGuard, type MissingPrerequisite } from "@/components/records/prerequisite-guard";
 import type { Menu, CourseTicket, Product, CustomerOption, MenuPaymentInfo, PendingTicket, PendingPurchase, RecordType } from "@/components/records/types";
 import type { Database } from "@/types/database";
 
@@ -67,6 +68,7 @@ function NewRecordForm() {
   const [pendingTickets, setPendingTickets] = useState<PendingTicket[]>([]);
   const [pendingPurchases, setPendingPurchases] = useState<PendingPurchase[]>([]);
   const [linkedAppointmentId, setLinkedAppointmentId] = useState<string | null>(appointmentParam);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const customerId = presetCustomerId ?? selectedCustomerId;
   const appointmentId = linkedAppointmentId;
@@ -114,6 +116,8 @@ function NewRecordForm() {
           setMenuPayments(ids.map((menuId) => ({ menuId, paymentType: "cash", ticketId: null, priceOverride: null })));
         }
       }
+
+      setDataLoaded(true);
     };
     load();
   }, [presetCustomerId, appointmentParam]);
@@ -243,6 +247,17 @@ function NewRecordForm() {
     }
     router.push(`/customers/${customerId}`);
   };
+
+  // 前提不足ガード: 顧客0件・メニュー0件のときに登録動線を提示
+  // 既にURLから顧客・予約が指定されている場合は前提が満たされているとみなしスキップ
+  if (dataLoaded && !presetCustomerId && !appointmentParam) {
+    const missing: MissingPrerequisite[] = [];
+    if (customers.length === 0) missing.push("customers");
+    if (recordType === "visit" && menus.length === 0) missing.push("menus");
+    if (missing.length > 0) {
+      return <PrerequisiteGuard missing={missing} />;
+    }
+  }
 
   // 予約選択ステップ（URLパラメータなしの場合）
   if (!appointmentStepDone) {

@@ -44,9 +44,9 @@ export function OnboardingChecklist({
 
   return (
     <>
-      <div className="bg-accent/5 border border-accent/20 rounded-2xl p-4 space-y-3">
+      <div className="bg-accent/10 border border-accent/30 rounded-2xl p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-sm">はじめの設定</h3>
+          <h3 className="font-bold text-base">はじめの設定</h3>
           <span className="text-xs text-accent font-medium">{displayCompleted}/{totalSteps} 完了</span>
         </div>
 

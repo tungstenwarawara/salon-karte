@@ -195,6 +195,13 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* オンボーディング未完了時はチェックリストを最上位に表示（目的: 「次に何をするか」を即座に伝える） */}
+      {!allSetupDone && (
+        <div className="animate-fade-in-up animation-delay-100">
+          <OnboardingChecklist setupSteps={setupSteps} />
+        </div>
+      )}
+
       {/* プラン状態カード（Free + Standard 両対応） */}
       <div className="animate-fade-in-up animation-delay-100">
         <PlanStatusCard
@@ -204,12 +211,6 @@ export default async function DashboardPage() {
           hasReferralBenefit={!!referralRes.data}
         />
       </div>
-
-      {!allSetupDone && (
-        <div className="animate-fade-in-up animation-delay-100">
-          <OnboardingChecklist setupSteps={setupSteps} />
-        </div>
-      )}
 
       <div className="animate-fade-in-up animation-delay-100">
         <SummaryCards
