@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
+import { MENU_PRESETS, type BusinessType } from "@/lib/menu-presets";
 
 type MenuData = { name: string; duration: number | null; price: number | null };
 
@@ -9,14 +10,24 @@ export function StepFirstMenu({
   onNext,
   onSkip,
   initial,
+  businessType,
 }: {
   onNext: (data: MenuData) => void;
   onSkip: () => void;
   initial?: { name: string; duration: number | null; price: number | null };
+  businessType: BusinessType | null;
 }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [duration, setDuration] = useState(initial?.duration != null ? String(initial.duration) : "");
   const [price, setPrice] = useState(initial?.price != null ? String(initial.price) : "");
+
+  const presets = businessType ? MENU_PRESETS[businessType] : [];
+
+  const applyPreset = (preset: typeof presets[number]) => {
+    setName(preset.name);
+    setDuration(String(preset.duration));
+    setPrice(String(preset.price));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +48,24 @@ export function StepFirstMenu({
           よく施術するメニューを1つ登録しましょう
         </p>
       </div>
+
+      {presets.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs text-text-light">候補から選ぶ（タップで入力）</p>
+          <div className="flex flex-wrap gap-2">
+            {presets.map((preset) => (
+              <button
+                key={preset.name}
+                type="button"
+                onClick={() => applyPreset(preset)}
+                className="bg-accent/10 hover:bg-accent/20 text-accent text-xs font-medium rounded-full px-3 py-2 transition-colors min-h-[36px]"
+              >
+                {preset.name}（{preset.duration}分 / {preset.price.toLocaleString()}円）
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         <div>

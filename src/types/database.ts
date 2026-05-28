@@ -172,6 +172,7 @@ export type Database = {
           name: string;
           phone: string | null;
           address: string | null;
+          business_type: "esthetic" | "eyelash" | "nail" | "hair" | "bodycare" | "other" | null;
           business_hours: BusinessHours | null;
           salon_holidays: string[] | null;
           booking_settings: BookingSettings | null;
@@ -192,6 +193,7 @@ export type Database = {
           name: string;
           phone?: string | null;
           address?: string | null;
+          business_type?: "esthetic" | "eyelash" | "nail" | "hair" | "bodycare" | "other" | null;
           business_hours?: BusinessHours | null;
           salon_holidays?: string[] | null;
           booking_settings?: BookingSettings | null;
@@ -212,6 +214,7 @@ export type Database = {
           name?: string;
           phone?: string | null;
           address?: string | null;
+          business_type?: "esthetic" | "eyelash" | "nail" | "hair" | "bodycare" | "other" | null;
           business_hours?: BusinessHours | null;
           salon_holidays?: string[] | null;
           booking_settings?: BookingSettings | null;

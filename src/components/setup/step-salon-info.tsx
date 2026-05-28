@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { EmptyStateIllustration } from "@/components/ui/empty-state-illustrations";
+import { BUSINESS_TYPES, type BusinessType } from "@/lib/menu-presets";
 
-type SalonInfoData = { name: string; phone: string; address: string };
+type SalonInfoData = { name: string; phone: string; address: string; businessType: BusinessType };
 
 export function StepSalonInfo({
   onNext,
@@ -15,11 +16,12 @@ export function StepSalonInfo({
   const [name, setName] = useState(initial?.name ?? "");
   const [phone, setPhone] = useState(initial?.phone ?? "");
   const [address, setAddress] = useState(initial?.address ?? "");
+  const [businessType, setBusinessType] = useState<BusinessType | "">(initial?.businessType ?? "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-    onNext({ name: name.trim(), phone: phone.trim(), address: address.trim() });
+    if (!name.trim() || !businessType) return;
+    onNext({ name: name.trim(), phone: phone.trim(), address: address.trim(), businessType });
   };
 
   return (
@@ -73,11 +75,34 @@ export function StepSalonInfo({
             className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
           />
         </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1.5">
+            業種 <span className="text-error text-xs">必須</span>
+          </label>
+          <p className="text-xs text-text-light mb-2">次のステップでこの業種に合わせたメニュー候補が表示されます</p>
+          <div className="grid grid-cols-2 gap-2">
+            {BUSINESS_TYPES.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setBusinessType(opt.value)}
+                className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
+                  businessType === opt.value
+                    ? "bg-accent border-accent text-white"
+                    : "bg-background border-border text-text hover:border-accent/50"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <button
         type="submit"
-        disabled={!name.trim()}
+        disabled={!name.trim() || !businessType}
         className="w-full bg-accent hover:bg-accent-light text-white font-medium rounded-xl py-3 transition-colors disabled:opacity-40 min-h-[48px]"
       >
         次へ

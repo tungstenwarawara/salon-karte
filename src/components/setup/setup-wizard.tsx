@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import type { BusinessHours } from "@/types/database";
+import type { BusinessType } from "@/lib/menu-presets";
 import { BrandLogo } from "@/components/ui/brand-logo";
 import { SetupProgressBar } from "./setup-progress-bar";
 import { StepSalonInfo } from "./step-salon-info";
@@ -13,6 +14,7 @@ export type WizardData = {
   salonName: string;
   phone: string;
   address: string;
+  businessType: BusinessType;
   businessHours: BusinessHours | null;
   menuName: string | null;
   menuDuration: number | null;
@@ -28,7 +30,7 @@ export function SetupWizard({ onComplete, loading }: { onComplete: (data: Wizard
   const [animKey, setAnimKey] = useState(0);
 
   // 各ステップのデータ
-  const [salonInfo, setSalonInfo] = useState({ name: "", phone: "", address: "" });
+  const [salonInfo, setSalonInfo] = useState<{ name: string; phone: string; address: string; businessType: BusinessType | "" }>({ name: "", phone: "", address: "", businessType: "" });
   const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
   const [menuData, setMenuData] = useState<{ name: string; duration: number | null; price: number | null } | null>(null);
 
@@ -39,7 +41,7 @@ export function SetupWizard({ onComplete, loading }: { onComplete: (data: Wizard
   }, []);
 
   // Step 1: サロン情報
-  const handleSalonInfo = useCallback((data: { name: string; phone: string; address: string }) => {
+  const handleSalonInfo = useCallback((data: { name: string; phone: string; address: string; businessType: BusinessType }) => {
     setSalonInfo(data);
     goTo(2);
   }, [goTo]);
@@ -68,10 +70,12 @@ export function SetupWizard({ onComplete, loading }: { onComplete: (data: Wizard
 
   // Step 4: 完了
   const handleStart = useCallback((withSample: boolean) => {
+    if (!salonInfo.businessType) return; // Step1必須なので通常到達しない
     onComplete({
       salonName: salonInfo.name,
       phone: salonInfo.phone,
       address: salonInfo.address,
+      businessType: salonInfo.businessType,
       businessHours,
       menuName: menuData?.name ?? null,
       menuDuration: menuData?.duration ?? null,
@@ -113,7 +117,12 @@ export function SetupWizard({ onComplete, loading }: { onComplete: (data: Wizard
           className={step === 4 ? "" : animClass}
         >
           <div className="bg-surface rounded-2xl shadow-sm border border-border p-5">
-            {step === 1 && <StepSalonInfo onNext={handleSalonInfo} initial={salonInfo} />}
+            {step === 1 && (
+              <StepSalonInfo
+                onNext={handleSalonInfo}
+                initial={salonInfo.businessType ? { ...salonInfo, businessType: salonInfo.businessType } : undefined}
+              />
+            )}
             {step === 2 && (
               <StepBusinessHours
                 onNext={handleBusinessHours}
@@ -125,6 +134,7 @@ export function SetupWizard({ onComplete, loading }: { onComplete: (data: Wizard
               <StepFirstMenu
                 onNext={handleMenu}
                 onSkip={skipMenu}
+                businessType={salonInfo.businessType || null}
                 initial={
                   menuData
                     ? { name: menuData.name, duration: menuData.duration, price: menuData.price }

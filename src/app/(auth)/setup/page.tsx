@@ -86,6 +86,7 @@ function SetupContent() {
         name: data.salonName,
         phone: data.phone || null,
         address: data.address || null,
+        business_type: data.businessType,
         business_hours: data.businessHours,
         plan_type: "free",
       })
