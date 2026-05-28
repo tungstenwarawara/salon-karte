@@ -356,6 +356,7 @@ export type Database = {
           weight_kg: number | null;
           treatment_goal: string | null;
           graduated_at: string | null;
+          is_sample: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -380,6 +381,7 @@ export type Database = {
           weight_kg?: number | null;
           treatment_goal?: string | null;
           graduated_at?: string | null;
+          is_sample?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -404,6 +406,7 @@ export type Database = {
           weight_kg?: number | null;
           treatment_goal?: string | null;
           graduated_at?: string | null;
+          is_sample?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -426,6 +429,7 @@ export type Database = {
           duration_minutes: number | null;
           price: number | null;
           is_active: boolean;
+          is_sample: boolean;
           created_at: string;
         };
         Insert: {
@@ -436,6 +440,7 @@ export type Database = {
           duration_minutes?: number | null;
           price?: number | null;
           is_active?: boolean;
+          is_sample?: boolean;
           created_at?: string;
         };
         Update: {
@@ -446,6 +451,7 @@ export type Database = {
           duration_minutes?: number | null;
           price?: number | null;
           is_active?: boolean;
+          is_sample?: boolean;
           created_at?: string;
         };
         Relationships: [
