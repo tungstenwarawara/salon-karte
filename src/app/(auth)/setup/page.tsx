@@ -147,6 +147,17 @@ function SetupContent() {
     }
 
     trackEvent({ name: "onboarding_complete" });
+
+    // 5. サンプルデータ投入（ユーザーが希望した場合のみ）
+    // 失敗してもオンボーディング自体は完了させる（フォールバック）
+    if (data.withSample) {
+      try {
+        await fetch("/api/setup/seed-sample", { method: "POST" });
+      } catch (sampleErr) {
+        console.error("サンプル投入エラー:", sampleErr);
+      }
+    }
+
     router.push("/dashboard");
   };
 

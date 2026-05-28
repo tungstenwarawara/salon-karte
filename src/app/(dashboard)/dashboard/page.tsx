@@ -9,6 +9,7 @@ import { BirthdayCustomers } from "@/components/dashboard/birthday-customers";
 import { KpiTrendCards } from "@/components/dashboard/kpi-trend-cards";
 import { GreetingVisual } from "@/components/dashboard/greeting-visual";
 import { PlanStatusCard } from "@/components/dashboard/plan-status-card";
+import { SampleDataBanner } from "@/components/dashboard/sample-data-banner";
 import type { PlanType } from "@/lib/plan";
 
 type Appointment = Database["public"]["Tables"]["appointments"]["Row"];
@@ -68,6 +69,7 @@ export default async function DashboardPage() {
     inventoryRes,
     kpiRes,
     referralRes,
+    sampleCustomerCountRes,
   ] = await Promise.all([
     supabase
       .from("appointments")
@@ -114,7 +116,14 @@ export default async function DashboardPage() {
       .eq("referred_salon_id", salon.id)
       .is("referred_reward_applied_at", null)
       .maybeSingle(),
+    supabase
+      .from("customers")
+      .select("id", { count: "exact", head: true })
+      .eq("salon_id", salon.id)
+      .eq("is_sample", true),
   ]);
+
+  const hasSampleData = (sampleCustomerCountRes.count ?? 0) > 0;
 
   const todayAppointments = todayAppointmentsRes.data;
   const customerCount = customerCountRes.count;
@@ -194,6 +203,13 @@ export default async function DashboardPage() {
           <h2 className="text-xl font-bold mt-0.5">{salon.name}</h2>
         </div>
       </div>
+
+      {/* サンプルデータ削除バナー（サンプルが残っている場合のみ表示） */}
+      {hasSampleData && (
+        <div className="animate-fade-in-up animation-delay-100">
+          <SampleDataBanner />
+        </div>
+      )}
 
       {/* オンボーディング未完了時はチェックリストを最上位に表示（目的: 「次に何をするか」を即座に伝える） */}
       {!allSetupDone && (

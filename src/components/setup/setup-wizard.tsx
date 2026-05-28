@@ -17,6 +17,7 @@ export type WizardData = {
   menuName: string | null;
   menuDuration: number | null;
   menuPrice: number | null;
+  withSample: boolean;
 };
 
 type StepNum = 1 | 2 | 3 | 4;
@@ -66,7 +67,7 @@ export function SetupWizard({ onComplete, loading }: { onComplete: (data: Wizard
   }, [goTo]);
 
   // Step 4: 完了
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback((withSample: boolean) => {
     onComplete({
       salonName: salonInfo.name,
       phone: salonInfo.phone,
@@ -75,6 +76,7 @@ export function SetupWizard({ onComplete, loading }: { onComplete: (data: Wizard
       menuName: menuData?.name ?? null,
       menuDuration: menuData?.duration ?? null,
       menuPrice: menuData?.price ?? null,
+      withSample,
     });
   }, [onComplete, salonInfo, businessHours, menuData]);
 

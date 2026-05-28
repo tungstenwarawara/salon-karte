@@ -5,7 +5,7 @@ import { Confetti } from "@/components/ui/confetti";
 type StepCompleteProps = {
   salonName: string;
   setupSummary: { businessHours: boolean; menu: boolean };
-  onStart: () => void;
+  onStart: (withSample: boolean) => void;
   loading?: boolean;
 };
 
@@ -132,15 +132,28 @@ export function StepComplete({ salonName, setupSummary, onStart, loading }: Step
       {/* 1日の流れ */}
       <DailyFlowVisual />
 
-      {/* CTA */}
-      <button
-        type="button"
-        onClick={onStart}
-        disabled={loading}
-        className="w-full bg-accent hover:bg-accent-light text-white font-bold rounded-xl py-3.5 transition-colors min-h-[48px] shadow-md disabled:opacity-50"
-      >
-        {loading ? "登録中..." : "サロンカルテを始める"}
-      </button>
+      {/* CTA: サンプルあり / なし の2系統。サンプル付きを推奨配置 */}
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={() => onStart(true)}
+          disabled={loading}
+          className="w-full bg-accent hover:bg-accent-light text-white font-bold rounded-xl py-3.5 transition-colors min-h-[48px] shadow-md disabled:opacity-50"
+        >
+          {loading ? "登録中..." : "サンプルデータで使い方を見る"}
+        </button>
+        <p className="text-[11px] text-text-light text-center">
+          顧客2人・メニュー1件・予約1件・カルテ1件を投入します（いつでも削除できます）
+        </p>
+        <button
+          type="button"
+          onClick={() => onStart(false)}
+          disabled={loading}
+          className="w-full bg-background border border-border hover:bg-border/20 text-text font-medium rounded-xl py-3 transition-colors min-h-[48px] disabled:opacity-50"
+        >
+          自分のデータから始める
+        </button>
+      </div>
     </div>
   );
 }
