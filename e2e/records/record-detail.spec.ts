@@ -1,7 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { CUSTOMERS } from "../fixtures/test-data";
 
-/** 全期間フィルターでカルテ一覧を表示し、最初のカルテ詳細に遷移 */
+/** メニュー付きの seed カルテ（他テストが作る「メニューなしカルテ」の影響を受けない固定ID） */
+const SEEDED_RECORD_WITH_MENUS = "00000000-0000-0000-0000-000000004001";
+
+/** 全期間フィルターでカルテ一覧を表示し、seed カルテ詳細に遷移 */
 async function gotoFirstRecordDetail(page: import("@playwright/test").Page) {
   await page.goto("/records");
   await page.waitForLoadState("networkidle");
@@ -9,10 +12,8 @@ async function gotoFirstRecordDetail(page: import("@playwright/test").Page) {
   await page.locator("button").filter({ hasText: "全期間" }).click();
   await page.waitForTimeout(500);
 
-  const card = page
-    .locator("a[href*='/records/']")
-    .filter({ hasNotText: /カルテを登録/ })
-    .first();
+  // 「最初のカード」だと先行テストが作ったメニューなしカルテを拾うことがあるため seed IDを直接選ぶ
+  const card = page.locator(`a[href*='${SEEDED_RECORD_WITH_MENUS}']`).first();
   await expect(card).toBeVisible({ timeout: 5_000 });
   await card.click();
   await page.waitForURL(/\/records\/[^/]+$/);
@@ -154,12 +155,17 @@ test.describe("@records カルテ詳細・編集・削除", () => {
     await page.waitForLoadState("networkidle");
 
     // 保存ボタンまでスクロールして保存（編集内容の確認は保存→遷移で検証）
+    // ハイドレーション前のクリックが無効になることがあるため、遷移するまで再試行
     const saveBtn = page
       .locator("button[type='submit']")
       .filter({ hasText: /保存/ });
     await saveBtn.scrollIntoViewIfNeeded();
-    await saveBtn.click();
-    await page.waitForURL(/\/records\/[^/]+$/, { timeout: 15_000 });
+    await expect(async () => {
+      if (await saveBtn.isVisible().catch(() => false)) {
+        await saveBtn.click();
+      }
+      await page.waitForURL(/\/records\/[^/]+$/, { timeout: 5_000 });
+    }).toPass({ timeout: 30_000 });
     // カルテ詳細ページに戻ったことを確認
     await expect(page.locator("body")).toContainText(/カルテ詳細/);
 

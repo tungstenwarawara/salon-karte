@@ -59,7 +59,8 @@ test.describe("@appointments キャンセルダイアログ", () => {
     // カード選択 → 金額入力欄 + 「予約メニューの合計金額を初期値に入れています」表示
     await page.locator("label").filter({ hasText: "カード・振込でもらう" }).click();
     await page.waitForTimeout(300);
-    await expect(page.locator("text=金額")).toBeVisible();
+    // ヘルプ文「予約メニューの合計金額を…」と区別するため exact 指定
+    await expect(page.getByText("金額", { exact: true })).toBeVisible();
 
     // モーダルを閉じる
     await page.locator("button").filter({ hasText: "もどる" }).click();

@@ -53,22 +53,19 @@ test.describe("@settings 設定ページ", () => {
 
     await expect(page.locator("body")).toContainText(menuName);
 
-    // 削除
-    const deleteBtn = page
-      .locator("button")
-      .filter({ hasText: /削除/ })
+    // 削除（作成したメニューのカード内ボタンに限定 — 「最初の削除ボタン」だと既存の種メニューを誤削除する）
+    const menuCard = page
+      .locator("div.bg-surface.rounded-xl")
+      .filter({ hasText: menuName })
       .first();
-    if (await deleteBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await deleteBtn.click();
-      await page.waitForTimeout(300);
-      const confirmBtn = page
-        .locator("button")
-        .filter({ hasText: /^削除する$/ });
-      if (await confirmBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
-        await confirmBtn.click();
-        await page.waitForTimeout(1000);
-      }
-    }
+    const deleteBtn = menuCard.locator("button").filter({ hasText: /削除/ }).first();
+    await expect(deleteBtn).toBeVisible({ timeout: 5_000 });
+    await deleteBtn.click();
+    // 確認パネルに対象メニュー名が表示されることを検証してから確定（誤対象の削除防止）
+    await expect(page.locator("body")).toContainText(`「${menuName}」を削除しますか？`);
+    await page.locator("button").filter({ hasText: /^削除する$/ }).click();
+    await page.waitForTimeout(1000);
+    await expect(page.locator("body")).not.toContainText(menuName);
   });
 
   test("ST-03: メニュー編集 — 既存メニューの編集ボタン", async ({

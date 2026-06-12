@@ -15,13 +15,20 @@ test.describe("@records 物販のみカルテ", () => {
     page,
   }) => {
     // 顧客一覧 → 山田花子の詳細
+    // 一覧は20件+「もっと見る」方式でカナ順末尾の山田は初期非表示のため、検索で絞り込む
     await page.goto("/customers");
     await page.waitForLoadState("networkidle");
+    await page.getByPlaceholder(/名前・カナ/).fill(CUSTOMERS.yamada.lastName);
+    await page.waitForTimeout(500);
 
     const customerLink = page.locator("a").filter({ hasText: CUSTOMERS.yamada.lastName }).first();
     await expect(customerLink).toBeVisible({ timeout: 10_000 });
     await customerLink.click();
     await page.waitForLoadState("networkidle");
+
+    // 「物販」タブに切り替え（既定は施術タブで、物販セクションは hidden のため）
+    await page.locator("button").filter({ hasText: /^物販/ }).first().click();
+    await page.waitForTimeout(300);
 
     // 「+ 物販を登録」ボタンをクリック
     const purchaseBtn = page.locator("a").filter({ hasText: "+ 物販を登録" }).first();
@@ -42,23 +49,25 @@ test.describe("@records 物販のみカルテ", () => {
   test("RT-02: 種別タブで「来店」→「物販のみ」に切り替えるとメニューが消える", async ({
     page,
   }) => {
-    await page.goto(`/records/new?customer=${CUSTOMERS.sato.lastName ? "" : ""}`);
-    // 予約選択スキップ
+    await page.goto("/records/new");
+    await page.waitForLoadState("networkidle");
+
+    // 予約選択スキップ（ハイドレーション前のクリックが無効になることがあるため、フォーム表示まで再試行）
     const skipBtn = page.locator("button[type='button']").filter({ hasText: "予約に紐づけずにカルテを登録" });
-    if (await skipBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await skipBtn.click();
-      await page.waitForTimeout(500);
-    }
+    const customerSearch = page.getByPlaceholder("名前・カナで検索...");
+    await expect(async () => {
+      if (await skipBtn.isVisible().catch(() => false)) {
+        await skipBtn.click();
+      }
+      await expect(customerSearch).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
 
     // 顧客選択
-    const customerSearch = page.getByPlaceholder("名前・カナで検索...");
-    if (await customerSearch.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await customerSearch.fill(CUSTOMERS.sato.lastName);
-      await page.waitForTimeout(500);
-      const candidate = page.locator("button[type='button']").filter({ hasText: CUSTOMERS.sato.lastName }).first();
-      await candidate.click();
-      await page.waitForTimeout(300);
-    }
+    await customerSearch.fill(CUSTOMERS.sato.lastName);
+    await page.waitForTimeout(500);
+    const candidate = page.locator("button[type='button']").filter({ hasText: CUSTOMERS.sato.lastName }).first();
+    await candidate.click();
+    await page.waitForTimeout(300);
 
     // 来店タブがデフォルトでアクティブ
     const visitTab = page.locator("button[aria-pressed='true']").filter({ hasText: "来店" });

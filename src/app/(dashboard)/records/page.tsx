@@ -28,14 +28,22 @@ export default async function RecordsPage() {
   const todayStr = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
   const tomorrowStr = new Date(Date.now() + 86400000).toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
 
-  // カルテ + 今日・明日の予約を並列取得
-  const [recordsResult, todayApptResult, tomorrowApptResult] = await Promise.all([
+  // カルテ一覧の取得上限（全件転送防止。カルテ1,000件超のサロンでも体感速度を維持）
+  const RECORDS_FETCH_LIMIT = 500;
+
+  // カルテ + 総件数 + 今日・明日の予約を並列取得
+  const [recordsResult, recordCountResult, todayApptResult, tomorrowApptResult] = await Promise.all([
     supabase
       .from("treatment_records")
       .select("id, treatment_date, menu_name_snapshot, customer_id, record_type, notes_after, customers(id, last_name, first_name)")
       .eq("salon_id", salon.id)
       .order("treatment_date", { ascending: false })
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(RECORDS_FETCH_LIMIT),
+    supabase
+      .from("treatment_records")
+      .select("id", { count: "exact", head: true })
+      .eq("salon_id", salon.id),
     supabase
       .from("appointments")
       .select("id, customer_id, start_time, customers(id, last_name, first_name)")
@@ -82,7 +90,9 @@ export default async function RecordsPage() {
       };
     });
 
-  const recordCount = allRecords.length;
+  const recordCount = recordCountResult.count ?? allRecords.length;
+  // 取得上限を超えるサロンには「古いカルテの探し方」を明示（検索の取りこぼしを黙って起こさない）
+  const isCapped = recordCount > allRecords.length;
 
   return (
     <div className="space-y-4">
@@ -100,6 +110,12 @@ export default async function RecordsPage() {
       <FirstVisitHint pageKey="records" message="施術内容や写真をカルテに記録できます。予約なしでも直接作成できます" />
 
       <PlanLimitWarning planType={planType} type="records" current={recordCount} />
+
+      {isCapped && (
+        <p className="text-xs text-text-light">
+          最新{allRecords.length}件を表示しています。それ以前のカルテは各お客様のページの施術履歴からご覧いただけます
+        </p>
+      )}
 
       <RecordListSearch
         records={allRecords}

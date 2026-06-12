@@ -65,6 +65,7 @@ test.describe("@records キャンセル / メモ種別", () => {
     await page.waitForTimeout(300);
 
     await expect(page.locator("text=施術メニュー")).not.toBeVisible();
-    await expect(page.locator("label").filter({ hasText: "メモ" })).toBeVisible();
+    // 「メモの日付」ラベルと区別するため hasNotText で絞る
+    await expect(page.locator("label").filter({ hasText: "メモ" }).filter({ hasNotText: "日付" })).toBeVisible();
   });
 });

@@ -98,9 +98,9 @@ test.describe("@appointments 予約CRUD", () => {
     await searchInput.fill(CUSTOMERS.sato.lastName);
     await page.waitForTimeout(500);
 
-    // 佐藤が表示される
+    // 佐藤が表示される（候補リストとカレンダー双方に出るため first で検証）
     await expect(
-      page.locator("body").locator(`:text("${CUSTOMERS.sato.lastName}")`)
+      page.locator("body").locator(`:text("${CUSTOMERS.sato.lastName}")`).first()
     ).toBeVisible();
   });
 
