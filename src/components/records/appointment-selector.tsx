@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatDateShort } from "@/lib/format";
 
@@ -34,6 +34,9 @@ function getToday() {
 export function AppointmentSelector({ salonId, onSelect, onSkip }: Props) {
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  // onSkip は親で毎レンダー再生成されるため ref 経由で安定参照にする（useEffect の再実行防止）
+  const onSkipRef = useRef(onSkip);
+  onSkipRef.current = onSkip;
 
   useEffect(() => {
     if (!salonId) return;
@@ -58,8 +61,12 @@ export function AppointmentSelector({ salonId, onSelect, onSkip }: Props) {
         .order("start_time", { ascending: true })
         .returns<AppointmentRow[]>();
 
-      setAppointments(data ?? []);
+      const rows = data ?? [];
+      setAppointments(rows);
       setLoading(false);
+      // 紐づけ可能な予約が1件もなければ選択ステップ自体を省略して直接フォームへ
+      // （予約をまだ使っていない新規オーナーが「予約って何？」で迷わないため）
+      if (rows.length === 0) onSkipRef.current();
     };
     load();
   }, [salonId]);

@@ -212,19 +212,16 @@ function NewRecordForm() {
     setError(""); setLoading(true);
 
     // フリープラン制限チェック + 既存カルテ数の取得（Reward判定に使用）
+    // plan_type は初期ロード済みの state を使用し、保存前の通信を1クエリに抑える
     let preRecordCount: number | null = null;
     if (salonId) {
       const supabase = createClient();
-      const [{ data: salon }, { count }] = await Promise.all([
-        supabase.from("salons").select("plan_type").eq("id", salonId).single(),
-        supabase
-          .from("treatment_records")
-          .select("id", { count: "exact", head: true })
-          .eq("salon_id", salonId),
-      ]);
+      const { count } = await supabase
+        .from("treatment_records")
+        .select("id", { count: "exact", head: true })
+        .eq("salon_id", salonId);
       preRecordCount = count ?? 0;
       const { isAtLimit } = await import("@/lib/plan");
-      const planType = (salon?.plan_type ?? "free") as "free" | "standard";
       if (isAtLimit(planType, "records", preRecordCount)) {
         setError(
           "おためしプランのカルテ作成上限（100件）に達しました。スタンダードプランにアップグレードしてください。"

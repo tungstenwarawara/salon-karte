@@ -75,8 +75,14 @@ export function TodayAppointments({
           })}
         </div>
       ) : (
-        <div className="bg-surface border border-border rounded-xl p-4 text-center text-text-light text-sm">
-          今日の予約はありません
+        <div className="bg-surface border border-border rounded-xl p-6 text-center">
+          <p className="text-text-light text-sm">今日の予約はありません</p>
+          <Link
+            href="/appointments/new"
+            className="inline-flex items-center justify-center mt-2 text-sm text-accent hover:underline font-medium min-h-[44px]"
+          >
+            + 予約を登録する →
+          </Link>
         </div>
       )}
     </div>
