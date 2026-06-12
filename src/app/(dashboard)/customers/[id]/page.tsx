@@ -11,6 +11,7 @@ import { CustomerLineSection } from "@/components/customers/customer-line-sectio
 import { CustomerDetailContent } from "@/components/customers/customer-detail-content";
 import { CustomerInsights } from "@/components/customers/customer-insights";
 import { GraduationToggle } from "@/components/customers/graduation-toggle";
+import { NextAppointmentPrompt } from "@/components/customers/next-appointment-prompt";
 
 type CounselingSheet = Database["public"]["Tables"]["counseling_sheets"]["Row"];
 
@@ -27,10 +28,13 @@ type RecordWithMenus = TreatmentRecord & {
 
 export default async function CustomerDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ saved?: string }>;
 }) {
   const { id } = await params;
+  const { saved } = await searchParams;
   const { user, salon, supabase } = await getAuthAndSalon();
   if (!user) redirect("/login");
   if (!salon) redirect("/setup");
@@ -213,6 +217,10 @@ export default async function CustomerDetailPage({
           </p>
         )}
       </div>
+
+      {saved === "1" && futureAppointments.length === 0 && (
+        <NextAppointmentPrompt customerId={id} />
+      )}
 
       <VisitAnalytics
         customerId={id}

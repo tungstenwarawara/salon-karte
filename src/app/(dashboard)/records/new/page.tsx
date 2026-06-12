@@ -24,6 +24,7 @@ import { INPUT_CLASS } from "@/components/records/types";
 import { AppointmentSelector, type SelectedAppointment } from "@/components/records/appointment-selector";
 import { RecordTypeTabs } from "@/components/records/record-type-tabs";
 import { PrerequisiteGuard, type MissingPrerequisite } from "@/components/records/prerequisite-guard";
+import { PreviousRecordPanel, type PreviousRecordCopy } from "@/components/records/previous-record-panel";
 import type { Menu, CourseTicket, Product, CustomerOption, MenuPaymentInfo, PendingTicket, PendingPurchase, RecordType } from "@/components/records/types";
 import type { Database } from "@/types/database";
 
@@ -162,6 +163,28 @@ function NewRecordForm() {
     loadTickets();
   }, [customerId, salonId]);
 
+  // 前回カルテの内容をフォームへコピー（空欄のみ上書き。メニューは未選択時のみプリフィル）
+  const handleCopyPrevious = (data: PreviousRecordCopy) => {
+    setForm((prev) => ({
+      ...prev,
+      treatment_area: prev.treatment_area || data.treatment_area,
+      products_used: prev.products_used || data.products_used,
+      skin_condition_before: prev.skin_condition_before || data.skin_condition_before,
+      caution_notes: prev.caution_notes || data.caution_notes,
+    }));
+    if (selectedMenuIds.length === 0 && data.menuIds.length > 0) {
+      // 現在も有効なメニューのみコピー（削除・非アクティブ化されたメニューは除外）
+      const validIds = data.menuIds.filter((id) => menus.some((m) => m.id === id));
+      if (validIds.length > 0) {
+        setSelectedMenuIds(validIds);
+        setMenuPayments(validIds.map((menuId) => hasTickets
+          ? { menuId, paymentType: "ticket" as const, ticketId: courseTickets.length === 1 ? courseTickets[0].id : null, priceOverride: null }
+          : { menuId, paymentType: "cash" as const, ticketId: null, priceOverride: null }
+        ));
+      }
+    }
+  };
+
   const setFormCb = useCallback((val: typeof form) => setForm(val), []);
   const { clearDraft, draftRestored, dismissDraftBanner } = useFormDraft("record-new", form, setFormCb);
   const updateField = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
@@ -252,7 +275,8 @@ function NewRecordForm() {
       setFlashToast(`施術記録を保存しました${ticketInfo}`);
     }
     clearDraft();
-    router.push(`/customers/${customerId}`);
+    // 来店カルテ保存後は次回予約の提案バナーを表示（saved=1）。施術直後が予約の最も決まりやすい瞬間
+    router.push(recordType === "visit" ? `/customers/${customerId}?saved=1` : `/customers/${customerId}`);
   };
 
   // 前提不足ガード: 顧客0件・メニュー0件のときに登録動線を提示
@@ -300,6 +324,10 @@ function NewRecordForm() {
       )}
 
       {customerId && <CourseTicketInfo courseTickets={courseTickets} />}
+
+      {customerId && salonId && recordType === "visit" && (
+        <PreviousRecordPanel salonId={salonId} customerId={customerId} onCopy={handleCopyPrevious} />
+      )}
 
       <form onSubmit={handleSubmit} className="bg-surface border border-border rounded-2xl p-5 space-y-4">
         {error && <ErrorAlert message={error} />}
