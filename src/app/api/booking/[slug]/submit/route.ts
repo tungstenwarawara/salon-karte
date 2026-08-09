@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calculateAvailableSlots } from "@/lib/booking-slots";
-import { timeToMinutes, minutesToTime } from "@/lib/business-hours";
+import {
+  timeToMinutes,
+  minutesToTime,
+  todayStrInJst,
+  jstDateStringAfterDays,
+} from "@/lib/business-hours";
 import { sendWebBookingNotifications } from "@/lib/booking/notifications";
 
 type SubmitBody = {
@@ -61,11 +66,14 @@ export async function POST(
     return NextResponse.json({ error: "メモは500文字以内で入力してください" }, { status: 400 });
   }
 
-  // 過去日チェック
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-  if (date < todayStr) {
+  // 過去日チェック（JST基準。calculateAvailableSlots と基準を揃えないと、
+  // UTCランタイムでは JST 00:00〜09:00 の間だけ「JSTの前日」が素通りする）
+  if (date < todayStrInJst()) {
     return NextResponse.json({ error: "過去の日付は指定できません" }, { status: 400 });
+  }
+  // 予約可能な上限（公開ページと同じ60日先まで）
+  if (date > jstDateStringAfterDays(60)) {
+    return NextResponse.json({ error: "60日先までしか予約できません" }, { status: 400 });
   }
 
   const admin = createAdminClient();

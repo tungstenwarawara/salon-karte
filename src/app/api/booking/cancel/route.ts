@@ -7,6 +7,7 @@ import {
   buildOwnerCancelNotificationEmail,
 } from "@/lib/email/templates";
 import { checkChangeDeadline } from "@/lib/booking/deadline";
+import { todayStrInJst } from "@/lib/business-hours";
 
 // POST: 予約キャンセル（公開API — cancel_tokenで認証）
 export async function POST(request: Request) {
@@ -45,10 +46,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "完了した予約はキャンセルできません" }, { status: 400 });
   }
 
-  // 過去の予約はキャンセル不可
-  const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  if (appointment.appointment_date < todayStr) {
+  // 過去の予約はキャンセル不可（JST基準）
+  if (appointment.appointment_date < todayStrInJst()) {
     return NextResponse.json({ error: "過去の予約はキャンセルできません" }, { status: 400 });
   }
 

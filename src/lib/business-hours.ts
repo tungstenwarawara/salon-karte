@@ -102,6 +102,24 @@ export function toDateString(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/**
+ * JST の「今日」を "YYYY-MM-DD" で返す
+ *
+ * 予約API群の過去日ガードはこれを使うこと。実行環境ローカルの `new Date()` を使うと、
+ * UTC ランタイム上では JST 00:00〜09:00 の間だけ「前日」を today と誤認し、
+ * booking-slots.ts 側（JST基準）と判定がズレる。
+ */
+export function todayStrInJst(): string {
+  return toDateString(nowInJst());
+}
+
+/** JST の「今日」から N 日後を "YYYY-MM-DD" で返す */
+export function jstDateStringAfterDays(days: number): string {
+  const d = nowInJst();
+  d.setDate(d.getDate() + days);
+  return toDateString(d);
+}
+
 /** 不定休かどうかを判定 */
 export function isIrregularHoliday(
   holidays: string[] | null | undefined,

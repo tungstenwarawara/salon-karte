@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calculateAvailableSlots } from "@/lib/booking-slots";
-import { timeToMinutes, minutesToTime } from "@/lib/business-hours";
+import {
+  timeToMinutes,
+  minutesToTime,
+  todayStrInJst,
+  jstDateStringAfterDays,
+} from "@/lib/business-hours";
 import { checkChangeDeadline } from "@/lib/booking/deadline";
 import { getResendClient, getFromAddress } from "@/lib/email/client";
 import {
@@ -160,11 +165,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "メニューを1つ以上選択してください" }, { status: 400 });
   }
 
-  // 過去日チェック
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-  if (date < todayStr) {
+  // 過去日チェック（JST基準。calculateAvailableSlots と基準を揃える）
+  if (date < todayStrInJst()) {
     return NextResponse.json({ error: "過去の日付は指定できません" }, { status: 400 });
+  }
+  // 変更先も公開ページと同じ60日先まで
+  if (date > jstDateStringAfterDays(60)) {
+    return NextResponse.json({ error: "60日先までしか予約できません" }, { status: 400 });
   }
 
   const admin = createAdminClient();

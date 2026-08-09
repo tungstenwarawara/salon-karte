@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import { calculateAvailableSlots, resolveStartMinutes } from "@/lib/booking-slots";
-import { nowInJst, toDateString } from "@/lib/business-hours";
+import {
+  nowInJst,
+  toDateString,
+  todayStrInJst,
+  jstDateStringAfterDays,
+} from "@/lib/business-hours";
 import type { BusinessHours, BookingSettings } from "@/types/database";
 
 /** 全曜日 10:00-15:00 営業 */
@@ -157,6 +162,44 @@ describe("calculateAvailableSlots", () => {
       // JST 14:00 時点なので 14:00 以降だけが残る
       expect(available).toEqual(["14:00", "14:30"]);
       expect(result.find((s) => s.time === "13:30")?.reason).toBe("lead_time");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  /**
+   * 退行ガード: 予約APIの過去日ガードと calculateAvailableSlots の「今日」が
+   * 同じJST基準であること。基準がズレると JST 00:00〜09:00 の間だけ
+   * 「JSTの前日」が過去日ガードを素通りし、かつ当日ブロックも効かなくなる。
+   */
+  it("APIの過去日ガードとスロット計算の「今日」が一致する（JST 08:00 / UTCランタイム想定）", () => {
+    vi.useFakeTimers();
+    // 2026-08-11T23:00Z = JST 2026-08-12 08:00（UTCでは前日）
+    vi.setSystemTime(new Date("2026-08-11T23:00:00Z"));
+    try {
+      // API側のガードが見る「今日」
+      expect(todayStrInJst()).toBe("2026-08-12");
+
+      // JSTの前日を要求した場合、スロット側でも当日扱いにならず全枠締切になること
+      const result = calculateAvailableSlots({
+        businessHours: HOURS_10_15,
+        salonHolidays: null,
+        bookingSettings: { ...BASE_SETTINGS, lead_time_minutes: 60 },
+        date: "2026-08-11",
+        existingAppointments: [],
+      });
+      // 過去日なので予約可能な枠が1つも無い（APIガードで弾く前提だが二重防御を確認）
+      expect(result.filter((s) => s.available)).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("60日先の上限もJST基準で計算される", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-11T23:00:00Z")); // JST 2026-08-12
+    try {
+      expect(jstDateStringAfterDays(60)).toBe("2026-10-11");
     } finally {
       vi.useRealTimers();
     }

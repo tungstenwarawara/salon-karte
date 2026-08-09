@@ -68,6 +68,9 @@ export function calculateAvailableSlots({
   const todayStr = toDateString(jstNow);
   const nowMin = jstNow.getHours() * 60 + jstNow.getMinutes();
 
+  // 過去日は枠なし（呼び出し元の過去日ガードが漏れても、ここで二重に防ぐ）
+  if (date < todayStr) return [];
+
   // 当日予約の可否チェック
   if (bookingSettings?.same_day_enabled === false && date === todayStr) return [];
 
