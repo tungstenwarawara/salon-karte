@@ -192,12 +192,15 @@ test.describe("@booking 予約開始時間の指定", () => {
         await page.waitForLoadState("networkidle");
 
         // Step 1: メニュー選択 → 次へ
+        // メニューは button として描画される。"button, div" のような緩い指定だと
+        // メニュー一覧を囲む外側の div にマッチし、本番ビルドのレイアウトでは
+        // クリック位置がずれて別のメニューを選んでしまう
         await page
-          .locator("button, div")
-          .filter({ hasText: MENUS.decollete.name })
-          .first()
+          .getByRole("button", { name: new RegExp(MENUS.decollete.name) })
           .click();
-        await page.locator("button").filter({ hasText: "次へ" }).click();
+        const nextBtn = page.getByRole("button", { name: "次へ", exact: true });
+        await expect(nextBtn).toBeEnabled();
+        await nextBtn.click();
 
         // Step 2: 翌週に送って「今日より後の日付」だけの週にする
         const nextWeek = page.locator(
@@ -220,5 +223,41 @@ test.describe("@booking 予約開始時間の指定", () => {
         await context.close();
       },
     );
+  });
+
+  /**
+   * 退行ガード: Cookie同意バナーは fixed bottom-0 z-50 のため、対策がないと
+   * 予約フォーム下端の「次へ」を覆ってお客様が先に進めなくなる。
+   * バナーは NEXT_PUBLIC_GA4_ID が設定された環境（＝本番）でのみ表示されるため、
+   * 本番URLに対して実行したときにこのテストが本来の意味を持つ。
+   */
+  test("BK-SLOT-07: Cookie同意バナーが出ていても「次へ」を押して先に進める", async ({
+    browser,
+    baseURL,
+  }) => {
+    const context = await browser.newContext({
+      baseURL,
+      storageState: { cookies: [], origins: [] }, // 同意履歴なし＝バナーが出る状態
+    });
+    const page = await context.newPage();
+
+    await page.goto(`/book/${TEST_SALON.bookingSlug}`);
+    await page.waitForLoadState("networkidle");
+
+    await page
+      .getByRole("button", { name: new RegExp(MENUS.decollete.name) })
+      .click();
+
+    const nextBtn = page.getByRole("button", { name: "次へ", exact: true });
+    await expect(nextBtn).toBeEnabled();
+    // バナーに覆われていると、ここで actionability タイムアウトになる
+    await nextBtn.click({ timeout: 10_000 });
+
+    // 日時選択ステップ（週ナビ）に到達できたことを確認
+    await expect(
+      page.locator('button:has(path[d="M8.25 4.5l7.5 7.5-7.5 7.5"])'),
+    ).toBeVisible();
+
+    await context.close();
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 import Link from "next/link";
@@ -12,6 +12,7 @@ export function CookieConsent() {
   const pathname = usePathname();
   const [showBanner, setShowBanner] = useState(false);
   const [loadGa4, setLoadGa4] = useState(false);
+  const bannerRef = useRef<HTMLDivElement>(null);
 
   // ダッシュボード内はログイン済み（利用規約同意済み）なのでバナー不要・GA4読み込みOK
   const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/settings");
@@ -24,6 +25,26 @@ export function CookieConsent() {
       setShowBanner(true);
     }
   }, [isDashboard]);
+
+  // バナーは fixed なのでページ下端のボタン（Web予約の「次へ」等）を覆ってしまう。
+  // 表示中はバナーの高さぶん body に余白を足し、下端の操作を必ず押せる状態にする
+  useEffect(() => {
+    if (!showBanner) return;
+    const el = bannerRef.current;
+    if (!el) return;
+
+    const applyPadding = () => {
+      document.body.style.paddingBottom = `${el.offsetHeight}px`;
+    };
+    applyPadding();
+
+    const observer = new ResizeObserver(applyPadding);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      document.body.style.paddingBottom = "";
+    };
+  }, [showBanner]);
 
   const handleAccept = useCallback(() => {
     localStorage.setItem(CONSENT_KEY, "accepted");
@@ -60,7 +81,7 @@ export function CookieConsent() {
 
       {/* Cookie同意バナー（LP等の公開ページのみ） */}
       {showBanner && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 p-4">
+        <div ref={bannerRef} className="fixed bottom-0 left-0 right-0 z-50 p-4">
           <div className="max-w-2xl mx-auto bg-white border border-border shadow-lg rounded-2xl p-4 md:p-5">
             <p className="text-sm text-text leading-relaxed mb-3">
               当サイトでは、サービス改善のためにCookieを使用しています。
