@@ -3,7 +3,13 @@
  * time-slot-visualization.tsx のロジックをサーバーサイドで再利用可能な形に抽出
  */
 import type { BusinessHours, BookingSettings, HourOverrides } from "@/types/database";
-import { getScheduleForDate, timeToMinutes, minutesToTime } from "@/lib/business-hours";
+import {
+  getScheduleForDate,
+  timeToMinutes,
+  minutesToTime,
+  nowInJst,
+  toDateString,
+} from "@/lib/business-hours";
 
 export type SlotUnavailableReason = "occupied" | "lead_time" | "exceeds_close" | "overlap_during";
 
@@ -27,7 +33,7 @@ type ExistingAppointment = {
  * @param date - 対象日 "YYYY-MM-DD"
  * @param existingAppointments - 対象日の既存予約（cancelledを除く）
  * @param requestedDuration - リクエストされた施術時間（分）。0の場合はスロット単体の空き判定
- * @param interval - スロット間隔（分）。デフォルト30
+ * @param interval - スロット間隔（分）。デフォルト30。slot_mode = "fixed" のときは無視される
  */
 export function calculateAvailableSlots({
   businessHours,
@@ -57,50 +63,32 @@ export function calculateAvailableSlots({
 
   const maxConcurrent = bookingSettings?.max_concurrent_appointments ?? 1;
 
+  // 現在時刻の判定はすべて JST 基準で行う（Vercel ランタイムは UTC のため）
+  const jstNow = nowInJst();
+  const todayStr = toDateString(jstNow);
+  const nowMin = jstNow.getHours() * 60 + jstNow.getMinutes();
+
+  // 当日予約の可否チェック
+  if (bookingSettings?.same_day_enabled === false && date === todayStr) return [];
+
   // min_advance_hours: 予約受付締切（X時間前まで受付可能）
-  // 例: min_advance_hours=2 → 予約の2時間前を過ぎたスロットはブロック
+  // 例: min_advance_hours=2 → 現在時刻+2時間より前の枠はブロック（当日以外にも適用）
   const minAdvanceHours = bookingSettings?.min_advance_hours ?? 0;
   let advanceThresholdMin = -1;
   if (minAdvanceHours > 0) {
-    const now = new Date();
-    const nowMs = now.getTime();
-    const [y, mo, d] = date.split("-").map(Number);
-    // 対象日のスロット時刻をJSTとして、現在時刻 + X時間 より前のスロットをブロック
-    // nowMs + advanceHours の時刻を対象日の分に変換
-    const slotDateStart = new Date(y, mo - 1, d, 0, 0, 0).getTime();
-    const thresholdMs = nowMs + minAdvanceHours * 60 * 60 * 1000;
-    // 閾値が対象日の範囲内の場合のみ適用
-    if (thresholdMs > slotDateStart) {
-      const thresholdDate = new Date(thresholdMs);
-      // 対象日と同じ日の場合のみスロット単位でブロック
-      const thresholdDateStr = `${thresholdDate.getFullYear()}-${String(thresholdDate.getMonth() + 1).padStart(2, "0")}-${String(thresholdDate.getDate()).padStart(2, "0")}`;
-      if (thresholdDateStr === date) {
-        advanceThresholdMin = thresholdDate.getHours() * 60 + thresholdDate.getMinutes();
-      } else if (thresholdMs > slotDateStart + 24 * 60 * 60 * 1000) {
-        // 閾値が対象日を完全に過ぎている場合、全スロット不可
-        return [];
-      }
+    const threshold = new Date(jstNow.getTime() + minAdvanceHours * 60 * 60 * 1000);
+    const thresholdStr = toDateString(threshold);
+    // 対象日が締切を完全に過ぎている場合は全スロット不可
+    if (date < thresholdStr) return [];
+    // 締切と同じ日のみスロット単位でブロック（date > thresholdStr なら制限なし）
+    if (date === thresholdStr) {
+      advanceThresholdMin = threshold.getHours() * 60 + threshold.getMinutes();
     }
   }
 
-  // リードタイム制限: 当日のみ、現在時刻+lead_time_minutes より前のスロットをブロック
+  // 当日は現在時刻を過ぎた枠を常にブロックし、lead_time_minutes はさらに手前で締め切る
   const leadMin = bookingSettings?.lead_time_minutes ?? 0;
-  let leadTimeThreshold = -1;
-  if (leadMin > 0) {
-    const now = new Date();
-    // JST でローカル日付を比較
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    if (date === todayStr) {
-      leadTimeThreshold = now.getHours() * 60 + now.getMinutes() + leadMin;
-    }
-  }
-
-  // 当日予約の可否チェック
-  if (bookingSettings?.same_day_enabled === false) {
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    if (date === todayStr) return [];
-  }
+  const leadTimeThreshold = date === todayStr ? nowMin + leadMin : -1;
 
   // あるスロットに重複する予約数を返す
   const countOverlapping = (slotMin: number): number => {
@@ -113,14 +101,14 @@ export function calculateAvailableSlots({
 
   // スロット生成
   const slots: SlotInfo[] = [];
-  for (let m = openMin; m < closeMin; m += interval) {
+  for (const m of resolveStartMinutes(bookingSettings, openMin, closeMin, interval)) {
     // 基本チェック: 同時予約上限に達しているか
     const isOccupied = countOverlapping(m) >= maxConcurrent;
 
     // リードタイム制限（当日の lead_time_minutes + 全日の min_advance_hours）
     const isBeforeLeadTime =
-      (leadTimeThreshold > 0 && m < leadTimeThreshold) ||
-      (advanceThresholdMin > 0 && m < advanceThresholdMin);
+      (leadTimeThreshold >= 0 && m < leadTimeThreshold) ||
+      (advanceThresholdMin >= 0 && m < advanceThresholdMin);
 
     // 施術時間が閉店までに収まるか + 途中に埋まった枠がないか
     let canFit = true;
@@ -150,4 +138,30 @@ export function calculateAvailableSlots({
   }
 
   return slots;
+}
+
+/**
+ * 予約開始時刻の候補（0時からの分）を返す
+ *
+ * - slot_mode = "fixed": サロンが指定した時刻のうち、その日の営業時間内のものだけ
+ *   （曜日ごとに営業時間が違うため、営業時間外になる時刻はその日だけ自動で除外される）
+ * - それ以外（既定）: 営業時間を interval 刻み
+ */
+export function resolveStartMinutes(
+  bookingSettings: BookingSettings | null,
+  openMin: number,
+  closeMin: number,
+  interval: number
+): number[] {
+  if (bookingSettings?.slot_mode === "fixed") {
+    const unique = Array.from(new Set(bookingSettings.slot_times ?? []));
+    return unique
+      .map(timeToMinutes)
+      .filter((m) => m >= openMin && m < closeMin)
+      .sort((a, b) => a - b);
+  }
+
+  const result: number[] = [];
+  for (let m = openMin; m < closeMin; m += interval) result.push(m);
+  return result;
 }

@@ -80,6 +80,20 @@ function toDate(date: Date | string): Date {
   return date;
 }
 
+/**
+ * 現在時刻を「JSTの壁時計」として読める Date で返す
+ *
+ * Vercel のランタイムは UTC で動くため、`new Date().getHours()` をそのまま使うと
+ * 日本時間より9時間ずれる。返り値に対して getFullYear() / getHours() 等の
+ * ローカルゲッターを使うと、実行環境のTZに関係なくJSTの値が得られる。
+ */
+export function nowInJst(): Date {
+  const now = new Date();
+  // getTimezoneOffset() は「UTC - ローカル」の分数（JST なら -540）
+  const shiftMinutes = 9 * 60 + now.getTimezoneOffset();
+  return new Date(now.getTime() + shiftMinutes * 60 * 1000);
+}
+
 /** Date → "YYYY-MM-DD"（ローカルタイムゾーン） */
 export function toDateString(date: Date): string {
   const y = date.getFullYear();

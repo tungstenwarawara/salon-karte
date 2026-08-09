@@ -23,6 +23,10 @@ export type BookingSettings = {
   max_concurrent_appointments: number; // 同時予約上限 1〜5, デフォルト1
   min_advance_hours?: number; // 予約受付締切（X時間前まで）。0 = 制限なし
   change_deadline_hours?: number; // キャンセル・変更締切（予約のX時間前まで）。0 = 制限なし
+  /** 予約開始時刻の決め方。"interval" = 営業時間を30分刻み（既定）/ "fixed" = slot_times の時刻のみ */
+  slot_mode?: "interval" | "fixed";
+  /** slot_mode = "fixed" のとき予約可能にする開始時刻 "HH:MM" の配列（例: ["10:00", "13:00"]） */
+  slot_times?: string[];
 };
 
 /** 特定日の営業時間上書き（臨時の時短営業・延長営業等） */

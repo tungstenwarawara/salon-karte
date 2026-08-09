@@ -8,7 +8,8 @@ import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { HelpTip } from "@/components/ui/help-tip";
-import type { BookingSettings } from "@/types/database";
+import { BookingSlotTimes } from "@/components/settings/booking-slot-times";
+import type { BookingSettings, BusinessHours } from "@/types/database";
 
 const LEAD_TIME_OPTIONS = [
   { value: 0, label: "制限なし" },
@@ -52,10 +53,13 @@ const DEFAULT_SETTINGS: BookingSettings = {
   same_day_enabled: true,
   lead_time_minutes: 0,
   max_concurrent_appointments: 1,
+  slot_mode: "interval",
+  slot_times: [],
 };
 
 export default function BookingRulesPage() {
   const [settings, setSettings] = useState<BookingSettings>(DEFAULT_SETTINGS);
+  const [businessHours, setBusinessHours] = useState<BusinessHours | null>(null);
   const [salonId, setSalonId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -71,12 +75,13 @@ export default function BookingRulesPage() {
       const supabase = createClient();
       const { data } = await supabase
         .from("salons")
-        .select("booking_settings")
+        .select("booking_settings, business_hours")
         .eq("id", sid)
-        .single<{ booking_settings: BookingSettings | null }>();
+        .single<{ booking_settings: BookingSettings | null; business_hours: BusinessHours | null }>();
       if (data?.booking_settings) {
         setSettings({ ...DEFAULT_SETTINGS, ...data.booking_settings });
       }
+      setBusinessHours(data?.business_hours ?? null);
       setLoading(false);
     };
     load();
@@ -85,6 +90,10 @@ export default function BookingRulesPage() {
   const handleSave = async () => {
     setError("");
     if (!salonId) { setError("認証エラー"); return; }
+    if (settings.slot_mode === "fixed" && (settings.slot_times?.length ?? 0) === 0) {
+      setError("予約できる開始時間を1つ以上登録してください。登録がないとお客様は予約できません");
+      return;
+    }
     setSaving(true);
     const supabase = createClient();
     const { error: updateError } = await supabase
@@ -115,6 +124,15 @@ export default function BookingRulesPage() {
 
       <div className="bg-surface border border-border rounded-2xl p-5 space-y-5">
         {error && <ErrorAlert message={error} />}
+
+        {/* 予約できる開始時間 */}
+        <BookingSlotTimes
+          mode={settings.slot_mode === "fixed" ? "fixed" : "interval"}
+          times={settings.slot_times ?? []}
+          businessHours={businessHours}
+          onModeChange={(slot_mode) => setSettings({ ...settings, slot_mode })}
+          onTimesChange={(slot_times) => setSettings({ ...settings, slot_times })}
+        />
 
         {/* 当日予約 */}
         <div className="space-y-2">
