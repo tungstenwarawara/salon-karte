@@ -84,7 +84,10 @@ export default async function CustomerDetailPage({
       .returns<CourseTicket[]>(),
     supabase
       .from("counseling_sheets")
-      .select("id, salon_id, customer_id, token, status, responses, submitted_at, expires_at, created_at, updated_at")
+      // template_id は必須: 過去の回答を「発行したテンプレート」でラベル解決するため
+      // （欠落するとサロン既定テンプレートにフォールバックし、別テンプレートの設問が
+      //   ラベルではなくフィールドIDのまま表示される）
+      .select("id, salon_id, customer_id, template_id, token, status, responses, submitted_at, expires_at, created_at, updated_at")
       .eq("customer_id", id)
       .eq("salon_id", salon.id)
       .order("created_at", { ascending: false })
