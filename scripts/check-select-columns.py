@@ -13,6 +13,7 @@ data を null にして返すだけのケースがあり、実行時にも気づ
   - .select("col, col, ...")            のカラム名
   - .order() / .eq() / .in() / .not() 等 の第1引数（カラム名）
   - .match({ col: value })              のキー
+  - .insert() / .update() / .upsert()   に渡すオブジェクトのキー
 
 使い方: python3 scripts/check-select-columns.py
 """
@@ -72,6 +73,12 @@ REFERENCED_TABLE_RE = re.compile(r'(?:referencedTable|foreignTable)\s*:\s*["\'](
 
 # オブジェクトリテラルのキー（.match({ salon_id: x }) 用）
 OBJECT_KEY_RE = re.compile(r'["\']?(\w+)["\']?\s*:')
+
+# 書き込み系メソッド（第1引数がカラム名をキーに持つオブジェクト）
+PAYLOAD_METHODS = {"insert", "update", "upsert"}
+
+# オブジェクトのキーになりうる識別子
+KEY_IDENT_RE = re.compile(r"[A-Za-z_$][\w$]*")
 
 
 def extract_table_columns():
@@ -204,6 +211,142 @@ def find_matching_paren(content, i):
     return -1
 
 
+def strip_leading_trivia(src, i=0):
+    """空白とコメントを読み飛ばした位置を返す"""
+    n = len(src)
+    while i < n:
+        if src[i].isspace():
+            i += 1
+            continue
+        if src[i] == "/" and i + 1 < n and src[i + 1] in "/*":
+            i = _skip_comment(src, i)
+            continue
+        break
+    return i
+
+
+def split_top_level(src):
+    """深さ0のカンマで分割する（文字列・コメント・入れ子の括弧は無視）"""
+    parts = []
+    depth = 0
+    start = 0
+    i = 0
+    n = len(src)
+    while i < n:
+        c = src[i]
+        if c in "\"'`":
+            i = _skip_string(src, i)
+            continue
+        if c == "/" and i + 1 < n and src[i + 1] in "/*":
+            i = _skip_comment(src, i)
+            continue
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+        elif c == "," and depth == 0:
+            parts.append(src[start:i])
+            start = i + 1
+        i += 1
+    if src[start:].strip():
+        parts.append(src[start:])
+    return parts
+
+
+def extract_object_keys(obj_src):
+    """オブジェクトリテラルのトップレベル（depth 1）のキーを抽出する
+
+    JSONBカラムの中身などネストしたオブジェクトのキーは対象外。
+    スプレッド（...payload）・計算キー（[k]: v）は判定不能としてスキップする。
+    戻り値: (キー一覧, 判定不能な要素があったか)
+    """
+    body = obj_src.strip()
+    if not (body.startswith("{") and body.endswith("}")):
+        return [], True
+    body = body[1:-1]
+
+    keys = []
+    skipped = False
+    for element in split_top_level(body):
+        rest = element[strip_leading_trivia(element):]
+        if not rest.strip():
+            continue
+
+        # スプレッド（...payload）は展開されるキーが不明
+        # 計算キー（[dynamicKey]: value）も同様
+        if rest.startswith("...") or rest.startswith("["):
+            skipped = True
+            continue
+
+        # クォート付きキー（"col": value）
+        if rest[0] in "\"'":
+            end = _skip_string(rest, 0)
+            after = strip_leading_trivia(rest, end)
+            if after < len(rest) and rest[after] == ":":
+                keys.append(rest[1 : end - 1])
+            else:
+                skipped = True
+            continue
+
+        # 識別子キー（col: value）とショートハンド（{ salon_id }）
+        m = KEY_IDENT_RE.match(rest)
+        if not m:
+            skipped = True
+            continue
+        after = strip_leading_trivia(rest, m.end())
+        if after >= len(rest) or rest[after] == ":":
+            keys.append(m.group(0))
+        else:
+            # メソッドショートハンド等、キーと断定できない形
+            skipped = True
+
+    return keys, skipped
+
+
+def iter_payload_objects(args):
+    """.insert() / .update() / .upsert() の第1引数からオブジェクトリテラルを取り出す
+
+      .insert({ ... })            → 1件
+      .insert([{ ... }, { ... }]) → 配列内のオブジェクトリテラル全件
+      .insert(rows)               → 変数指定は判定不能（空を返す）
+
+    戻り値: (オブジェクトリテラル一覧, 判定不能な要素があったか)
+    """
+    parts = split_top_level(args)
+    if not parts:
+        return [], False
+
+    first = parts[0]
+    payload = first[strip_leading_trivia(first):].strip()
+
+    if payload.startswith("{"):
+        end = find_matching_paren(payload, 0)
+        return ([], True) if end == -1 else ([payload[: end + 1]], False)
+
+    if payload.startswith("["):
+        end = find_matching_paren(payload, 0)
+        if end == -1:
+            return [], True
+        objects = []
+        skipped = False
+        for element in split_top_level(payload[1:end]):
+            el = element[strip_leading_trivia(element):].strip()
+            if not el:
+                continue
+            if not el.startswith("{"):
+                skipped = True  # 変数・スプレッド・map() の結果など
+                continue
+            el_end = find_matching_paren(el, 0)
+            if el_end == -1:
+                skipped = True
+            else:
+                objects.append(el[: el_end + 1])
+        return objects, skipped
+
+    # 変数・関数呼び出しなど、リテラルでない指定は判定不能
+    return [], True
+
+
 def iter_query_chains(content):
     """.from("テーブル名") を起点にメソッドチェーンを抽出する
 
@@ -299,6 +442,7 @@ def scan_source_files(tables):
     errors = []
     warnings = []
     unknown_tables = defaultdict(int)
+    skipped_payloads = []
 
     # .tsx と .ts を統合スキャン
     ts_files = list(SRC_DIR.rglob("*.tsx")) + [
@@ -368,6 +512,24 @@ def scan_source_files(tables):
                         check_column(key, table_name, tables, ctx, errors, "match")
                     continue
 
+                # --- .insert({...}) / .update({...}) / .upsert({...}) ---
+                if method in PAYLOAD_METHODS:
+                    objects, skipped = iter_payload_objects(args)
+                    for obj_src in objects:
+                        keys, key_skipped = extract_object_keys(obj_src)
+                        skipped = skipped or key_skipped
+                        for key in keys:
+                            check_column(key, table_name, tables, ctx, errors, method)
+                    if skipped:
+                        skipped_payloads.append(
+                            {
+                                "file": relative_path,
+                                "line": ctx["line"],
+                                "method": method,
+                            }
+                        )
+                    continue
+
             # salon_id フィルタチェック（.select() を含むクエリのみ）
             if has_select and table_name != "salons" and "salon_id" in known_columns:
                 check_context = "\n".join(lines[from_line - 1 : from_line + 19])
@@ -380,7 +542,7 @@ def scan_source_files(tables):
                         }
                     )
 
-    return errors, warnings, unknown_tables
+    return errors, warnings, unknown_tables, skipped_payloads
 
 
 def main():
@@ -394,7 +556,7 @@ def main():
     print()
 
     # 照合実行
-    errors, warnings, unknown_tables = scan_source_files(tables)
+    errors, warnings, unknown_tables, skipped_payloads = scan_source_files(tables)
 
     # 結果出力
     for err in errors:
@@ -412,6 +574,16 @@ def main():
     if unknown_tables:
         names = ", ".join(f"{t}({c})" for t, c in sorted(unknown_tables.items()))
         print(f"{YELLOW}[INFO]{NC} スキーマ未検出のため未照合の .from(): {names}\n")
+
+    if skipped_payloads:
+        # 変数指定・スプレッド等でキーが確定できなかった書き込み（目視確認の対象）
+        print(
+            f"{YELLOW}[INFO]{NC} キーを確定できず未照合の書き込み: "
+            f"{len(skipped_payloads)}件（変数指定・スプレッド等）"
+        )
+        for sp in skipped_payloads:
+            print(f"    {sp['file']}:{sp['line']} .{sp['method']}()")
+        print()
 
     print("=== チェック完了 ===")
     if errors:

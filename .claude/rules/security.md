@@ -65,7 +65,11 @@ globs:
   - 呼び出し側は `data ?? []` で握りつぶすことが多く、**画面が空になるだけでエラーにならない**
   - `sort_order` は appointment_menus / treatment_photos / treatment_record_menus にのみ存在。
     treatment_menus・products・customers 等にはない（2026-08-11 の不具合原因）
-- `.insert()` / `.update()` のカラム名も同様に照合（※スクリプト未対応。目視確認が必要）
+- `.insert()` / `.update()` / `.upsert()` に渡すオブジェクトのキーも同様に照合
+  - オブジェクトリテラル（配列の一括insertを含む）の**トップレベルのキーのみ**が対象。
+    JSONBカラムの中身（`booking_settings: { ... }` の内側）は照合しない
+  - `.insert(rows)` のような変数指定・`...payload` のスプレッドはキーを確定できないため未照合。
+    該当箇所はスクリプトが `[INFO]` として一覧表示するので、**そこは目視確認する**
 - **コミット前に必ず以下のスクリプトを実行**:
   ```bash
   python3 scripts/check-select-columns.py
