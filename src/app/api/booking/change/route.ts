@@ -68,12 +68,19 @@ export async function GET(request: Request) {
     .order("sort_order");
 
   // サロンのアクティブメニュー取得
-  const { data: menus } = await admin
+  // treatment_menus に sort_order 列は存在しない。指定するとPostgRESTがエラーを返し
+  // menus が null になって変更画面のメニュー選択が空になる（新規予約画面と同じ name 順で統一）
+  const { data: menus, error: menusError } = await admin
     .from("treatment_menus")
     .select("id, name, price, duration_minutes")
     .eq("salon_id", salon.id)
     .eq("is_active", true)
-    .order("sort_order");
+    .order("name", { ascending: true });
+
+  if (menusError) {
+    console.error("メニュー取得エラー:", menusError.message);
+    Sentry.captureException(menusError, { tags: { feature: "booking-change" } });
+  }
 
   // 空き枠（日付が指定された場合）
   let slots: { time: string; available: boolean; reason?: string }[] = [];

@@ -92,6 +92,14 @@ export function BookingDatePicker({
 
   useEffect(() => { if (selectedDate) fetchSlots(selectedDate); }, [selectedDate, fetchSlots]);
 
+  // メニューを選び直して施術時間が変わると、選択済みの時間が空き枠でなくなることがある
+  // （例: 30分メニューで19:30を選択 → 90分に変更すると閉店を超える / 他の予約と重なる）
+  // 古い選択が残ったままだと確認画面まで進めてしまうため、無効になった時点で解除する
+  useEffect(() => {
+    if (!selectedTime || loadingSlots || slots.length === 0) return;
+    if (!slots.some((s) => s.time === selectedTime && s.available)) onTimeChange("");
+  }, [slots, loadingSlots, selectedTime, onTimeChange]);
+
   const isOpen = (d: Date) => getScheduleForDate(businessHours, d, salonHolidays, hourOverrides).is_open;
   const isPast = (d: Date) => toDateString(d) < todayStr;
   const weekLabel = dates[0].getMonth() === dates[6].getMonth()
