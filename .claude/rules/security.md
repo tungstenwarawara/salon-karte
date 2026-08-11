@@ -48,9 +48,9 @@ globs:
 - 環境変数がハードコードされていない
 - 全Supabaseクエリにsalon_idフィルタが存在
 
-## マージ前クエリ整合性チェック（最重要 — 2回再発済み）
+## マージ前クエリ整合性チェック（最重要 — 3回再発済み）
 
-> **警告**: このチェックは2026-02-21に同日2回バグを出した最重要項目。ビルド・型チェック・実行時エラーのいずれでも検出不可能。
+> **警告**: 2026-02-21に同日2回、2026-08-11に1回バグを出した最重要項目。ビルド・型チェック・実行時エラーのいずれでも検出不可能。
 
 - `.select()` で指定したカラム名がDBスキーマ（`supabase/migrations/`）と一致するか照合
   - ビルドでは検出不可（Supabase SDKのselectは文字列型のため型チェックが効かない）
@@ -60,7 +60,12 @@ globs:
     - `skin_condition` vs `skin_condition_before`
     - `description` vs `memo`
     - `name` vs `item_name` vs `ticket_name` vs `menu_name_snapshot`
-- `.insert()` / `.update()` のカラム名も同様に照合
+- **`.order()` / `.eq()` / `.in()` 等、カラム名を文字列で渡す全メソッドも同様に照合**
+  - 存在しないカラムを渡すとPostgRESTがエラーを返し **`data` が `null`** になる
+  - 呼び出し側は `data ?? []` で握りつぶすことが多く、**画面が空になるだけでエラーにならない**
+  - `sort_order` は appointment_menus / treatment_photos / treatment_record_menus にのみ存在。
+    treatment_menus・products・customers 等にはない（2026-08-11 の不具合原因）
+- `.insert()` / `.update()` のカラム名も同様に照合（※スクリプト未対応。目視確認が必要）
 - **コミット前に必ず以下のスクリプトを実行**:
   ```bash
   python3 scripts/check-select-columns.py
