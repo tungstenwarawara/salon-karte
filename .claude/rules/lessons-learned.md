@@ -19,6 +19,10 @@
 - `.select("description")` → 正しくは `memo`。ビルドでは検出不可（文字列型） (2026-02-21)
 - `.select("total_price, skin_condition")` → 別テーブルのカラム名を誤指定。Supabaseは空配列を返すだけ (2026-02-21)
 - 全クエリに `.eq("salon_id", salon.id)` 欠落 → ルールに明記済みだったが守られず (2026-02-21)
+- `treatment_menus` に `.order("sort_order")`（同カラムは appointment_menus 等にのみ存在）→ PostgRESTがエラーを返し `data` が null → `menus ?? []` で空配列になり、Web予約の変更画面でメニューが1件も選べない状態が続いた。顧客の問い合わせで発覚 (2026-08-11)
+  - チェックスクリプトが `.select()` しか見ていなかったのが原因 → `.order()` / `.eq()` / `.in()` 等、カラム名を文字列で渡す全メソッドを照合対象に拡張済み
+  - `data ?? []` のフォールバックは「取得0件」と「クエリ失敗」を区別できない。空になった原因を握りつぶす点に注意
+  - 同じ穴が `.insert()` / `.update()` / `.upsert()` にも残っていたため、渡すオブジェクトのキーも照合対象に拡張済み (2026-08-11)
 - **対策**: `python3 scripts/check-select-columns.py` をコミット前に必ず実行
 
 ## コード品質

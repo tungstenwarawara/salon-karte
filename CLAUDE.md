@@ -27,7 +27,7 @@
 - `npm run test:e2e:ui` — Playwright UI モード（対話的にデバッグ）
 - `npm run test:e2e:check` — テストデータ安全チェックのみ（DB変更なし）
 - `npm run test:e2e:reset` — テストデータをリセットしてから E2E 実行
-- `python3 scripts/check-select-columns.py` — カラム名照合（コミット前必須）
+- `python3 scripts/check-select-columns.py` — Supabaseクエリのカラム名照合（コミット前必須）
 - `npx tsx scripts/seed-test-data.ts --check` — 安全チェックのみ（DB変更なし、5層防御の動作確認）
 - `npx tsx scripts/seed-test-data.ts` — テストデータ投入（初回）
 - `npx tsx scripts/seed-test-data.ts --reset` — テストデータリセット（5層防御を経由）
@@ -37,6 +37,18 @@
 2. `npm test` パス
 3. `npm run build` パス
 4. `python3 scripts/check-select-columns.py` パス（カラム名 + salon_idフィルタ）
+   - `.from("テーブル名")` からメソッドチェーンを辿り、以下をDBスキーマと照合する
+     - `.select("col, col, ...")` のカラム名
+     - `.order()` / `.eq()` / `.neq()` / `.in()` / `.is()` / `.not()` / `.gte()` / `.lte()` / `.filter()` など、**第1引数がカラム名になる全メソッド**
+     - `.match({ col: value })` のキー
+     - `.insert()` / `.update()` / `.upsert()` に渡すオブジェクトの**トップレベルのキー**（配列の一括insertを含む）
+     - `.order("col", { referencedTable: "x" })` は参照先テーブル `x` のカラムとして照合
+   - 検出できないケース（照合不能のためスキップ）
+     - 第1引数が変数・テンプレートリテラルの場合
+     - `.insert(rows)` の変数指定、`...payload` のスプレッド、計算キー `[k]:`
+     - JSONBカラムの中身（ネストしたオブジェクトのキーは対象外）
+   - 未照合の書き込みは `[INFO]` に一覧表示されるので、**そこは目視確認する**
+   - エラー（存在しないカラム）は exit 1 でコミットをブロック / salon_idフィルタ欠落の警告は exit 0
 
 ## コミットメッセージ規約
 - `feat:` 新機能 / `fix:` バグ修正 / `refactor:` リファクタ / `docs:` ドキュメント
