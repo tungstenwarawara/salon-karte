@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import * as Sentry from "@sentry/nextjs";
+import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { runNotificationsSequentially } from "@/lib/booking/notifications";
 import { getResendClient, getFromAddress } from "@/lib/email/client";
 import {
   buildCustomerCancelConfirmationEmail,
@@ -69,14 +69,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "キャンセルに失敗しました" }, { status: 500 });
   }
 
-  // 通知メール送信（fire-and-forget）
-  sendCancelNotifications({
-    salonId: appointment.salon_id,
-    customerId: appointment.customer_id,
-    appointmentDate: appointment.appointment_date,
-    startTime: appointment.start_time,
-    menuNameSnapshot: appointment.menu_name_snapshot,
-  }).catch(() => {});
+  // 通知メール送信（after() で包むこと。放置した Promise は関数の凍結で失われる）
+  after(async () => {
+    await sendCancelNotifications({
+      salonId: appointment.salon_id,
+      customerId: appointment.customer_id,
+      appointmentDate: appointment.appointment_date,
+      startTime: appointment.start_time,
+      menuNameSnapshot: appointment.menu_name_snapshot,
+    });
+  });
 
   return NextResponse.json({ success: true });
 }
@@ -163,67 +165,62 @@ async function sendCancelNotifications(params: {
 
   const customerName = `${customer.last_name} ${customer.first_name}`;
 
-  const results = await Promise.allSettled([
-    // 顧客へキャンセル確認メール
-    (async () => {
-      if (!customer.email) return;
-      const resend = getResendClient();
-      if (!resend) return;
+  // 顧客向けを先頭に、1件ずつ送る（Resend のレート制限で消えるのを防ぐ）
+  await runNotificationsSequentially("booking-cancel-notification", [
+    {
+      name: "customer-email",
+      run: async () => {
+        if (!customer.email) return;
+        const resend = getResendClient();
+        if (!resend) return;
 
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://salonkarte.com";
-      const bookingUrl = salon.booking_slug ? `${baseUrl}/book/${salon.booking_slug}` : undefined;
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://salonkarte.com";
+        const bookingUrl = salon.booking_slug ? `${baseUrl}/book/${salon.booking_slug}` : undefined;
 
-      const { subject, html } = buildCustomerCancelConfirmationEmail({
-        customerName,
-        appointmentDate: params.appointmentDate,
-        startTime: params.startTime,
-        menuNames,
-        salonName: salon.name,
-        salonPhone: salon.phone,
-        bookingUrl,
-      });
+        const { subject, html } = buildCustomerCancelConfirmationEmail({
+          customerName,
+          appointmentDate: params.appointmentDate,
+          startTime: params.startTime,
+          menuNames,
+          salonName: salon.name,
+          salonPhone: salon.phone,
+          bookingUrl,
+        });
 
-      const { error } = await resend.emails.send({
-        from: getFromAddress(),
-        to: customer.email,
-        subject,
-        html,
-      });
-      if (error) throw new Error(`キャンセル確認メール送信失敗: ${error.message}`);
-    })(),
+        const { error } = await resend.emails.send({
+          from: getFromAddress(),
+          to: customer.email,
+          subject,
+          html,
+        });
+        if (error) throw new Error(`キャンセル確認メール送信失敗: ${error.message}`);
+      },
+    },
+    {
+      name: "owner-email",
+      run: async () => {
+        const resend = getResendClient();
+        if (!resend) return;
 
-    // オーナーへキャンセル通知メール
-    (async () => {
-      const resend = getResendClient();
-      if (!resend) return;
+        const { data: { user } } = await admin.auth.admin.getUserById(salon.owner_id);
+        if (!user?.email) return;
 
-      const { data: { user } } = await admin.auth.admin.getUserById(salon.owner_id);
-      if (!user?.email) return;
+        const { subject, html } = buildOwnerCancelNotificationEmail({
+          customerName,
+          appointmentDate: params.appointmentDate,
+          startTime: params.startTime,
+          menuNames,
+          salonName: salon.name,
+        });
 
-      const { subject, html } = buildOwnerCancelNotificationEmail({
-        customerName,
-        appointmentDate: params.appointmentDate,
-        startTime: params.startTime,
-        menuNames,
-        salonName: salon.name,
-      });
-
-      const { error } = await resend.emails.send({
-        from: getFromAddress(),
-        to: user.email,
-        subject,
-        html,
-      });
-      if (error) throw new Error(`オーナーキャンセル通知メール送信失敗: ${error.message}`);
-    })(),
+        const { error } = await resend.emails.send({
+          from: getFromAddress(),
+          to: user.email,
+          subject,
+          html,
+        });
+        if (error) throw new Error(`オーナーキャンセル通知メール送信失敗: ${error.message}`);
+      },
+    },
   ]);
-
-  for (const result of results) {
-    if (result.status === "rejected") {
-      console.error("キャンセル通知エラー:", result.reason);
-      Sentry.captureException(result.reason, {
-        tags: { feature: "booking-cancel-notification" },
-      });
-    }
-  }
 }

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { randomUUID } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calculateAvailableSlots } from "@/lib/booking-slots";
@@ -239,28 +239,32 @@ export async function POST(
     // 予約自体は作成済みなので、メニューの紐付けだけ失敗した旨をログに残す
   }
 
-  // --- 通知送信（fire-and-forget: 失敗しても予約は成功扱い） ---
+  // --- 通知送信（失敗しても予約は成功扱い） ---
+  // after() で包むこと。Promise を放置するとレスポンス返却後に関数インスタンスが
+  // 凍結され、メールが数分遅れる／送信されないまま失われる（2026-08-14 障害）
   const customerName = `${last_name.trim()} ${first_name.trim()}`;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${request.headers.get("host")}`;
-  sendWebBookingNotifications({
-    salonId: salon.id,
-    salonName: salon.name,
-    salonPhone: salon.phone,
-    ownerId: salon.owner_id,
-    appointmentId: appointment.id,
-    appointmentDate: date,
-    startTime: start_time + ":00",
-    menuNames: menus.map((m) => m.name),
-    totalDuration,
-    customerId,
-    customerName,
-    customerEmail: email.trim(),
-    customerPhone: normalizedPhone,
-    isNewCustomer,
-    memo: memo?.trim() || null,
-    cancelUrl: `${baseUrl}/book/cancel/${cancelToken}`,
-    changeUrl: `${baseUrl}/book/change/${cancelToken}`,
-  }).catch(() => {});
+  after(async () => {
+    await sendWebBookingNotifications({
+      salonId: salon.id,
+      salonName: salon.name,
+      salonPhone: salon.phone,
+      ownerId: salon.owner_id,
+      appointmentId: appointment.id,
+      appointmentDate: date,
+      startTime: start_time + ":00",
+      menuNames: menus.map((m) => m.name),
+      totalDuration,
+      customerId,
+      customerName,
+      customerEmail: email.trim(),
+      customerPhone: normalizedPhone,
+      isNewCustomer,
+      memo: memo?.trim() || null,
+      cancelUrl: `${baseUrl}/book/cancel/${cancelToken}`,
+      changeUrl: `${baseUrl}/book/change/${cancelToken}`,
+    });
+  });
 
   return NextResponse.json({ success: true, appointmentId: appointment.id });
 }

@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import * as Sentry from "@sentry/nextjs";
+import { runNotificationsSequentially } from "@/lib/booking/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calculateAvailableSlots } from "@/lib/booking-slots";
 import {
@@ -300,21 +301,23 @@ export async function POST(request: Request) {
   }));
   await admin.from("appointment_menus").insert(menuRows);
 
-  // 通知（fire-and-forget）
-  sendChangeNotifications({
-    salonId: salon.id,
-    salonName: salon.name,
-    salonPhone: salon.phone,
-    ownerId: salon.owner_id,
-    customerId: appointment.customer_id,
-    oldDate,
-    oldTime,
-    oldMenuName,
-    newDate: date,
-    newTime: start_time + ":00",
-    newMenuNames: menus.map((m) => m.name),
-    newTotalDuration: totalDuration,
-  }).catch(() => {});
+  // 通知（after() で包むこと。放置した Promise は関数の凍結で失われる）
+  after(async () => {
+    await sendChangeNotifications({
+      salonId: salon.id,
+      salonName: salon.name,
+      salonPhone: salon.phone,
+      ownerId: salon.owner_id,
+      customerId: appointment.customer_id,
+      oldDate,
+      oldTime,
+      oldMenuName,
+      newDate: date,
+      newTime: start_time + ":00",
+      newMenuNames: menus.map((m) => m.name),
+      newTotalDuration: totalDuration,
+    });
+  });
 
   return NextResponse.json({ success: true });
 }
@@ -346,69 +349,64 @@ async function sendChangeNotifications(params: {
   if (!customer) return;
   const customerName = `${customer.last_name} ${customer.first_name}`;
 
-  const results = await Promise.allSettled([
-    // 顧客へ変更確認メール
-    (async () => {
-      if (!customer.email) return;
-      const resend = getResendClient();
-      if (!resend) return;
+  // 顧客向けを先頭に、1件ずつ送る（Resend のレート制限で消えるのを防ぐ）
+  await runNotificationsSequentially("booking-change-notification", [
+    {
+      name: "customer-email",
+      run: async () => {
+        if (!customer.email) return;
+        const resend = getResendClient();
+        if (!resend) return;
 
-      const { subject, html } = buildCustomerChangeConfirmationEmail({
-        customerName,
-        oldDate: params.oldDate,
-        oldTime: params.oldTime,
-        newDate: params.newDate,
-        newTime: params.newTime,
-        newMenuNames: params.newMenuNames,
-        newTotalDuration: params.newTotalDuration,
-        salonName: params.salonName,
-        salonPhone: params.salonPhone,
-      });
+        const { subject, html } = buildCustomerChangeConfirmationEmail({
+          customerName,
+          oldDate: params.oldDate,
+          oldTime: params.oldTime,
+          newDate: params.newDate,
+          newTime: params.newTime,
+          newMenuNames: params.newMenuNames,
+          newTotalDuration: params.newTotalDuration,
+          salonName: params.salonName,
+          salonPhone: params.salonPhone,
+        });
 
-      const { error } = await resend.emails.send({
-        from: getFromAddress(),
-        to: customer.email,
-        subject,
-        html,
-      });
-      if (error) throw new Error(`変更確認メール送信失敗: ${error.message}`);
-    })(),
+        const { error } = await resend.emails.send({
+          from: getFromAddress(),
+          to: customer.email,
+          subject,
+          html,
+        });
+        if (error) throw new Error(`変更確認メール送信失敗: ${error.message}`);
+      },
+    },
+    {
+      name: "owner-email",
+      run: async () => {
+        const resend = getResendClient();
+        if (!resend) return;
 
-    // オーナーへ変更通知メール
-    (async () => {
-      const resend = getResendClient();
-      if (!resend) return;
+        const { data: { user } } = await admin.auth.admin.getUserById(params.ownerId);
+        if (!user?.email) return;
 
-      const { data: { user } } = await admin.auth.admin.getUserById(params.ownerId);
-      if (!user?.email) return;
+        const { subject, html } = buildOwnerChangeNotificationEmail({
+          customerName,
+          oldDate: params.oldDate,
+          oldTime: params.oldTime,
+          oldMenuName: params.oldMenuName,
+          newDate: params.newDate,
+          newTime: params.newTime,
+          newMenuNames: params.newMenuNames,
+          salonName: params.salonName,
+        });
 
-      const { subject, html } = buildOwnerChangeNotificationEmail({
-        customerName,
-        oldDate: params.oldDate,
-        oldTime: params.oldTime,
-        oldMenuName: params.oldMenuName,
-        newDate: params.newDate,
-        newTime: params.newTime,
-        newMenuNames: params.newMenuNames,
-        salonName: params.salonName,
-      });
-
-      const { error } = await resend.emails.send({
-        from: getFromAddress(),
-        to: user.email,
-        subject,
-        html,
-      });
-      if (error) throw new Error(`オーナー変更通知メール送信失敗: ${error.message}`);
-    })(),
+        const { error } = await resend.emails.send({
+          from: getFromAddress(),
+          to: user.email,
+          subject,
+          html,
+        });
+        if (error) throw new Error(`オーナー変更通知メール送信失敗: ${error.message}`);
+      },
+    },
   ]);
-
-  for (const result of results) {
-    if (result.status === "rejected") {
-      console.error("変更通知エラー:", result.reason);
-      Sentry.captureException(result.reason, {
-        tags: { feature: "booking-change-notification" },
-      });
-    }
-  }
 }
