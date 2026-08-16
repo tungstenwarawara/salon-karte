@@ -113,6 +113,12 @@
 #### オプショナル
 - API_KEY 未設定時はメール送信をスキップ（graceful degradation）
 
+#### 運営者への課金通知（2026-08-17〜）
+- `OPERATOR_NOTIFICATION_EMAIL` 宛に、新規成約 / 解約 / 支払い失敗を送信
+- 実装: `src/lib/email/operator-notify.ts`（Stripe Webhook から呼び出し）
+- **毎月の更新課金（`invoice.paid`）は通知しない**。行動が不要なため意図的に対象外
+- 未設定なら何も送らない（graceful degradation）
+
 ---
 
 ### 5. Sentry（エラー監視）
@@ -204,6 +210,7 @@ CRON_SECRET                       # Cron 認証キー
 NEXT_PUBLIC_GA4_ID                # Google Analytics 4 測定ID（設定済み）
 RESEND_API_KEY                    # Resend APIキー（未設定時はメール送信スキップ）
 EMAIL_FROM                        # メール送信元アドレス
+OPERATOR_NOTIFICATION_EMAIL       # 運営者への課金通知の宛先（未設定時は通知スキップ）
 NEXT_PUBLIC_APP_URL               # アプリURL（OGP・SEO用、Stripe/Resend/Cron 全リンク生成に使用）
 ```
 
