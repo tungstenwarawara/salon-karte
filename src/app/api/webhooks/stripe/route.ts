@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyOperatorBillingEvent } from "@/lib/email/operator-notify";
 import type Stripe from "stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -170,11 +171,13 @@ async function handleStripeEvent(
         throw new Error(`subscriptions の upsert に失敗: ${insertError.message}`);
       }
 
-      // salon の plan_type を standard に更新
-      const { error: updateError } = await supabase
+      // salon の plan_type を standard に更新（通知用にサロン名も受け取る）
+      const { data: updatedSalon, error: updateError } = await supabase
         .from("salons")
         .update({ plan_type: "standard" })
-        .eq("id", salonId);
+        .eq("id", salonId)
+        .select("name")
+        .maybeSingle();
 
       if (updateError) {
         throw new Error(
@@ -194,6 +197,14 @@ async function handleStripeEvent(
           throw new Error(`referrals の被紹介特典更新に失敗: ${refError.message}`);
         }
       }
+
+      // DB更新がすべて成功してから通知する（途中で呼ぶと再送時に重複する）
+      notifyOperatorBillingEvent({
+        kind: "subscribed",
+        salonName: updatedSalon?.name ?? null,
+        salonId,
+        occurredAt: eventTimestamp(event),
+      });
       return;
     }
 
@@ -246,17 +257,26 @@ async function handleStripeEvent(
       // 該当行なし（テストモード時代の顧客等）は何もしない
       if (!subscription) return;
 
-      // salon の plan_type を free に戻す
-      const { error: planError } = await supabase
+      // salon の plan_type を free に戻す（通知用にサロン名も受け取る）
+      const { data: downgradedSalon, error: planError } = await supabase
         .from("salons")
         .update({ plan_type: "free" })
-        .eq("id", subscription.salon_id);
+        .eq("id", subscription.salon_id)
+        .select("name")
+        .maybeSingle();
 
       if (planError) {
         throw new Error(
           `salons.plan_type の free 戻しに失敗: ${planError.message}`
         );
       }
+
+      notifyOperatorBillingEvent({
+        kind: "canceled",
+        salonName: downgradedSalon?.name ?? null,
+        salonId: subscription.salon_id,
+        occurredAt: eventTimestamp(event),
+      });
       return;
     }
 
@@ -269,13 +289,33 @@ async function handleStripeEvent(
 
       if (!customerId) return;
 
-      const { error } = await supabase
+      const { data: pastDueSub, error } = await supabase
         .from("subscriptions")
         .update({ status: "past_due" })
-        .eq("stripe_customer_id", customerId);
+        .eq("stripe_customer_id", customerId)
+        .select("salon_id, salons(name)")
+        .maybeSingle();
 
       if (error) {
         throw new Error(`past_due への更新に失敗: ${error.message}`);
+      }
+
+      if (pastDueSub) {
+        // 埋め込み取得は配列で返る場合があるため両方に備える
+        const salons = pastDueSub.salons as
+          | { name: string }
+          | { name: string }[]
+          | null;
+        const salonName = Array.isArray(salons)
+          ? (salons[0]?.name ?? null)
+          : (salons?.name ?? null);
+
+        notifyOperatorBillingEvent({
+          kind: "payment_failed",
+          salonName,
+          salonId: pastDueSub.salon_id,
+          occurredAt: eventTimestamp(event),
+        });
       }
       return;
     }
@@ -392,6 +432,21 @@ async function applyReferrerReward(
       extra: { referral_id: referral.id },
     });
   }
+}
+
+/**
+ * イベント発生時刻を ISO 文字列で返す。
+ *
+ * event.created は Stripe が必ず付与するが、欠けていた場合に
+ * new Date(NaN).toISOString() が throw すると、通知のためだけに
+ * 課金反映まで失敗して再送ループに入る。現在時刻でフォールバックする。
+ */
+function eventTimestamp(event: Stripe.Event): string {
+  const created = event.created;
+  if (typeof created !== "number" || !Number.isFinite(created)) {
+    return new Date().toISOString();
+  }
+  return new Date(created * 1000).toISOString();
 }
 
 /** Stripe のステータスをアプリ内ステータスにマッピング */

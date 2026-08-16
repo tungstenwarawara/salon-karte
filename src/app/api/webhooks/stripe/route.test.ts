@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   constructEvent: vi.fn(),
   retrieveSubscription: vi.fn(),
   createBalanceTransaction: vi.fn(),
+  notifyOperator: vi.fn(),
   adminClient: { current: null as unknown as ReturnType<typeof createSupabaseMock> },
 }));
 
@@ -30,6 +31,11 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 
 vi.mock("@sentry/nextjs", () => ({ captureException: vi.fn() }));
+
+// after() は Next.js のリクエストスコープ外では動かないためモックする
+vi.mock("@/lib/email/operator-notify", () => ({
+  notifyOperatorBillingEvent: mocks.notifyOperator,
+}));
 
 import { POST } from "@/app/api/webhooks/stripe/route";
 
@@ -140,6 +146,25 @@ describe("Stripe Webhook: 正常系", () => {
       calls.some((c) => c.table === "stripe_processed_events" && c.op === "delete")
     ).toBe(false);
   });
+
+  it("成約が確定したら運営者に通知する", async () => {
+    mocks.adminClient.current = createSupabaseMock({
+      "stripe_processed_events.insert": {},
+      "subscriptions.select": { data: null },
+      "subscriptions.upsert": {},
+      "salons.update": { data: { name: "テスト美容室" } },
+    });
+
+    await POST(buildRequest());
+
+    expect(mocks.notifyOperator).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "subscribed",
+        salonName: "テスト美容室",
+        salonId: "salon-1",
+      })
+    );
+  });
 });
 
 describe("Stripe Webhook: 失敗時の再送可能性（最重要）", () => {
@@ -169,6 +194,19 @@ describe("Stripe Webhook: 失敗時の再送可能性（最重要）", () => {
     expect(
       calls.some((c) => c.table === "stripe_processed_events" && c.op === "delete")
     ).toBe(true);
+  });
+
+  it("処理が失敗したときは運営者通知を送らない（再送で重複するため）", async () => {
+    mocks.adminClient.current = createSupabaseMock({
+      "stripe_processed_events.insert": {},
+      "subscriptions.select": { data: null },
+      "subscriptions.upsert": { error: { message: "書き込み失敗" } },
+      "stripe_processed_events.delete": {},
+    });
+
+    await POST(buildRequest());
+
+    expect(mocks.notifyOperator).not.toHaveBeenCalled();
   });
 
   it("plan_type の更新が失敗した場合も 500 + マーカー削除", async () => {

@@ -571,3 +571,63 @@ export function buildOwnerChangeNotificationEmail(info: OwnerChangeNotificationI
     html: wrapHtml(body),
   };
 }
+
+// ============================================================
+// 運営者（サービス提供側）向け通知
+// ============================================================
+
+export type OperatorBillingEvent = {
+  kind: "subscribed" | "canceled" | "payment_failed";
+  salonName: string | null;
+  salonId: string;
+  /** 発生時刻（ISO文字列） */
+  occurredAt: string;
+};
+
+const OPERATOR_EVENT_LABELS: Record<OperatorBillingEvent["kind"], string> = {
+  subscribed: "新規成約",
+  canceled: "解約",
+  payment_failed: "支払い失敗",
+};
+
+const OPERATOR_EVENT_ACTIONS: Record<OperatorBillingEvent["kind"], string> = {
+  subscribed:
+    "決め手をヒアリングできると次の訴求に使えます。Stripeダッシュボードで入金予定も確認できます。",
+  canceled:
+    "解約理由の確認を検討してください。期間末まではご利用いただけます。",
+  payment_failed:
+    "Stripeが自動でリトライしますが、カード期限切れの可能性があります。状況によってはご連絡が必要です。",
+};
+
+// 運営者向け: 課金イベント通知
+export function buildOperatorBillingEmail(info: OperatorBillingEvent): {
+  subject: string;
+  html: string;
+} {
+  const label = OPERATOR_EVENT_LABELS[info.kind];
+  const salon = info.salonName ?? "（サロン名を取得できませんでした）";
+  const occurredAtJst = new Date(info.occurredAt).toLocaleString("ja-JP", {
+    timeZone: "Asia/Tokyo",
+  });
+
+  const body = `
+<tr><td style="padding:32px 24px;">
+  <p style="margin:0 0 8px;font-size:12px;color:#888;font-weight:bold;">salon-karte 運営通知</p>
+  <h1 style="margin:0 0 16px;font-size:20px;color:#333;">${label}</h1>
+  <table width="100%" style="background:#f9f7f5;border-radius:12px;" cellpadding="0" cellspacing="0">
+  <tr><td style="padding:16px;">
+    <p style="margin:0 0 8px;font-size:16px;color:#333;font-weight:bold;">${salon}</p>
+    <p style="margin:0 0 4px;font-size:13px;color:#666;">salon_id: ${info.salonId}</p>
+    <p style="margin:0;font-size:13px;color:#666;">発生: ${occurredAtJst}</p>
+  </td></tr>
+  </table>
+  <p style="margin:20px 0 0;font-size:13px;color:#666;line-height:1.7;">
+    ${OPERATOR_EVENT_ACTIONS[info.kind]}
+  </p>
+</td></tr>`;
+
+  return {
+    subject: `【salon-karte】${label}: ${salon}`,
+    html: wrapHtml(body),
+  };
+}
