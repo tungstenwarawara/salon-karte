@@ -293,7 +293,7 @@ async function handleStripeEvent(
         .from("subscriptions")
         .update({ status: "past_due" })
         .eq("stripe_customer_id", customerId)
-        .select("salon_id, salons(name)")
+        .select("salon_id")
         .maybeSingle();
 
       if (error) {
@@ -301,18 +301,9 @@ async function handleStripeEvent(
       }
 
       if (pastDueSub) {
-        // 埋め込み取得は配列で返る場合があるため両方に備える
-        const salons = pastDueSub.salons as
-          | { name: string }
-          | { name: string }[]
-          | null;
-        const salonName = Array.isArray(salons)
-          ? (salons[0]?.name ?? null)
-          : (salons?.name ?? null);
-
         notifyOperatorBillingEvent({
           kind: "payment_failed",
-          salonName,
+          salonName: await lookupSalonName(supabase, pastDueSub.salon_id),
           salonId: pastDueSub.salon_id,
           occurredAt: eventTimestamp(event),
         });
@@ -432,6 +423,27 @@ async function applyReferrerReward(
       extra: { referral_id: referral.id },
     });
   }
+}
+
+/**
+ * 通知に載せるサロン名を引く。
+ * 表示用の情報でしかないため、失敗しても null を返して処理を止めない。
+ */
+async function lookupSalonName(
+  supabase: SupabaseClient,
+  salonId: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("salons")
+    .select("name")
+    .eq("id", salonId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("通知用のサロン名取得に失敗:", error);
+    return null;
+  }
+  return data?.name ?? null;
 }
 
 /**
