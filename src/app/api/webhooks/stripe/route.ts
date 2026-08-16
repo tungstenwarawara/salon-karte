@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type Stripe from "stripe";
@@ -35,20 +36,71 @@ export async function POST(request: Request) {
     .from("stripe_processed_events")
     .insert({ event_id: event.id, event_type: event.type });
 
-  if (idempotencyError) {
+  if (idempotencyError && idempotencyError.code === "23505") {
     // unique violation = 既に処理済み → 200を返して終了
-    if (idempotencyError.code === "23505") {
-      return NextResponse.json({ received: true, duplicate: true });
-    }
-    console.error("冪等性チェックエラー:", idempotencyError);
-    // テーブルアクセスエラーでも処理は続行（安全側に倒す）
+    return NextResponse.json({ received: true, duplicate: true });
   }
 
+  // マーカーを書けなかった場合（テーブルアクセスエラー等）は処理を続行する。
+  // 失敗時にロールバックすべきマーカーが無いことを覚えておく
+  const markerStored = !idempotencyError;
+  if (idempotencyError) {
+    console.error("冪等性チェックエラー:", idempotencyError);
+    Sentry.captureException(idempotencyError, {
+      tags: { feature: "stripe-webhook" },
+      extra: { event_id: event.id, event_type: event.type },
+    });
+  }
+
+  try {
+    await handleStripeEvent(event, supabase);
+  } catch (err) {
+    console.error(`Stripe Webhook 処理失敗 (${event.type} / ${event.id}):`, err);
+    Sentry.captureException(err, {
+      tags: { feature: "stripe-webhook" },
+      extra: { event_id: event.id, event_type: event.type },
+    });
+
+    // 冪等性マーカーを取り消す。
+    // 残したままにすると Stripe の再送が「処理済み」として弾かれ、
+    // 「課金されたのに plan_type が free のまま」という状態が永久に固定される
+    if (markerStored) {
+      const { error: rollbackError } = await supabase
+        .from("stripe_processed_events")
+        .delete()
+        .eq("event_id", event.id);
+
+      if (rollbackError) {
+        console.error("冪等性マーカーの取り消しに失敗:", rollbackError);
+        Sentry.captureException(rollbackError, {
+          tags: { feature: "stripe-webhook" },
+          extra: { event_id: event.id, event_type: event.type },
+        });
+      }
+    }
+
+    // 500 を返して Stripe に再送させる（Stripe は最大3日間リトライする）
+    return NextResponse.json({ error: "処理に失敗しました" }, { status: 500 });
+  }
+
+  return NextResponse.json({ received: true });
+}
+
+/**
+ * Stripe イベントを処理する。
+ *
+ * **重要**: DB 更新に失敗したら必ず throw すること。
+ * 握りつぶして 200 を返すと Stripe は再送せず、課金と実態のズレが恒久化する。
+ */
+async function handleStripeEvent(
+  event: Stripe.Event,
+  supabase: SupabaseClient
+): Promise<void> {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       const salonId = session.metadata?.salon_id;
-      if (!salonId || !session.customer || !session.subscription) break;
+      if (!salonId || !session.customer || !session.subscription) return;
 
       const customerId =
         typeof session.customer === "string"
@@ -65,7 +117,40 @@ export async function POST(request: Request) {
       });
       const periodEnd = sub.items.data[0]?.current_period_end;
 
-      // subscriptions テーブルに INSERT
+      // 二重契約の検知:
+      // 既に別のサブスクリプションが有効なまま2本目が成約した場合、
+      // upsert で上書きすると旧サブスクが追跡不能のまま課金され続ける。
+      // 自動キャンセルは誤爆時の被害が大きいため、記録だけ残して人間の判断に委ねる
+      const { data: existing, error: existingError } = await supabase
+        .from("subscriptions")
+        .select("stripe_subscription_id, status")
+        .eq("salon_id", salonId)
+        .maybeSingle();
+
+      if (existingError) {
+        throw new Error(`既存サブスクの確認に失敗: ${existingError.message}`);
+      }
+
+      if (
+        existing &&
+        existing.status === "active" &&
+        existing.stripe_subscription_id !== subscriptionId
+      ) {
+        const message =
+          `二重サブスクリプション検知: salon=${salonId} ` +
+          `既存=${existing.stripe_subscription_id} 新規=${subscriptionId}`;
+        console.error(message);
+        Sentry.captureException(new Error(message), {
+          tags: { feature: "stripe-webhook", severity: "billing" },
+          extra: {
+            salon_id: salonId,
+            existing_subscription_id: existing.stripe_subscription_id,
+            new_subscription_id: subscriptionId,
+          },
+        });
+      }
+
+      // subscriptions テーブルに UPSERT
       const { error: insertError } = await supabase
         .from("subscriptions")
         .upsert(
@@ -82,8 +167,7 @@ export async function POST(request: Request) {
         );
 
       if (insertError) {
-        console.error("subscription insert エラー:", insertError);
-        break;
+        throw new Error(`subscriptions の upsert に失敗: ${insertError.message}`);
       }
 
       // salon の plan_type を standard に更新
@@ -93,7 +177,9 @@ export async function POST(request: Request) {
         .eq("id", salonId);
 
       if (updateError) {
-        console.error("salon plan_type update エラー:", updateError);
+        throw new Error(
+          `salons.plan_type の更新に失敗: ${updateError.message}`
+        );
       }
 
       // 紹介特典（被紹介者側）: trial 付きチェックアウトなら referred_reward_applied_at を記録
@@ -103,11 +189,12 @@ export async function POST(request: Request) {
           .from("referrals")
           .update({ referred_reward_applied_at: new Date().toISOString() })
           .eq("id", referralId);
+
         if (refError) {
-          console.error("referrals 被紹介特典更新エラー:", refError);
+          throw new Error(`referrals の被紹介特典更新に失敗: ${refError.message}`);
         }
       }
-      break;
+      return;
     }
 
     case "customer.subscription.updated": {
@@ -117,7 +204,7 @@ export async function POST(request: Request) {
 
       const status = mapStripeStatus(sub.status);
       const itemPeriodEnd = sub.items.data[0]?.current_period_end;
-      await supabase
+      const { error } = await supabase
         .from("subscriptions")
         .update({
           status,
@@ -130,7 +217,11 @@ export async function POST(request: Request) {
             : {}),
         })
         .eq("stripe_customer_id", customerId);
-      break;
+
+      if (error) {
+        throw new Error(`subscriptions の更新に失敗: ${error.message}`);
+      }
+      return;
     }
 
     case "customer.subscription.deleted": {
@@ -139,21 +230,34 @@ export async function POST(request: Request) {
         typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
       // サブスクリプションを canceled に
-      const { data: subscription } = await supabase
+      const { data: subscription, error: cancelError } = await supabase
         .from("subscriptions")
         .update({ status: "canceled" })
         .eq("stripe_customer_id", customerId)
         .select("salon_id")
-        .single();
+        .maybeSingle();
+
+      if (cancelError) {
+        throw new Error(
+          `subscriptions のキャンセル更新に失敗: ${cancelError.message}`
+        );
+      }
+
+      // 該当行なし（テストモード時代の顧客等）は何もしない
+      if (!subscription) return;
 
       // salon の plan_type を free に戻す
-      if (subscription) {
-        await supabase
-          .from("salons")
-          .update({ plan_type: "free" })
-          .eq("id", subscription.salon_id);
+      const { error: planError } = await supabase
+        .from("salons")
+        .update({ plan_type: "free" })
+        .eq("id", subscription.salon_id);
+
+      if (planError) {
+        throw new Error(
+          `salons.plan_type の free 戻しに失敗: ${planError.message}`
+        );
       }
-      break;
+      return;
     }
 
     case "invoice.payment_failed": {
@@ -163,19 +267,23 @@ export async function POST(request: Request) {
           ? invoice.customer
           : invoice.customer?.id;
 
-      if (customerId) {
-        await supabase
-          .from("subscriptions")
-          .update({ status: "past_due" })
-          .eq("stripe_customer_id", customerId);
+      if (!customerId) return;
+
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({ status: "past_due" })
+        .eq("stripe_customer_id", customerId);
+
+      if (error) {
+        throw new Error(`past_due への更新に失敗: ${error.message}`);
       }
-      break;
+      return;
     }
 
     case "invoice.paid": {
       // 被紹介者の初回有料請求（trial 終了後）が完了したら、紹介者に 2,980円分のクレジットを付与
       const invoice = event.data.object as Stripe.Invoice;
-      if (invoice.amount_paid <= 0 || !invoice.customer) break;
+      if (invoice.amount_paid <= 0 || !invoice.customer) return;
 
       const customerId =
         typeof invoice.customer === "string"
@@ -183,33 +291,44 @@ export async function POST(request: Request) {
           : invoice.customer.id;
 
       // 1. この customer が「被紹介側」で紹介者特典がまだ未付与の referrals を探す
-      const { data: subscription } = await supabase
+      const { data: subscription, error: subError } = await supabase
         .from("subscriptions")
         .select("salon_id")
         .eq("stripe_customer_id", customerId)
-        .single();
+        .maybeSingle();
 
-      if (!subscription) break;
+      if (subError) {
+        throw new Error(`subscriptions の取得に失敗: ${subError.message}`);
+      }
+      if (!subscription) return;
 
-      const { data: referral } = await supabase
+      const { data: referral, error: referralError } = await supabase
         .from("referrals")
         .select("id, referrer_salon_id")
         .eq("referred_salon_id", subscription.salon_id)
         .is("referrer_reward_applied_at", null)
         .maybeSingle();
 
-      if (!referral) break;
+      if (referralError) {
+        throw new Error(`referrals の取得に失敗: ${referralError.message}`);
+      }
+      if (!referral) return;
 
-      // 2. 紹介者側のサブスク情報を取得
+      // 2. 紹介者側にクレジットを付与
       await applyReferrerReward(supabase, referral);
-      break;
+      return;
     }
   }
-
-  return NextResponse.json({ received: true });
 }
 
-/** 紹介者側に 1ヶ月分（2,980円）のクレジットを付与し referrals を更新 */
+/**
+ * 紹介者側に 1ヶ月分（2,980円）のクレジットを付与し referrals を更新
+ *
+ * **この関数は throw しない。**
+ * Stripe の残高クレジット付与（createBalanceTransaction）は冪等でないため、
+ * throw して Webhook を再送させるとクレジットが二重付与される。
+ * 失敗は記録に留め、次回の invoice.paid で再試行させる。
+ */
 async function applyReferrerReward(
   supabase: SupabaseClient,
   referral: { id: string; referrer_salon_id: string }
@@ -219,7 +338,7 @@ async function applyReferrerReward(
     .from("subscriptions")
     .select("stripe_customer_id")
     .eq("salon_id", referral.referrer_salon_id)
-    .single();
+    .maybeSingle();
 
   // 紹介者がまだ有料プラン未加入の場合は後で（salon側が checkout するとき）適用するため今回はスキップ
   // referrer_reward_applied_at は更新しないので、次回 invoice.paid で再チェックされる
@@ -240,6 +359,10 @@ async function applyReferrerReward(
     );
   } catch (err) {
     console.error("紹介者クレジット付与エラー:", err);
+    Sentry.captureException(err, {
+      tags: { feature: "stripe-webhook" },
+      extra: { referral_id: referral.id },
+    });
     return;
   }
 
@@ -249,16 +372,26 @@ async function applyReferrerReward(
     .from("referrals")
     .select("referred_reward_applied_at")
     .eq("id", referral.id)
-    .single();
+    .maybeSingle();
 
   const bothApplied = !!current?.referred_reward_applied_at;
-  await supabase
+  const { error: updateError } = await supabase
     .from("referrals")
     .update({
       referrer_reward_applied_at: now,
       ...(bothApplied ? { status: "rewarded" } : {}),
     })
     .eq("id", referral.id);
+
+  // ここで失敗するとクレジットは付与済みなのに未適用扱いのまま残り、
+  // 翌月の invoice.paid で二重付与される。throw はできないので必ず気付けるようにする
+  if (updateError) {
+    console.error("紹介特典の適用記録に失敗（二重付与のおそれ）:", updateError);
+    Sentry.captureException(updateError, {
+      tags: { feature: "stripe-webhook", severity: "billing" },
+      extra: { referral_id: referral.id },
+    });
+  }
 }
 
 /** Stripe のステータスをアプリ内ステータスにマッピング */
