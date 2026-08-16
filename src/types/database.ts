@@ -338,6 +338,7 @@ export type Database = {
           stripe_subscription_id: string;
           status: "active" | "past_due" | "canceled" | "incomplete";
           current_period_end: string | null;
+          cancel_at_period_end: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -348,6 +349,7 @@ export type Database = {
           stripe_subscription_id: string;
           status?: "active" | "past_due" | "canceled" | "incomplete";
           current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -358,6 +360,7 @@ export type Database = {
           stripe_subscription_id?: string;
           status?: "active" | "past_due" | "canceled" | "incomplete";
           current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
           created_at?: string;
           updated_at?: string;
         };

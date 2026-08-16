@@ -163,6 +163,8 @@ async function handleStripeEvent(
             current_period_end: periodEnd
               ? new Date(periodEnd * 1000).toISOString()
               : null,
+            // 再契約のとき、前回の解約予定が残らないよう明示的に戻す
+            cancel_at_period_end: sub.cancel_at_period_end ?? false,
           },
           { onConflict: "salon_id" }
         );
@@ -219,6 +221,10 @@ async function handleStripeEvent(
         .from("subscriptions")
         .update({
           status,
+          // 期間末解約の予約・取り消しはこのイベントで届く。
+          // status は active のままなので、これを保持しないと
+          // 解約手続き済みかどうかを画面で区別できない
+          cancel_at_period_end: sub.cancel_at_period_end ?? false,
           ...(itemPeriodEnd
             ? {
                 current_period_end: new Date(

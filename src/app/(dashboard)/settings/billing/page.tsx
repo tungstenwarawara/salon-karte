@@ -20,6 +20,7 @@ export default function BillingPage() {
     planType,
     periodEnd,
     subscriptionStatus,
+    cancelAtPeriodEnd,
     usage,
     hasReferralBenefit,
     loading,
@@ -127,6 +128,7 @@ export default function BillingPage() {
           planType={planType}
           subscriptionStatus={subscriptionStatus}
           periodEnd={periodEnd}
+          cancelAtPeriodEnd={cancelAtPeriodEnd}
           actionLoading={actionLoading}
           onManage={handleManage}
         />

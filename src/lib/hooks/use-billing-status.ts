@@ -15,6 +15,8 @@ export type BillingStatus = {
   planType: PlanType;
   periodEnd: string | null;
   subscriptionStatus: string | null;
+  /** 期間末で解約予定か（Stripe Portal で解約手続き済み） */
+  cancelAtPeriodEnd: boolean;
   usage: BillingUsage;
   hasReferralBenefit: boolean;
   loading: boolean;
@@ -47,6 +49,7 @@ export function useBillingStatus(justCheckedOut: boolean): BillingStatus {
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(
     null
   );
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false);
   const [usage, setUsage] = useState<BillingUsage>({
     customers: 0,
     records: 0,
@@ -67,7 +70,7 @@ export function useBillingStatus(justCheckedOut: boolean): BillingStatus {
         supabase.from("salons").select("plan_type").eq("id", salonId).single(),
         supabase
           .from("subscriptions")
-          .select("status, current_period_end")
+          .select("status, current_period_end, cancel_at_period_end")
           .eq("salon_id", salonId)
           .maybeSingle(),
       ]);
@@ -75,6 +78,7 @@ export function useBillingStatus(justCheckedOut: boolean): BillingStatus {
         planType: (salonRes.data?.plan_type ?? "free") as PlanType,
         status: subRes.data?.status ?? null,
         periodEnd: subRes.data?.current_period_end ?? null,
+        cancelAtPeriodEnd: subRes.data?.cancel_at_period_end ?? false,
       };
     };
 
@@ -99,7 +103,7 @@ export function useBillingStatus(justCheckedOut: boolean): BillingStatus {
         supabase.from("salons").select("plan_type").eq("id", salonId).single(),
         supabase
           .from("subscriptions")
-          .select("status, current_period_end")
+          .select("status, current_period_end, cancel_at_period_end")
           .eq("salon_id", salonId)
           .maybeSingle(),
         supabase
@@ -131,6 +135,7 @@ export function useBillingStatus(justCheckedOut: boolean): BillingStatus {
       if (subRes.data) {
         setSubscriptionStatus(subRes.data.status);
         setPeriodEnd(subRes.data.current_period_end);
+        setCancelAtPeriodEnd(subRes.data.cancel_at_period_end ?? false);
       }
       setUsage({
         customers: customersRes.count ?? 0,
@@ -158,6 +163,7 @@ export function useBillingStatus(justCheckedOut: boolean): BillingStatus {
           setPlanType("standard");
           setSubscriptionStatus(state.status);
           setPeriodEnd(state.periodEnd);
+          setCancelAtPeriodEnd(state.cancelAtPeriodEnd);
           setSyncing(false);
           return;
         }
@@ -177,6 +183,7 @@ export function useBillingStatus(justCheckedOut: boolean): BillingStatus {
     planType,
     periodEnd,
     subscriptionStatus,
+    cancelAtPeriodEnd,
     usage,
     hasReferralBenefit,
     loading,
