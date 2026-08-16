@@ -2,106 +2,39 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { getClientAuth } from "@/lib/supabase/client-auth";
-import {
-  PLAN_LIMITS,
-  getPlanLabel,
-  type PlanType,
-} from "@/lib/plan";
+import { useBillingStatus } from "@/lib/hooks/use-billing-status";
 import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { UsageBar, LockedFeatureRow } from "@/components/plan/usage-bar";
+import { BillingPlanStatus } from "@/components/billing/billing-plan-status";
 import { BillingPlanComparison } from "@/components/billing/billing-plan-comparison";
+import { BillingSyncNotice } from "@/components/billing/billing-sync-notice";
 import { BillingFaq } from "@/components/billing/billing-faq";
-
-type Usage = {
-  customers: number;
-  records: number;
-  appointmentsThisMonth: number;
-};
 
 export default function BillingPage() {
   const searchParams = useSearchParams();
+  const justCheckedOut = searchParams.get("success") === "true";
   const { toast, showToast, hideToast } = useToast();
-  const [planType, setPlanType] = useState<PlanType>("free");
-  const [periodEnd, setPeriodEnd] = useState<string | null>(null);
-  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
-  const [usage, setUsage] = useState<Usage>({
-    customers: 0,
-    records: 0,
-    appointmentsThisMonth: 0,
-  });
-  const [hasReferralBenefit, setHasReferralBenefit] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const {
+    planType,
+    periodEnd,
+    subscriptionStatus,
+    usage,
+    hasReferralBenefit,
+    loading,
+    syncing,
+    syncTimedOut,
+  } = useBillingStatus(justCheckedOut);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // 反映が確認できてから完了を伝える（反映前に出すと「反映中」と矛盾する）
   useEffect(() => {
-    if (searchParams.get("success") === "true") {
+    if (justCheckedOut && planType === "standard") {
       showToast("スタンダードプランへのアップグレードが完了しました");
     }
-  }, [searchParams, showToast]);
-
-  useEffect(() => {
-    const load = async () => {
-      const { salonId } = await getClientAuth();
-      if (!salonId) return;
-
-      const supabase = createClient();
-
-      // 今月の予約範囲
-      const now = new Date();
-      const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-      const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      const startOfNextMonth = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-01`;
-
-      const [salonRes, subRes, customersRes, recordsRes, appointmentsRes, referralRes] =
-        await Promise.all([
-          supabase.from("salons").select("plan_type").eq("id", salonId).single(),
-          supabase
-            .from("subscriptions")
-            .select("status, current_period_end")
-            .eq("salon_id", salonId)
-            .maybeSingle(),
-          supabase
-            .from("customers")
-            .select("id", { count: "exact", head: true })
-            .eq("salon_id", salonId),
-          supabase
-            .from("treatment_records")
-            .select("id", { count: "exact", head: true })
-            .eq("salon_id", salonId),
-          supabase
-            .from("appointments")
-            .select("id", { count: "exact", head: true })
-            .eq("salon_id", salonId)
-            .gte("appointment_date", startOfMonth)
-            .lt("appointment_date", startOfNextMonth),
-          supabase
-            .from("referrals")
-            .select("id")
-            .eq("referred_salon_id", salonId)
-            .is("referred_reward_applied_at", null)
-            .maybeSingle(),
-        ]);
-
-      if (salonRes.data) setPlanType(salonRes.data.plan_type as PlanType);
-      if (subRes.data) {
-        setSubscriptionStatus(subRes.data.status);
-        setPeriodEnd(subRes.data.current_period_end);
-      }
-      setUsage({
-        customers: customersRes.count ?? 0,
-        records: recordsRes.count ?? 0,
-        appointmentsThisMonth: appointmentsRes.count ?? 0,
-      });
-      setHasReferralBenefit(!!referralRes.data);
-      setLoading(false);
-    };
-    load();
-  }, []);
+  }, [justCheckedOut, planType, showToast]);
 
   const handleUpgrade = async () => {
     setActionLoading(true);
@@ -141,10 +74,17 @@ export default function BillingPage() {
     }
   };
 
+  const header = (
+    <PageHeader
+      title="料金プラン"
+      breadcrumbs={[{ label: "設定", href: "/settings" }, { label: "料金プラン" }]}
+    />
+  );
+
   if (loading) {
     return (
       <div className="space-y-4">
-        <PageHeader title="料金プラン" breadcrumbs={[{ label: "設定", href: "/settings" }, { label: "料金プラン" }]} />
+        {header}
         <div className="bg-surface border border-border rounded-2xl p-6 animate-pulse">
           <div className="h-6 bg-border/50 rounded w-1/3 mb-4" />
           <div className="h-10 bg-border/50 rounded w-1/2 mb-4" />
@@ -154,57 +94,46 @@ export default function BillingPage() {
     );
   }
 
+  // 決済直後の反映待ち: フリープランのUIを見せない
+  // （支払い済みの画面に「アップグレード」ボタンを出すと二重契約を誘発する）
+  if (syncing) {
+    return (
+      <div className="space-y-4">
+        {header}
+        <BillingSyncNotice timedOut={false} />
+      </div>
+    );
+  }
+
+  // 決済したのに反映されていない状態。
+  // 「おためしプラン ¥0/月」を出すと支払い済みのお客様が
+  // 「課金されていない」と誤解するため、プラン状態そのものを表示しない
+  const planUnconfirmed = syncTimedOut && planType === "free";
+  const showFreePlanSections = planType === "free" && !syncTimedOut;
+
   return (
     <div className="space-y-4">
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
-      <PageHeader title="料金プラン" breadcrumbs={[{ label: "設定", href: "/settings" }, { label: "料金プラン" }]} />
+      {header}
 
       {error && <ErrorAlert message={error} />}
 
+      {/* 反映されないまま待ち時間を超えた場合の案内 */}
+      {planUnconfirmed && <BillingSyncNotice timedOut />}
+
       {/* 現在のプラン状態 */}
-      <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
-        <div className="flex items-center gap-2">
-          <span
-            className={`w-2.5 h-2.5 rounded-full ${
-              planType === "standard" ? "bg-accent" : "bg-text-light"
-            }`}
-          />
-          <p className="text-sm text-text-light">現在のプラン</p>
-        </div>
-        <div className="flex items-baseline gap-3 flex-wrap">
-          <p className="text-2xl font-bold">{getPlanLabel(planType)}</p>
-          <p className="text-base font-bold text-text-light">
-            ¥{PLAN_LIMITS[planType].monthlyPriceJpy.toLocaleString()}
-            <span className="text-xs font-normal"> / 月</span>
-          </p>
-        </div>
-
-        {planType === "standard" && subscriptionStatus === "past_due" && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3">
-            <p className="text-sm text-yellow-800 font-medium">
-              お支払いに問題があります。カード情報をご確認ください。
-            </p>
-          </div>
-        )}
-        {planType === "standard" && periodEnd && (
-          <p className="text-sm text-text-light">
-            次回請求日: {new Date(periodEnd).toLocaleDateString("ja-JP")}
-          </p>
-        )}
-
-        {planType === "standard" && (
-          <button
-            onClick={handleManage}
-            disabled={actionLoading}
-            className="w-full bg-background border border-border text-text font-medium rounded-2xl py-4 text-center transition-colors hover:bg-surface disabled:opacity-50 min-h-[56px]"
-          >
-            {actionLoading ? "読み込み中..." : "プラン・支払い方法を管理"}
-          </button>
-        )}
-      </div>
+      {!planUnconfirmed && (
+        <BillingPlanStatus
+          planType={planType}
+          subscriptionStatus={subscriptionStatus}
+          periodEnd={periodEnd}
+          actionLoading={actionLoading}
+          onManage={handleManage}
+        />
+      )}
 
       {/* 紹介特典バナー（被紹介者・Free のみ） */}
-      {planType === "free" && hasReferralBenefit && (
+      {showFreePlanSections && hasReferralBenefit && (
         <div className="bg-accent/10 border-2 border-accent rounded-2xl p-4 flex items-start gap-3">
           <span className="text-2xl leading-none">🎁</span>
           <div className="flex-1">
@@ -218,7 +147,7 @@ export default function BillingPage() {
       )}
 
       {/* 使用状況（フリープランのみ） */}
-      {planType === "free" && (
+      {showFreePlanSections && (
         <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
           <h3 className="font-bold">📊 現在の使用状況</h3>
           <div className="space-y-3">
@@ -234,7 +163,7 @@ export default function BillingPage() {
       )}
 
       {/* プラン比較 + アップグレードCTA */}
-      {planType === "free" && (
+      {showFreePlanSections && (
         <BillingPlanComparison
           hasReferralBenefit={hasReferralBenefit}
           actionLoading={actionLoading}
@@ -243,7 +172,7 @@ export default function BillingPage() {
       )}
 
       {/* 切替タイミングの説明 */}
-      {planType === "free" && (
+      {showFreePlanSections && (
         <div className="bg-surface border border-border rounded-2xl p-5 space-y-2">
           <h3 className="font-bold">💡 アップグレードの流れ</h3>
           <ol className="text-sm text-text-light space-y-2 list-decimal list-inside">
