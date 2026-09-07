@@ -19,13 +19,6 @@ export async function POST() {
     return NextResponse.json({ error: "認証エラー" }, { status: 401 });
   }
 
-  if (salon.plan_type === "standard") {
-    return NextResponse.json(
-      { error: "すでにスタンダードプランです" },
-      { status: 400 }
-    );
-  }
-
   const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID;
   if (!priceId) {
     return NextResponse.json(
@@ -37,15 +30,34 @@ export async function POST() {
   const stripe = getStripe();
 
   // 二重契約の防止:
-  // plan_type が standard になるのは Webhook 受信後なので、決済直後に
-  // もう一度このAPIを叩くと2本目のサブスクリプションが作られ二重課金になる。
-  // DB ではなく Stripe 側の実態を見て判定する。
+  // 決済直後にもう一度このAPIを叩くと2本目のサブスクリプションが作られ二重課金になる。
+  // DB の契約行 → Stripe 側の実態 の順に二段で確認する。
   // （1オーナー = 1サロン前提。getAuthAndSalon が single() で解決している）
   const { data: existingSub } = await supabase
     .from("subscriptions")
-    .select("stripe_customer_id")
+    .select("stripe_customer_id, status")
     .eq("salon_id", salon.id)
     .maybeSingle();
+
+  // 契約中の再チェックアウトは二重課金になるため止める。
+  // 判定は plan_type ではなく「Stripe 契約の実態」で行う。
+  // 運営が手動で standard を付与したサロン（Stripe 契約なし）は
+  // plan_type で弾くと支払いを開始する手段が一切なくなるため
+  const hasLiveSubscription =
+    existingSub?.status === "active" || existingSub?.status === "past_due";
+
+  if (hasLiveSubscription) {
+    return NextResponse.json(
+      { error: "すでにスタンダードプランです" },
+      { status: 400 }
+    );
+  }
+
+  // 手動付与で standard になっているサロン。
+  // 契約実態が DB に無いだけで、実は Stripe 側に契約が存在する可能性を
+  // 通常より厳しく見る（後述の照合失敗時に fail closed にする）
+  const grantedWithoutSubscription =
+    salon.plan_type === "standard" && !hasLiveSubscription;
 
   let customerId: string | null = existingSub?.stripe_customer_id ?? null;
   const customerLinkedToSalon = !!customerId;
@@ -67,6 +79,20 @@ export async function POST() {
         tags: { feature: "stripe-checkout" },
         extra: { salon_id: salon.id },
       });
+
+      // 手動付与のサロンだけは fail closed にする。
+      // 「plan_type は standard なのに契約が DB に無い」状態では、
+      // Stripe 側に契約が存在するかどうかを照合でしか判断できない。
+      // 照合できないまま進めると二重契約になりうるので、やり直してもらう
+      if (grantedWithoutSubscription) {
+        return NextResponse.json(
+          {
+            error:
+              "決済システムとの通信に失敗しました。恐れ入りますが、少し時間をおいて再度お試しください。",
+          },
+          { status: 503 }
+        );
+      }
     }
   }
 
@@ -91,6 +117,17 @@ export async function POST() {
         tags: { feature: "stripe-checkout" },
         extra: { salon_id: salon.id, customer_id: customerId },
       });
+
+      // 手動付与のサロンは fail closed（理由は上の customers.list と同じ）
+      if (grantedWithoutSubscription) {
+        return NextResponse.json(
+          {
+            error:
+              "決済システムとの通信に失敗しました。恐れ入りますが、少し時間をおいて再度お試しください。",
+          },
+          { status: 503 }
+        );
+      }
     }
 
     if (live) {

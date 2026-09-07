@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useBillingStatus } from "@/lib/hooks/use-billing-status";
+import { useBillingStatus, isPaymentReflected } from "@/lib/hooks/use-billing-status";
 import { PageHeader } from "@/components/layout/page-header";
 import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
@@ -30,12 +30,13 @@ export default function BillingPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 反映が確認できてから完了を伝える（反映前に出すと「反映中」と矛盾する）
+  // 反映が確認できてから完了を伝える（反映前に出すと「反映中」と矛盾する）。
+  // 手動付与のサロンは決済前から standard なので、契約の反映で判定する
   useEffect(() => {
-    if (justCheckedOut && planType === "standard") {
-      showToast("スタンダードプランへのアップグレードが完了しました");
+    if (justCheckedOut && isPaymentReflected(subscriptionStatus)) {
+      showToast("スタンダードプランのお支払い登録が完了しました");
     }
-  }, [justCheckedOut, planType, showToast]);
+  }, [justCheckedOut, subscriptionStatus, showToast]);
 
   const handleUpgrade = async () => {
     setActionLoading(true);
@@ -106,11 +107,20 @@ export default function BillingPage() {
     );
   }
 
+  // 支払いが DB に反映済みか（plan_type ではなく契約実態で見る）
+  const paymentReflected = isPaymentReflected(subscriptionStatus);
+
   // 決済したのに反映されていない状態。
   // 「おためしプラン ¥0/月」を出すと支払い済みのお客様が
   // 「課金されていない」と誤解するため、プラン状態そのものを表示しない
-  const planUnconfirmed = syncTimedOut && planType === "free";
+  const planUnconfirmed = syncTimedOut && !paymentReflected;
   const showFreePlanSections = planType === "free" && !syncTimedOut;
+
+  // 運営が手動でスタンダードを付与したサロン（Stripe 契約が存在しない）。
+  // 全機能を無料で使えている状態で、支払いを始める導線がここにしかない。
+  // Webhook は subscriptions を先に書いてから plan_type を standard にするので、
+  // 決済経由でこの状態になることはない
+  const specialGrant = planType === "standard" && !paymentReflected;
 
   return (
     <div className="space-y-4">
@@ -131,6 +141,8 @@ export default function BillingPage() {
           cancelAtPeriodEnd={cancelAtPeriodEnd}
           actionLoading={actionLoading}
           onManage={handleManage}
+          specialGrant={specialGrant}
+          onStartPayment={handleUpgrade}
         />
       )}
 

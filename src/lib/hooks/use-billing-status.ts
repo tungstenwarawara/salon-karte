@@ -39,6 +39,17 @@ const SYNC_MAX_ATTEMPTS = 10; // 最大20秒
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
+ * Stripe の契約が DB に反映済みか。
+ *
+ * plan_type ではなく subscriptions.status で判定する。
+ * plan_type は運営が手動で standard を付与することがあり、
+ * 「支払っているか」とは一致しない
+ */
+export function isPaymentReflected(status: string | null | undefined): boolean {
+  return status === "active" || status === "past_due";
+}
+
+/**
  * 料金プラン画面の表示に必要な状態をまとめて取得する。
  *
  * @param justCheckedOut Stripe の決済完了直後（success=true）か
@@ -145,8 +156,13 @@ export function useBillingStatus(justCheckedOut: boolean): BillingStatus {
       setHasReferralBenefit(!!referralRes.data);
       setLoading(false);
 
-      // 決済直後でなければ、または既に反映済みならポーリング不要
-      if (!justCheckedOut || currentPlan === "standard") {
+      // 決済直後でなければ、または既に反映済みならポーリング不要。
+      //
+      // 反映の判定に plan_type を使ってはいけない。
+      // 運営が手動で standard を付与したサロンは決済前から standard なので、
+      // plan_type で判定すると決済直後に「反映済み」と誤認し、
+      // 支払い済みの画面に支払い導線を出してしまう（二重課金の誘発）
+      if (!justCheckedOut || isPaymentReflected(subRes.data?.status)) {
         setSyncing(false);
         return;
       }
@@ -159,7 +175,7 @@ export function useBillingStatus(justCheckedOut: boolean): BillingStatus {
         const state = await fetchPlanState(salonId);
         if (cancelled) return;
 
-        if (state.planType === "standard") {
+        if (state.planType === "standard" && isPaymentReflected(state.status)) {
           setPlanType("standard");
           setSubscriptionStatus(state.status);
           setPeriodEnd(state.periodEnd);

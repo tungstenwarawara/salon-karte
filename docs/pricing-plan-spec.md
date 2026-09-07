@@ -443,6 +443,22 @@ function getEffectivePlan(salon: Salon): PlanType {
 5. 解約/失敗 → plan_type = 'free' に戻す
 ```
 
+### 手動付与サロン（plan_type = 'standard' / Stripe 契約なし）の課金開始
+
+テスター優遇などで `plan_type` を手動で `standard` にしたサロンは、Stripe 契約が
+存在しないため、以前は課金を開始する手段が画面上に無かった（アップグレードは
+`plan_type` で門前払い、プラン管理は Stripe 顧客が無く 404）。
+
+- **一度 `free` に戻して課金してもらう運用は禁止**。上限超過分の登録がブロックされ、
+  写真・LINE・カウンセリング・売上分析もロックされる（既存データは消えないが業務が止まる）
+- 現在は `plan_type` を触らずに支払いだけを開始できる:
+  - `/settings/billing` に「お支払いを開始する」を表示（`specialGrant`）
+  - 判定は `subscriptions.status` が `active`/`past_due` かどうか。`plan_type` では判定しない
+  - Checkout API の二重契約ガードも `subscriptions.status` + Stripe 側の実態で行う
+  - 手動付与サロンで Stripe への照合が失敗した場合は fail closed（503 で再試行を促す）
+- 決済完了後は Webhook が `subscriptions` に行を作り、`plan_type` は `standard` のまま。
+  利用中の機能・データに変化はない
+
 ### 実装済みコンポーネント
 
 | コンポーネント | 場所 |

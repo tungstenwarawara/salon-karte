@@ -7,6 +7,13 @@ type Props = {
   cancelAtPeriodEnd: boolean;
   actionLoading: boolean;
   onManage: () => void;
+  /**
+   * 運営が手動でスタンダードを付与した状態（Stripe 契約なしで全機能利用中）。
+   * Stripe に顧客が存在しないため「プラン管理」は開けない。
+   * 代わりに支払い開始の導線を出す
+   */
+  specialGrant?: boolean;
+  onStartPayment?: () => void;
 };
 
 const formatDate = (iso: string) =>
@@ -24,6 +31,8 @@ export function BillingPlanStatus({
   cancelAtPeriodEnd,
   actionLoading,
   onManage,
+  specialGrant = false,
+  onStartPayment,
 }: Props) {
   const endingSoon = planType === "standard" && cancelAtPeriodEnd;
 
@@ -40,7 +49,10 @@ export function BillingPlanStatus({
       <div className="flex items-baseline gap-3 flex-wrap">
         <p className="text-2xl font-bold">{getPlanLabel(planType)}</p>
         <p className="text-base font-bold text-text-light">
-          ¥{PLAN_LIMITS[planType].monthlyPriceJpy.toLocaleString()}
+          ¥
+          {specialGrant
+            ? 0
+            : PLAN_LIMITS[planType].monthlyPriceJpy.toLocaleString()}
           <span className="text-xs font-normal"> / 月</span>
         </p>
       </div>
@@ -75,7 +87,38 @@ export function BillingPlanStatus({
         </p>
       )}
 
-      {planType === "standard" && (
+      {/* 手動付与でご利用中のサロン。
+          Stripe に契約が無いため「プラン管理」は開けない（開くとエラーになる）。
+          支払いを開始する導線だけを出す */}
+      {specialGrant && (
+        <div className="space-y-3">
+          <div className="bg-accent/10 border border-accent rounded-xl p-3 space-y-1">
+            <p className="text-sm font-bold text-accent">
+              現在は無料でご利用いただいています
+            </p>
+            <p className="text-sm text-text-light">
+              スタンダードプランの全機能を、お支払いなしでお使いいただいている状態です。
+            </p>
+            <p className="text-sm text-text-light">
+              お支払いを開始すると、月額¥
+              {PLAN_LIMITS.standard.monthlyPriceJpy.toLocaleString()}
+              （税込）の課金が始まります。
+              <span className="font-medium">
+                今お使いの機能・データはそのまま引き継がれます。
+              </span>
+            </p>
+          </div>
+          <button
+            onClick={onStartPayment}
+            disabled={actionLoading}
+            className="w-full bg-accent hover:bg-accent-light text-white font-bold rounded-2xl py-4 text-center transition-colors disabled:opacity-50 min-h-[56px]"
+          >
+            {actionLoading ? "読み込み中..." : "お支払いを開始する"}
+          </button>
+        </div>
+      )}
+
+      {planType === "standard" && !specialGrant && (
         <button
           onClick={onManage}
           disabled={actionLoading}
