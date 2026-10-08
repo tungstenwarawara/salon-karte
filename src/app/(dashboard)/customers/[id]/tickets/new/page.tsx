@@ -61,7 +61,8 @@ export default function NewTicketPage() {
           .select("id, name, category, duration_minutes, price, is_active")
           .eq("salon_id", resolvedSalonId)
           .eq("is_active", true)
-          .order("name")
+          .order("created_at", { ascending: true })
+          .order("name", { ascending: true })
           .returns<Menu[]>(),
       ]);
 

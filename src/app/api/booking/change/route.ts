@@ -70,12 +70,14 @@ export async function GET(request: Request) {
 
   // サロンのアクティブメニュー取得
   // treatment_menus に sort_order 列は存在しない。指定するとPostgRESTがエラーを返し
-  // menus が null になって変更画面のメニュー選択が空になる（新規予約画面と同じ name 順で統一）
+  // menus が null になって変更画面のメニュー選択が空になる。
+  // 並び順はメニュー管理画面と同じ登録順（同時刻の登録は名前順）。新規予約画面とも揃える
   const { data: menus, error: menusError } = await admin
     .from("treatment_menus")
     .select("id, name, price, duration_minutes")
     .eq("salon_id", salon.id)
     .eq("is_active", true)
+    .order("created_at", { ascending: true })
     .order("name", { ascending: true });
 
   if (menusError) {

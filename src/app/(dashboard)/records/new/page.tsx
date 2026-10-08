@@ -92,7 +92,7 @@ function NewRecordForm() {
       // プラン情報も読み込む（写真機能ロックの判定に使う）
       const { data: salonRow } = await supabase.from("salons").select("plan_type").eq("id", resolvedSalonId).single();
       if (salonRow?.plan_type) setPlanType(salonRow.plan_type as "free" | "standard");
-      const menusQuery = supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name").returns<Menu[]>();
+      const menusQuery = supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).eq("is_active", true).order("created_at", { ascending: true }).order("name", { ascending: true }).returns<Menu[]>();
       const productsQuery = supabase.from("products").select("id, name, category, base_sell_price, base_cost_price").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name").returns<Product[]>();
       const staffQuery = supabase.from("staff").select("id, name").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name");
 

@@ -99,7 +99,7 @@ function NewAppointmentForm() {
 
     const [customersRes, menusRes, staffRes] = await Promise.all([
       supabase.from("customers").select("id, last_name, first_name, last_name_kana, first_name_kana").eq("salon_id", resolvedSalonId).order("last_name_kana", { ascending: true }).returns<Customer[]>(),
-      supabase.from("treatment_menus").select("id, name, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name").returns<TreatmentMenu[]>(),
+      supabase.from("treatment_menus").select("id, name, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).eq("is_active", true).order("created_at", { ascending: true }).order("name", { ascending: true }).returns<TreatmentMenu[]>(),
       supabase.from("staff").select("id, name").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name"),
     ]);
     setCustomers(customersRes.data ?? []);

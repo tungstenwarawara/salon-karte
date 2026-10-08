@@ -47,11 +47,14 @@ export async function GET(
   }
 
   // アクティブなメニュー取得
+  // 並び順はメニュー管理画面と同じ登録順（同時刻の登録は名前順）。
+  // 名前順だと「ジェルオフ」がメインメニューより先に来るなど、オーナーが順番を制御できない
   const { data: menus } = await admin
     .from("treatment_menus")
     .select("id, name, price, duration_minutes")
     .eq("salon_id", salon.id)
     .eq("is_active", true)
+    .order("created_at", { ascending: true })
     .order("name", { ascending: true });
 
   // 指定日の既存予約取得（キャンセル除く、個人情報は含めない）

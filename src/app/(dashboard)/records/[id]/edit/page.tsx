@@ -77,7 +77,7 @@ export default function EditRecordPage() {
 
       const supabase = createClient();
       const [menuRes, recordRes, recordMenusRes, purchasesRes, linkedTicketsRes, staffRes, productsRes] = await Promise.all([
-        supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).order("name").returns<Menu[]>(),
+        supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).order("created_at", { ascending: true }).order("name", { ascending: true }).returns<Menu[]>(),
         supabase.from("treatment_records").select("id, customer_id, staff_id, treatment_date, menu_id, treatment_area, products_used, skin_condition_before, notes_after, next_visit_memo, conversation_notes, caution_notes, record_type").eq("id", id).eq("salon_id", resolvedSalonId).single<TreatmentRecord>(),
         supabase.from("treatment_record_menus").select("id, menu_id, menu_name_snapshot, price_snapshot, duration_minutes_snapshot, payment_type, ticket_id, sort_order").eq("treatment_record_id", id).order("sort_order").returns<TreatmentRecordMenu[]>(),
         supabase.from("purchases").select("id, item_name, quantity, unit_price, total_price, memo, product_id, purchase_date").eq("treatment_record_id", id).eq("salon_id", resolvedSalonId).order("created_at").returns<Purchase[]>(),

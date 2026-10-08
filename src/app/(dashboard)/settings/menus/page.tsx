@@ -43,7 +43,7 @@ export default function MenusPage() {
 
     const supabase = createClient();
     const [menusRes, staffRes, staffMenusRes] = await Promise.all([
-      supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active, created_at").eq("salon_id", sid).order("created_at", { ascending: true }).returns<Menu[]>(),
+      supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active, created_at").eq("salon_id", sid).order("created_at", { ascending: true }).order("name", { ascending: true }).returns<Menu[]>(),
       supabase.from("staff").select("id, name").eq("salon_id", sid).eq("is_active", true).order("name"),
       supabase.from("staff_menus").select("id, staff_id, menu_id").returns<StaffMenu[]>(),
     ]);
@@ -206,6 +206,7 @@ export default function MenusPage() {
 
       {menus.length > 0 ? (
         <div className="space-y-4">
+          <p className="text-xs text-text-light">お客様の予約画面には、登録した順にメニューが表示されます</p>
           {Object.entries(
             menus.reduce((acc, menu) => {
               const cat = menu.category ?? "未分類";

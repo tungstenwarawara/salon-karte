@@ -136,7 +136,8 @@ async function getSalonData(slug: string) {
     .select("id, name, price, duration_minutes")
     .eq("salon_id", salon.id)
     .eq("is_active", true)
-    .order("price", { ascending: true });
+    .order("created_at", { ascending: true })
+    .order("name", { ascending: true });
 
   return { salon, menus: menus ?? [] };
 }

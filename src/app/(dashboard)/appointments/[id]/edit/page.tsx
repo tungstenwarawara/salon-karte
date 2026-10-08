@@ -67,7 +67,7 @@ export default function EditAppointmentPage() {
       supabase.from("appointments").select("id, customer_id, staff_id, appointment_date, start_time, end_time, source, memo, status, customers(last_name, first_name)")
         .eq("id", appointmentId).eq("salon_id", resolvedSalonId)
         .single<Appointment & { customers: { last_name: string; first_name: string } | null }>(),
-      supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name").returns<TreatmentMenu[]>(),
+      supabase.from("treatment_menus").select("id, name, category, duration_minutes, price, is_active").eq("salon_id", resolvedSalonId).eq("is_active", true).order("created_at", { ascending: true }).order("name", { ascending: true }).returns<TreatmentMenu[]>(),
       supabase.from("appointment_menus").select("menu_id").eq("appointment_id", appointmentId).order("sort_order"),
       supabase.from("staff").select("id, name").eq("salon_id", resolvedSalonId).eq("is_active", true).order("name"),
     ]);
