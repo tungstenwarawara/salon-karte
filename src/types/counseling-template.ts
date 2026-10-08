@@ -24,6 +24,11 @@ export type TemplateSection = {
 /** テンプレート全体（salons.counseling_template に保存） */
 export type CounselingTemplate = {
   sections: TemplateSection[];
+  /**
+   * お客様情報ステップで表示しない項目（lib/counseling-customer-info.ts の項目名）。
+   * 未設定ならサロンの業種ごとの既定に従う
+   */
+  hiddenCustomerInfoFields?: string[];
 };
 
 /** フォーム回答データ: セクションID → フィールドID → 値 */

@@ -9,7 +9,10 @@ import { Toast, useToast } from "@/components/ui/toast";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { SectionEditor } from "@/components/counseling/section-editor";
 import { TemplatePreview } from "@/components/counseling/template-preview";
+import { EditPreviewToggle } from "@/components/counseling/edit-preview-toggle";
+import { CustomerInfoFieldsEditor } from "@/components/counseling/customer-info-fields-editor";
 import { DEFAULT_COUNSELING_TEMPLATE } from "@/lib/counseling-default-template";
+import { resolveHiddenCustomerInfoFields } from "@/lib/counseling-customer-info";
 import { SubmitButton } from "@/components/ui/submit-button";
 import type { CounselingTemplate, TemplateSection } from "@/types/counseling-template";
 
@@ -20,6 +23,7 @@ export default function CounselingTemplateEditPage() {
   const [name, setName] = useState("");
   const [template, setTemplate] = useState<CounselingTemplate | null>(null);
   const [isDefault, setIsDefault] = useState(false);
+  const [businessType, setBusinessType] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -34,17 +38,22 @@ export default function CounselingTemplateEditPage() {
     setSalonId(sid);
 
     const supabase = createClient();
-    const { data } = await supabase
-      .from("counseling_templates")
-      .select("id, name, template, is_default")
-      .eq("id", templateId)
-      .eq("salon_id", sid)
-      .single();
+    // 業種はお客様情報の項目の既定（未設定時）を決めるために使う
+    const [{ data }, { data: salon }] = await Promise.all([
+      supabase
+        .from("counseling_templates")
+        .select("id, name, template, is_default")
+        .eq("id", templateId)
+        .eq("salon_id", sid)
+        .single(),
+      supabase.from("salons").select("business_type").eq("id", sid).single(),
+    ]);
 
     if (!data) {
       router.push("/settings/counseling-template");
       return;
     }
+    setBusinessType(salon?.business_type ?? null);
     setName(data.name);
     setTemplate(data.template as unknown as CounselingTemplate);
     setIsDefault(data.is_default);
@@ -192,32 +201,17 @@ export default function CounselingTemplateEditPage() {
         </label>
       </div>
 
-      {/* モード切替 */}
-      <div className="flex bg-background rounded-xl p-1">
-        <button
-          type="button"
-          onClick={() => setIsPreview(false)}
-          className={`flex-1 text-sm font-medium rounded-lg py-2 min-h-[44px] transition-colors ${
-            !isPreview ? "bg-surface shadow text-text" : "text-text-light"
-          }`}
-        >
-          編集
-        </button>
-        <button
-          type="button"
-          onClick={() => setIsPreview(true)}
-          className={`flex-1 text-sm font-medium rounded-lg py-2 min-h-[44px] transition-colors ${
-            isPreview ? "bg-surface shadow text-text" : "text-text-light"
-          }`}
-        >
-          プレビュー
-        </button>
-      </div>
+      <EditPreviewToggle isPreview={isPreview} onChange={setIsPreview} />
 
       {isPreview ? (
         <TemplatePreview template={template} />
       ) : (
         <>
+          <CustomerInfoFieldsEditor
+            hiddenFields={resolveHiddenCustomerInfoFields(template, businessType)}
+            onChange={(hidden) => setTemplate({ ...template, hiddenCustomerInfoFields: hidden })}
+          />
+
           <div className="space-y-3">
             {template.sections.map((section, i) => (
               <div key={section.id}>

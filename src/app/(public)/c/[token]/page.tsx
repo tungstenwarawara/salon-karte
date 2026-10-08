@@ -3,8 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PublicForm } from "@/components/counseling/public-form";
 import type { PublicCustomerInfo } from "@/components/counseling/customer-info-step";
 import { emptyPublicCustomerInfo } from "@/components/counseling/customer-info-step";
-import { DEFAULT_COUNSELING_TEMPLATE } from "@/lib/counseling-default-template";
-import type { CounselingTemplate } from "@/types/counseling-template";
+import { resolveSheetTemplate } from "@/lib/counseling-sheet-template";
 
 export default async function CounselingPage({
   params,
@@ -37,34 +36,8 @@ export default async function CounselingPage({
     redirect(`/c/${token}/expired`);
   }
 
-  // サロン情報取得
-  const { data: salonData } = await admin
-    .from("salons")
-    .select("name, counseling_template")
-    .eq("id", sheet.salon_id)
-    .single();
-
-  const salonName = salonData?.name ?? "サロン";
-
-  // テンプレート解決: template_id → counseling_templates → salons.counseling_template → デフォルト
-  let template: CounselingTemplate = DEFAULT_COUNSELING_TEMPLATE;
-  let templateName: string | null = null;
-
-  if (sheet.template_id) {
-    const { data: tmpl } = await admin
-      .from("counseling_templates")
-      .select("template, name")
-      .eq("id", sheet.template_id)
-      .eq("salon_id", sheet.salon_id)
-      .single();
-
-    if (tmpl) {
-      template = tmpl.template as unknown as CounselingTemplate;
-      templateName = tmpl.name as string;
-    }
-  } else if (salonData?.counseling_template) {
-    template = salonData.counseling_template as unknown as CounselingTemplate;
-  }
+  // サロン情報 + テンプレート解決（送信APIと同じ解決ロジックを共用）
+  const { salonName, template, templateName, hiddenCustomerInfoFields } = await resolveSheetTemplate(admin, sheet);
 
   const isAnonymous = sheet.customer_id === null;
   const showCustomerInfo = sheet.include_customer_info ?? false;
@@ -116,6 +89,7 @@ export default async function CounselingPage({
         isAnonymous={isAnonymous}
         showCustomerInfo={showCustomerInfo}
         existingCustomerInfo={existingCustomerInfo}
+        hiddenCustomerInfoFields={hiddenCustomerInfoFields}
       />
     </div>
   );

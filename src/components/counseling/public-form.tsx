@@ -6,6 +6,7 @@ import { StepIndicator } from "./step-indicator";
 import { TemplateStep } from "./template-step";
 import { CustomerInfoStep, type PublicCustomerInfo, emptyPublicCustomerInfo } from "./customer-info-step";
 import type { CounselingTemplate, CounselingResponseData } from "@/types/counseling-template";
+import type { OptionalCustomerInfoField } from "@/lib/counseling-customer-info";
 
 type Props = {
   token: string;
@@ -13,9 +14,11 @@ type Props = {
   isAnonymous?: boolean;
   showCustomerInfo?: boolean;
   existingCustomerInfo?: PublicCustomerInfo;
+  /** お客様情報ステップで表示しない項目 */
+  hiddenCustomerInfoFields?: OptionalCustomerInfoField[];
 };
 
-export function PublicForm({ token, template, isAnonymous = false, showCustomerInfo = false, existingCustomerInfo }: Props) {
+export function PublicForm({ token, template, isAnonymous = false, showCustomerInfo = false, existingCustomerInfo, hiddenCustomerInfoFields = [] }: Props) {
   const router = useRouter();
   const sections = template.sections;
   const showCustomerInfoStep = isAnonymous || showCustomerInfo;
@@ -103,7 +106,7 @@ export function PublicForm({ token, template, isAnonymous = false, showCustomerI
       <StepIndicator labels={stepLabels} currentStep={step} />
 
       {isCustomerInfoStep ? (
-        <CustomerInfoStep data={customerInfo} onChange={setCustomerInfo} />
+        <CustomerInfoStep data={customerInfo} onChange={setCustomerInfo} hiddenFields={hiddenCustomerInfoFields} />
       ) : currentSection ? (
         <TemplateStep
           section={currentSection}
