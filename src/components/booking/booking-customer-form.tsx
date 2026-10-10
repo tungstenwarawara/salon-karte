@@ -86,6 +86,10 @@ export function BookingCustomerForm({
           autoComplete="email"
           inputMode="email"
         />
+        {/* キャリアメールは受信サーバー側で破棄され、送信側からは「配信済み」に見える（2026-10-10 爪彩） */}
+        <p className="mt-1 text-xs text-text-light leading-relaxed">
+          au・docomo・SoftBank などのメールをお使いの方は、「@salonkarte.com」からのメールを受け取れるよう設定してください
+        </p>
       </div>
 
       {/* 電話番号 */}

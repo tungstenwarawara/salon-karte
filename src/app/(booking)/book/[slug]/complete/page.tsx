@@ -48,6 +48,9 @@ export default function BookingCompletePage() {
           メールが届かない場合は、迷惑メールフォルダをご確認ください。
         </p>
         <p className="text-xs text-text-light">
+          au・docomo・SoftBank などのメールをお使いの方は、前日のお知らせメールを受け取れるよう「@salonkarte.com」からの受信を許可してください。
+        </p>
+        <p className="text-xs text-text-light">
           キャンセル・変更はサロンへ直接ご連絡ください。
         </p>
       </div>
