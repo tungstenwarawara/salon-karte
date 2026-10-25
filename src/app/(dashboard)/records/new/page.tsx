@@ -235,15 +235,26 @@ function NewRecordForm() {
     setError(""); setLoading(true);
 
     // フリープラン制限チェック + 既存カルテ数の取得（Reward判定に使用）
-    // plan_type は初期ロード済みの state を使用し、保存前の通信を1クエリに抑える
+    // plan_type は初期ロード済みの state を使用し、2クエリを並列で投げる
+    // 上限判定は総数（サンプルもDB行を占めるため）、Reward判定は実カルテ数で行う。
+    // サンプルを数えると最初の1件が「2件目」扱いになり first_record が飛ばなくなる。
     let preRecordCount: number | null = null;
+    let preRealRecordCount: number | null = null;
     if (salonId) {
       const supabase = createClient();
-      const { count } = await supabase
-        .from("treatment_records")
-        .select("id", { count: "exact", head: true })
-        .eq("salon_id", salonId);
-      preRecordCount = count ?? 0;
+      const [{ count: totalCount }, { count: sampleCount }] = await Promise.all([
+        supabase
+          .from("treatment_records")
+          .select("id", { count: "exact", head: true })
+          .eq("salon_id", salonId),
+        supabase
+          .from("treatment_records")
+          .select("id, customers!inner(id)", { count: "exact", head: true })
+          .eq("salon_id", salonId)
+          .eq("customers.is_sample", true),
+      ]);
+      preRecordCount = totalCount ?? 0;
+      preRealRecordCount = preRecordCount - (sampleCount ?? 0);
       const { isAtLimit } = await import("@/lib/plan");
       if (isAtLimit(planType, "records", preRecordCount)) {
         setError(
@@ -265,10 +276,10 @@ function NewRecordForm() {
     const ticketInfo = result.ticketConsumptions && result.ticketConsumptions.length > 0
       ? `（${result.ticketConsumptions.map((tc) => `${tc.ticketName} ${tc.consumed}回消化→残${tc.remaining}回`).join("、")}）`
       : "";
-    if (preRecordCount === 0) {
+    if (preRealRecordCount === 0) {
       trackEvent({ name: "first_record" });
       setFlashToast(`🎉 最初のカルテを記録しました！次回も同じ手順で記録できます${ticketInfo}`);
-    } else if (preRecordCount === 1) {
+    } else if (preRealRecordCount === 1) {
       trackEvent({ name: "second_record" });
       setFlashToast(`🎊 2件目を記録しました。売上ページで月の合計が見られます${ticketInfo}`);
     } else {

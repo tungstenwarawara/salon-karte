@@ -10,6 +10,25 @@ import {
 
 type EmailType = "day3_no_customer" | "day7_no_record" | "day14_no_second_record";
 
+// サンプルデータを除いた実カルテ件数を返す。
+// treatment_records に is_sample はなく、サンプルカルテはサンプル顧客に紐づく形で
+// 作られる（src/app/api/setup/seed-sample/route.ts）ため、顧客側のフラグ経由で数える。
+// 総数から引く形にしているのは customer_id が NULL のカルテを実データ側に残すため。
+async function countRealRecords(
+  client: ReturnType<typeof createAdminClient>,
+  salonId: string,
+): Promise<number> {
+  const [{ count: total }, { count: sample }] = await Promise.all([
+    client.from("treatment_records").select("id", { count: "exact", head: true }).eq("salon_id", salonId),
+    client
+      .from("treatment_records")
+      .select("id, customers!inner(id)", { count: "exact", head: true })
+      .eq("salon_id", salonId)
+      .eq("customers.is_sample", true),
+  ]);
+  return (total ?? 0) - (sample ?? 0);
+}
+
 // GET: 日次オンボーディングメール送信
 // Vercel Cron が呼ぶ。`CRON_SECRET` で認証。
 // 各サロンに対し email_send_logs(salon_id, email_type) UNIQUE で二重送信防止
@@ -118,12 +137,9 @@ export async function GET(request: Request) {
       continue;
     }
 
-    const { count: recordCount } = await adminClient
-      .from("treatment_records")
-      .select("id", { count: "exact", head: true })
-      .eq("salon_id", salon.id);
+    const recordCount = await countRealRecords(adminClient, salon.id);
 
-    if ((recordCount ?? 0) > 0) {
+    if (recordCount > 0) {
       stats.day7_no_record.skipped++;
       continue;
     }
@@ -162,12 +178,9 @@ export async function GET(request: Request) {
       continue;
     }
 
-    const { count: recordCount } = await adminClient
-      .from("treatment_records")
-      .select("id", { count: "exact", head: true })
-      .eq("salon_id", salon.id);
+    const recordCount = await countRealRecords(adminClient, salon.id);
 
-    if ((recordCount ?? 0) !== 1) {
+    if (recordCount !== 1) {
       stats.day14_no_second_record.skipped++;
       continue;
     }

@@ -151,6 +151,46 @@ test.describe("@activation サンプルデータ投入と削除", () => {
       await cleanupActivationUser(userId, email);
     }
   });
+
+  test("ON-SAMPLE-03: サンプルだけではチェックリストが完了にならず、実カルテ1件目で🎉が出る", async ({ page }) => {
+    const email = generateActivationEmail();
+    const { userId } = await createConfirmedUser(email);
+    const salonName = `E2Eサンプル実績_${Date.now()}`;
+
+    try {
+      await loginAs(page, email, ACTIVATION_PASSWORD);
+      await runSetup(page, { salonName, withSample: true });
+
+      // サンプルのメニュー・顧客・予約・カルテは実績に数えない → 該当ステップは未完了のまま
+      for (const label of ["施術メニューを登録する", "最初のお客様を登録する", "予約を入れてみる", "カルテを記録する"]) {
+        await expect(page.locator("span", { hasText: label })).not.toHaveClass(/line-through/);
+      }
+
+      // サンプルカルテ1件がある状態で、実際のお客様の1件目を保存する
+      const salonId = await getSalonId(userId);
+      const { data: customer } = await getAdmin()
+        .from("customers")
+        .insert({ salon_id: salonId!, last_name: "実績", first_name: "テスト" })
+        .select("id")
+        .single();
+      expect(customer).not.toBeNull();
+
+      await page.goto(`/records/new?customer=${customer!.id}`);
+      await page.waitForLoadState("networkidle");
+      const checkbox = page.locator("input[type='checkbox']").first();
+      await expect(checkbox).toBeVisible({ timeout: 10_000 });
+      await checkbox.check();
+      const saveBtn = page.locator("button[type='submit']").filter({ hasText: /保存/ });
+      await saveBtn.scrollIntoViewIfNeeded();
+      await saveBtn.click();
+
+      // サンプルを数えると「2件目」になってしまう
+      await page.waitForURL(/\/customers\/[^/]+$/, { timeout: 15_000 });
+      await expect(page.locator("body")).toContainText("最初のカルテを記録しました", { timeout: 10_000 });
+    } finally {
+      await cleanupActivationUser(userId, email);
+    }
+  });
 });
 
 test.describe("@activation Step3 メニュープリセット", () => {

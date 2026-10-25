@@ -70,6 +70,8 @@ export default async function DashboardPage() {
     kpiRes,
     referralRes,
     sampleCustomerCountRes,
+    sampleAppointmentCountRes,
+    sampleRecordCountRes,
   ] = await Promise.all([
     supabase
       .from("appointments")
@@ -87,7 +89,8 @@ export default async function DashboardPage() {
       .from("treatment_menus")
       .select("id", { count: "exact", head: true })
       .eq("salon_id", salon.id)
-      .eq("is_active", true),
+      .eq("is_active", true)
+      .eq("is_sample", false),
     supabase
       .from("appointments")
       .select("id", { count: "exact", head: true })
@@ -121,6 +124,19 @@ export default async function DashboardPage() {
       .select("id", { count: "exact", head: true })
       .eq("salon_id", salon.id)
       .eq("is_sample", true),
+    // 予約・カルテには is_sample がなく、サンプル顧客に紐づく形で作られる
+    // （src/app/api/setup/seed-sample/route.ts）。オンボーディング判定で
+    // サンプルを実績として数えないよう、顧客側のフラグ経由で件数を数える。
+    supabase
+      .from("appointments")
+      .select("id, customers!inner(id)", { count: "exact", head: true })
+      .eq("salon_id", salon.id)
+      .eq("customers.is_sample", true),
+    supabase
+      .from("treatment_records")
+      .select("id, customers!inner(id)", { count: "exact", head: true })
+      .eq("salon_id", salon.id)
+      .eq("customers.is_sample", true),
   ]);
 
   const hasSampleData = (sampleCustomerCountRes.count ?? 0) > 0;
@@ -178,11 +194,18 @@ export default async function DashboardPage() {
   const lapsedCount = lapsedCustomers?.length ?? 0;
 
   // オンボーディング
+  // チェックリストの判定はサンプルデータを除いた実データで行う。
+  // サンプル投入だけでステップが完了扱いになると、オーナーが実作業をしないまま
+  // 「もう終わった」と受け取ってしまうため（menuCount はクエリ側で除外済み）。
+  const realCustomerCount = (customerCount ?? 0) - (sampleCustomerCountRes.count ?? 0);
+  const realAppointmentCount = (appointmentTotalRes.count ?? 0) - (sampleAppointmentCountRes.count ?? 0);
+  const realRecordCount = (recordTotalRes.count ?? 0) - (sampleRecordCountRes.count ?? 0);
+
   const hasBusinessHours = salon.business_hours !== null;
   const hasMenus = (menuCount ?? 0) > 0;
-  const hasCustomers = (customerCount ?? 0) > 0;
-  const hasAppointments = (appointmentTotalRes.count ?? 0) > 0;
-  const hasRecords = (recordTotalRes.count ?? 0) > 0;
+  const hasCustomers = realCustomerCount > 0;
+  const hasAppointments = realAppointmentCount > 0;
+  const hasRecords = realRecordCount > 0;
   const setupSteps: { done: boolean; label: string; href: string; phase: 1 | 2 }[] = [
     { done: true, label: "サロン登録", href: "/dashboard", phase: 1 },
     { done: hasBusinessHours, label: "営業時間を設定する", href: "/settings/business-hours", phase: 1 },
