@@ -30,7 +30,7 @@
     "google-auth-library": "^10.6.2",
     "gray-matter": "^4.0.3",
     "jszip": "^3.10.1",
-    "next": "15.5.12",
+    "next": "15.5.28",
     "qrcode": "^1.5.4",
     "react": "19.2.5",
     "react-dom": "19.2.5",
@@ -56,5 +56,8 @@
     "tsx": "^4.21.0",
     "typescript": "5.9.3",
     "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "sharp": "^0.35.5"
   }
 }
