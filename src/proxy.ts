@@ -3,7 +3,8 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 const CANONICAL_HOST = "salonkarte.com";
 
-export async function middleware(request: NextRequest) {
+// Next.js 16 で middleware から proxy に改名。proxy は Node.js ランタイム固定（edge 不可）
+export async function proxy(request: NextRequest) {
   // Vercel Cron はリダイレクト対象外（Authorizationヘッダーが失われるため）
   const pathname = request.nextUrl.pathname;
   if (pathname.startsWith("/api/cron/")) {

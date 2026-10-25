@@ -6,7 +6,6 @@ import { ImageResponse } from "next/og";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { SalonHpContent } from "@/types/database";
 
-export const runtime = "edge";
 export const alt = "サロンHP";
 export const contentType = "image/png";
 export const size = { width: 1200, height: 630 };
