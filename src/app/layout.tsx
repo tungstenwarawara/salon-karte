@@ -48,7 +48,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
+    // globals.css の scroll-behavior: smooth をページ遷移時だけ無効化する
+    // （Next.js 16 から既定では上書きしなくなったため、この属性で従来の動作を維持）
+    <html lang="ja" data-scroll-behavior="smooth">
       <body className="antialiased">
         {children}
         <CookieConsent />

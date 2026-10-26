@@ -41,7 +41,7 @@ test.describe("@smoke スモーク: 主要ページ表示確認", () => {
     });
     const page = await context.newPage();
     await page.goto("/dashboard");
-    // middleware で /login にリダイレクトされる
+    // proxy（src/proxy.ts）で /login にリダイレクトされる
     await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });
     await context.close();
   });

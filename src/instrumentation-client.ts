@@ -2,8 +2,9 @@
  * Sentry クライアント（ブラウザ）設定
  * セッションリプレイは無効（全画面に顧客PII表示のため）
  *
- * 注意: このファイルはプロジェクトルートにあるため @/ パスエイリアスが
- * 使えない。PII除去ロジックはインラインで定義する。
+ * Next.js 16 の既定ビルド（Turbopack）では sentry.client.config.ts が読み込まれないため、
+ * Next.js 標準の instrumentation-client.ts に置く（旧 sentry.client.config.ts）。
+ * PII除去ロジックは server / edge 設定と同じくインラインで定義する。
  */
 import * as Sentry from "@sentry/nextjs";
 
@@ -65,3 +66,6 @@ Sentry.init({
     "Failed to fetch",
   ],
 });
+
+// App Router のページ遷移をトレースに含める（Sentry SDK が要求するフック）
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

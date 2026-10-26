@@ -1,5 +1,6 @@
 /**
- * Sentry Edge runtime 設定（middleware 等）
+ * Sentry Edge runtime 設定（OGP 画像生成など）
+ * proxy（旧 middleware）は Node.js ランタイムなので sentry.server.config 側で扱う
  *
  * 注意: このファイルはプロジェクトルートにあるため @/ パスエイリアスが
  * 使えない場合がある。PII除去ロジックはインラインで定義する。

@@ -130,7 +130,7 @@
 | 商用化時のプラン | **Developer で十分（100サロンまで）** |
 | ダッシュボード | https://sentry.io |
 | 環境変数 | `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` |
-| 設定ファイル | `sentry.server.config.ts`, `sentry.client.config.ts`, `sentry.edge.config.ts` |
+| 設定ファイル | `sentry.server.config.ts`, `src/instrumentation-client.ts`（ブラウザ）, `sentry.edge.config.ts` |
 
 #### Developer プランの制限
 - 5,000イベント/月

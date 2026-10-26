@@ -27,7 +27,7 @@ globs:
 - `p_salon_id` パラメータで内部検証
 
 ## 認証フロー
-- `middleware.ts`: `/dashboard` 以下は認証必須
+- `src/proxy.ts`（Next.js 16 で middleware から改名）: `/dashboard` 以下は認証必須
 - 各ページの `getAuthAndSalon()`: ユーザー → サロン紐づけ確認
 - サロン未作成: `/setup` にリダイレクト
 - 未認証: `/login` にリダイレクト

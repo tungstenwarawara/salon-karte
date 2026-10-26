@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 const nextConfig: NextConfig = {
   // App Router のページロードトレーシング用
@@ -106,10 +106,9 @@ export default withSentryConfig(nextConfig, {
     deleteSourcemapsAfterUpload: true,
   },
 
-  // 本番バンドルからデバッグログを除去
-  disableLogger: true,
-
   // バンドルサイズ最適化: 未使用のSentry機能をツリーシェイクで除去
+  // 注意: webpack ビルド時のみ有効。Next.js 16 既定の Turbopack ビルドでは効かない
+  // （旧 disableLogger も同様に Turbopack 非対応のため削除した）
   bundleSizeOptimizations: {
     // セッションリプレイは完全無効（PII対策）→ 関連コードを除去
     excludeReplayIframe: true,

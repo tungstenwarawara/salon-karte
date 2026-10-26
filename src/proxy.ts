@@ -3,7 +3,8 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 const CANONICAL_HOST = "salonkarte.com";
 
-export async function middleware(request: NextRequest) {
+// Next.js 16 で middleware から proxy に改名。proxy は Node.js ランタイム固定（edge 不可）
+export async function proxy(request: NextRequest) {
   // Vercel Cron はリダイレクト対象外（Authorizationヘッダーが失われるため）
   const pathname = request.nextUrl.pathname;
   if (pathname.startsWith("/api/cron/")) {
@@ -11,8 +12,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // 旧ドメインからカノニカルドメインへリダイレクト
+  // Vercel のプレビューデプロイ（*.vercel.app、Vercel Authentication で保護）は対象外にし、
+  // 本番へ飛ばされずに動作確認できるようにする。本番デプロイは VERCEL_ENV=production なので従来どおり
   const host = request.headers.get("host") ?? "";
+  const isVercelPreview = process.env.VERCEL_ENV === "preview";
   if (
+    !isVercelPreview &&
     host !== CANONICAL_HOST &&
     host !== `www.${CANONICAL_HOST}` &&
     !host.startsWith("localhost") &&

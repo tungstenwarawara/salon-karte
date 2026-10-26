@@ -1016,7 +1016,7 @@ MEO対策:
 
 | レイヤー | 技術 |
 |---------|------|
-| フロントエンド | Next.js 15 (App Router) + TypeScript 5.9 + Tailwind CSS 4 |
+| フロントエンド | Next.js 16 (App Router) + TypeScript 5.9 + Tailwind CSS 4 |
 | バックエンド | Supabase (PostgreSQL + Auth + Storage) |
 | 決済 | Stripe（Checkout + Customer Portal + Webhooks） |
 | メール | Resend（予約確認・リマインド） |
