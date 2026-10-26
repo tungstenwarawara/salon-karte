@@ -12,8 +12,12 @@ export async function proxy(request: NextRequest) {
   }
 
   // 旧ドメインからカノニカルドメインへリダイレクト
+  // Vercel のプレビューデプロイ（*.vercel.app、Vercel Authentication で保護）は対象外にし、
+  // 本番へ飛ばされずに動作確認できるようにする。本番デプロイは VERCEL_ENV=production なので従来どおり
   const host = request.headers.get("host") ?? "";
+  const isVercelPreview = process.env.VERCEL_ENV === "preview";
   if (
+    !isVercelPreview &&
     host !== CANONICAL_HOST &&
     host !== `www.${CANONICAL_HOST}` &&
     !host.startsWith("localhost") &&
