@@ -6,7 +6,8 @@
  */
 export const TEST_SALON_ID = "00000000-0000-0000-0000-000000000001";
 export const TEST_OWNER_ID = "00000000-0000-0000-0000-000000000099";
+// GitHub Actions は未登録の secret を空文字で渡すため、`??` ではなく `||` で既定値に戻す
 export const TEST_EMAIL =
-  process.env.PLAYWRIGHT_TEST_EMAIL ?? "test-salon@salon-karte.dev";
+  process.env.PLAYWRIGHT_TEST_EMAIL || "test-salon@salon-karte.dev";
 export const TEST_PASSWORD =
-  process.env.PLAYWRIGHT_TEST_PASSWORD ?? "TestSalon2026!";
+  process.env.PLAYWRIGHT_TEST_PASSWORD || "TestSalon2026!";
