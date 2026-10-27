@@ -13,7 +13,10 @@ concurrency:
 
 jobs:
   e2e:
-    runs-on: ubuntu-latest
+    # ubuntu-latest（26.04）では `playwright install --with-deps` が依存パッケージ185個（142MB）を
+    # apt で取得するが、ミラーが約50KB/sしか出ず20分のタイムアウトに達した（2026-10-27）。
+    # 24.04 のイメージには依存の大半が入っており1〜2分で終わるため、E2E だけ 24.04 に固定する。
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
